@@ -78,21 +78,30 @@ export function MainHeader() {
 
         <div className="h-6 w-px bg-border" />
 
-        <Select value={selectedModel} onValueChange={setSelectedModel}>
-          <SelectTrigger className="w-[180px] h-8 text-sm bg-secondary/50 border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {modelOptions.map((model) => (
-              <SelectItem key={model.id} value={model.id}>
-                <div className="flex flex-col">
-                  <span>{model.name}</span>
-                  <span className="text-xs text-muted-foreground">{model.description}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <Select value={selectedModel} onValueChange={setSelectedModel}>
+                <SelectTrigger className="w-[180px] h-8 text-sm bg-secondary/50 border-border">
+                  <SelectValue>
+                    {modelOptions.find(m => m.id === selectedModel)?.name}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {modelOptions.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[200px]">
+            <p className="font-medium">{modelOptions.find(m => m.id === selectedModel)?.name}</p>
+            <p className="text-xs text-muted-foreground">{modelOptions.find(m => m.id === selectedModel)?.description}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Right Side - Actions */}
