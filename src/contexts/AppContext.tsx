@@ -23,10 +23,12 @@ interface AppContextType {
   sharedWithMeProjects: Project[];
   selectedProject: Project | null;
   setSelectedProject: (project: Project | null) => void;
+  addProject: (name: string, description: string, language: 'en' | 'sr-lat') => void;
   
   // Chats
   selectedChat: Chat | null;
   setSelectedChat: (chat: Chat | null) => void;
+  addChat: (projectId: string) => void;
   
   // Search
   searchQuery: string;
@@ -51,12 +53,15 @@ interface AppContextType {
   setShowDocuments: (show: boolean) => void;
   showShare: boolean;
   setShowShare: (show: boolean) => void;
+  showNewProject: boolean;
+  setShowNewProject: (show: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(mockProjects[0]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(mockProjects[0].chats[0] || null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,8 +70,75 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [showSettings, setShowSettings] = useState<'project' | 'chat' | 'prompt' | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showNewProject, setShowNewProject] = useState(false);
 
   const unreadCount = mockNotifications.filter(n => !n.read).length;
+
+  const addProject = (name: string, description: string, projectLanguage: 'en' | 'sr-lat') => {
+    const now = new Date().toISOString();
+    const newProject: Project = {
+      id: `proj-${Date.now()}`,
+      name,
+      description: description || 'No description provided.',
+      ownerId: currentUser.id,
+      sharedWith: [],
+      chats: [],
+      documents: [],
+      language: projectLanguage,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    setProjects(prev => [newProject, ...prev]);
+    setSelectedProject(newProject);
+    setSelectedChat(null);
+  };
+
+  const addChat = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const now = new Date().toISOString();
+    const chatNumber = project.chats.length + 1;
+    
+    const newChat: Chat = {
+      id: `chat-${Date.now()}`,
+      name: `New Chat ${chatNumber}`,
+      projectId,
+      messages: [
+        {
+          id: `msg-${Date.now()}`,
+          role: 'assistant',
+          content: 'Welcome! You can start asking questions about your documents. Upload files to enhance the knowledge base for this chat.',
+          timestamp: now,
+        }
+      ],
+      documents: [],
+      language: project.language,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const updatedProjects = projects.map(p => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          chats: [...p.chats, newChat],
+          updatedAt: now,
+        };
+      }
+      return p;
+    });
+
+    setProjects(updatedProjects);
+    
+    // Update selectedProject reference if it's the current project
+    const updatedProject = updatedProjects.find(p => p.id === projectId);
+    if (updatedProject) {
+      setSelectedProject(updatedProject);
+      setSelectedChat(newChat);
+    }
+  };
 
   return (
     <AppContext.Provider
@@ -74,12 +146,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         user: currentUser,
         sidebarCollapsed,
         setSidebarCollapsed,
-        projects: mockProjects,
+        projects,
         sharedWithMeProjects: sharedProjects,
         selectedProject,
         setSelectedProject,
+        addProject,
         selectedChat,
         setSelectedChat,
+        addChat,
         searchQuery,
         setSearchQuery,
         selectedModel,
@@ -94,6 +168,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setShowDocuments,
         showShare,
         setShowShare,
+        showNewProject,
+        setShowNewProject,
       }}
     >
       {children}

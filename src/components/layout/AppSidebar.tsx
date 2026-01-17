@@ -64,6 +64,7 @@ export function AppSidebar() {
     setSelectedChat,
     user,
     unreadCount,
+    setShowNewProject,
   } = useApp();
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
@@ -120,6 +121,7 @@ export function AppSidebar() {
               variant="ghost" 
               size="icon" 
               className="text-sidebar-primary hover:bg-sidebar-accent mb-2"
+              onClick={() => setShowNewProject(true)}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -199,6 +201,7 @@ export function AppSidebar() {
         <Button 
           className="flex-1 justify-start gap-2 bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground"
           size="sm"
+          onClick={() => setShowNewProject(true)}
         >
           <Plus className="h-4 w-4" />
           New Project
