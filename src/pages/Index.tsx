@@ -7,31 +7,46 @@ import { ChatWorkspace } from '@/components/chat/ChatWorkspace';
 import { SettingsDialog } from '@/components/dialogs/SettingsDialog';
 import { DocumentsDialog } from '@/components/dialogs/DocumentsDialog';
 import { ShareDialog } from '@/components/dialogs/ShareDialog';
+import { NewProjectDialog } from '@/components/dialogs/NewProjectDialog';
+import { useApp } from '@/contexts/AppContext';
+
+function AppContent() {
+  const { showNewProject, setShowNewProject, addProject } = useApp();
+
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* Sidebar */}
+      <AppSidebar />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Main Header */}
+        <MainHeader />
+
+        {/* Contextual Header */}
+        <ContextualHeader />
+
+        {/* Chat Workspace */}
+        <ChatWorkspace />
+      </div>
+
+      {/* Dialogs */}
+      <SettingsDialog />
+      <DocumentsDialog />
+      <ShareDialog />
+      <NewProjectDialog 
+        open={showNewProject} 
+        onOpenChange={setShowNewProject}
+        onCreateProject={addProject}
+      />
+    </div>
+  );
+}
 
 const Index = () => {
   return (
     <AppProvider>
-      <div className="flex h-screen w-full overflow-hidden bg-background">
-        {/* Sidebar */}
-        <AppSidebar />
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Main Header */}
-          <MainHeader />
-
-          {/* Contextual Header */}
-          <ContextualHeader />
-
-          {/* Chat Workspace */}
-          <ChatWorkspace />
-        </div>
-
-        {/* Dialogs */}
-        <SettingsDialog />
-        <DocumentsDialog />
-        <ShareDialog />
-      </div>
+      <AppContent />
     </AppProvider>
   );
 };

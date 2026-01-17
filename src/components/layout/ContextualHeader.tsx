@@ -17,7 +17,13 @@ import { useApp } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
 
 export function ContextualHeader() {
-  const { selectedProject, selectedChat, setShowSettings } = useApp();
+  const { selectedProject, selectedChat, setShowSettings, addChat } = useApp();
+
+  const handleNewChat = () => {
+    if (selectedProject) {
+      addChat(selectedProject.id);
+    }
+  };
 
   if (!selectedProject) {
     return (
@@ -97,7 +103,10 @@ export function ContextualHeader() {
           </p>
         </div>
 
-        <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
+        <Button 
+          className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+          onClick={handleNewChat}
+        >
           <Plus className="h-4 w-4" />
           New Chat
         </Button>
