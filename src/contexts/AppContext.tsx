@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { 
-  Project, 
-  Chat, 
-  currentUser, 
-  mockProjects, 
-  sharedProjects, 
+import {
+  Project,
+  Chat,
+  currentUser,
+  mockProjects,
+  sharedProjects,
   mockNotifications,
   Notification,
   User,
-  Plan
+  Plan,
+  Document
 } from '@/data/mockData';
 
 interface AppContextType {
@@ -35,7 +36,10 @@ interface AppContextType {
   selectedChat: Chat | null;
   setSelectedChat: (chat: Chat | null) => void;
   addChat: (projectId: string) => void;
-  
+
+  // Documents
+  addDocuments: (documents: Document[], context: 'project' | 'chat' | 'all') => void;
+
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -115,7 +119,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const now = new Date().toISOString();
     const chatNumber = project.chats.length + 1;
-    
+
     const newChat: Chat = {
       id: `chat-${Date.now()}`,
       name: `New Chat ${chatNumber}`,
@@ -146,12 +150,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
 
     setProjects(updatedProjects);
-    
-    // Update selectedProject reference if it's the current project
+
     const updatedProject = updatedProjects.find(p => p.id === projectId);
     if (updatedProject) {
       setSelectedProject(updatedProject);
       setSelectedChat(newChat);
+    }
+  };
+
+  const addDocuments = (documents: Document[], context: 'project' | 'chat' | 'all') => {
+    const now = new Date().toISOString();
+
+    if (context === 'chat' && selectedChat && selectedProject) {
+      const updatedProjects = projects.map(p => {
+        if (p.id === selectedProject.id) {
+          return {
+            ...p,
+            chats: p.chats.map(c => {
+              if (c.id === selectedChat.id) {
+                return {
+                  ...c,
+                  documents: [...c.documents, ...documents],
+                  updatedAt: now,
+                };
+              }
+              return c;
+            }),
+            updatedAt: now,
+          };
+        }
+        return p;
+      });
+
+      setProjects(updatedProjects);
+
+      const updatedProject = updatedProjects.find(p => p.id === selectedProject.id);
+      if (updatedProject) {
+        setSelectedProject(updatedProject);
+        const updatedChat = updatedProject.chats.find(c => c.id === selectedChat.id);
+        if (updatedChat) {
+          setSelectedChat(updatedChat);
+        }
+      }
+    } else if (context === 'project' && selectedProject) {
+      const updatedProjects = projects.map(p => {
+        if (p.id === selectedProject.id) {
+          return {
+            ...p,
+            documents: [...p.documents, ...documents],
+            updatedAt: now,
+          };
+        }
+        return p;
+      });
+
+      setProjects(updatedProjects);
+
+      const updatedProject = updatedProjects.find(p => p.id === selectedProject.id);
+      if (updatedProject) {
+        setSelectedProject(updatedProject);
+      }
     }
   };
 
@@ -172,6 +230,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         selectedChat,
         setSelectedChat,
         addChat,
+        addDocuments,
         searchQuery,
         setSearchQuery,
         selectedModel,

@@ -17,7 +17,7 @@ import { useApp } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
 
 export function ContextualHeader() {
-  const { selectedProject, selectedChat, setShowSettings, addChat } = useApp();
+  const { selectedProject, selectedChat, setShowSettings, setShowDocuments, addChat } = useApp();
 
   const handleNewChat = () => {
     if (selectedProject) {
@@ -113,19 +113,31 @@ export function ContextualHeader() {
       </div>
 
       {/* Project Meta */}
-      <div className="flex items-center gap-4 text-sm">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <FileText className="h-4 w-4" />
+            <span>{selectedProject.documents.length} documents</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <MessageSquare className="h-4 w-4" />
+            <span>{selectedProject.chats.length} chats</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Calendar className="h-4 w-4" />
+            <span>Updated {new Date(selectedProject.updatedAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => setShowDocuments(true)}
+        >
           <FileText className="h-4 w-4" />
-          <span>{selectedProject.documents.length} documents</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <MessageSquare className="h-4 w-4" />
-          <span>{selectedProject.chats.length} chats</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Calendar className="h-4 w-4" />
-          <span>Updated {new Date(selectedProject.updatedAt).toLocaleDateString()}</span>
-        </div>
+          Manage Documents
+        </Button>
       </div>
 
       {/* Chats Preview - Limited to 3 most recent */}

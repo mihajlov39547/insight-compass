@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 export function ChatInput() {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const { setShowSettings } = useApp();
+  const { setShowSettings, setShowDocuments } = useApp();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,11 +50,12 @@ export function ChatInput() {
           <div className="absolute right-2 bottom-2 flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
+                <Button
                   type="button"
-                  variant="ghost" 
-                  size="icon" 
+                  variant="ghost"
+                  size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowDocuments(true)}
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>

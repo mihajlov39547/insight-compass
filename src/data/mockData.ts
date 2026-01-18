@@ -9,12 +9,17 @@ export interface User {
   plan: Plan;
 }
 
+export type DocumentState = 'uploading' | 'indexing' | 'ready';
+
 export interface Document {
   id: string;
   name: string;
   type: 'pdf' | 'docx' | 'txt' | 'xlsx';
   size: string;
   uploadedAt: string;
+  state: DocumentState;
+  uploadProgress?: number;
+  usedInAnswers?: boolean;
 }
 
 export interface Message {
@@ -70,11 +75,11 @@ export const currentUser: User = {
 
 // Mock documents
 export const mockDocuments: Document[] = [
-  { id: 'doc-1', name: 'Research_Paper_2024.pdf', type: 'pdf', size: '2.4 MB', uploadedAt: '2024-01-15' },
-  { id: 'doc-2', name: 'Technical_Specifications.docx', type: 'docx', size: '856 KB', uploadedAt: '2024-01-14' },
-  { id: 'doc-3', name: 'Data_Analysis_Notes.txt', type: 'txt', size: '124 KB', uploadedAt: '2024-01-13' },
-  { id: 'doc-4', name: 'Quarterly_Report.xlsx', type: 'xlsx', size: '1.2 MB', uploadedAt: '2024-01-12' },
-  { id: 'doc-5', name: 'API_Documentation.pdf', type: 'pdf', size: '3.1 MB', uploadedAt: '2024-01-11' },
+  { id: 'doc-1', name: 'Research_Paper_2024.pdf', type: 'pdf', size: '2.4 MB', uploadedAt: '2024-01-15', state: 'ready', usedInAnswers: true },
+  { id: 'doc-2', name: 'Technical_Specifications.docx', type: 'docx', size: '856 KB', uploadedAt: '2024-01-14', state: 'ready', usedInAnswers: true },
+  { id: 'doc-3', name: 'Data_Analysis_Notes.txt', type: 'txt', size: '124 KB', uploadedAt: '2024-01-13', state: 'ready', usedInAnswers: true },
+  { id: 'doc-4', name: 'Quarterly_Report.xlsx', type: 'xlsx', size: '1.2 MB', uploadedAt: '2024-01-12', state: 'ready', usedInAnswers: true },
+  { id: 'doc-5', name: 'API_Documentation.pdf', type: 'pdf', size: '3.1 MB', uploadedAt: '2024-01-11', state: 'ready', usedInAnswers: true },
 ];
 
 // Mock messages
