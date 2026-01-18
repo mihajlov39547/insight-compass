@@ -94,11 +94,7 @@ export function ChatInput() {
         </div>
 
         {/* Hints */}
-        <div className="flex items-center justify-between mt-2 px-1">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Sparkles className="h-3 w-3" />
-            <span>Powered by multimodal RAG</span>
-          </div>
+        <div className="flex items-center justify-end mt-2 px-1">
           <span className="text-xs text-muted-foreground">
             Press <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> to send
           </span>

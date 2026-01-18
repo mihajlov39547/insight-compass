@@ -15,7 +15,7 @@ export function ChatWorkspace() {
       <div className="flex-1 flex items-center justify-center bg-muted/30">
         <EmptyState 
           icon={<Sparkles className="h-12 w-12 text-accent" />}
-          title="Welcome to InsightRAG"
+          title="Welcome to Insight Navigator"
           description="Select a project from the sidebar to get started with your knowledge assistant."
         />
       </div>
