@@ -46,7 +46,11 @@ const planLabels = {
   enterprise: 'Enterprise',
 };
 
-export function MainHeader() {
+interface MainHeaderProps {
+  minimal?: boolean;
+}
+
+export function MainHeader({ minimal = false }: MainHeaderProps) {
   const { 
     user, 
     selectedModel, 
@@ -56,6 +60,7 @@ export function MainHeader() {
     setShowSettings,
     setShowDocuments,
     setShowShare,
+    setShowPricing,
   } = useApp();
 
   const PlanIcon = planIcons[user.plan];
@@ -106,60 +111,69 @@ export function MainHeader() {
 
       {/* Right Side - Actions */}
       <div className="flex items-center gap-2">
-        {/* Language Selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
-              <Globe className="h-4 w-4" />
-              <span className="text-sm">{language === 'en' ? 'EN' : 'SR'}</span>
-              <ChevronDown className="h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Language</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setLanguage('en')}>
-              <span className={cn(language === 'en' && 'font-medium')}>English</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLanguage('sr-lat')}>
-              <span className={cn(language === 'sr-lat' && 'font-medium')}>Serbian (Latin)</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Language Selector - hide in minimal mode */}
+        {!minimal && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                <Globe className="h-4 w-4" />
+                <span className="text-sm">{language === 'en' ? 'EN' : 'SR'}</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Language</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setLanguage('en')}>
+                <span className={cn(language === 'en' && 'font-medium')}>English</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('sr-lat')}>
+                <span className={cn(language === 'sr-lat' && 'font-medium')}>Serbian (Latin)</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
-        {/* Documents */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="text-muted-foreground hover:text-foreground"
-              onClick={() => setShowDocuments(true)}
-            >
-              <FileText className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Documents</TooltipContent>
-        </Tooltip>
+        {/* Documents - hide in minimal mode */}
+        {!minimal && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setShowDocuments(true)}
+              >
+                <FileText className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Documents</TooltipContent>
+          </Tooltip>
+        )}
 
-        {/* Share */}
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2"
-          onClick={() => setShowShare(true)}
-        >
-          <Share2 className="h-4 w-4" />
-          Share
-        </Button>
+        {/* Share - hide in minimal mode */}
+        {!minimal && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2"
+            onClick={() => setShowShare(true)}
+          >
+            <Share2 className="h-4 w-4" />
+            Share
+          </Button>
+        )}
 
         {/* Plan Icon */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer",
-              `plan-badge-${user.plan}`
-            )}>
+            <div 
+              className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all hover:ring-2 hover:ring-primary/30",
+                `plan-badge-${user.plan}`
+              )}
+              onClick={() => setShowPricing(true)}
+            >
               <PlanIcon className="h-4 w-4" />
             </div>
           </TooltipTrigger>
@@ -184,27 +198,29 @@ export function MainHeader() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-            <DropdownMenuItem>Billing</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowPricing(true)}>Billing & Plans</DropdownMenuItem>
             <DropdownMenuItem>API Keys</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Project Settings */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="text-muted-foreground hover:text-foreground"
-              onClick={() => setShowSettings('project')}
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Project Settings</TooltipContent>
-        </Tooltip>
+        {/* Project Settings - hide in minimal mode */}
+        {!minimal && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setShowSettings('project')}
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Project Settings</TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </header>
   );
