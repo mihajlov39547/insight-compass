@@ -7,12 +7,18 @@ import {
   sharedProjects, 
   mockNotifications,
   Notification,
-  User
+  User,
+  Plan
 } from '@/data/mockData';
 
 interface AppContextType {
   // User
   user: User;
+  setUserPlan: (plan: Plan) => void;
+  
+  // Onboarding
+  isFirstTimeUser: boolean;
+  setIsFirstTimeUser: (value: boolean) => void;
   
   // Sidebar
   sidebarCollapsed: boolean;
@@ -55,11 +61,15 @@ interface AppContextType {
   setShowShare: (show: boolean) => void;
   showNewProject: boolean;
   setShowNewProject: (show: boolean) => void;
+  showPricing: boolean;
+  setShowPricing: (show: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User>(currentUser);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false); // Set to true to demo onboarding
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(mockProjects[0]);
@@ -71,8 +81,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [showDocuments, setShowDocuments] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
   const unreadCount = mockNotifications.filter(n => !n.read).length;
+
+  const setUserPlan = (plan: Plan) => {
+    setUser(prev => ({ ...prev, plan }));
+  };
 
   const addProject = (name: string, description: string, projectLanguage: 'en' | 'sr-lat') => {
     const now = new Date().toISOString();
@@ -143,7 +158,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider
       value={{
-        user: currentUser,
+        user,
+        setUserPlan,
+        isFirstTimeUser,
+        setIsFirstTimeUser,
         sidebarCollapsed,
         setSidebarCollapsed,
         projects,
@@ -170,6 +188,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setShowShare,
         showNewProject,
         setShowNewProject,
+        showPricing,
+        setShowPricing,
       }}
     >
       {children}
