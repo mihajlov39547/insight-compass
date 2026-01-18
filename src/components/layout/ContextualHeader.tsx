@@ -128,15 +128,30 @@ export function ContextualHeader() {
         </div>
       </div>
 
-      {/* Chats Preview */}
+      {/* Chats Preview - Limited to 3 most recent */}
       {selectedProject.chats.length > 0 && (
         <div className="mt-4 pt-4 border-t border-border">
           <h3 className="text-sm font-medium text-foreground mb-2">Recent Chats</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {selectedProject.chats.slice(0, 6).map((chat) => (
-              <ChatPreviewCard key={chat.id} chat={chat} />
-            ))}
+            {[...selectedProject.chats]
+              .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+              .slice(0, 3)
+              .map((chat) => (
+                <ChatPreviewCard key={chat.id} chat={chat} />
+              ))}
           </div>
+          {selectedProject.chats.length > 3 && (
+            <button 
+              className="mt-3 text-sm text-accent hover:text-accent/80 transition-colors"
+              onClick={() => {
+                // Scroll sidebar into view or expand - mock interaction
+                const sidebar = document.querySelector('[data-sidebar="sidebar"]');
+                sidebar?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            >
+              View all {selectedProject.chats.length} chats →
+            </button>
+          )}
         </div>
       )}
     </div>
