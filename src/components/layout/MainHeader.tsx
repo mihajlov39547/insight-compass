@@ -61,6 +61,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
     setShowDocuments,
     setShowShare,
     setShowPricing,
+    setIsFirstTimeUser,
   } = useApp();
 
   const PlanIcon = planIcons[user.plan];
@@ -69,17 +70,20 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
     <header className="h-14 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
       {/* Left Side - App Name & Model Selector */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        <button 
+          onClick={() => setIsFirstTimeUser(true)}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center">
             <Sparkles className="h-4 w-4 text-accent-foreground" />
           </div>
-          <div>
+          <div className="text-left">
             <h1 className="text-base font-semibold text-foreground leading-tight">
-              Insight<span className="gradient-text">RAG</span>
+              Insight <span className="gradient-text">Navigator</span>
             </h1>
             <p className="text-[10px] text-muted-foreground leading-tight">Knowledge Assistant</p>
           </div>
-        </div>
+        </button>
 
         <div className="h-6 w-px bg-border" />
 
@@ -201,7 +205,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
             <DropdownMenuItem onClick={() => setShowPricing(true)}>Billing & Plans</DropdownMenuItem>
             <DropdownMenuItem>API Keys</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Sign out</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsFirstTimeUser(true)}>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 

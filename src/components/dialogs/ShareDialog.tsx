@@ -89,7 +89,7 @@ export function ShareDialog() {
               <div className="relative flex-1">
                 <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  value="https://insightrag.app/share/abc123..."
+                  value="https://insightnavigator.app/share/abc123..."
                   readOnly
                   className="pl-9 bg-muted"
                 />

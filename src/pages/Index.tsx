@@ -45,7 +45,7 @@ function AppContent() {
       {showOnboarding && sidebarCollapsed === false && (
         <div className="w-16 border-r border-border bg-sidebar flex flex-col items-center py-4">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <span className="text-primary font-bold text-sm">IR</span>
+            <span className="text-primary font-bold text-sm">IN</span>
           </div>
         </div>
       )}
