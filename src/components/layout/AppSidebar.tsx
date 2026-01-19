@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -37,6 +37,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useApp } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
 import { Project, Chat } from '@/data/mockData';
+import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 
 const planIcons = {
   free: Sparkles,
@@ -65,13 +66,33 @@ export function AppSidebar() {
     user,
     unreadCount,
     setShowNewProject,
+    addChat,
   } = useApp();
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set([selectedProject?.id || ''])
   );
   const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [showSharedWithMe, setShowSharedWithMe] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle search input changes
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      setShowSearchResults(true);
+    } else {
+      setShowSearchResults(false);
+    }
+  }, [searchQuery]);
+
+  // Focus search input when search is shown
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showSearch]);
 
   const toggleProject = (projectId: string) => {
     const newExpanded = new Set(expandedProjects);
@@ -94,6 +115,16 @@ export function AppSidebar() {
   const handleChatSelect = (chat: Chat, project: Project) => {
     setSelectedProject(project);
     setSelectedChat(chat);
+  };
+
+  const handleNewChatFromSidebar = (projectId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    addChat(projectId);
+  };
+
+  const handleCloseSearch = () => {
+    setShowSearchResults(false);
+    setSearchQuery('');
   };
 
   const PlanIcon = planIcons[user.plan];
@@ -135,12 +166,29 @@ export function AppSidebar() {
               variant="ghost" 
               size="icon" 
               className="text-sidebar-foreground/70 hover:bg-sidebar-accent mb-2"
+              onClick={() => setSidebarCollapsed(false)}
             >
               <Search className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right">Search</TooltipContent>
+          <TooltipContent side="right">Search workspace</TooltipContent>
         </Tooltip>
+
+        {selectedProject && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-sidebar-foreground/70 hover:bg-sidebar-accent mb-2"
+                onClick={() => addChat(selectedProject.id)}
+              >
+                <MessageSquare className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">New Chat</TooltipContent>
+          </Tooltip>
+        )}
 
         <Tooltip>
           <TooltipTrigger asChild>
@@ -217,20 +265,29 @@ export function AppSidebar() {
       </div>
 
       {/* Search */}
-      <div className="p-3">
+      <div className="p-3 relative">
         <button 
           className="sidebar-item w-full justify-start"
           onClick={() => setShowSearch(!showSearch)}
         >
           <Search className="h-4 w-4" />
-          <span className="text-sm">Search all chats</span>
+          <span className="text-sm">Search workspace</span>
         </button>
         {showSearch && (
-          <div className="mt-2 animate-fade-in">
+          <div className="mt-2 animate-fade-in relative">
             <Input 
-              placeholder="Search conversations..." 
+              ref={searchInputRef}
+              placeholder="Search projects, chats, documents..." 
               className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-muted text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
+            {showSearchResults && (
+              <WorkspaceSearchResults 
+                query={searchQuery} 
+                onClose={handleCloseSearch} 
+              />
+            )}
           </div>
         )}
       </div>
@@ -271,6 +328,20 @@ export function AppSidebar() {
                   <FolderOpen className="h-4 w-4 flex-shrink-0" />
                   <span className="truncate">{project.name}</span>
                 </button>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent"
+                      onClick={(e) => handleNewChatFromSidebar(project.id, e)}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>New Chat</TooltipContent>
+                </Tooltip>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
