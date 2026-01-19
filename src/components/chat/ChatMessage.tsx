@@ -1,8 +1,8 @@
 import React from 'react';
-import { User, Sparkles, ExternalLink, FileText } from 'lucide-react';
+import { User, Sparkles, FileText } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Message } from '@/data/mockData';
+import { Message, modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 interface ChatMessageProps {
@@ -11,6 +11,9 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
+  const modelName = message.modelId 
+    ? modelOptions.find(m => m.id === message.modelId)?.name 
+    : null;
 
   return (
     <div className={cn(
@@ -61,10 +64,20 @@ export function ChatMessage({ message }: ChatMessageProps) {
           </div>
         )}
 
-        {/* Timestamp */}
-        <p className="text-[10px] text-muted-foreground px-1">
-          {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </p>
+        {/* Timestamp and Model Tag */}
+        <div className={cn(
+          "flex items-center gap-2 px-1",
+          isUser ? "flex-row-reverse" : "flex-row"
+        )}>
+          <p className="text-[10px] text-muted-foreground">
+            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </p>
+          {modelName && (
+            <span className="text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
+              {modelName}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

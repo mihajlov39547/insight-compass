@@ -28,6 +28,7 @@ export interface Message {
   content: string;
   sources?: { title: string; snippet: string; relevance: number }[];
   timestamp: string;
+  modelId?: string;
 }
 
 export interface Chat {
@@ -102,6 +103,7 @@ The implementation details are described in Section 3.2 of your uploaded researc
     { title: 'Technical_Specifications.docx', snippet: 'Cross-modal attention implementation...', relevance: 0.87 },
   ],
   timestamp: '2024-01-15T10:32:00Z',
+  modelId: 'default',
 };
 
 const ragResponse2: Message = {
@@ -128,6 +130,7 @@ Would you like me to dive deeper into any specific metric?`,
     { title: 'Data_Analysis_Notes.txt', snippet: 'January improvements summary...', relevance: 0.82 },
   ],
   timestamp: '2024-01-15T11:15:00Z',
+  modelId: 'advanced',
 };
 
 // Mock chats
@@ -137,7 +140,7 @@ export const mockChats: Chat[] = [
     name: 'RAG Architecture Discussion',
     projectId: 'proj-1',
     messages: [
-      { id: 'msg-1', role: 'user', content: 'Can you explain how multimodal RAG systems work based on our research documents?', timestamp: '2024-01-15T10:30:00Z' },
+      { id: 'msg-1', role: 'user', content: 'Can you explain how multimodal RAG systems work based on our research documents?', timestamp: '2024-01-15T10:30:00Z', modelId: 'default' },
       ragResponse1,
     ],
     documents: [mockDocuments[0], mockDocuments[1]],
@@ -150,7 +153,7 @@ export const mockChats: Chat[] = [
     name: 'Performance Metrics Analysis',
     projectId: 'proj-1',
     messages: [
-      { id: 'msg-3', role: 'user', content: 'What are the key performance improvements shown in our latest reports?', timestamp: '2024-01-15T11:00:00Z' },
+      { id: 'msg-3', role: 'user', content: 'What are the key performance improvements shown in our latest reports?', timestamp: '2024-01-15T11:00:00Z', modelId: 'advanced' },
       ragResponse2,
     ],
     documents: [mockDocuments[3], mockDocuments[2]],
@@ -163,13 +166,14 @@ export const mockChats: Chat[] = [
     name: 'API Integration Planning',
     projectId: 'proj-1',
     messages: [
-      { id: 'msg-5', role: 'user', content: 'How should we structure the API endpoints for the RAG service?', timestamp: '2024-01-14T09:00:00Z' },
+      { id: 'msg-5', role: 'user', content: 'How should we structure the API endpoints for the RAG service?', timestamp: '2024-01-14T09:00:00Z', modelId: 'fast' },
       {
         id: 'msg-6',
         role: 'assistant',
         content: 'Based on the API documentation, I recommend a RESTful structure with the following endpoints:\n\n- `POST /api/v1/query` - Submit queries\n- `GET /api/v1/sources` - Retrieve source documents\n- `POST /api/v1/upload` - Upload new documents\n\nShall I elaborate on the request/response schemas?',
         sources: [{ title: 'API_Documentation.pdf', snippet: 'Endpoint specifications...', relevance: 0.91 }],
         timestamp: '2024-01-14T09:05:00Z',
+        modelId: 'fast',
       },
     ],
     documents: [mockDocuments[4]],
