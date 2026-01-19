@@ -55,6 +55,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
     user, 
     selectedModel, 
     setSelectedModel, 
+    selectedChat,
     language, 
     setLanguage,
     setShowSettings,
@@ -63,6 +64,8 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
     setShowPricing,
     setIsFirstTimeUser,
   } = useApp();
+
+  const isInChatMode = selectedChat !== null && !minimal;
 
   const PlanIcon = planIcons[user.plan];
 
@@ -85,32 +88,36 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
           </div>
         </button>
 
-        <div className="h-6 w-px bg-border" />
+        {isInChatMode && (
+          <>
+            <div className="h-6 w-px bg-border" />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div>
-              <Select value={selectedModel} onValueChange={setSelectedModel}>
-                <SelectTrigger className="w-[180px] h-8 text-sm bg-secondary/50 border-border">
-                  <SelectValue>
-                    {modelOptions.find(m => m.id === selectedModel)?.name}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {modelOptions.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
-                      {model.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[200px]">
-            <p className="font-medium">{modelOptions.find(m => m.id === selectedModel)?.name}</p>
-            <p className="text-xs text-muted-foreground">{modelOptions.find(m => m.id === selectedModel)?.description}</p>
-          </TooltipContent>
-        </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                    <SelectTrigger className="w-[180px] h-8 text-sm bg-secondary/50 border-border">
+                      <SelectValue>
+                        {modelOptions.find(m => m.id === selectedModel)?.name}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modelOptions.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[200px]">
+                <p className="font-medium">{modelOptions.find(m => m.id === selectedModel)?.name}</p>
+                <p className="text-xs text-muted-foreground">{modelOptions.find(m => m.id === selectedModel)?.description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </>
+        )}
       </div>
 
       {/* Right Side - Actions */}
