@@ -44,10 +44,6 @@ interface AppContextType {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   
-  // Model
-  selectedModel: string;
-  setSelectedModel: (model: string) => void;
-  
   // Language
   language: 'en' | 'sr-lat';
   setLanguage: (lang: 'en' | 'sr-lat') => void;
@@ -79,7 +75,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(mockProjects[0]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(mockProjects[0].chats[0] || null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedModel, setSelectedModel] = useState('default');
   const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
   const [showSettings, setShowSettings] = useState<'project' | 'chat' | 'prompt' | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
@@ -233,8 +228,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addDocuments,
         searchQuery,
         setSearchQuery,
-        selectedModel,
-        setSelectedModel,
         language,
         setLanguage,
         notifications: mockNotifications,

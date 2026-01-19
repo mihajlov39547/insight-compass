@@ -1,21 +1,35 @@
 import React, { useState } from 'react';
-import { Paperclip, Send, Settings2, Sparkles } from 'lucide-react';
+import { Paperclip, Send, Settings2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useApp } from '@/contexts/AppContext';
+import { modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 export function ChatInput() {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const { setShowSettings, setShowDocuments } = useApp();
+  const [selectedModel, setSelectedModel] = useState('default');
+  const { setShowSettings, setShowDocuments, selectedChat } = useApp();
+
+  const currentModel = modelOptions.find(m => m.id === selectedModel);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
       // Mock send - just clear the input
+      // In real implementation, the selectedModel would be attached to the message
+      console.log('Sending with model:', selectedModel);
       setMessage('');
+      // Optionally reset to default after send
+      // setSelectedModel('default');
     }
   };
 
@@ -25,6 +39,11 @@ export function ChatInput() {
       handleSubmit(e);
     }
   };
+
+  // Only render if a chat is active
+  if (!selectedChat) {
+    return null;
+  }
 
   return (
     <div className="border-t border-border bg-card p-4">
@@ -48,6 +67,51 @@ export function ChatInput() {
           
           {/* Action buttons */}
           <div className="absolute right-2 bottom-2 flex items-center gap-1">
+            {/* Model Selector */}
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                    >
+                      <span className="max-w-[80px] truncate">{currentModel?.name || 'Model'}</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px]">
+                  <p className="font-medium">{currentModel?.name}</p>
+                  <p className="text-xs text-muted-foreground">{currentModel?.description}</p>
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="w-56">
+                {modelOptions.map((model) => (
+                  <DropdownMenuItem
+                    key={model.id}
+                    onClick={() => setSelectedModel(model.id)}
+                    className={cn(
+                      "flex flex-col items-start gap-0.5",
+                      selectedModel === model.id && "bg-accent/10"
+                    )}
+                  >
+                    <span className={cn(
+                      "font-medium",
+                      selectedModel === model.id && "text-accent"
+                    )}>
+                      {model.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{model.description}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="h-4 w-px bg-border" />
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
