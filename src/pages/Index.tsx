@@ -101,6 +101,10 @@ function AppContent() {
         currentPlan={user.plan}
         onSelectPlan={setUserPlan}
       />
+      <NotificationPanel
+        open={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </div>
   );
 }
