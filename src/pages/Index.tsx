@@ -10,6 +10,7 @@ import { ShareDialog } from '@/components/dialogs/ShareDialog';
 import { NewProjectDialog } from '@/components/dialogs/NewProjectDialog';
 import { PricingDialog } from '@/components/dialogs/PricingDialog';
 import { OnboardingScreen } from '@/components/onboarding/OnboardingScreen';
+import { NotificationPanel } from '@/components/notifications/NotificationPanel';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
 
@@ -20,6 +21,8 @@ function AppContent() {
     addProject,
     showPricing,
     setShowPricing,
+    showNotifications,
+    setShowNotifications,
     user,
     setUserPlan,
     isFirstTimeUser,
@@ -97,6 +100,10 @@ function AppContent() {
         onOpenChange={setShowPricing}
         currentPlan={user.plan}
         onSelectPlan={setUserPlan}
+      />
+      <NotificationPanel
+        open={showNotifications}
+        onClose={() => setShowNotifications(false)}
       />
     </div>
   );

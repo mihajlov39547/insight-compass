@@ -63,6 +63,8 @@ interface AppContextType {
   setShowNewProject: (show: boolean) => void;
   showPricing: boolean;
   setShowPricing: (show: boolean) => void;
+  showNotifications: boolean;
+  setShowNotifications: (show: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -81,6 +83,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [showShare, setShowShare] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadCount = mockNotifications.filter(n => !n.read).length;
 
@@ -242,6 +245,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setShowNewProject,
         showPricing,
         setShowPricing,
+        showNotifications,
+        setShowNotifications,
       }}
     >
       {children}

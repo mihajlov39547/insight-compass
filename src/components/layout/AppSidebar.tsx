@@ -72,6 +72,7 @@ export function AppSidebar() {
     unreadCount,
     setShowNewProject,
     addChat,
+    setShowNotifications,
   } = useApp();
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
@@ -259,7 +260,7 @@ export function AppSidebar() {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent">
+              <Button variant="ghost" size="icon" className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent" onClick={() => setShowNotifications(true)}>
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center">
@@ -560,6 +561,7 @@ export function AppSidebar() {
             variant="ghost" 
             size="icon" 
             className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent"
+            onClick={() => setShowNotifications(true)}
           >
             <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
