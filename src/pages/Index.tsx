@@ -10,6 +10,7 @@ import { ShareDialog } from '@/components/dialogs/ShareDialog';
 import { NewProjectDialog } from '@/components/dialogs/NewProjectDialog';
 import { PricingDialog } from '@/components/dialogs/PricingDialog';
 import { OnboardingScreen } from '@/components/onboarding/OnboardingScreen';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
 
 function AppContent() {
@@ -40,36 +41,47 @@ function AppContent() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* Sidebar - simplified in onboarding mode */}
-      {!showOnboarding && <AppSidebar />}
-      {showOnboarding && sidebarCollapsed === false && (
-        <div className="w-16 border-r border-border bg-sidebar flex flex-col items-center py-4">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <span className="text-primary font-bold text-sm">IN</span>
+      {showOnboarding ? (
+        <>
+          {sidebarCollapsed === false && (
+            <div className="w-16 border-r border-border bg-sidebar flex flex-col items-center py-4">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <span className="text-primary font-bold text-sm">IN</span>
+              </div>
+            </div>
+          )}
+          <div className="flex-1 flex flex-col min-w-0">
+            <MainHeader minimal />
+            <OnboardingScreen 
+              onStartFree={handleStartFree}
+              onViewPricing={handleViewPricing}
+            />
           </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Main Header */}
-        <MainHeader minimal={showOnboarding} />
-
-        {showOnboarding ? (
-          <OnboardingScreen 
-            onStartFree={handleStartFree}
-            onViewPricing={handleViewPricing}
-          />
-        ) : (
-          <>
-            {/* Contextual Header */}
+        </>
+      ) : sidebarCollapsed ? (
+        <>
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            <MainHeader />
             <ContextualHeader />
-
-            {/* Chat Workspace */}
             <ChatWorkspace />
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      ) : (
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          <ResizablePanel defaultSize={18} minSize={14} maxSize={30}>
+            <AppSidebar />
+          </ResizablePanel>
+          <ResizableHandle />
+          <ResizablePanel defaultSize={82}>
+            <div className="flex-1 flex flex-col min-w-0 h-full">
+              <MainHeader />
+              <ContextualHeader />
+              <ChatWorkspace />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      )}
 
       {/* Dialogs */}
       <SettingsDialog />

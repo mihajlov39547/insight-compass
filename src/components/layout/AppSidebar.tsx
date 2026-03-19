@@ -289,7 +289,7 @@ export function AppSidebar() {
   }
 
   return (
-    <div className="w-64 h-screen bg-sidebar flex flex-col border-r border-sidebar-border animate-slide-in-left">
+    <div className="w-full h-screen bg-sidebar flex flex-col border-r border-sidebar-border animate-slide-in-left">
       {/* Header */}
       <div className="p-3 flex items-center justify-between border-b border-sidebar-border">
         <Button 
