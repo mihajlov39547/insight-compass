@@ -63,6 +63,8 @@ interface AppContextType {
   setShowNewProject: (show: boolean) => void;
   showPricing: boolean;
   setShowPricing: (show: boolean) => void;
+  showNotifications: boolean;
+  setShowNotifications: (show: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
