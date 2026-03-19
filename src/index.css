@@ -7,82 +7,82 @@
 
 @layer base {
   :root {
-    /* Core palette - Deep slate with teal accent */
-    --background: 210 20% 98%;
-    --foreground: 220 25% 10%;
+    /* Core palette - Light, warm, Google NotebookLM-inspired */
+    --background: 210 20% 99%;
+    --foreground: 220 15% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card-foreground: 220 15% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover-foreground: 220 15% 20%;
 
-    /* Deep slate primary */
-    --primary: 220 25% 15%;
-    --primary-foreground: 210 20% 98%;
+    /* Soft blue primary (friendly, non-threatening) */
+    --primary: 217 72% 53%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Soft gray secondary */
-    --secondary: 210 15% 94%;
-    --secondary-foreground: 220 20% 25%;
+    /* Warm light gray secondary */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 15% 30%;
 
     /* Muted tones */
-    --muted: 210 15% 96%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 50%;
 
-    /* Teal accent for AI/intelligence feel */
-    --accent: 175 60% 40%;
+    /* Warm coral accent */
+    --accent: 217 72% 53%;
     --accent-foreground: 0 0% 100%;
 
     /* Status colors */
-    --destructive: 0 72% 51%;
+    --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 160 60% 45%;
+    --success: 152 55% 48%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 38 90% 55%;
     --warning-foreground: 0 0% 100%;
 
     /* UI elements */
-    --border: 210 15% 90%;
-    --input: 210 15% 90%;
-    --ring: 175 60% 40%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 72% 53%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    /* Sidebar */
-    --sidebar-background: 220 20% 12%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 175 60% 45%;
+    /* Sidebar - Light warm white like NotebookLM */
+    --sidebar-background: 220 16% 96%;
+    --sidebar-foreground: 220 15% 25%;
+    --sidebar-primary: 217 72% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 18%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 175 60% 45%;
-    --sidebar-muted: 220 15% 35%;
+    --sidebar-accent: 220 14% 92%;
+    --sidebar-accent-foreground: 220 15% 20%;
+    --sidebar-border: 220 13% 90%;
+    --sidebar-ring: 217 72% 53%;
+    --sidebar-muted: 220 10% 55%;
 
     /* Chat specific */
-    --chat-user: 175 50% 95%;
-    --chat-user-foreground: 220 25% 10%;
+    --chat-user: 217 72% 95%;
+    --chat-user-foreground: 220 15% 20%;
     --chat-assistant: 0 0% 100%;
-    --chat-assistant-foreground: 220 25% 10%;
+    --chat-assistant-foreground: 220 15% 20%;
 
     /* Plan badges */
-    --plan-free: 210 15% 50%;
-    --plan-basic: 200 70% 50%;
-    --plan-premium: 280 70% 55%;
-    --plan-enterprise: 175 60% 40%;
+    --plan-free: 220 10% 55%;
+    --plan-basic: 217 72% 53%;
+    --plan-premium: 270 55% 58%;
+    --plan-enterprise: 152 55% 48%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(220 25% 15%) 0%, hsl(220 30% 25%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(175 60% 40%) 0%, hsl(185 55% 45%) 100%);
-    --gradient-sidebar: linear-gradient(180deg, hsl(220 20% 12%) 0%, hsl(220 22% 10%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(217 72% 53%) 0%, hsl(217 65% 60%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(217 72% 53%) 0%, hsl(230 60% 60%) 100%);
+    --gradient-sidebar: linear-gradient(180deg, hsl(220 16% 96%) 0%, hsl(220 14% 94%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    /* Shadows - softer */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
   }
 
   .dark {
