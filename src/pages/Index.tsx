@@ -10,6 +10,7 @@ import { ShareDialog } from '@/components/dialogs/ShareDialog';
 import { NewProjectDialog } from '@/components/dialogs/NewProjectDialog';
 import { PricingDialog } from '@/components/dialogs/PricingDialog';
 import { OnboardingScreen } from '@/components/onboarding/OnboardingScreen';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
 
 function AppContent() {
