@@ -83,6 +83,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [showShare, setShowShare] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadCount = mockNotifications.filter(n => !n.read).length;
 
