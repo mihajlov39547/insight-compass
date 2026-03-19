@@ -245,6 +245,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setShowNewProject,
         showPricing,
         setShowPricing,
+        showNotifications,
+        setShowNotifications,
       }}
     >
       {children}
