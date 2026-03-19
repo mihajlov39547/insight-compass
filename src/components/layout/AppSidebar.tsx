@@ -341,11 +341,47 @@ export function AppSidebar() {
       {/* Projects List */}
       <ScrollArea className="flex-1 px-3">
         <div className="space-y-1">
-          <p className="text-xs font-medium text-sidebar-muted px-3 py-2 uppercase tracking-wider">
-            My Projects
-          </p>
+          <div className="flex items-center justify-between px-2 py-2">
+            <p className="text-xs font-medium text-sidebar-muted uppercase tracking-wider">
+              My Projects
+            </p>
+            <div className="flex items-center gap-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                    onClick={cycleSortMode}
+                  >
+                    {sortMode === 'name-asc' ? <ArrowUpAZ className="h-3.5 w-3.5" /> :
+                     sortMode === 'name-desc' ? <ArrowDownAZ className="h-3.5 w-3.5" /> :
+                     <Clock className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">{sortLabel}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                    onClick={expandedProjects.size === projects.length ? collapseAll : expandAll}
+                  >
+                    {expandedProjects.size === projects.length ? 
+                      <ChevronsDownUp className="h-3.5 w-3.5" /> : 
+                      <ChevronsUpDown className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {expandedProjects.size === projects.length ? 'Collapse all' : 'Expand all'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
           
-          {projects.map((project) => (
+          {sortedProjects.map((project) => (
             <Collapsible 
               key={project.id}
               open={expandedProjects.has(project.id)}
