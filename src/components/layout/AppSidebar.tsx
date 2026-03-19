@@ -318,14 +318,21 @@ export function AppSidebar() {
                 
                 <button
                   className={cn(
-                    "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                    "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
                     selectedProject?.id === project.id && !selectedChat
-                      ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
                   onClick={() => handleProjectSelect(project)}
                 >
-                  <FolderOpen className="h-4 w-4 flex-shrink-0" />
+                  <div className={cn(
+                    "h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0",
+                    selectedProject?.id === project.id && !selectedChat
+                      ? "bg-primary/20 text-primary"
+                      : "bg-primary/10 text-primary/70"
+                  )}>
+                    <FolderOpen className="h-3.5 w-3.5" />
+                  </div>
                   <span className="truncate">{project.name}</span>
                 </button>
 
