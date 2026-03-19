@@ -81,7 +81,48 @@ export function AppSidebar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showSharedWithMe, setShowSharedWithMe] = useState(false);
+  const [sortMode, setSortMode] = useState<'name-asc' | 'name-desc' | 'date-new' | 'date-old' | 'updated'>('updated');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const sortedProjects = useMemo(() => {
+    const sorted = [...projects];
+    switch (sortMode) {
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case 'date-new':
+        return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      case 'date-old':
+        return sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      case 'updated':
+        return sorted.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      default:
+        return sorted;
+    }
+  }, [projects, sortMode]);
+
+  const cycleSortMode = () => {
+    const modes: typeof sortMode[] = ['updated', 'name-asc', 'name-desc', 'date-new', 'date-old'];
+    const idx = modes.indexOf(sortMode);
+    setSortMode(modes[(idx + 1) % modes.length]);
+  };
+
+  const sortLabel = {
+    'updated': 'Recently updated',
+    'name-asc': 'Name A→Z',
+    'name-desc': 'Name Z→A',
+    'date-new': 'Newest first',
+    'date-old': 'Oldest first',
+  }[sortMode];
+
+  const expandAll = () => {
+    setExpandedProjects(new Set(projects.map(p => p.id)));
+  };
+
+  const collapseAll = () => {
+    setExpandedProjects(new Set());
+  };
 
   // Handle search input changes
   useEffect(() => {
