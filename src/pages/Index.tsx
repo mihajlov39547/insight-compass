@@ -21,6 +21,8 @@ function AppContent() {
     addProject,
     showPricing,
     setShowPricing,
+    showNotifications,
+    setShowNotifications,
     user,
     setUserPlan,
     isFirstTimeUser,

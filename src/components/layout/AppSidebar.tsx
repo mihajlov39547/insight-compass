@@ -72,6 +72,7 @@ export function AppSidebar() {
     unreadCount,
     setShowNewProject,
     addChat,
+    setShowNotifications,
   } = useApp();
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
