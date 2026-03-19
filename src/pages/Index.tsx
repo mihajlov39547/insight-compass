@@ -69,11 +69,11 @@ function AppContent() {
         </>
       ) : (
         <ResizablePanelGroup direction="horizontal" className="h-full">
-          <ResizablePanel defaultSize={18} minSize={14} maxSize={30}>
+          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
             <AppSidebar />
           </ResizablePanel>
           <ResizableHandle />
-          <ResizablePanel defaultSize={82}>
+          <ResizablePanel defaultSize={80}>
             <div className="flex-1 flex flex-col min-w-0 h-full">
               <MainHeader />
               <ContextualHeader />
