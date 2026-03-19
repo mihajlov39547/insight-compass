@@ -81,40 +81,33 @@ export function AppSidebar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showSharedWithMe, setShowSharedWithMe] = useState(false);
-  const [sortMode, setSortMode] = useState<'name-asc' | 'name-desc' | 'date-new' | 'date-old' | 'updated'>('updated');
+  const [alphaSort, setAlphaSort] = useState<'none' | 'asc' | 'desc'>('none');
+  const [dateSort, setDateSort] = useState<'updated' | 'newest' | 'oldest'>('updated');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const sortedProjects = useMemo(() => {
     const sorted = [...projects];
-    switch (sortMode) {
-      case 'name-asc':
-        return sorted.sort((a, b) => a.name.localeCompare(b.name));
-      case 'name-desc':
-        return sorted.sort((a, b) => b.name.localeCompare(a.name));
-      case 'date-new':
-        return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      case 'date-old':
-        return sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      case 'updated':
-        return sorted.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-      default:
-        return sorted;
-    }
-  }, [projects, sortMode]);
+    if (alphaSort === 'asc') return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    if (alphaSort === 'desc') return sorted.sort((a, b) => b.name.localeCompare(a.name));
+    if (dateSort === 'newest') return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    if (dateSort === 'oldest') return sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    return sorted.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }, [projects, alphaSort, dateSort]);
 
-  const cycleSortMode = () => {
-    const modes: typeof sortMode[] = ['updated', 'name-asc', 'name-desc', 'date-new', 'date-old'];
-    const idx = modes.indexOf(sortMode);
-    setSortMode(modes[(idx + 1) % modes.length]);
+  const cycleAlphaSort = () => {
+    const next = alphaSort === 'none' ? 'asc' : alphaSort === 'asc' ? 'desc' : 'none';
+    setAlphaSort(next);
+    if (next !== 'none') setDateSort('updated');
   };
 
-  const sortLabel = {
-    'updated': 'Recently updated',
-    'name-asc': 'Name A→Z',
-    'name-desc': 'Name Z→A',
-    'date-new': 'Newest first',
-    'date-old': 'Oldest first',
-  }[sortMode];
+  const cycleDateSort = () => {
+    const next = dateSort === 'updated' ? 'newest' : dateSort === 'newest' ? 'oldest' : 'updated';
+    setDateSort(next);
+    if (next !== 'updated') setAlphaSort('none');
+  };
+
+  const alphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[alphaSort];
+  const dateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[dateSort];
 
   const expandAll = () => {
     setExpandedProjects(new Set(projects.map(p => p.id)));
