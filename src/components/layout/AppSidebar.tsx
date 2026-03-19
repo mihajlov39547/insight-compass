@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -14,7 +14,12 @@ import {
   Sparkles,
   Crown,
   Zap,
-  Building2
+  Building2,
+  ArrowUpAZ,
+  ArrowDownAZ,
+  Clock,
+  ChevronsUpDown,
+  ChevronsDownUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,7 +81,48 @@ export function AppSidebar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showSharedWithMe, setShowSharedWithMe] = useState(false);
+  const [sortMode, setSortMode] = useState<'name-asc' | 'name-desc' | 'date-new' | 'date-old' | 'updated'>('updated');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const sortedProjects = useMemo(() => {
+    const sorted = [...projects];
+    switch (sortMode) {
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case 'date-new':
+        return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      case 'date-old':
+        return sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      case 'updated':
+        return sorted.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      default:
+        return sorted;
+    }
+  }, [projects, sortMode]);
+
+  const cycleSortMode = () => {
+    const modes: typeof sortMode[] = ['updated', 'name-asc', 'name-desc', 'date-new', 'date-old'];
+    const idx = modes.indexOf(sortMode);
+    setSortMode(modes[(idx + 1) % modes.length]);
+  };
+
+  const sortLabel = {
+    'updated': 'Recently updated',
+    'name-asc': 'Name A→Z',
+    'name-desc': 'Name Z→A',
+    'date-new': 'Newest first',
+    'date-old': 'Oldest first',
+  }[sortMode];
+
+  const expandAll = () => {
+    setExpandedProjects(new Set(projects.map(p => p.id)));
+  };
+
+  const collapseAll = () => {
+    setExpandedProjects(new Set());
+  };
 
   // Handle search input changes
   useEffect(() => {
@@ -295,11 +341,47 @@ export function AppSidebar() {
       {/* Projects List */}
       <ScrollArea className="flex-1 px-3">
         <div className="space-y-1">
-          <p className="text-xs font-medium text-sidebar-muted px-3 py-2 uppercase tracking-wider">
-            My Projects
-          </p>
+          <div className="flex items-center justify-between px-2 py-2">
+            <p className="text-xs font-medium text-sidebar-muted uppercase tracking-wider">
+              My Projects
+            </p>
+            <div className="flex items-center gap-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                    onClick={cycleSortMode}
+                  >
+                    {sortMode === 'name-asc' ? <ArrowUpAZ className="h-3.5 w-3.5" /> :
+                     sortMode === 'name-desc' ? <ArrowDownAZ className="h-3.5 w-3.5" /> :
+                     <Clock className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">{sortLabel}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                    onClick={expandedProjects.size === projects.length ? collapseAll : expandAll}
+                  >
+                    {expandedProjects.size === projects.length ? 
+                      <ChevronsDownUp className="h-3.5 w-3.5" /> : 
+                      <ChevronsUpDown className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {expandedProjects.size === projects.length ? 'Collapse all' : 'Expand all'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
           
-          {projects.map((project) => (
+          {sortedProjects.map((project) => (
             <Collapsible 
               key={project.id}
               open={expandedProjects.has(project.id)}
