@@ -318,14 +318,21 @@ export function AppSidebar() {
                 
                 <button
                   className={cn(
-                    "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                    "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
                     selectedProject?.id === project.id && !selectedChat
-                      ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
                   onClick={() => handleProjectSelect(project)}
                 >
-                  <FolderOpen className="h-4 w-4 flex-shrink-0" />
+                  <div className={cn(
+                    "h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0",
+                    selectedProject?.id === project.id && !selectedChat
+                      ? "bg-primary/20 text-primary"
+                      : "bg-primary/10 text-primary/70"
+                  )}>
+                    <FolderOpen className="h-3.5 w-3.5" />
+                  </div>
                   <span className="truncate">{project.name}</span>
                 </button>
 
@@ -363,19 +370,26 @@ export function AppSidebar() {
                 </DropdownMenu>
               </div>
 
-              <CollapsibleContent className="pl-6 space-y-0.5 animate-fade-in">
+              <CollapsibleContent className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5 animate-fade-in">
                 {project.chats.map((chat) => (
                   <button
                     key={chat.id}
                     className={cn(
                       "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
                       selectedChat?.id === chat.id
-                        ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        ? "bg-accent/50 text-accent-foreground font-medium"
+                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                     )}
                     onClick={() => handleChatSelect(chat, project)}
                   >
-                    <MessageSquare className="h-3.5 w-3.5 flex-shrink-0" />
+                    <div className={cn(
+                      "h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0",
+                      selectedChat?.id === chat.id
+                        ? "bg-accent/30 text-accent-foreground"
+                        : "bg-muted text-muted-foreground"
+                    )}>
+                      <MessageSquare className="h-3 w-3" />
+                    </div>
                     <span className="truncate">{chat.name}</span>
                   </button>
                 ))}
