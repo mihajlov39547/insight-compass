@@ -560,6 +560,7 @@ export function AppSidebar() {
             variant="ghost" 
             size="icon" 
             className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent"
+            onClick={() => setShowNotifications(true)}
           >
             <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
