@@ -307,6 +307,18 @@ export function AppSidebar() {
               onArchive={() => handleArchiveProject(project.id)}
               onRename={() => handleRenameProject(project.id, project.name)}
               onChatSelect={handleChatSelect}
+              onDeleteChat={(chatId) => {
+                deleteChat.mutate({ id: chatId, projectId: project.id }, {
+                  onSuccess: () => {
+                    if (selectedChatId === chatId) setSelectedChatId(null);
+                    toast.success('Chat deleted');
+                  }
+                });
+              }}
+              onRenameChat={(chatId, currentName) => {
+                setRenameChatId(chatId);
+                setRenameChatValue(currentName);
+              }}
             />
           ))}
         </div>
