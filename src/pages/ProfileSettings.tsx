@@ -223,7 +223,7 @@ export default function ProfileSettings() {
         .from('user_settings')
         .select('*')
         .eq('user_id', authUser.id)
-        .single();
+        .maybeSingle();
       if (data) {
         setSettings({
           chat_suggestions: data.chat_suggestions,
