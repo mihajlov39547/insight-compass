@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquarePlus, Sparkles, FileText, Zap, Shield } from 'lucide-react';
+import { MessageSquarePlus, FileText, Zap, Shield } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
@@ -7,6 +7,7 @@ import { ChatInput } from './ChatInput';
 import { useApp } from '@/contexts/AppContext';
 import { useMessages } from '@/hooks/useMessages';
 import { useProjects } from '@/hooks/useProjects';
+import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
 
 export function ChatWorkspace() {
   const { selectedProjectId, selectedChatId } = useApp();
@@ -16,15 +17,7 @@ export function ChatWorkspace() {
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
   if (!selectedProjectId || !selectedProject) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-muted/30">
-        <EmptyState 
-          icon={<Sparkles className="h-12 w-12 text-accent" />}
-          title="Welcome to Insight Navigator"
-          description="Select a project from the sidebar to get started with your knowledge assistant."
-        />
-      </div>
-    );
+    return <ProjectsLanding />;
   }
 
   if (!selectedChatId) {
