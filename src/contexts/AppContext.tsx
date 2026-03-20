@@ -107,6 +107,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setShowSettings,
         showDocuments,
         setShowDocuments,
+        documentScope,
+        setDocumentScope,
         showShare,
         setShowShare,
         showNewProject,
