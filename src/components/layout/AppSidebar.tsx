@@ -16,7 +16,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
-import { useChats, useCreateChat, useDeleteChat, DbChat } from '@/hooks/useChats';
+import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat } from '@/hooks/useChats';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 import { toast } from 'sonner';
@@ -40,9 +40,12 @@ export function AppSidebar() {
   const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const deleteChat = useDeleteChat();
+  const updateChat = useUpdateChat();
 
   const [renameProjectId, setRenameProjectId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [renameChatId, setRenameChatId] = useState<string | null>(null);
+  const [renameChatValue, setRenameChatValue] = useState('');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
@@ -304,6 +307,18 @@ export function AppSidebar() {
               onArchive={() => handleArchiveProject(project.id)}
               onRename={() => handleRenameProject(project.id, project.name)}
               onChatSelect={handleChatSelect}
+              onDeleteChat={(chatId) => {
+                deleteChat.mutate({ id: chatId, projectId: project.id }, {
+                  onSuccess: () => {
+                    if (selectedChatId === chatId) setSelectedChatId(null);
+                    toast.success('Chat deleted');
+                  }
+                });
+              }}
+              onRenameChat={(chatId, currentName) => {
+                setRenameChatId(chatId);
+                setRenameChatValue(currentName);
+              }}
             />
           ))}
         </div>
@@ -353,12 +368,46 @@ export function AppSidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Rename Chat Dialog */}
+      <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename Chat</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameChatValue}
+            onChange={(e) => setRenameChatValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && renameChatId && renameChatValue.trim()) {
+                updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
+                  onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); }
+                });
+              }
+            }}
+            placeholder="Chat name"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameChatId(null)}>Cancel</Button>
+            <Button
+              disabled={!renameChatValue.trim()}
+              onClick={() => {
+                if (!renameChatId || !renameChatValue.trim()) return;
+                updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
+                  onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); }
+                });
+              }}
+            >Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 // Extracted project item with its own chats query
-function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect }: {
+function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect, onDeleteChat, onRenameChat }: {
   project: DbProject;
   isExpanded: boolean;
   isSelected: boolean;
@@ -370,6 +419,8 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onArchive: () => void;
   onRename: () => void;
   onChatSelect: (chat: DbChat) => void;
+  onDeleteChat: (chatId: string) => void;
+  onRenameChat: (chatId: string, currentName: string) => void;
 }) {
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
 
@@ -418,21 +469,34 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
 
       <CollapsibleContent className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5 animate-fade-in">
         {chats.map((chat) => (
-          <button
-            key={chat.id}
-            className={cn(
-              "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
-              selectedChatId === chat.id
-                ? "bg-accent/50 text-accent-foreground font-medium"
-                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            )}
-            onClick={() => onChatSelect(chat)}
-          >
-            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedChatId === chat.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-              <MessageSquare className="h-3 w-3" />
-            </div>
-            <span className="truncate">{chat.name}</span>
-          </button>
+          <div key={chat.id} className="group/chat flex items-center">
+            <button
+              className={cn(
+                "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                selectedChatId === chat.id
+                  ? "bg-accent/50 text-accent-foreground font-medium"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+              onClick={() => onChatSelect(chat)}
+            >
+              <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedChatId === chat.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                <MessageSquare className="h-3 w-3" />
+              </div>
+              <span className="truncate">{chat.name}</span>
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover/chat:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+                  <MoreHorizontal className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={() => onRenameChat(chat.id, chat.name)}>Rename chat</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={() => onDeleteChat(chat.id)}>Delete chat</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ))}
         {chats.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No chats yet</p>}
       </CollapsibleContent>
