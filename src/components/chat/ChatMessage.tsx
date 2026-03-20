@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Sparkles, FileText } from 'lucide-react';
+import { User, Sparkles, FileText, Bot } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Message, modelOptions } from '@/data/mockData';
@@ -7,12 +7,13 @@ import { cn } from '@/lib/utils';
 
 interface ChatMessageProps {
   message: Message;
+  onRetry?: () => void;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, onRetry }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const modelName = message.modelId 
-    ? modelOptions.find(m => m.id === message.modelId)?.name 
+    ? modelOptions.find(m => m.id === message.modelId)?.name ?? message.modelId.split('/').pop()
     : null;
 
   return (
@@ -20,7 +21,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
       "flex gap-3 animate-fade-in",
       isUser ? "flex-row-reverse" : "flex-row"
     )}>
-      {/* Avatar */}
       <Avatar className={cn(
         "h-8 w-8 shrink-0",
         isUser ? "bg-primary" : "bg-gradient-to-br from-accent to-accent/70"
@@ -32,7 +32,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </AvatarFallback>
       </Avatar>
 
-      {/* Message Content */}
       <div className={cn(
         "max-w-[75%] space-y-2",
         isUser ? "items-end" : "items-start"
@@ -40,7 +39,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
         <div className={cn(
           isUser ? "chat-bubble-user" : "chat-bubble-assistant"
         )}>
-          {/* Render markdown-like content */}
           <MessageContent content={message.content} />
         </div>
 
@@ -64,17 +62,18 @@ export function ChatMessage({ message }: ChatMessageProps) {
           </div>
         )}
 
-        {/* Timestamp and Model Tag */}
+        {/* Timestamp + AI indicator */}
         <div className={cn(
-          "flex items-center gap-2 px-1",
+          "flex items-center gap-2 px-1 flex-wrap",
           isUser ? "flex-row-reverse" : "flex-row"
         )}>
           <p className="text-[10px] text-muted-foreground">
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
-          {modelName && (
-            <span className="text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
-              {modelName}
+          {!isUser && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
+              <Bot className="h-2.5 w-2.5" />
+              AI-generated{modelName ? ` · ${modelName}` : ''}
             </span>
           )}
         </div>
@@ -84,13 +83,11 @@ export function ChatMessage({ message }: ChatMessageProps) {
 }
 
 function MessageContent({ content }: { content: string }) {
-  // Simple markdown-like parsing
   const lines = content.split('\n');
   
   return (
     <div className="space-y-2 text-sm leading-relaxed">
       {lines.map((line, idx) => {
-        // Headers
         if (line.startsWith('**') && line.endsWith('**')) {
           return (
             <p key={idx} className="font-semibold text-foreground">
@@ -99,7 +96,6 @@ function MessageContent({ content }: { content: string }) {
           );
         }
         
-        // Bold text within line
         if (line.includes('**')) {
           const parts = line.split(/(\*\*[^*]+\*\*)/g);
           return (
@@ -114,7 +110,6 @@ function MessageContent({ content }: { content: string }) {
           );
         }
         
-        // List items
         if (line.startsWith('- ') || line.match(/^\d+\.\s/)) {
           const text = line.replace(/^[-\d.]\s*/, '');
           return (
@@ -125,7 +120,6 @@ function MessageContent({ content }: { content: string }) {
           );
         }
         
-        // Tables (simple detection)
         if (line.includes('|')) {
           const cells = line.split('|').filter(c => c.trim());
           if (cells.length > 0 && !line.includes('---')) {
@@ -140,7 +134,6 @@ function MessageContent({ content }: { content: string }) {
           return null;
         }
         
-        // Code blocks
         if (line.startsWith('`') && line.endsWith('`')) {
           return (
             <code key={idx} className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">
@@ -149,12 +142,10 @@ function MessageContent({ content }: { content: string }) {
           );
         }
         
-        // Empty lines
         if (line.trim() === '') {
           return <div key={idx} className="h-2" />;
         }
         
-        // Regular text
         return <p key={idx}>{line}</p>;
       })}
     </div>

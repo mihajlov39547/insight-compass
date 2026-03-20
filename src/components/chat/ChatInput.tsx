@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useApp } from '@/contexts/AppContext';
-import { modelOptions } from '@/data/mockData';
+import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
@@ -16,10 +16,10 @@ interface ChatInputProps {
 export function ChatInput({ onSend, isGenerating }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('default');
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
   const { setShowSettings, setShowDocuments, selectedChatId } = useApp();
 
-  const currentModel = modelOptions.find(m => m.id === selectedModel);
+  const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,21 +62,27 @@ export function ChatInput({ onSend, isGenerating }: ChatInputProps) {
                 <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
                     <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1">
-                      <span className="max-w-[80px] truncate">{currentModel?.name || 'Model'}</span>
+                      <span className="max-w-[100px] truncate">{currentModel.name}</span>
                       <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[200px]">
-                  <p className="font-medium">{currentModel?.name}</p>
-                  <p className="text-xs text-muted-foreground">{currentModel?.description}</p>
+                <TooltipContent side="top" className="max-w-[220px]">
+                  <p className="font-medium">{currentModel.name}</p>
+                  <p className="text-xs text-muted-foreground">{currentModel.description}</p>
                 </TooltipContent>
               </Tooltip>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-48">
                 {modelOptions.map((model) => (
-                  <DropdownMenuItem key={model.id} onClick={() => setSelectedModel(model.id)} className={cn("flex flex-col items-start gap-0.5", selectedModel === model.id && "bg-accent/10")}>
-                    <span className={cn("font-medium", selectedModel === model.id && "text-accent")}>{model.name}</span>
-                    <span className="text-xs text-muted-foreground">{model.description}</span>
+                  <DropdownMenuItem
+                    key={model.id}
+                    onClick={() => setSelectedModel(model.id)}
+                    className={cn(
+                      "text-sm",
+                      selectedModel === model.id && "bg-accent/10 text-accent font-medium"
+                    )}
+                  >
+                    {model.name}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>

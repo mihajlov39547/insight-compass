@@ -21,12 +21,11 @@ export function ChatWorkspace() {
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
-  const { sendMessage, isGenerating, streamingContent, error, clearError } = useAIChat({
+  const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt } = useAIChat({
     chatId: selectedChatId ?? '',
     projectDescription: selectedProject?.description,
   });
 
-  // Auto-scroll on new messages or streaming
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -132,7 +131,7 @@ export function ChatWorkspace() {
             </div>
           )}
 
-          {/* Error state */}
+          {/* Error state with retry */}
           {error && (
             <div className="flex items-center gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5 animate-fade-in">
               <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
@@ -140,9 +139,16 @@ export function ChatWorkspace() {
                 <p className="text-sm font-medium text-destructive">Failed to get response</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{error}</p>
               </div>
-              <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={clearError}>
-                <RefreshCw className="h-3 w-3" /> Dismiss
-              </Button>
+              <div className="flex items-center gap-2">
+                {failedPrompt && (
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={retry}>
+                    <RefreshCw className="h-3 w-3" /> Retry
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="text-xs" onClick={clearError}>
+                  Dismiss
+                </Button>
+              </div>
             </div>
           )}
 
