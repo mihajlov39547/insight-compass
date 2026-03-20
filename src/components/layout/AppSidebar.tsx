@@ -460,6 +460,19 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onRenameChat: (chatId: string, currentName: string) => void;
 }) {
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
+  const { setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
+
+  const handleManageProjectDocs = () => {
+    setSelectedProjectId(project.id);
+    setSelectedChatId(null);
+    setActiveView('project-documents');
+  };
+
+  const handleManageChatDocs = (chat: DbChat) => {
+    setSelectedProjectId(project.id);
+    setSelectedChatId(chat.id);
+    setActiveView('chat-documents');
+  };
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -496,6 +509,9 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={onRename}>Manage project</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleManageProjectDocs}>
+              <FileText className="h-3.5 w-3.5 mr-2" /> Manage documents
+            </DropdownMenuItem>
             <DropdownMenuItem disabled>Share project</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onArchive}>Archive project</DropdownMenuItem>
@@ -527,8 +543,11 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={() => onRenameChat(chat.id, chat.name)}>Rename chat</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleManageChatDocs(chat)}>
+                  <FileText className="h-3.5 w-3.5 mr-2" /> Manage documents
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive" onClick={() => onDeleteChat(chat.id)}>Delete chat</DropdownMenuItem>
               </DropdownMenuContent>
