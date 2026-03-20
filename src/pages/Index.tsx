@@ -14,12 +14,12 @@ import { OnboardingScreen } from '@/components/onboarding/OnboardingScreen';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
+import { useCreateProject } from '@/hooks/useProjects';
 
 function AppContent() {
   const { 
     showNewProject, 
     setShowNewProject, 
-    addProject,
     showPricing,
     setShowPricing,
     showNotifications,
@@ -30,6 +30,11 @@ function AppContent() {
   } = useApp();
 
   const { user: authUser, loading } = useAuth();
+  const createProject = useCreateProject();
+
+  const handleCreateProject = async (name: string, description: string, language: 'en' | 'sr-lat') => {
+    createProject.mutate({ name, description, language });
+  };
 
   if (loading) {
     return (
@@ -39,7 +44,6 @@ function AppContent() {
     );
   }
 
-  // Not authenticated — show onboarding/landing
   if (!authUser) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -60,7 +64,6 @@ function AppContent() {
     );
   }
 
-  // Authenticated — full workspace
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {sidebarCollapsed ? (
@@ -88,14 +91,13 @@ function AppContent() {
         </ResizablePanelGroup>
       )}
 
-      {/* Dialogs */}
       <SettingsDialog />
       <DocumentsDialog />
       <ShareDialog />
       <NewProjectDialog 
         open={showNewProject} 
         onOpenChange={setShowNewProject}
-        onCreateProject={addProject}
+        onCreateProject={handleCreateProject}
       />
       <PricingDialog
         open={showPricing}
