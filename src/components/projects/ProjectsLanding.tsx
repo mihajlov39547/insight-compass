@@ -167,12 +167,16 @@ export function ProjectsLanding() {
                       {project.name}
                     </h3>
                   </div>
-                  <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 mt-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <MessageSquare className="h-3.5 w-3.5" />
                       <span>{chatCount}</span>
                     </div>
-                    <span>{formatLastActivity(project.updated_at)}</span>
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>{docCount}</span>
+                    </div>
+                    <span className="ml-auto">{formatLastActivity(project.updated_at)}</span>
                   </div>
                 </button>
               );
