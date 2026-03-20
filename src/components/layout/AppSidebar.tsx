@@ -17,7 +17,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat } from '@/hooks/useChats';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 import { toast } from 'sonner';
 
@@ -42,8 +45,10 @@ export function AppSidebar() {
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
 
-  const [renameProjectId, setRenameProjectId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
+  const [editProject, setEditProject] = useState<DbProject | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editLanguage, setEditLanguage] = useState<'en' | 'sr-lat'>('en');
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
 
@@ -158,17 +163,19 @@ export function AppSidebar() {
     });
   };
 
-  const handleRenameProject = (projectId: string, currentName: string) => {
-    setRenameProjectId(projectId);
-    setRenameValue(currentName);
+  const handleManageProject = (project: DbProject) => {
+    setEditProject(project);
+    setEditName(project.name);
+    setEditDescription(project.description || '');
+    setEditLanguage((project.language as 'en' | 'sr-lat') || 'en');
   };
 
-  const handleRenameSubmit = () => {
-    if (!renameProjectId || !renameValue.trim()) return;
-    updateProject.mutate({ id: renameProjectId, name: renameValue.trim() }, {
+  const handleManageSubmit = () => {
+    if (!editProject || !editName.trim() || !editDescription.trim()) return;
+    updateProject.mutate({ id: editProject.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
       onSuccess: () => {
-        toast.success('Project renamed');
-        setRenameProjectId(null);
+        toast.success('Project updated');
+        setEditProject(null);
       }
     });
   };
@@ -305,7 +312,7 @@ export function AppSidebar() {
               onNewChat={(e) => handleNewChat(project.id, e)}
               onDelete={() => handleDeleteProject(project.id)}
               onArchive={() => handleArchiveProject(project.id)}
-              onRename={() => handleRenameProject(project.id, project.name)}
+              onRename={() => handleManageProject(project)}
               onChatSelect={handleChatSelect}
               onDeleteChat={(chatId) => {
                 deleteChat.mutate({ id: chatId, projectId: project.id }, {
@@ -349,22 +356,52 @@ export function AppSidebar() {
         </div>
       </div>
 
-      {/* Rename Project Dialog */}
-      <Dialog open={!!renameProjectId} onOpenChange={(open) => !open && setRenameProjectId(null)}>
-        <DialogContent className="sm:max-w-md">
+      {/* Manage Project Dialog */}
+      <Dialog open={!!editProject} onOpenChange={(open) => !open && setEditProject(null)}>
+        <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Rename Project</DialogTitle>
+            <DialogTitle>Manage Project</DialogTitle>
+            <DialogDescription>Update your project details. The description helps the AI provide better answers.</DialogDescription>
           </DialogHeader>
-          <Input
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()}
-            placeholder="Project name"
-            autoFocus
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameProjectId(null)}>Cancel</Button>
-            <Button onClick={handleRenameSubmit} disabled={!renameValue.trim()}>Save</Button>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-name">Project name <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-project-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Project name"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-desc">Description <span className="text-destructive">*</span></Label>
+              <Textarea
+                id="edit-project-desc"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Describe what this project is about..."
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">This helps the AI understand the project context and provide better answers.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-lang">Language</Label>
+              <Select value={editLanguage} onValueChange={(val: 'en' | 'sr-lat') => setEditLanguage(val)}>
+                <SelectTrigger id="edit-project-lang">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 pt-4">
+            <Button variant="outline" onClick={() => setEditProject(null)}>Cancel</Button>
+            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -458,7 +495,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={onRename}>Rename project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onRename}>Manage project</DropdownMenuItem>
             <DropdownMenuItem disabled>Share project</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onArchive}>Archive project</DropdownMenuItem>
