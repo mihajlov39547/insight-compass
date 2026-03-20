@@ -37,9 +37,10 @@ import {
   CollapsibleTrigger 
 } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Project, Chat } from '@/data/mockData';
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
@@ -74,6 +75,15 @@ export function AppSidebar() {
     addChat,
     setShowNotifications,
   } = useApp();
+
+  const { user: authUser, profile } = useAuth();
+
+  const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
+  const displayEmail = profile?.email || authUser?.email || '';
+  const avatarUrl = profile?.avatar_url || authUser?.user_metadata?.avatar_url || '';
+  const initials = displayName
+    ? displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : displayEmail?.[0]?.toUpperCase() || '?';
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set([selectedProject?.id || ''])
@@ -273,8 +283,9 @@ export function AppSidebar() {
           </Tooltip>
 
           <Avatar className="h-8 w-8 cursor-pointer">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
             <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">
-              {user.initials}
+              {initials}
             </AvatarFallback>
           </Avatar>
         </div>
@@ -549,13 +560,14 @@ export function AppSidebar() {
         {/* User Area */}
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
             <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-sm">
-              {user.initials}
+              {initials}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">{user.name}</p>
-            <p className="text-xs text-sidebar-muted truncate">{user.email}</p>
+            <p className="text-sm font-medium text-sidebar-foreground truncate">{displayName || 'User'}</p>
+            <p className="text-xs text-sidebar-muted truncate">{displayEmail}</p>
           </div>
           <Button 
             variant="ghost" 

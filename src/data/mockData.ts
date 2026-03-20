@@ -65,12 +65,12 @@ export interface Notification {
   createdAt: string;
 }
 
-// Mock current user
+// Default user (plan info only - real identity comes from auth)
 export const currentUser: User = {
   id: 'user-1',
-  name: 'Alex Chen',
-  email: 'alex.chen@company.com',
-  initials: 'AC',
+  name: '',
+  email: '',
+  initials: '',
   plan: 'premium',
 };
 
