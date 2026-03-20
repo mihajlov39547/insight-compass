@@ -138,7 +138,34 @@ export function AppSidebar() {
           setSelectedProjectId(null);
           setSelectedChatId(null);
         }
-        toast.success('Project deleted');
+        toast.success('Project and all its chats deleted');
+      }
+    });
+  };
+
+  const handleArchiveProject = (projectId: string) => {
+    archiveProject.mutate(projectId, {
+      onSuccess: () => {
+        if (selectedProjectId === projectId) {
+          setSelectedProjectId(null);
+          setSelectedChatId(null);
+        }
+        toast.success('Project archived');
+      }
+    });
+  };
+
+  const handleRenameProject = (projectId: string, currentName: string) => {
+    setRenameProjectId(projectId);
+    setRenameValue(currentName);
+  };
+
+  const handleRenameSubmit = () => {
+    if (!renameProjectId || !renameValue.trim()) return;
+    updateProject.mutate({ id: renameProjectId, name: renameValue.trim() }, {
+      onSuccess: () => {
+        toast.success('Project renamed');
+        setRenameProjectId(null);
       }
     });
   };
