@@ -283,8 +283,9 @@ export function AppSidebar() {
           </Tooltip>
 
           <Avatar className="h-8 w-8 cursor-pointer">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
             <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">
-              {user.initials}
+              {initials}
             </AvatarFallback>
           </Avatar>
         </div>
