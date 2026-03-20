@@ -302,12 +302,20 @@ export const mockNotifications: Notification[] = [
   },
 ];
 
-// Model options
+// Model options — real Lovable AI models (text-capable only)
 export const modelOptions = [
-  { id: 'default', name: 'Default RAG Model', description: 'Balanced performance and accuracy' },
-  { id: 'fast', name: 'Fast Model', description: 'Optimized for quick responses' },
-  { id: 'advanced', name: 'Advanced Model', description: 'Maximum accuracy with detailed analysis' },
+  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', description: 'Fast, balanced default' },
+  { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', description: 'Strong reasoning, premium' },
+  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'Deep reasoning, slower' },
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Balanced speed and intelligence' },
+  { id: 'google/gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', description: 'Fastest low-cost option' },
+  { id: 'openai/gpt-5.2', name: 'GPT-5.2', description: 'Advanced professional reasoning' },
+  { id: 'openai/gpt-5', name: 'GPT-5', description: 'High-accuracy reasoning' },
+  { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', description: 'Balanced and efficient' },
+  { id: 'openai/gpt-5-nano', name: 'GPT-5 Nano', description: 'Fast, lightweight responses' },
 ];
+
+export const DEFAULT_MODEL_ID = 'google/gemini-3-flash-preview';
 
 // Settings configurations
 export const settingsConfig = {

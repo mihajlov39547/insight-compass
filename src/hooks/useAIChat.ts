@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { DbMessage } from './useMessages';
+import { DEFAULT_MODEL_ID } from '@/data/mockData';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
@@ -17,17 +17,20 @@ export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [failedPrompt, setFailedPrompt] = useState<{ content: string; modelId: string } | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string) => {
     if (!user || !chatId || isGenerating) return;
 
+    const resolvedModel = modelId || DEFAULT_MODEL_ID;
     setError(null);
+    setFailedPrompt(null);
     setIsGenerating(true);
     setStreamingContent('');
 
     try {
       // 1. Persist user message
-      const { data: userMsg, error: insertErr } = await supabase
+      const { error: insertErr } = await supabase
         .from('messages')
         .insert({
           chat_id: chatId,
@@ -35,16 +38,13 @@ export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
           role: 'user',
           content,
           sources: [],
-          model_id: modelId ?? null,
-        })
-        .select()
-        .single();
+          model_id: resolvedModel,
+        });
       if (insertErr) throw insertErr;
 
-      // Optimistically update cache
       qc.invalidateQueries({ queryKey: ['messages', chatId] });
 
-      // 2. Load recent chat history for context
+      // 2. Load recent chat history
       const { data: history } = await supabase
         .from('messages')
         .select('role, content')
@@ -56,7 +56,7 @@ export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
         .filter((m: any) => m.role === 'user' || m.role === 'assistant')
         .map((m: any) => ({ role: m.role, content: m.content }));
 
-      // 3. Call AI edge function with streaming
+      // 3. Call AI edge function with model
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -66,6 +66,7 @@ export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
         body: JSON.stringify({
           messages: contextMessages,
           projectDescription: projectDescription ?? '',
+          model: resolvedModel,
         }),
       });
 
@@ -107,21 +108,20 @@ export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
               setStreamingContent(fullContent);
             }
           } catch {
-            // partial JSON, put back
             buffer = line + '\n' + buffer;
             break;
           }
         }
       }
 
-      // 5. Persist assistant message
+      // 5. Persist assistant message with model used
       await supabase.from('messages').insert({
         chat_id: chatId,
         user_id: user.id,
         role: 'assistant',
         content: fullContent,
         sources: [],
-        model_id: modelId ?? 'gemini-3-flash-preview',
+        model_id: resolvedModel,
       });
 
       // 6. Update chat timestamp
@@ -138,13 +138,25 @@ export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
     } catch (err: any) {
       console.error('AI chat error:', err);
       setError(err.message || 'Failed to get AI response. Please try again.');
+      setFailedPrompt({ content, modelId: resolvedModel });
     } finally {
       setIsGenerating(false);
       setStreamingContent(null);
     }
   }, [user, chatId, isGenerating, qc, projectDescription]);
 
-  const clearError = useCallback(() => setError(null), []);
+  const retry = useCallback(() => {
+    if (failedPrompt) {
+      // Don't re-insert user message on retry — it was already saved
+      // Instead, call AI directly with the same context
+      sendMessage(failedPrompt.content, failedPrompt.modelId);
+    }
+  }, [failedPrompt, sendMessage]);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError };
+  const clearError = useCallback(() => {
+    setError(null);
+    setFailedPrompt(null);
+  }, []);
+
+  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt };
 }

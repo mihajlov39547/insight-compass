@@ -6,18 +6,35 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+
+const VALID_MODELS = new Set([
+  "google/gemini-3-flash-preview",
+  "google/gemini-3.1-pro-preview",
+  "google/gemini-2.5-pro",
+  "google/gemini-2.5-flash",
+  "google/gemini-2.5-flash-lite",
+  "openai/gpt-5.2",
+  "openai/gpt-5",
+  "openai/gpt-5-mini",
+  "openai/gpt-5-nano",
+]);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, projectDescription } = await req.json();
+    const { messages, projectDescription, model } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    // Validate and fallback model
+    const resolvedModel = (model && VALID_MODELS.has(model)) ? model : DEFAULT_MODEL;
 
     const systemPrompt = `You are a helpful workspace assistant for a document and knowledge management application. Your role is to help users explore project information, answer questions clearly, and support research and notebook-style workflows.
 
@@ -39,7 +56,7 @@ Guidelines:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: resolvedModel,
           messages: [
             { role: "system", content: systemPrompt },
             ...messages,
@@ -52,7 +69,7 @@ Guidelines:
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+          JSON.stringify({ error: "The workspace has reached its current AI request limit. Please try again shortly." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
