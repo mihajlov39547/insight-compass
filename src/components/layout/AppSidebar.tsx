@@ -163,17 +163,19 @@ export function AppSidebar() {
     });
   };
 
-  const handleRenameProject = (projectId: string, currentName: string) => {
-    setRenameProjectId(projectId);
-    setRenameValue(currentName);
+  const handleManageProject = (project: DbProject) => {
+    setEditProject(project);
+    setEditName(project.name);
+    setEditDescription(project.description || '');
+    setEditLanguage((project.language as 'en' | 'sr-lat') || 'en');
   };
 
-  const handleRenameSubmit = () => {
-    if (!renameProjectId || !renameValue.trim()) return;
-    updateProject.mutate({ id: renameProjectId, name: renameValue.trim() }, {
+  const handleManageSubmit = () => {
+    if (!editProject || !editName.trim() || !editDescription.trim()) return;
+    updateProject.mutate({ id: editProject.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
       onSuccess: () => {
-        toast.success('Project renamed');
-        setRenameProjectId(null);
+        toast.success('Project updated');
+        setEditProject(null);
       }
     });
   };
