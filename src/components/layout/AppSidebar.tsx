@@ -356,22 +356,52 @@ export function AppSidebar() {
         </div>
       </div>
 
-      {/* Rename Project Dialog */}
-      <Dialog open={!!renameProjectId} onOpenChange={(open) => !open && setRenameProjectId(null)}>
-        <DialogContent className="sm:max-w-md">
+      {/* Manage Project Dialog */}
+      <Dialog open={!!editProject} onOpenChange={(open) => !open && setEditProject(null)}>
+        <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Rename Project</DialogTitle>
+            <DialogTitle>Manage Project</DialogTitle>
+            <DialogDescription>Update your project details. The description helps the AI provide better answers.</DialogDescription>
           </DialogHeader>
-          <Input
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()}
-            placeholder="Project name"
-            autoFocus
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameProjectId(null)}>Cancel</Button>
-            <Button onClick={handleRenameSubmit} disabled={!renameValue.trim()}>Save</Button>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-name">Project name <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-project-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Project name"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-desc">Description <span className="text-destructive">*</span></Label>
+              <Textarea
+                id="edit-project-desc"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Describe what this project is about..."
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">This helps the AI understand the project context and provide better answers.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-lang">Language</Label>
+              <Select value={editLanguage} onValueChange={(val: 'en' | 'sr-lat') => setEditLanguage(val)}>
+                <SelectTrigger id="edit-project-lang">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 pt-4">
+            <Button variant="outline" onClick={() => setEditProject(null)}>Cancel</Button>
+            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
