@@ -1,0 +1,420 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Camera, Upload, Trash2, ExternalLink, Shield, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface UserSettings {
+  chat_suggestions: boolean;
+  generation_sound: string;
+  auto_accept_invitations: boolean;
+  agent_action_notifications: boolean;
+}
+
+export default function ProfileSettings() {
+  const navigate = useNavigate();
+  const { user: authUser, profile, signOut } = useAuth();
+
+  // Profile state
+  const [fullName, setFullName] = useState('');
+  const [bio, setBio] = useState('');
+  const [location, setLocation] = useState('');
+  const [website, setWebsite] = useState('');
+  const [username, setUsername] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [bannerUrl, setBannerUrl] = useState('');
+  const [isProfileEditing, setIsProfileEditing] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Settings state
+  const [settings, setSettings] = useState<UserSettings>({
+    chat_suggestions: true,
+    generation_sound: 'never',
+    auto_accept_invitations: false,
+    agent_action_notifications: true,
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
+
+  const displayEmail = profile?.email || authUser?.email || '';
+  const googleProvider = authUser?.app_metadata?.provider === 'google' || authUser?.app_metadata?.providers?.includes('google');
+
+  const initials = fullName
+    ? fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : displayEmail?.[0]?.toUpperCase() || '?';
+
+  // Load profile data
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || '');
+      setAvatarUrl(profile.avatar_url || '');
+      setBio((profile as any).bio || '');
+      setLocation((profile as any).location || '');
+      setWebsite((profile as any).website || '');
+      setUsername((profile as any).username || '');
+      setBannerUrl((profile as any).banner_url || '');
+    }
+  }, [profile]);
+
+  // Load settings
+  useEffect(() => {
+    if (!authUser) return;
+    const loadSettings = async () => {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .single();
+      if (data) {
+        setSettings({
+          chat_suggestions: data.chat_suggestions,
+          generation_sound: data.generation_sound,
+          auto_accept_invitations: data.auto_accept_invitations,
+          agent_action_notifications: data.agent_action_notifications,
+        });
+      }
+    };
+    loadSettings();
+  }, [authUser]);
+
+  const handleSaveProfile = async () => {
+    if (!authUser) return;
+    setIsSavingProfile(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: fullName,
+        bio,
+        location,
+        website,
+        banner_url: bannerUrl,
+      } as any)
+      .eq('user_id', authUser.id);
+    setIsSavingProfile(false);
+    if (error) {
+      toast.error('Failed to save profile');
+    } else {
+      toast.success('Profile saved');
+      setIsProfileEditing(false);
+    }
+  };
+
+  const handleSaveUsername = async () => {
+    if (!authUser) return;
+    setIsSavingUsername(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ username } as any)
+      .eq('user_id', authUser.id);
+    setIsSavingUsername(false);
+    if (error) {
+      if (error.code === '23505') {
+        toast.error('Username is already taken');
+      } else {
+        toast.error('Failed to update username');
+      }
+    } else {
+      toast.success('Username updated');
+    }
+  };
+
+  const handleSaveSettings = async (partial: Partial<UserSettings>) => {
+    if (!authUser) return;
+    const newSettings = { ...settings, ...partial };
+    setSettings(newSettings);
+    setIsSavingSettings(true);
+    const { error } = await supabase
+      .from('user_settings')
+      .update(partial as any)
+      .eq('user_id', authUser.id);
+    setIsSavingSettings(false);
+    if (error) {
+      toast.error('Failed to save settings');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    toast.error('Account deletion requires admin action. Please contact support.');
+  };
+
+  if (!authUser) {
+    navigate('/');
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Top bar */}
+      <header className="h-14 bg-card border-b border-border flex items-center px-4 gap-3 shrink-0">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="text-base font-semibold text-foreground">Profile Settings</h1>
+      </header>
+
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="w-full mb-6">
+            <TabsTrigger value="profile" className="flex-1">Profile</TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1">App Settings</TabsTrigger>
+          </TabsList>
+
+          {/* ===================== PROFILE TAB ===================== */}
+          <TabsContent value="profile" className="space-y-6">
+            {/* Banner */}
+            <div className="relative rounded-xl overflow-hidden border border-border">
+              <div
+                className="h-32 bg-muted flex items-center justify-center"
+                style={bannerUrl ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+              >
+                {!bannerUrl && <span className="text-muted-foreground text-sm">Profile Banner</span>}
+              </div>
+              {/* Avatar overlay */}
+              <div className="absolute -bottom-10 left-6">
+                <Avatar className="h-20 w-20 border-4 border-card">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">{initials}</AvatarFallback>
+                </Avatar>
+              </div>
+            </div>
+
+            <div className="pt-8 flex justify-end">
+              {!isProfileEditing ? (
+                <Button variant="outline" size="sm" onClick={() => setIsProfileEditing(true)}>
+                  Edit Profile
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsProfileEditing(false)}>Cancel</Button>
+                  <Button size="sm" onClick={handleSaveProfile} disabled={isSavingProfile}>
+                    {isSavingProfile ? 'Saving...' : 'Save'}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={fullName} onChange={e => setFullName(e.target.value)} disabled={!isProfileEditing} />
+              </div>
+              <div className="space-y-2">
+                <Label>Bio</Label>
+                <Textarea value={bio} onChange={e => setBio(e.target.value)} disabled={!isProfileEditing} placeholder="Tell us about yourself" className="resize-none min-h-[80px]" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <Input value={location} onChange={e => setLocation(e.target.value)} disabled={!isProfileEditing} placeholder="City, Country" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Website</Label>
+                  <Input value={website} onChange={e => setWebsite(e.target.value)} disabled={!isProfileEditing} placeholder="https://..." />
+                </div>
+              </div>
+              {isProfileEditing && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <Label>Banner URL</Label>
+                    <Input value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} placeholder="https://..." />
+                    <p className="text-xs text-muted-foreground">Direct link to a banner image</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Avatar URL</Label>
+                    <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="Managed by Google — or paste a URL" />
+                    <p className="text-xs text-muted-foreground">Your Google profile picture is used by default</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ===================== APP SETTINGS TAB ===================== */}
+          <TabsContent value="settings" className="space-y-8">
+            {/* Username */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Username</h3>
+              <p className="text-xs text-muted-foreground">Your public identifier and profile URL.</p>
+              <div className="flex gap-2">
+                <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="username" />
+                <Button variant="outline" size="sm" onClick={handleSaveUsername} disabled={isSavingUsername}>
+                  {isSavingUsername ? 'Saving...' : 'Update'}
+                </Button>
+              </div>
+            </section>
+
+            <Separator />
+
+            {/* Email */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Email</h3>
+              <Input value={displayEmail} disabled />
+              {googleProvider && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Shield className="h-3 w-3" /> Managed by Google — cannot be changed here.
+                </p>
+              )}
+            </section>
+
+            <Separator />
+
+            {/* Toggles */}
+            <section className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
+              <SettingRow
+                label="Chat suggestions"
+                description="Show AI-generated follow-up suggestions in chat"
+                checked={settings.chat_suggestions}
+                onChange={v => handleSaveSettings({ chat_suggestions: v })}
+              />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-foreground">Generation complete sound</p>
+                  <p className="text-xs text-muted-foreground">Play a sound when generation finishes</p>
+                </div>
+                <Select
+                  value={settings.generation_sound}
+                  onValueChange={v => handleSaveSettings({ generation_sound: v })}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="first">First generation</SelectItem>
+                    <SelectItem value="always">Always</SelectItem>
+                    <SelectItem value="never">Never</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <SettingRow
+                label="Auto-accept invitations"
+                description="Automatically join workspaces when invited"
+                checked={settings.auto_accept_invitations}
+                onChange={v => handleSaveSettings({ auto_accept_invitations: v })}
+              />
+              <SettingRow
+                label="Agent action notifications"
+                description="Get notified when agent actions complete"
+                checked={settings.agent_action_notifications}
+                onChange={v => handleSaveSettings({ agent_action_notifications: v })}
+              />
+            </section>
+
+            <Separator />
+
+            {/* Linked Accounts */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Linked Accounts</h3>
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/40">
+                <svg className="h-5 w-5" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">Google</p>
+                  <p className="text-xs text-muted-foreground">{displayEmail} — Primary sign-in method</p>
+                </div>
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">Connected</span>
+              </div>
+            </section>
+
+            <Separator />
+
+            {/* Password */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Password</h3>
+              {googleProvider ? (
+                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  <Shield className="h-4 w-4" /> Authentication is managed by Google. Password login is not available.
+                </p>
+              ) : (
+                <Button variant="outline" size="sm">Change Password</Button>
+              )}
+            </section>
+
+            <Separator />
+
+            {/* Delete Account */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
+              <p className="text-xs text-muted-foreground">
+                Permanently delete your account and all associated data. This action cannot be undone.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="gap-2">
+                    <Trash2 className="h-4 w-4" /> Delete Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                      Delete Account
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete your account, all your projects, and data. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Yes, delete my account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </section>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
+
+function SettingRow({ label, description, checked, onChange }: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
