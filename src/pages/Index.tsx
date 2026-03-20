@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppProvider } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { ContextualHeader } from '@/components/layout/ContextualHeader';
@@ -23,45 +24,46 @@ function AppContent() {
     setShowPricing,
     showNotifications,
     setShowNotifications,
-    user,
+    user: appUser,
     setUserPlan,
-    isFirstTimeUser,
-    setIsFirstTimeUser,
-    projects,
     sidebarCollapsed
   } = useApp();
 
-  const showOnboarding = isFirstTimeUser || projects.length === 0;
+  const { user: authUser, loading } = useAuth();
 
-  const handleStartFree = () => {
-    setIsFirstTimeUser(false);
-    setShowNewProject(true);
-  };
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
-  const handleViewPricing = () => {
-    setShowPricing(true);
-  };
+  // Not authenticated — show onboarding/landing
+  if (!authUser) {
+    return (
+      <div className="flex h-screen w-full overflow-hidden bg-background">
+        <div className="flex-1 flex flex-col min-w-0">
+          <MainHeader minimal />
+          <OnboardingScreen 
+            onStartFree={() => {}} 
+            onViewPricing={() => setShowPricing(true)}
+          />
+        </div>
+        <PricingDialog
+          open={showPricing}
+          onOpenChange={setShowPricing}
+          currentPlan={appUser.plan}
+          onSelectPlan={setUserPlan}
+        />
+      </div>
+    );
+  }
 
+  // Authenticated — full workspace
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      {showOnboarding ? (
-        <>
-          {sidebarCollapsed === false && (
-            <div className="w-16 border-r border-border bg-sidebar flex flex-col items-center py-4">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-bold text-sm">IN</span>
-              </div>
-            </div>
-          )}
-          <div className="flex-1 flex flex-col min-w-0">
-            <MainHeader minimal />
-            <OnboardingScreen 
-              onStartFree={handleStartFree}
-              onViewPricing={handleViewPricing}
-            />
-          </div>
-        </>
-      ) : sidebarCollapsed ? (
+      {sidebarCollapsed ? (
         <>
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0">
@@ -98,7 +100,7 @@ function AppContent() {
       <PricingDialog
         open={showPricing}
         onOpenChange={setShowPricing}
-        currentPlan={user.plan}
+        currentPlan={appUser.plan}
         onSelectPlan={setUserPlan}
       />
       <NotificationPanel
