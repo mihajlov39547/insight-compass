@@ -135,7 +135,7 @@ export default function ProfileSettings() {
     setIsSavingUsername(true);
     const { error } = await supabase
       .from('profiles')
-      .update({ username } as any)
+      .update({ username })
       .eq('user_id', authUser.id);
     setIsSavingUsername(false);
     if (error) {
