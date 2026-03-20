@@ -45,8 +45,10 @@ export function AppSidebar() {
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
 
-  const [renameProjectId, setRenameProjectId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
+  const [editProject, setEditProject] = useState<DbProject | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editLanguage, setEditLanguage] = useState<'en' | 'sr-lat'>('en');
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
 
