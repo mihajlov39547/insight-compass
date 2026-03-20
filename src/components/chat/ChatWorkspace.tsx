@@ -11,9 +11,10 @@ import { useProjects } from '@/hooks/useProjects';
 import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
 
 export function ChatWorkspace() {
-  const { selectedProjectId, selectedChatId } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedChatId } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
+  const createChat = useCreateChat();
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
