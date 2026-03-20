@@ -173,7 +173,7 @@ export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOpt
       setIsGenerating(false);
       setStreamingContent(null);
     }
-  }, [user, chatId, isGenerating, qc, projectDescription]);
+  }, [user, chatId, chatName, isGenerating, qc, projectDescription]);
 
   const retry = useCallback(() => {
     if (failedPrompt) {
