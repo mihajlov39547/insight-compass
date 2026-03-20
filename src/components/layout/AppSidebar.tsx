@@ -368,6 +368,40 @@ export function AppSidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Rename Chat Dialog */}
+      <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename Chat</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameChatValue}
+            onChange={(e) => setRenameChatValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && renameChatId && renameChatValue.trim()) {
+                updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
+                  onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); }
+                });
+              }
+            }}
+            placeholder="Chat name"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameChatId(null)}>Cancel</Button>
+            <Button
+              disabled={!renameChatValue.trim()}
+              onClick={() => {
+                if (!renameChatId || !renameChatValue.trim()) return;
+                updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
+                  onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); }
+                });
+              }}
+            >Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
