@@ -70,18 +70,22 @@ export default function ProfileSettings() {
     ? fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : displayEmail?.[0]?.toUpperCase() || '?';
 
-  // Load profile data
+  // Load profile data — fallback to Google metadata if profile fields are empty
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || '');
-      setAvatarUrl(profile.avatar_url || '');
-      setBio((profile as any).bio || '');
-      setLocation((profile as any).location || '');
-      setWebsite((profile as any).website || '');
-      setUsername((profile as any).username || '');
-      setBannerUrl((profile as any).banner_url || '');
+      setFullName(profile.full_name || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || '');
+      setAvatarUrl(profile.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || '');
+      setBio(profile.bio || '');
+      setLocation(profile.location || '');
+      setWebsite(profile.website || '');
+      setUsername(profile.username || '');
+      setBannerUrl(profile.banner_url || '');
+    } else if (authUser) {
+      // No profile row yet — seed from Google metadata
+      setFullName(authUser.user_metadata?.full_name || authUser.user_metadata?.name || '');
+      setAvatarUrl(authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '');
     }
-  }, [profile]);
+  }, [profile, authUser]);
 
   // Load settings
   useEffect(() => {
@@ -115,7 +119,7 @@ export default function ProfileSettings() {
         location,
         website,
         banner_url: bannerUrl,
-      } as any)
+      })
       .eq('user_id', authUser.id);
     setIsSavingProfile(false);
     if (error) {
@@ -131,7 +135,7 @@ export default function ProfileSettings() {
     setIsSavingUsername(true);
     const { error } = await supabase
       .from('profiles')
-      .update({ username } as any)
+      .update({ username })
       .eq('user_id', authUser.id);
     setIsSavingUsername(false);
     if (error) {
@@ -152,7 +156,7 @@ export default function ProfileSettings() {
     setIsSavingSettings(true);
     const { error } = await supabase
       .from('user_settings')
-      .update(partial as any)
+      .update(partial)
       .eq('user_id', authUser.id);
     setIsSavingSettings(false);
     if (error) {
@@ -161,7 +165,17 @@ export default function ProfileSettings() {
   };
 
   const handleDeleteAccount = async () => {
-    toast.error('Account deletion requires admin action. Please contact support.');
+    if (!authUser) return;
+    try {
+      // Delete user settings and profile
+      await supabase.from('user_settings').delete().eq('user_id', authUser.id);
+      await supabase.from('profiles').delete().eq('user_id', authUser.id);
+      await signOut();
+      toast.success('Account data deleted. You have been signed out.');
+      navigate('/');
+    } catch {
+      toast.error('Failed to delete account data.');
+    }
   };
 
   if (!authUser) {
@@ -189,15 +203,15 @@ export default function ProfileSettings() {
           {/* ===================== PROFILE TAB ===================== */}
           <TabsContent value="profile" className="space-y-6">
             {/* Banner */}
-            <div className="relative rounded-xl overflow-hidden border border-border">
+            <div className="relative rounded-xl border border-border">
               <div
-                className="h-32 bg-muted flex items-center justify-center"
+                className="h-32 rounded-xl bg-muted flex items-center justify-center"
                 style={bannerUrl ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
               >
                 {!bannerUrl && <span className="text-muted-foreground text-sm">Profile Banner</span>}
               </div>
-              {/* Avatar overlay */}
-              <div className="absolute -bottom-10 left-6">
+              {/* Avatar overlay — positioned below the banner, not clipped */}
+              <div className="absolute -bottom-10 left-6 z-10">
                 <Avatar className="h-20 w-20 border-4 border-card">
                   {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl">{initials}</AvatarFallback>
