@@ -3,6 +3,7 @@ import { MessageSquarePlus, FileText, Zap, Shield } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
+import { useCreateChat } from '@/hooks/useChats';
 import { ChatInput } from './ChatInput';
 import { useApp } from '@/contexts/AppContext';
 import { useMessages } from '@/hooks/useMessages';
