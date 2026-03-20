@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Plus, Search, Settings, FileText, MessageSquare, FolderOpen, Calendar, Users
+  Plus, Search, Settings, FileText, MessageSquare, FolderOpen, Calendar, Users, Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useApp } from '@/contexts/AppContext';
 import { useProjects } from '@/hooks/useProjects';
 import { useChats, useCreateChat } from '@/hooks/useChats';
+import { useDocuments } from '@/hooks/useDocuments';
 import { cn } from '@/lib/utils';
 
 export function ContextualHeader() {
