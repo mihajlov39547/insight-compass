@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   FileText, 
   Database, 
@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { lovable } from '@/integrations/lovable/index';
+import { toast } from 'sonner';
 
 interface OnboardingScreenProps {
   onStartFree: () => void;
