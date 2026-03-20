@@ -17,31 +17,79 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          banner_url: string | null
+          bio: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          location: string | null
           phone: string | null
+          updated_at: string
+          user_id: string
+          username: string | null
+          website: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+          username?: string | null
+          website?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          agent_action_notifications: boolean
+          auto_accept_invitations: boolean
+          chat_suggestions: boolean
+          created_at: string
+          generation_sound: string
+          id: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          avatar_url?: string | null
+          agent_action_notifications?: boolean
+          auto_accept_invitations?: boolean
+          chat_suggestions?: boolean
           created_at?: string
-          email?: string | null
-          full_name?: string | null
+          generation_sound?: string
           id?: string
-          phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          avatar_url?: string | null
+          agent_action_notifications?: boolean
+          auto_accept_invitations?: boolean
+          chat_suggestions?: boolean
           created_at?: string
-          email?: string | null
-          full_name?: string | null
+          generation_sound?: string
           id?: string
-          phone?: string | null
           updated_at?: string
           user_id?: string
         }

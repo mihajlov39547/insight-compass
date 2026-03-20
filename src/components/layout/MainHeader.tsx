@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Share2, 
   Settings, 
@@ -58,6 +59,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
   } = useApp();
 
   const { user: authUser, profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const PlanIcon = planIcons[appUser.plan];
@@ -220,7 +222,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile Settings</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile-settings')}>Profile Settings</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowPricing(true)}>Billing & Plans</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>

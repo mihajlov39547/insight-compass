@@ -9,6 +9,11 @@ interface Profile {
   email: string | null;
   avatar_url: string | null;
   phone: string | null;
+  bio: string | null;
+  location: string | null;
+  website: string | null;
+  username: string | null;
+  banner_url: string | null;
 }
 
 interface AuthContextType {
