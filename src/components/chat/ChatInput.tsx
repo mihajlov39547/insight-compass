@@ -17,7 +17,7 @@ export function ChatInput({ onSend, isGenerating }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
-  const { setShowSettings, setShowDocuments, selectedChatId } = useApp();
+  const { setShowSettings, setShowDocuments, setDocumentScope, selectedChatId } = useApp();
 
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
