@@ -44,6 +44,8 @@ export function AppSidebar() {
 
   const [renameProjectId, setRenameProjectId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [renameChatId, setRenameChatId] = useState<string | null>(null);
+  const [renameChatValue, setRenameChatValue] = useState('');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
