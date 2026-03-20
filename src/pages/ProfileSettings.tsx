@@ -203,15 +203,15 @@ export default function ProfileSettings() {
           {/* ===================== PROFILE TAB ===================== */}
           <TabsContent value="profile" className="space-y-6">
             {/* Banner */}
-            <div className="relative rounded-xl overflow-hidden border border-border">
+            <div className="relative rounded-xl border border-border">
               <div
-                className="h-32 bg-muted flex items-center justify-center"
+                className="h-32 rounded-xl bg-muted flex items-center justify-center"
                 style={bannerUrl ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
               >
                 {!bannerUrl && <span className="text-muted-foreground text-sm">Profile Banner</span>}
               </div>
-              {/* Avatar overlay */}
-              <div className="absolute -bottom-10 left-6">
+              {/* Avatar overlay — positioned below the banner, not clipped */}
+              <div className="absolute -bottom-10 left-6 z-10">
                 <Avatar className="h-20 w-20 border-4 border-card">
                   {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl">{initials}</AvatarFallback>
