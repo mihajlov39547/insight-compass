@@ -70,18 +70,22 @@ export default function ProfileSettings() {
     ? fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : displayEmail?.[0]?.toUpperCase() || '?';
 
-  // Load profile data
+  // Load profile data — fallback to Google metadata if profile fields are empty
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || '');
-      setAvatarUrl(profile.avatar_url || '');
-      setBio((profile as any).bio || '');
-      setLocation((profile as any).location || '');
-      setWebsite((profile as any).website || '');
-      setUsername((profile as any).username || '');
-      setBannerUrl((profile as any).banner_url || '');
+      setFullName(profile.full_name || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || '');
+      setAvatarUrl(profile.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || '');
+      setBio(profile.bio || '');
+      setLocation(profile.location || '');
+      setWebsite(profile.website || '');
+      setUsername(profile.username || '');
+      setBannerUrl(profile.banner_url || '');
+    } else if (authUser) {
+      // No profile row yet — seed from Google metadata
+      setFullName(authUser.user_metadata?.full_name || authUser.user_metadata?.name || '');
+      setAvatarUrl(authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '');
     }
-  }, [profile]);
+  }, [profile, authUser]);
 
   // Load settings
   useEffect(() => {
