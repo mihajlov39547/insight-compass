@@ -165,7 +165,17 @@ export default function ProfileSettings() {
   };
 
   const handleDeleteAccount = async () => {
-    toast.error('Account deletion requires admin action. Please contact support.');
+    if (!authUser) return;
+    try {
+      // Delete user settings and profile
+      await supabase.from('user_settings').delete().eq('user_id', authUser.id);
+      await supabase.from('profiles').delete().eq('user_id', authUser.id);
+      await signOut();
+      toast.success('Account data deleted. You have been signed out.');
+      navigate('/');
+    } catch {
+      toast.error('Failed to delete account data.');
+    }
   };
 
   if (!authUser) {
