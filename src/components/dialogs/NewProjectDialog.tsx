@@ -31,6 +31,7 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
   const [description, setDescription] = useState('');
   const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
   const [nameError, setNameError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
