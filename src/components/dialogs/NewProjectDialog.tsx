@@ -54,6 +54,7 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
     setDescription('');
     setLanguage('en');
     setNameError('');
+    setDescriptionError('');
     onOpenChange(false);
   };
 
