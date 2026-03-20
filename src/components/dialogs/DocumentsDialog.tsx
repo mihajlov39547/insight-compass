@@ -42,18 +42,21 @@ function truncateFileName(name: string, maxBase = 30): string {
 }
 
 export function DocumentsDialog() {
-  const { showDocuments, setShowDocuments, selectedProjectId, selectedChatId } = useApp();
+  const { showDocuments, setShowDocuments, selectedProjectId, selectedChatId, documentScope } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const [showUpload, setShowUpload] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
   const selectedChat = chats.find(c => c.id === selectedChatId);
-  const context = selectedChat ? 'chat' : 'project';
+  
+  // Use documentScope to determine what to show
+  const isProjectScope = documentScope === 'project';
+  const scopeLabel = isProjectScope ? selectedProject?.name : selectedChat?.name;
 
   const { data: documents = [], isLoading } = useDocuments(
     selectedProjectId ?? undefined,
-    selectedChat ? selectedChatId : undefined,
+    isProjectScope ? null : selectedChatId,
   );
 
   const deleteMutation = useDeleteDocument();
