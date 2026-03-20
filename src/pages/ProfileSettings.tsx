@@ -240,7 +240,7 @@ export default function ProfileSettings() {
                 </Button>
               ) : (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setIsProfileEditing(false)}>Cancel</Button>
+                  <Button variant="outline" size="sm" onClick={handleCancelProfile}>Cancel</Button>
                   <Button size="sm" onClick={handleSaveProfile} disabled={isSavingProfile}>
                     {isSavingProfile ? 'Saving...' : 'Save'}
                   </Button>
