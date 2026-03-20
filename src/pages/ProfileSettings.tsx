@@ -192,7 +192,7 @@ export default function ProfileSettings() {
       .from('profiles')
       .select('*')
       .eq('user_id', authUser.id)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       toast.error('Failed to load profile');
