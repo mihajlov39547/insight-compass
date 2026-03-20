@@ -27,6 +27,7 @@ export function ChatWorkspace() {
   const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt } = useAIChat({
     chatId: selectedChatId ?? '',
     chatName: selectedChat?.name,
+    projectId: selectedProjectId ?? undefined,
     projectDescription: selectedProject?.description,
   });
 

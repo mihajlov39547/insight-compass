@@ -10,10 +10,155 @@ const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-ch
 interface UseAIChatOptions {
   chatId: string;
   chatName?: string;
+  projectId?: string;
   projectDescription?: string;
 }
 
-export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOptions) {
+interface DocumentSource {
+  id: string;
+  title: string;
+  snippet: string;
+  relevance: number;
+}
+
+/** Retrieve relevant documents for grounding — chat docs first, then project docs */
+async function retrieveDocumentContext(
+  projectId: string,
+  chatId: string,
+  userMessage: string
+): Promise<{ sources: DocumentSource[]; contextForAI: { id: string; fileName: string; summary?: string; excerpt?: string }[] }> {
+  try {
+    // 1. Search using the RPC for keyword matches
+    const { data: searchResults } = await supabase.rpc('search_documents', {
+      search_query: userMessage,
+    });
+
+    // 2. Also fetch all completed docs for this chat + project as fallback context
+    const { data: scopedDocs } = await supabase
+      .from('documents')
+      .select('id, file_name, summary, chat_id, project_id, processing_status')
+      .eq('project_id', projectId)
+      .eq('processing_status', 'completed')
+      .limit(50);
+
+    // Build a map of doc IDs to their analysis text
+    const relevantDocIds = new Set<string>();
+    const docSnippets = new Map<string, string>();
+
+    // Add search-matched docs (highest priority)
+    if (searchResults) {
+      for (const r of searchResults) {
+        // Only include docs in scope (same project)
+        if (r.project_id === projectId) {
+          relevantDocIds.add(r.document_id);
+          if (r.snippet) docSnippets.set(r.document_id, r.snippet);
+        }
+      }
+    }
+
+    // Prioritize chat docs, then project docs
+    const chatDocs = (scopedDocs ?? []).filter(d => d.chat_id === chatId);
+    const projectDocs = (scopedDocs ?? []).filter(d => !d.chat_id);
+
+    // Add chat docs that aren't already matched by search
+    for (const d of chatDocs) {
+      relevantDocIds.add(d.id);
+    }
+    // Add project docs (lower priority, limited)
+    for (const d of projectDocs.slice(0, 10)) {
+      relevantDocIds.add(d.id);
+    }
+
+    if (relevantDocIds.size === 0) {
+      return { sources: [], contextForAI: [] };
+    }
+
+    // Fetch analysis excerpts for relevant docs
+    const { data: analyses } = await supabase
+      .from('document_analysis')
+      .select('document_id, extracted_text, normalized_search_text')
+      .in('document_id', Array.from(relevantDocIds));
+
+    const analysisMap = new Map<string, { extracted_text: string | null; normalized_search_text: string | null }>();
+    if (analyses) {
+      for (const a of analyses) {
+        analysisMap.set(a.document_id, a);
+      }
+    }
+
+    // Build all docs map
+    const allDocsMap = new Map<string, typeof scopedDocs extends (infer T)[] | null ? NonNullable<T> : never>();
+    for (const d of [...chatDocs, ...projectDocs]) {
+      allDocsMap.set(d.id, d);
+    }
+
+    // Build sources and context — chat docs first, then search-ranked, then project docs
+    const orderedIds: string[] = [];
+    const seen = new Set<string>();
+
+    // Chat docs first
+    for (const d of chatDocs) {
+      if (!seen.has(d.id)) { orderedIds.push(d.id); seen.add(d.id); }
+    }
+    // Search results second (already ranked)
+    if (searchResults) {
+      for (const r of searchResults) {
+        if (r.project_id === projectId && !seen.has(r.document_id)) {
+          orderedIds.push(r.document_id); seen.add(r.document_id);
+        }
+      }
+    }
+    // Remaining project docs
+    for (const d of projectDocs) {
+      if (!seen.has(d.id)) { orderedIds.push(d.id); seen.add(d.id); }
+    }
+
+    // Limit to top 8 docs for context window management
+    const topIds = orderedIds.slice(0, 8);
+
+    const sources: DocumentSource[] = [];
+    const contextForAI: { id: string; fileName: string; summary?: string; excerpt?: string }[] = [];
+
+    for (const docId of topIds) {
+      const doc = allDocsMap.get(docId);
+      if (!doc) continue;
+
+      const analysis = analysisMap.get(docId);
+      const snippet = docSnippets.get(docId) ?? doc.summary ?? '';
+      const searchResult = searchResults?.find((r: any) => r.document_id === docId);
+      const relevance = searchResult?.rank ? Math.min(searchResult.rank * 10, 1) : 0.3;
+
+      sources.push({
+        id: docId,
+        title: doc.file_name,
+        snippet: snippet.slice(0, 200),
+        relevance,
+      });
+
+      // Build excerpt for AI — limit to ~2000 chars per doc
+      let excerpt = '';
+      if (analysis?.extracted_text) {
+        excerpt = analysis.extracted_text.slice(0, 2000);
+      } else if (analysis?.normalized_search_text) {
+        excerpt = analysis.normalized_search_text.slice(0, 2000);
+      }
+
+      contextForAI.push({
+        id: docId,
+        fileName: doc.file_name,
+        summary: doc.summary ?? undefined,
+        excerpt: excerpt || undefined,
+      });
+    }
+
+    return { sources, contextForAI };
+  } catch (err) {
+    console.warn('Document retrieval failed, proceeding without grounding:', err);
+    return { sources: [], contextForAI: [] };
+  }
+}
+
+export function useAIChat({ chatId, chatName, projectId, projectDescription }: UseAIChatOptions) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -46,7 +191,16 @@ export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOpt
 
       qc.invalidateQueries({ queryKey: ['messages', chatId] });
 
-      // 2. Load recent chat history
+      // 2. Retrieve relevant documents for grounding
+      let sources: DocumentSource[] = [];
+      let documentContext: any[] = [];
+      if (projectId) {
+        const retrieval = await retrieveDocumentContext(projectId, chatId, content);
+        sources = retrieval.sources;
+        documentContext = retrieval.contextForAI;
+      }
+
+      // 3. Load recent chat history
       const { data: history } = await supabase
         .from('messages')
         .select('role, content')
@@ -58,7 +212,7 @@ export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOpt
         .filter((m: any) => m.role === 'user' || m.role === 'assistant')
         .map((m: any) => ({ role: m.role, content: m.content }));
 
-      // 3. Call AI edge function with model
+      // 4. Call AI edge function with document context
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -69,6 +223,7 @@ export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOpt
           messages: contextMessages,
           projectDescription: projectDescription ?? '',
           model: resolvedModel,
+          documentContext,
         }),
       });
 
@@ -79,7 +234,7 @@ export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOpt
 
       if (!resp.body) throw new Error('No response stream');
 
-      // 4. Stream the response
+      // 5. Stream the response
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -116,19 +271,18 @@ export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOpt
         }
       }
 
-      // 5. Persist assistant message with model used
+      // 6. Persist assistant message with sources
       await supabase.from('messages').insert({
         chat_id: chatId,
         user_id: user.id,
         role: 'assistant',
         content: fullContent,
-        sources: [],
+        sources: (sources.length > 0 ? sources : []) as any,
         model_id: resolvedModel,
       });
 
-      // 6. Auto-rename chat if still "New Chat"
+      // 7. Auto-rename chat if still "New Chat"
       if (chatName === 'New Chat' && fullContent) {
-        // Fire-and-forget: don't block chat flow
         fetch(TITLE_URL, {
           method: 'POST',
           headers: {
@@ -154,13 +308,13 @@ export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOpt
           .catch((e) => console.warn('Auto-rename failed:', e.message));
       }
 
-      // 7. Update chat timestamp
+      // 8. Update chat timestamp
       await supabase
         .from('chats')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', chatId);
 
-      // 8. Refresh queries
+      // 9. Refresh queries
       qc.invalidateQueries({ queryKey: ['messages', chatId] });
       qc.invalidateQueries({ queryKey: ['chats'] });
       qc.invalidateQueries({ queryKey: ['allChats'] });
@@ -173,12 +327,10 @@ export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOpt
       setIsGenerating(false);
       setStreamingContent(null);
     }
-  }, [user, chatId, chatName, isGenerating, qc, projectDescription]);
+  }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription]);
 
   const retry = useCallback(() => {
     if (failedPrompt) {
-      // Don't re-insert user message on retry — it was already saved
-      // Instead, call AI directly with the same context
       sendMessage(failedPrompt.content, failedPrompt.modelId);
     }
   }, [failedPrompt, sendMessage]);

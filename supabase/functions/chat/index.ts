@@ -20,25 +20,57 @@ const VALID_MODELS = new Set([
   "openai/gpt-5-nano",
 ]);
 
+interface DocumentContext {
+  id: string;
+  fileName: string;
+  summary?: string;
+  excerpt?: string;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, projectDescription, model } = await req.json();
+    const { messages, projectDescription, model, documentContext } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Validate and fallback model
     const resolvedModel = (model && VALID_MODELS.has(model)) ? model : DEFAULT_MODEL;
+
+    // Build document grounding section
+    let documentGrounding = "";
+    const docs = (documentContext ?? []) as DocumentContext[];
+    if (docs.length > 0) {
+      const docSections = docs.map((doc, i) => {
+        let section = `[Document ${i + 1}: ${doc.fileName}]`;
+        if (doc.summary) section += `\nSummary: ${doc.summary}`;
+        if (doc.excerpt) section += `\nRelevant excerpt: ${doc.excerpt}`;
+        return section;
+      }).join("\n\n");
+
+      documentGrounding = `
+
+You have access to the following documents from the user's workspace. Use them to ground your answers when relevant. If you use information from a document, mention which document it came from naturally in your response.
+
+--- BEGIN DOCUMENTS ---
+${docSections}
+--- END DOCUMENTS ---
+
+When answering:
+- Prefer information from the provided documents over general knowledge
+- If the documents contain relevant information, reference it
+- If the documents don't cover the topic, answer from general knowledge and note that
+- Do not fabricate document content`;
+    }
 
     const systemPrompt = `You are a helpful workspace assistant for a document and knowledge management application. Your role is to help users explore project information, answer questions clearly, and support research and notebook-style workflows.
 
-${projectDescription ? `The user is working in a project described as: "${projectDescription}". Use this context to provide more relevant and focused responses.` : ""}
+${projectDescription ? `The user is working in a project described as: "${projectDescription}".` : ""}${documentGrounding}
 
 Guidelines:
 - Be clear, accurate, and concise
