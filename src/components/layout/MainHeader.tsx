@@ -222,7 +222,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile Settings</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile-settings')}>Profile Settings</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowPricing(true)}>Billing & Plans</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
