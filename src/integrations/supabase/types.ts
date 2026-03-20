@@ -55,42 +55,110 @@ export type Database = {
           },
         ]
       }
+      document_analysis: {
+        Row: {
+          created_at: string
+          document_id: string
+          extracted_text: string | null
+          id: string
+          indexed_at: string | null
+          metadata_json: Json | null
+          normalized_search_text: string | null
+          ocr_used: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          extracted_text?: string | null
+          id?: string
+          indexed_at?: string | null
+          metadata_json?: Json | null
+          normalized_search_text?: string | null
+          ocr_used?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          extracted_text?: string | null
+          id?: string
+          indexed_at?: string | null
+          metadata_json?: Json | null
+          normalized_search_text?: string | null
+          ocr_used?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_analysis_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
+          char_count: number | null
           chat_id: string | null
           created_at: string
+          detected_language: string | null
           file_name: string
           file_size: number
           file_type: string
           id: string
           mime_type: string
+          page_count: number | null
+          processing_error: string | null
+          processing_status: string
           project_id: string
           storage_path: string
+          summary: string | null
           user_id: string
+          word_count: number | null
         }
         Insert: {
+          char_count?: number | null
           chat_id?: string | null
           created_at?: string
+          detected_language?: string | null
           file_name: string
           file_size: number
           file_type: string
           id?: string
           mime_type: string
+          page_count?: number | null
+          processing_error?: string | null
+          processing_status?: string
           project_id: string
           storage_path: string
+          summary?: string | null
           user_id: string
+          word_count?: number | null
         }
         Update: {
+          char_count?: number | null
           chat_id?: string | null
           created_at?: string
+          detected_language?: string | null
           file_name?: string
           file_size?: number
           file_type?: string
           id?: string
           mime_type?: string
+          page_count?: number | null
+          processing_error?: string | null
+          processing_status?: string
           project_id?: string
           storage_path?: string
+          summary?: string | null
           user_id?: string
+          word_count?: number | null
         }
         Relationships: []
       }

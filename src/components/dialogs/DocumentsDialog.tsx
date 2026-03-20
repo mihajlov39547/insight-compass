@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Upload, Trash2, File as FileIcon, FileType, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileText, Upload, Trash2, File as FileIcon, FileType, FileSpreadsheet, Loader2, RotateCcw, CheckCircle2, AlertCircle, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useApp } from '@/contexts/AppContext';
 import { useProjects } from '@/hooks/useProjects';
 import { useChats } from '@/hooks/useChats';
-import { useDocuments, useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
+import { useDocuments, useDeleteDocument, useRetryProcessing, DbDocument } from '@/hooks/useDocuments';
 import { UploadDocumentsDialog } from './UploadDocumentsDialog';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -41,6 +41,35 @@ function truncateFileName(name: string, maxBase = 30): string {
   return base.slice(0, maxBase) + '…' + ext;
 }
 
+function ProcessingBadge({ status }: { status: string }) {
+  switch (status) {
+    case 'completed':
+      return (
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
+          <CheckCircle2 className="h-2.5 w-2.5" /> Analyzed
+        </Badge>
+      );
+    case 'failed':
+      return (
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-destructive/10 text-destructive border-destructive/20">
+          <AlertCircle className="h-2.5 w-2.5" /> Failed
+        </Badge>
+      );
+    case 'uploaded':
+      return (
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1">
+          Pending
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-accent/10 text-accent border-accent/20">
+          <Loader2 className="h-2.5 w-2.5 animate-spin" /> Processing
+        </Badge>
+      );
+  }
+}
+
 export function DocumentsDialog() {
   const { showDocuments, setShowDocuments, selectedProjectId, selectedChatId, documentScope } = useApp();
   const { data: projects = [] } = useProjects();
@@ -49,8 +78,7 @@ export function DocumentsDialog() {
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
   const selectedChat = chats.find(c => c.id === selectedChatId);
-  
-  // Use documentScope to determine what to show
+
   const isProjectScope = documentScope === 'project';
   const scopeLabel = isProjectScope ? selectedProject?.name : selectedChat?.name;
 
@@ -60,6 +88,7 @@ export function DocumentsDialog() {
   );
 
   const deleteMutation = useDeleteDocument();
+  const { retry: retryProcessing, isPending: isRetrying } = useRetryProcessing();
 
   const handleDelete = (doc: DbDocument) => {
     deleteMutation.mutate(doc, {
@@ -108,20 +137,43 @@ export function DocumentsDialog() {
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate" title={doc.file_name}>{truncateFileName(doc.file_name)}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-foreground truncate" title={doc.file_name}>{truncateFileName(doc.file_name)}</p>
+                            <ProcessingBadge status={doc.processing_status} />
+                          </div>
                           <p className="text-xs text-muted-foreground">
-                            {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
+                            {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)}
+                            {doc.word_count ? ` • ${doc.word_count.toLocaleString()} words` : ''}
+                            {doc.detected_language ? ` • ${doc.detected_language.toUpperCase()}` : ''}
+                            {' • '}{new Date(doc.created_at).toLocaleDateString()}
                           </p>
+                          {doc.summary && (
+                            <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">{doc.summary}</p>
+                          )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleDelete(doc)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {doc.processing_status === 'failed' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-accent"
+                              onClick={() => retryProcessing(doc)}
+                              disabled={isRetrying}
+                              title="Retry processing"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDelete(doc)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -130,7 +182,12 @@ export function DocumentsDialog() {
             </ScrollArea>
           </div>
           <div className="flex justify-between pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground">{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-muted-foreground">
+              {documents.length} document{documents.length !== 1 ? 's' : ''}
+              {documents.filter(d => d.processing_status === 'completed').length > 0 && (
+                <span className="ml-1">• {documents.filter(d => d.processing_status === 'completed').length} analyzed</span>
+              )}
+            </p>
             <Button variant="outline" onClick={() => setShowDocuments(false)}>Done</Button>
           </div>
         </DialogContent>
