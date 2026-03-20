@@ -171,8 +171,7 @@ export default function ProfileSettings() {
     setIsSavingSettings(true);
     const { error } = await supabase
       .from('user_settings')
-      .update(partial)
-      .eq('user_id', authUser.id);
+      .upsert({ user_id: authUser.id, ...partial }, { onConflict: 'user_id' });
     setIsSavingSettings(false);
     if (error) {
       toast.error('Failed to save settings');
