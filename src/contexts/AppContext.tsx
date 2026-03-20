@@ -10,6 +10,8 @@ import {
 import { DbProject } from '@/hooks/useProjects';
 import { DbChat } from '@/hooks/useChats';
 
+export type ActiveView = 'default' | 'project-documents' | 'chat-documents';
+
 interface AppContextType {
   // User
   user: User;
@@ -30,6 +32,10 @@ interface AppContextType {
   // Chats
   selectedChatId: string | null;
   setSelectedChatId: (id: string | null) => void;
+
+  // Active view
+  activeView: ActiveView;
+  setActiveView: (view: ActiveView) => void;
 
   // Search
   searchQuery: string;
@@ -66,8 +72,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(currentUser);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectIdRaw] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatIdRaw] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<ActiveView>('default');
   const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
   const [showSettings, setShowSettings] = useState<'project' | 'chat' | 'prompt' | null>(null);
@@ -84,6 +91,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUser(prev => ({ ...prev, plan }));
   }, []);
 
+  // Reset activeView when changing project/chat selection (unless explicitly setting view)
+  const setSelectedProjectId = useCallback((id: string | null) => {
+    setSelectedProjectIdRaw(id);
+    // Don't reset activeView here — let callers manage it explicitly
+  }, []);
+
+  const setSelectedChatId = useCallback((id: string | null) => {
+    setSelectedChatIdRaw(id);
+    // Don't reset activeView here — let callers manage it explicitly
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -97,6 +115,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSelectedProjectId,
         selectedChatId,
         setSelectedChatId,
+        activeView,
+        setActiveView,
         searchQuery,
         setSearchQuery,
         language,

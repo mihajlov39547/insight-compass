@@ -12,9 +12,28 @@ import { NewProjectDialog } from '@/components/dialogs/NewProjectDialog';
 import { PricingDialog } from '@/components/dialogs/PricingDialog';
 import { OnboardingScreen } from '@/components/onboarding/OnboardingScreen';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
+import { DocumentDashboard } from '@/components/documents/DocumentDashboard';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
 import { useCreateProject } from '@/hooks/useProjects';
+
+function MainContent() {
+  const { activeView } = useApp();
+
+  if (activeView === 'project-documents') {
+    return <DocumentDashboard scope="project" />;
+  }
+  if (activeView === 'chat-documents') {
+    return <DocumentDashboard scope="chat" />;
+  }
+
+  return (
+    <>
+      <ContextualHeader />
+      <ChatWorkspace />
+    </>
+  );
+}
 
 function AppContent() {
   const { 
@@ -71,8 +90,7 @@ function AppContent() {
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0">
             <MainHeader />
-            <ContextualHeader />
-            <ChatWorkspace />
+            <MainContent />
           </div>
         </>
       ) : (
@@ -84,8 +102,7 @@ function AppContent() {
           <ResizablePanel defaultSize={80}>
             <div className="flex-1 flex flex-col min-w-0 h-full">
               <MainHeader />
-              <ContextualHeader />
-              <ChatWorkspace />
+              <MainContent />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

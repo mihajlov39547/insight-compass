@@ -13,7 +13,7 @@ import { useDocuments } from '@/hooks/useDocuments';
 import { cn } from '@/lib/utils';
 
 export function ContextualHeader() {
-  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowSettings, setShowDocuments, setDocumentScope } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowSettings, setShowDocuments, setDocumentScope, setActiveView } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: documents = [] } = useDocuments(selectedProjectId ?? undefined, undefined);
@@ -93,9 +93,11 @@ export function ContextualHeader() {
             <span>Updated {new Date(selectedProject.updated_at).toLocaleDateString()}</span>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="gap-2" onClick={() => { setDocumentScope('project'); setShowDocuments(true); }}>
-          <FileText className="h-4 w-4" /> Manage Documents
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => setActiveView('project-documents')}>
+            <FileText className="h-4 w-4" /> Manage Documents
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-4 text-sm mt-1.5">
