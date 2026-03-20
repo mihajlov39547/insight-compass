@@ -407,7 +407,7 @@ export function AppSidebar() {
 }
 
 // Extracted project item with its own chats query
-function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect }: {
+function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect, onDeleteChat, onRenameChat }: {
   project: DbProject;
   isExpanded: boolean;
   isSelected: boolean;
@@ -419,6 +419,8 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onArchive: () => void;
   onRename: () => void;
   onChatSelect: (chat: DbChat) => void;
+  onDeleteChat: (chatId: string) => void;
+  onRenameChat: (chatId: string, currentName: string) => void;
 }) {
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
 
