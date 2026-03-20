@@ -29,8 +29,13 @@ export function useDocuments(projectId?: string, chatId?: string | null) {
         .order('created_at', { ascending: false });
 
       if (chatId) {
+        // Chat-scoped: only docs attached to this chat
         query = query.eq('chat_id', chatId);
+      } else if (chatId === null) {
+        // Project-scoped: only docs with no chat association
+        query = query.is('chat_id', null);
       }
+      // chatId === undefined: return all docs for the project (both scopes)
 
       const { data, error } = await query;
       if (error) throw error;
