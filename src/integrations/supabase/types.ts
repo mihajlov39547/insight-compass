@@ -115,11 +115,13 @@ export type Database = {
           file_size: number
           file_type: string
           id: string
+          last_retry_at: string | null
           mime_type: string
           page_count: number | null
           processing_error: string | null
           processing_status: string
           project_id: string
+          retry_count: number
           storage_path: string
           summary: string | null
           user_id: string
@@ -134,11 +136,13 @@ export type Database = {
           file_size: number
           file_type: string
           id?: string
+          last_retry_at?: string | null
           mime_type: string
           page_count?: number | null
           processing_error?: string | null
           processing_status?: string
           project_id: string
+          retry_count?: number
           storage_path: string
           summary?: string | null
           user_id: string
@@ -153,11 +157,13 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          last_retry_at?: string | null
           mime_type?: string
           page_count?: number | null
           processing_error?: string | null
           processing_status?: string
           project_id?: string
+          retry_count?: number
           storage_path?: string
           summary?: string | null
           user_id?: string
