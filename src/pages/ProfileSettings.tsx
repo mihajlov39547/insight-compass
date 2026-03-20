@@ -156,7 +156,7 @@ export default function ProfileSettings() {
     setIsSavingSettings(true);
     const { error } = await supabase
       .from('user_settings')
-      .update(partial as any)
+      .update(partial)
       .eq('user_id', authUser.id);
     setIsSavingSettings(false);
     if (error) {
