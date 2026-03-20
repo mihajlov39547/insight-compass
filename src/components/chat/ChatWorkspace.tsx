@@ -3,7 +3,7 @@ import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Spark
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
-import { useCreateChat } from '@/hooks/useChats';
+import { useCreateChat, useChats } from '@/hooks/useChats';
 import { ChatInput } from './ChatInput';
 import { useApp } from '@/contexts/AppContext';
 import { useMessages } from '@/hooks/useMessages';
