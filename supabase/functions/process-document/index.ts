@@ -133,6 +133,23 @@ function extractText(bytes: Uint8Array, mimeType: string, fileName: string): str
   return new TextDecoder("utf-8", { fatal: false }).decode(bytes).slice(0, 50000);
 }
 
+function categorizeFile(fileType: string): string {
+  switch (fileType) {
+    case "pdf": return "pdf";
+    case "doc": case "docx": return "word";
+    case "xls": case "xlsx": case "csv": return "spreadsheet";
+    case "txt": return "text";
+    case "md": return "markdown";
+    case "rtf": return "rich_text";
+    default: return "other";
+  }
+}
+
+// Active processing states that should block duplicate runs
+const ACTIVE_STATES = new Set([
+  "extracting_metadata", "extracting_content", "detecting_language", "summarizing", "indexing"
+]);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -147,7 +164,6 @@ serve(async (req) => {
       });
     }
 
-    // Create service-role client for backend operations
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -166,8 +182,25 @@ serve(async (req) => {
       });
     }
 
-    // Update status: extracting metadata
-    await supabase.from("documents").update({ processing_status: "extracting_metadata" }).eq("id", documentId);
+    // Duplicate-processing guard: skip if already completed or actively processing
+    if (doc.processing_status === "completed") {
+      return new Response(JSON.stringify({ status: "already_completed", documentId }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (ACTIVE_STATES.has(doc.processing_status)) {
+      return new Response(JSON.stringify({ status: "already_processing", documentId }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Update retry tracking
+    await supabase.from("documents").update({
+      processing_status: "extracting_metadata",
+      processing_error: null,
+      retry_count: (doc.retry_count || 0) + 1,
+      last_retry_at: new Date().toISOString(),
+    }).eq("id", documentId);
 
     // Download file from storage
     const { data: fileData, error: dlErr } = await supabase.storage
@@ -187,20 +220,16 @@ serve(async (req) => {
 
     const bytes = new Uint8Array(await fileData.arrayBuffer());
 
-    // Update status: extracting content
     await supabase.from("documents").update({ processing_status: "extracting_content" }).eq("id", documentId);
-
     const extractedText = extractText(bytes, doc.mime_type, doc.file_name);
     const stats = countStats(extractedText);
 
-    // Update with metadata
     await supabase.from("documents").update({
       processing_status: "detecting_language",
       word_count: stats.word_count,
       char_count: stats.char_count,
     }).eq("id", documentId);
 
-    // Language detection
     const langResult = detectLanguage(extractedText);
 
     await supabase.from("documents").update({
@@ -223,43 +252,31 @@ serve(async (req) => {
           body: JSON.stringify({
             model: "google/gemini-2.5-flash-lite",
             messages: [
-              {
-                role: "system",
-                content: "You are a document summarizer. Produce a concise summary of 2-5 sentences. Be factual, neutral, and informative. No markdown.",
-              },
-              {
-                role: "user",
-                content: `Summarize this document titled "${doc.file_name}":\n\n${textForSummary}`,
-              },
+              { role: "system", content: "You are a document summarizer. Produce a concise summary of 2-5 sentences. Be factual, neutral, and informative. No markdown." },
+              { role: "user", content: `Summarize this document titled "${doc.file_name}":\n\n${textForSummary}` },
             ],
           }),
         });
-
         if (aiResp.ok) {
           const aiData = await aiResp.json();
           summary = aiData.choices?.[0]?.message?.content || "";
         }
       } catch (e) {
         console.warn("Summary generation failed:", e);
-        // Non-blocking - continue without summary
       }
     }
 
-    // Update status: indexing
     await supabase.from("documents").update({
       processing_status: "indexing",
       summary: summary || null,
     }).eq("id", documentId);
 
-    // Create search index
     const searchText = normalizeForSearch(extractedText, doc.file_name, summary);
-    const textPreview = extractedText.slice(0, 1000);
 
-    // Upsert document_analysis record
     await supabase.from("document_analysis").upsert({
       document_id: documentId,
       user_id: doc.user_id,
-      extracted_text: extractedText.slice(0, 500000), // cap at 500k chars
+      extracted_text: extractedText.slice(0, 500000),
       normalized_search_text: searchText.slice(0, 500000),
       metadata_json: {
         original_size: doc.file_size,
@@ -275,7 +292,6 @@ serve(async (req) => {
       indexed_at: new Date().toISOString(),
     }, { onConflict: "document_id" });
 
-    // Mark as completed
     await supabase.from("documents").update({
       processing_status: "completed",
       processing_error: null,
@@ -292,8 +308,6 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("process-document error:", e);
-
-    // Try to mark as failed
     try {
       const { documentId } = await req.clone().json();
       if (documentId) {
@@ -306,22 +320,9 @@ serve(async (req) => {
         }).eq("id", documentId);
       }
     } catch { /* ignore */ }
-
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
-
-function categorizeFile(fileType: string): string {
-  switch (fileType) {
-    case "pdf": return "pdf";
-    case "doc": case "docx": return "word";
-    case "xls": case "xlsx": case "csv": return "spreadsheet";
-    case "txt": return "text";
-    case "md": return "markdown";
-    case "rtf": return "rich_text";
-    default: return "other";
-  }
-}
