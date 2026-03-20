@@ -333,9 +333,28 @@ export function AppSidebar() {
           </Button>
         </div>
       </div>
+
+      {/* Rename Project Dialog */}
+      <Dialog open={!!renameProjectId} onOpenChange={(open) => !open && setRenameProjectId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()}
+            placeholder="Project name"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameProjectId(null)}>Cancel</Button>
+            <Button onClick={handleRenameSubmit} disabled={!renameValue.trim()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
 
 // Extracted project item with its own chats query
 function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onChatSelect }: {
