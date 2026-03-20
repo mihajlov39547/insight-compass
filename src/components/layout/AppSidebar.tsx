@@ -40,6 +40,7 @@ export function AppSidebar() {
   const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const deleteChat = useDeleteChat();
+  const updateChat = useUpdateChat();
 
   const [renameProjectId, setRenameProjectId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
