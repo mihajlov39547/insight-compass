@@ -13,7 +13,7 @@ interface UseAIChatOptions {
   projectDescription?: string;
 }
 
-export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
+export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOptions) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
