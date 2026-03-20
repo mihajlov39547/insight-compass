@@ -48,6 +48,8 @@ interface AppContextType {
   setShowSettings: (type: 'project' | 'chat' | 'prompt' | null) => void;
   showDocuments: boolean;
   setShowDocuments: (show: boolean) => void;
+  documentScope: 'project' | 'chat';
+  setDocumentScope: (scope: 'project' | 'chat') => void;
   showShare: boolean;
   setShowShare: (show: boolean) => void;
   showNewProject: boolean;
