@@ -55,6 +55,45 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          chat_id: string | null
+          created_at: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          mime_type: string
+          project_id: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          chat_id?: string | null
+          created_at?: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          mime_type: string
+          project_id: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          mime_type?: string
+          project_id?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           chat_id: string
