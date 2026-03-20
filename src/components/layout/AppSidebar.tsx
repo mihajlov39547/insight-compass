@@ -301,6 +301,8 @@ export function AppSidebar() {
               onSelect={() => handleProjectSelect(project)}
               onNewChat={(e) => handleNewChat(project.id, e)}
               onDelete={() => handleDeleteProject(project.id)}
+              onArchive={() => handleArchiveProject(project.id)}
+              onRename={() => handleRenameProject(project.id, project.name)}
               onChatSelect={handleChatSelect}
             />
           ))}
