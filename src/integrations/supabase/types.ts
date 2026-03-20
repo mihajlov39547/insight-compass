@@ -65,6 +65,7 @@ export type Database = {
           metadata_json: Json | null
           normalized_search_text: string | null
           ocr_used: boolean | null
+          search_vector: unknown
           updated_at: string
           user_id: string
         }
@@ -77,6 +78,7 @@ export type Database = {
           metadata_json?: Json | null
           normalized_search_text?: string | null
           ocr_used?: boolean | null
+          search_vector?: unknown
           updated_at?: string
           user_id: string
         }
@@ -89,6 +91,7 @@ export type Database = {
           metadata_json?: Json | null
           normalized_search_text?: string | null
           ocr_used?: boolean | null
+          search_vector?: unknown
           updated_at?: string
           user_id?: string
         }
@@ -322,7 +325,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_documents: {
+        Args: { search_query: string }
+        Returns: {
+          chat_id: string
+          document_id: string
+          file_name: string
+          processing_status: string
+          project_id: string
+          rank: number
+          snippet: string
+          summary: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
