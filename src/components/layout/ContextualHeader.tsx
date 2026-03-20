@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Plus, Search, Settings, FileText, MessageSquare, FolderOpen, Calendar, Users
+  Plus, Search, Settings, FileText, MessageSquare, FolderOpen, Calendar, Users, Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useApp } from '@/contexts/AppContext';
 import { useProjects } from '@/hooks/useProjects';
 import { useChats, useCreateChat } from '@/hooks/useChats';
+import { useDocuments } from '@/hooks/useDocuments';
 import { cn } from '@/lib/utils';
 
 export function ContextualHeader() {
   const { selectedProjectId, selectedChatId, setSelectedChatId, setShowSettings, setShowDocuments } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
+  const { data: documents = [] } = useDocuments(selectedProjectId ?? undefined);
   const createChat = useCreateChat();
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
@@ -84,7 +86,7 @@ export function ContextualHeader() {
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <MessageSquare className="h-4 w-4" />
-            <span>{chats.length} chats</span>
+            <span>{chats.length} chat{chats.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Calendar className="h-4 w-4" />
@@ -94,6 +96,19 @@ export function ContextualHeader() {
         <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowDocuments(true)}>
           <FileText className="h-4 w-4" /> Manage Documents
         </Button>
+      </div>
+
+      <div className="flex items-center gap-4 text-sm mt-1.5">
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <FileText className="h-4 w-4" />
+          <span>{documents.length} document{documents.length !== 1 ? 's' : ''}</span>
+        </div>
+        {documents.length > 0 && (
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Upload className="h-4 w-4" />
+            <span>Last upload {new Date(documents[0].created_at).toLocaleDateString()}</span>
+          </div>
+        )}
       </div>
 
       {/* Recent chats preview */}
