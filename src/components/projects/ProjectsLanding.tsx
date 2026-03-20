@@ -78,6 +78,24 @@ export function ProjectsLanding() {
   const { data: projects = [], isLoading } = useProjects();
   const { data: allChats = [] } = useChats();
 
+  const { user } = useAuth();
+
+  const { data: allDocCounts = {} } = useQuery({
+    queryKey: ['all-document-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('documents' as any)
+        .select('project_id');
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      (data || []).forEach((d: any) => {
+        counts[d.project_id] = (counts[d.project_id] || 0) + 1;
+      });
+      return counts;
+    },
+    enabled: !!user,
+  });
+
   const chatCountByProject = useMemo(() => {
     const map: Record<string, number> = {};
     allChats.forEach(c => {
