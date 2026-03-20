@@ -9,6 +9,7 @@ const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-ch
 
 interface UseAIChatOptions {
   chatId: string;
+  chatName?: string;
   projectDescription?: string;
 }
 
