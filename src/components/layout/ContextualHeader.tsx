@@ -94,11 +94,8 @@ export function ContextualHeader() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => { setDocumentScope('project'); setShowDocuments(true); }}>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => setActiveView('project-documents')}>
             <FileText className="h-4 w-4" /> Manage Documents
-          </Button>
-          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => { const { setActiveView } = useApp(); }}>
-            <FileText className="h-4 w-4" /> Documents Dashboard
           </Button>
         </div>
       </div>
