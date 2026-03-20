@@ -72,6 +72,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
   const [showSettings, setShowSettings] = useState<'project' | 'chat' | 'prompt' | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
+  const [documentScope, setDocumentScope] = useState<'project' | 'chat'>('project');
   const [showShare, setShowShare] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
