@@ -3,6 +3,7 @@ import { MessageSquarePlus, FileText, Zap, Shield } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
+import { useCreateChat } from '@/hooks/useChats';
 import { ChatInput } from './ChatInput';
 import { useApp } from '@/contexts/AppContext';
 import { useMessages } from '@/hooks/useMessages';
@@ -10,9 +11,10 @@ import { useProjects } from '@/hooks/useProjects';
 import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
 
 export function ChatWorkspace() {
-  const { selectedProjectId, selectedChatId } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedChatId } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
+  const createChat = useCreateChat();
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
@@ -38,8 +40,17 @@ export function ChatWorkspace() {
             <FeatureCard icon={<Zap className="h-5 w-5" />} title="Instant Answers" description="Get accurate responses with source citations" />
             <FeatureCard icon={<Shield className="h-5 w-5" />} title="Secure & Private" description="Your data stays within your workspace" />
           </div>
-          <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
-            <MessageSquarePlus className="h-4 w-4" /> Create New Chat
+          <Button
+            className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+            onClick={() => {
+              createChat.mutate(
+                { projectId: selectedProjectId!, name: 'New Chat', language: selectedProject!.language },
+                { onSuccess: (chat) => setSelectedChatId(chat.id) }
+              );
+            }}
+            disabled={createChat.isPending}
+          >
+            <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? 'Creating...' : 'Create New Chat'}
           </Button>
         </div>
       </div>

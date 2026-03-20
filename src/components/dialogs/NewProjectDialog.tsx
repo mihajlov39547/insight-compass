@@ -31,12 +31,17 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
   const [description, setDescription] = useState('');
   const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
   const [nameError, setNameError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim()) {
       setNameError('Project name is required');
+      return;
+    }
+    if (!description.trim()) {
+      setDescriptionError('Project description is required — it helps the AI provide better answers');
       return;
     }
     
@@ -49,6 +54,7 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
     setDescription('');
     setLanguage('en');
     setNameError('');
+    setDescriptionError('');
     onOpenChange(false);
   };
 
@@ -96,16 +102,25 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
 
           <div className="space-y-2">
             <Label htmlFor="project-description">
-              Description <span className="text-muted-foreground text-xs">(optional)</span>
+              Description <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="project-description"
-              placeholder="Describe what this project is about..."
+              placeholder="Describe what this project is about. This helps the AI agent provide more relevant and accurate answers..."
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (e.target.value.trim()) setDescriptionError('');
+              }}
               rows={3}
-              className="resize-none"
+              className={`resize-none ${descriptionError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
+            {descriptionError && (
+              <p className="text-sm text-destructive animate-fade-in">{descriptionError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              This description helps the AI understand the project context and provide better answers.
+            </p>
           </div>
 
           <div className="space-y-2">
