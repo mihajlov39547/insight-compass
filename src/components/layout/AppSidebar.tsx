@@ -32,6 +32,7 @@ export function AppSidebar() {
     sidebarCollapsed, setSidebarCollapsed, 
     selectedProjectId, setSelectedProjectId,
     selectedChatId, setSelectedChatId,
+    setActiveView,
     user, unreadCount, setShowNewProject, setShowNotifications,
   } = useApp();
 
