@@ -22,6 +22,7 @@ export function useChats(projectId: string | undefined) {
         .from('chats')
         .select('*')
         .eq('project_id', projectId!)
+        .eq('is_archived', false)
         .order('updated_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as DbChat[];
