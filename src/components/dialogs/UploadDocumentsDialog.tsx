@@ -114,7 +114,7 @@ export function UploadDocumentsDialog({
 
       if (successCount > 0) {
         toast({
-          title: `${successCount} document${successCount !== 1 ? 's' : ''} uploaded successfully`,
+          title: `${successCount} document${successCount !== 1 ? 's' : ''} added to ${context}`,
         });
       }
       if (errorCount > 0) {
