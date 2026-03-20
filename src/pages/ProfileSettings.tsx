@@ -119,7 +119,7 @@ export default function ProfileSettings() {
         location,
         website,
         banner_url: bannerUrl,
-      } as any)
+      })
       .eq('user_id', authUser.id);
     setIsSavingProfile(false);
     if (error) {
