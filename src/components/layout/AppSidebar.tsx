@@ -313,6 +313,11 @@ export function AppSidebar() {
               onDelete={() => handleDeleteProject(project.id)}
               onArchive={() => handleArchiveProject(project.id)}
               onRename={() => handleManageProject(project)}
+              onManageProjectDocs={() => {
+                setSelectedProjectId(project.id);
+                setSelectedChatId(null);
+                const { setActiveView } = require('@/contexts/AppContext');
+              }}
               onChatSelect={handleChatSelect}
               onDeleteChat={(chatId) => {
                 deleteChat.mutate({ id: chatId, projectId: project.id }, {
