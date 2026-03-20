@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Upload, Trash2, ExternalLink, Shield, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Trash2, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +38,98 @@ interface UserSettings {
   agent_action_notifications: boolean;
 }
 
+interface SavedProfileState {
+  fullName: string;
+  bio: string;
+  location: string;
+  website: string;
+  username: string;
+  avatarUrl: string;
+  bannerUrl: string;
+  phoneCountry: string;
+  phoneArea: string;
+  phoneNumber: string;
+}
+
+const emptySavedProfile: SavedProfileState = {
+  fullName: '',
+  bio: '',
+  location: '',
+  website: '',
+  username: '',
+  avatarUrl: '',
+  bannerUrl: '',
+  phoneCountry: '',
+  phoneArea: '',
+  phoneNumber: '',
+};
+
+const usernamePattern = /^[a-z0-9]+$/;
+
+function sanitizeUsername(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function sanitizeDigits(value: string, maxLength: number) {
+  return value.replace(/\D/g, '').slice(0, maxLength);
+}
+
+function sanitizePhoneNumber(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+
+  if (digits.length <= 3) return digits;
+
+  return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+}
+
+function parsePhone(phone: string | null | undefined) {
+  if (!phone) {
+    return {
+      phoneCountry: '',
+      phoneArea: '',
+      phoneNumber: '',
+    };
+  }
+
+  const [country = '', area = '', number = ''] = phone.trim().split(/\s+/);
+
+  return {
+    phoneCountry: sanitizeDigits(country, 3),
+    phoneArea: sanitizeDigits(area, 2),
+    phoneNumber: sanitizePhoneNumber(number),
+  };
+}
+
+function buildSavedProfile({
+  authUser,
+  profile,
+}: {
+  authUser: ReturnType<typeof useAuth>['user'];
+  profile: {
+    full_name: string | null;
+    bio: string | null;
+    location: string | null;
+    website: string | null;
+    username: string | null;
+    avatar_url: string | null;
+    banner_url: string | null;
+    phone: string | null;
+  } | null;
+}): SavedProfileState {
+  const phoneParts = parsePhone(profile?.phone);
+
+  return {
+    fullName: profile?.full_name || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || '',
+    bio: profile?.bio || '',
+    location: profile?.location || '',
+    website: profile?.website || '',
+    username: profile?.username || '',
+    avatarUrl: profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || '',
+    bannerUrl: profile?.banner_url || '',
+    ...phoneParts,
+  };
+}
+
 export default function ProfileSettings() {
   const navigate = useNavigate();
   const { user: authUser, profile, signOut } = useAuth();
@@ -50,8 +142,12 @@ export default function ProfileSettings() {
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState('');
+  const [phoneArea, setPhoneArea] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isProfileEditing, setIsProfileEditing] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [savedProfile, setSavedProfile] = useState<SavedProfileState>(emptySavedProfile);
 
   // Settings state
   const [settings, setSettings] = useState<UserSettings>({
@@ -70,22 +166,54 @@ export default function ProfileSettings() {
     ? fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : displayEmail?.[0]?.toUpperCase() || '?';
 
-  // Load profile data — fallback to Google metadata if profile fields are empty
-  useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || '');
-      setAvatarUrl(profile.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || '');
-      setBio(profile.bio || '');
-      setLocation(profile.location || '');
-      setWebsite(profile.website || '');
-      setUsername(profile.username || '');
-      setBannerUrl(profile.banner_url || '');
-    } else if (authUser) {
-      // No profile row yet — seed from Google metadata
-      setFullName(authUser.user_metadata?.full_name || authUser.user_metadata?.name || '');
-      setAvatarUrl(authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '');
+  const usernameValidationMessage = useMemo(() => {
+    if (!username) return 'Username is required.';
+    if (!usernamePattern.test(username)) return 'Username can only contain lowercase letters and numbers.';
+    return '';
+  }, [username]);
+
+  const applyProfileState = useCallback((nextState: SavedProfileState) => {
+    setFullName(nextState.fullName);
+    setBio(nextState.bio);
+    setLocation(nextState.location);
+    setWebsite(nextState.website);
+    setUsername(nextState.username);
+    setAvatarUrl(nextState.avatarUrl);
+    setBannerUrl(nextState.bannerUrl);
+    setPhoneCountry(nextState.phoneCountry);
+    setPhoneArea(nextState.phoneArea);
+    setPhoneNumber(nextState.phoneNumber);
+  }, []);
+
+  const loadProfile = useCallback(async () => {
+    if (!authUser) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', authUser.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      toast.error('Failed to load profile');
+      return;
     }
-  }, [profile, authUser]);
+
+    const nextState = buildSavedProfile({ authUser, profile: data ?? null });
+    setSavedProfile(nextState);
+    applyProfileState(nextState);
+  }, [applyProfileState, authUser]);
+
+  useEffect(() => {
+    if (authUser) {
+      void loadProfile();
+      return;
+    }
+
+    const nextState = buildSavedProfile({ authUser: null, profile: null });
+    setSavedProfile(nextState);
+    applyProfileState(nextState);
+  }, [applyProfileState, authUser, loadProfile, profile]);
 
   // Load settings
   useEffect(() => {
@@ -109,20 +237,20 @@ export default function ProfileSettings() {
   }, [authUser]);
 
   const handleCancelProfile = () => {
-    // Restore from profile/auth data
-    if (profile) {
-      setFullName(profile.full_name || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || '');
-      setAvatarUrl(profile.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || '');
-      setBio(profile.bio || '');
-      setLocation(profile.location || '');
-      setWebsite(profile.website || '');
-      setBannerUrl(profile.banner_url || '');
-    }
+    applyProfileState(savedProfile);
     setIsProfileEditing(false);
   };
 
   const handleSaveProfile = async () => {
     if (!authUser) return;
+
+    const formattedPhone = [phoneCountry, phoneArea, phoneNumber].filter(Boolean).join(' ');
+
+    if ((phoneCountry || phoneArea || phoneNumber) && (!phoneCountry || !phoneArea || phoneNumber.replace(/\D/g, '').length < 6)) {
+      toast.error('Enter a valid phone number in all 3 fields.');
+      return;
+    }
+
     setIsSavingProfile(true);
     const payload = {
       user_id: authUser.id,
@@ -132,6 +260,7 @@ export default function ProfileSettings() {
       website,
       banner_url: bannerUrl,
       avatar_url: avatarUrl,
+      phone: formattedPhone || null,
       email: displayEmail,
     };
     const { error } = await supabase
@@ -141,13 +270,33 @@ export default function ProfileSettings() {
     if (error) {
       toast.error('Failed to save profile');
     } else {
+      const nextState = {
+        fullName,
+        bio,
+        location,
+        website,
+        username,
+        avatarUrl,
+        bannerUrl,
+        phoneCountry,
+        phoneArea,
+        phoneNumber,
+      };
+      setSavedProfile(nextState);
       toast.success('Profile saved');
       setIsProfileEditing(false);
+      void loadProfile();
     }
   };
 
   const handleSaveUsername = async () => {
     if (!authUser) return;
+
+    if (usernameValidationMessage) {
+      toast.error(usernameValidationMessage);
+      return;
+    }
+
     setIsSavingUsername(true);
     const { error } = await supabase
       .from('profiles')
@@ -160,7 +309,9 @@ export default function ProfileSettings() {
         toast.error('Failed to update username');
       }
     } else {
+      setSavedProfile((current) => ({ ...current, username }));
       toast.success('Username updated');
+      void loadProfile();
     }
   };
 
@@ -267,6 +418,33 @@ export default function ProfileSettings() {
                   <Input value={website} onChange={e => setWebsite(e.target.value)} disabled={!isProfileEditing} placeholder="https://..." />
                 </div>
               </div>
+                <div className="space-y-2">
+                  <Label>Phone number</Label>
+                  <div className="grid grid-cols-[minmax(0,110px)_minmax(0,100px)_minmax(0,1fr)] gap-3 max-sm:grid-cols-1">
+                    <Input
+                      inputMode="numeric"
+                      placeholder="381"
+                      value={phoneCountry}
+                      onChange={e => setPhoneCountry(sanitizeDigits(e.target.value, 3))}
+                      disabled={!isProfileEditing}
+                    />
+                    <Input
+                      inputMode="numeric"
+                      placeholder="60"
+                      value={phoneArea}
+                      onChange={e => setPhoneArea(sanitizeDigits(e.target.value, 2))}
+                      disabled={!isProfileEditing}
+                    />
+                    <Input
+                      inputMode="numeric"
+                      placeholder="345-2323"
+                      value={phoneNumber}
+                      onChange={e => setPhoneNumber(sanitizePhoneNumber(e.target.value))}
+                      disabled={!isProfileEditing}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Format: 381 60 345-2323</p>
+                </div>
               <Separator />
               <div className="space-y-2">
                 <Label>Banner URL</Label>
@@ -288,11 +466,15 @@ export default function ProfileSettings() {
               <h3 className="text-sm font-semibold text-foreground">Username</h3>
               <p className="text-xs text-muted-foreground">Your public identifier and profile URL.</p>
               <div className="flex gap-2">
-                <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="username" />
+                <Input value={username} onChange={e => setUsername(sanitizeUsername(e.target.value))} placeholder="username" />
                 <Button variant="outline" size="sm" onClick={handleSaveUsername} disabled={isSavingUsername}>
                   {isSavingUsername ? 'Saving...' : 'Update'}
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">Lowercase letters and numbers only.</p>
+              {usernameValidationMessage ? (
+                <p className="text-xs text-destructive">{usernameValidationMessage}</p>
+              ) : null}
             </section>
 
             <Separator />
