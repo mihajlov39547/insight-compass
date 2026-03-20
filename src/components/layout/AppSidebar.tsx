@@ -37,7 +37,12 @@ export function AppSidebar() {
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const createChat = useCreateChat();
   const deleteProject = useDeleteProject();
+  const archiveProject = useArchiveProject();
+  const updateProject = useUpdateProject();
   const deleteChat = useDeleteChat();
+
+  const [renameProjectId, setRenameProjectId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
