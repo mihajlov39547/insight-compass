@@ -3,7 +3,7 @@ import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Spark
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
-import { useCreateChat } from '@/hooks/useChats';
+import { useCreateChat, useChats } from '@/hooks/useChats';
 import { ChatInput } from './ChatInput';
 import { useApp } from '@/contexts/AppContext';
 import { useMessages } from '@/hooks/useMessages';
@@ -21,8 +21,12 @@ export function ChatWorkspace() {
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
+  const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
+  const selectedChat = chats.find(c => c.id === selectedChatId);
+
   const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt } = useAIChat({
     chatId: selectedChatId ?? '',
+    chatName: selectedChat?.name,
     projectDescription: selectedProject?.description,
   });
 

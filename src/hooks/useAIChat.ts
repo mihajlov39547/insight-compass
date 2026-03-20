@@ -5,13 +5,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DEFAULT_MODEL_ID } from '@/data/mockData';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`;
 
 interface UseAIChatOptions {
   chatId: string;
+  chatName?: string;
   projectDescription?: string;
 }
 
-export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
+export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOptions) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -124,13 +126,41 @@ export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
         model_id: resolvedModel,
       });
 
-      // 6. Update chat timestamp
+      // 6. Auto-rename chat if still "New Chat"
+      if (chatName === 'New Chat' && fullContent) {
+        // Fire-and-forget: don't block chat flow
+        fetch(TITLE_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            userMessage: content,
+            assistantMessage: fullContent,
+          }),
+        })
+          .then(r => r.json())
+          .then(async (data) => {
+            if (data.title) {
+              await supabase
+                .from('chats')
+                .update({ name: data.title, updated_at: new Date().toISOString() })
+                .eq('id', chatId);
+              qc.invalidateQueries({ queryKey: ['chats'] });
+              qc.invalidateQueries({ queryKey: ['allChats'] });
+            }
+          })
+          .catch((e) => console.warn('Auto-rename failed:', e.message));
+      }
+
+      // 7. Update chat timestamp
       await supabase
         .from('chats')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', chatId);
 
-      // 7. Refresh queries
+      // 8. Refresh queries
       qc.invalidateQueries({ queryKey: ['messages', chatId] });
       qc.invalidateQueries({ queryKey: ['chats'] });
       qc.invalidateQueries({ queryKey: ['allChats'] });
@@ -143,7 +173,7 @@ export function useAIChat({ chatId, projectDescription }: UseAIChatOptions) {
       setIsGenerating(false);
       setStreamingContent(null);
     }
-  }, [user, chatId, isGenerating, qc, projectDescription]);
+  }, [user, chatId, chatName, isGenerating, qc, projectDescription]);
 
   const retry = useCallback(() => {
     if (failedPrompt) {
