@@ -117,12 +117,14 @@ export function AppSidebar() {
   const handleProjectSelect = (project: DbProject) => {
     setSelectedProjectId(project.id);
     setSelectedChatId(null);
+    setActiveView('default');
     if (!expandedProjects.has(project.id)) toggleProject(project.id);
   };
 
   const handleChatSelect = (chat: DbChat) => {
     setSelectedProjectId(chat.project_id);
     setSelectedChatId(chat.id);
+    setActiveView('default');
   };
 
   const handleNewChat = (projectId: string, e: React.MouseEvent) => {
