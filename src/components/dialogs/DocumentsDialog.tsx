@@ -32,6 +32,15 @@ function formatFileSize(bytes: number): string {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
+function truncateFileName(name: string, maxBase = 30): string {
+  const dotIndex = name.lastIndexOf('.');
+  if (dotIndex === -1) return name.length > maxBase ? name.slice(0, maxBase) + '…' : name;
+  const base = name.slice(0, dotIndex);
+  const ext = name.slice(dotIndex);
+  if (base.length <= maxBase) return name;
+  return base.slice(0, maxBase) + '…' + ext;
+}
+
 export function DocumentsDialog() {
   const { showDocuments, setShowDocuments, selectedProjectId, selectedChatId } = useApp();
   const { data: projects = [] } = useProjects();
@@ -96,7 +105,7 @@ export function DocumentsDialog() {
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{doc.file_name}</p>
+                          <p className="text-sm font-medium text-foreground truncate" title={doc.file_name}>{truncateFileName(doc.file_name)}</p>
                           <p className="text-xs text-muted-foreground">
                             {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
                           </p>
