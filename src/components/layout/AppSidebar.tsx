@@ -357,7 +357,7 @@ export function AppSidebar() {
   );
 
 // Extracted project item with its own chats query
-function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onChatSelect }: {
+function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect }: {
   project: DbProject;
   isExpanded: boolean;
   isSelected: boolean;
@@ -366,6 +366,8 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onSelect: () => void;
   onNewChat: (e: React.MouseEvent) => void;
   onDelete: () => void;
+  onArchive: () => void;
+  onRename: () => void;
   onChatSelect: (chat: DbChat) => void;
 }) {
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
@@ -404,10 +406,10 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>Rename project</DropdownMenuItem>
-            <DropdownMenuItem>Share project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onRename}>Rename project</DropdownMenuItem>
+            <DropdownMenuItem disabled>Share project</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Archive project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onArchive}>Archive project</DropdownMenuItem>
             <DropdownMenuItem className="text-destructive" onClick={onDelete}>Delete project</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
