@@ -355,6 +355,7 @@ export function AppSidebar() {
       </Dialog>
     </div>
   );
+}
 
 // Extracted project item with its own chats query
 function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect }: {
