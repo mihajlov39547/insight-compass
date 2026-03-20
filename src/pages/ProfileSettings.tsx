@@ -108,19 +108,35 @@ export default function ProfileSettings() {
     loadSettings();
   }, [authUser]);
 
+  const handleCancelProfile = () => {
+    // Restore from profile/auth data
+    if (profile) {
+      setFullName(profile.full_name || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || '');
+      setAvatarUrl(profile.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || '');
+      setBio(profile.bio || '');
+      setLocation(profile.location || '');
+      setWebsite(profile.website || '');
+      setBannerUrl(profile.banner_url || '');
+    }
+    setIsProfileEditing(false);
+  };
+
   const handleSaveProfile = async () => {
     if (!authUser) return;
     setIsSavingProfile(true);
+    const payload = {
+      user_id: authUser.id,
+      full_name: fullName,
+      bio,
+      location,
+      website,
+      banner_url: bannerUrl,
+      avatar_url: avatarUrl,
+      email: displayEmail,
+    };
     const { error } = await supabase
       .from('profiles')
-      .update({
-        full_name: fullName,
-        bio,
-        location,
-        website,
-        banner_url: bannerUrl,
-      })
-      .eq('user_id', authUser.id);
+      .upsert(payload, { onConflict: 'user_id' });
     setIsSavingProfile(false);
     if (error) {
       toast.error('Failed to save profile');
@@ -135,8 +151,7 @@ export default function ProfileSettings() {
     setIsSavingUsername(true);
     const { error } = await supabase
       .from('profiles')
-      .update({ username })
-      .eq('user_id', authUser.id);
+      .upsert({ user_id: authUser.id, username }, { onConflict: 'user_id' });
     setIsSavingUsername(false);
     if (error) {
       if (error.code === '23505') {
@@ -156,8 +171,7 @@ export default function ProfileSettings() {
     setIsSavingSettings(true);
     const { error } = await supabase
       .from('user_settings')
-      .update(partial)
-      .eq('user_id', authUser.id);
+      .upsert({ user_id: authUser.id, ...partial }, { onConflict: 'user_id' });
     setIsSavingSettings(false);
     if (error) {
       toast.error('Failed to save settings');
@@ -226,7 +240,7 @@ export default function ProfileSettings() {
                 </Button>
               ) : (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setIsProfileEditing(false)}>Cancel</Button>
+                  <Button variant="outline" size="sm" onClick={handleCancelProfile}>Cancel</Button>
                   <Button size="sm" onClick={handleSaveProfile} disabled={isSavingProfile}>
                     {isSavingProfile ? 'Saving...' : 'Save'}
                   </Button>
