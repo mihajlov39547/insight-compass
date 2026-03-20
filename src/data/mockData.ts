@@ -103,7 +103,7 @@ The implementation details are described in Section 3.2 of your uploaded researc
     { title: 'Technical_Specifications.docx', snippet: 'Cross-modal attention implementation...', relevance: 0.87 },
   ],
   timestamp: '2024-01-15T10:32:00Z',
-  modelId: 'default',
+  modelId: 'google/gemini-3-flash-preview',
 };
 
 const ragResponse2: Message = {
