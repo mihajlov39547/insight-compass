@@ -30,6 +30,8 @@ export function useChats(projectId: string | undefined) {
   });
 }
 
+const WELCOME_MESSAGE = `Welcome! I can help you explore and work with the information in this project. You can upload files, build a knowledge base, ask questions about your documents, and get grounded answers based on the content available here. To get started, add files to this chat or project, then ask a question, request a summary, or explore key insights.`;
+
 export function useCreateChat() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -42,11 +44,21 @@ export function useCreateChat() {
         .select()
         .single();
       if (error) throw error;
+
+      // Insert welcome assistant message
+      await supabase.from('messages').insert({
+        chat_id: data.id,
+        user_id: user!.id,
+        role: 'assistant',
+        content: WELCOME_MESSAGE,
+        sources: [],
+      });
+
       return data as DbChat;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['chats', data.project_id] });
-      // Touch parent project updated_at
+      qc.invalidateQueries({ queryKey: ['messages', data.id] });
       supabase.from('projects').update({ updated_at: new Date().toISOString() }).eq('id', data.project_id).then(() => {
         qc.invalidateQueries({ queryKey: ['projects'] });
       });
