@@ -75,10 +75,10 @@ export function DocumentsDialog() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-accent" />
-              Documents
-              {(selectedChat || selectedProject) && (
+              {isProjectScope ? 'Project Documents' : 'Chat Documents'}
+              {scopeLabel && (
                 <Badge variant="secondary" className="ml-2 font-normal">
-                  {selectedChat ? selectedChat.name : selectedProject?.name}
+                  {scopeLabel}
                 </Badge>
               )}
             </DialogTitle>
