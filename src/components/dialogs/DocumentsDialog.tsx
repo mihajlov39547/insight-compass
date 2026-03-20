@@ -139,7 +139,7 @@ export function DocumentsDialog() {
         open={showUpload}
         onOpenChange={setShowUpload}
         onUploadComplete={() => {}}
-        context={context}
+        context={isProjectScope ? 'project' : 'chat'}
       />
     </>
   );

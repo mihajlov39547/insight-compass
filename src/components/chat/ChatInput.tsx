@@ -89,7 +89,7 @@ export function ChatInput({ onSend, isGenerating }: ChatInputProps) {
             </DropdownMenu>
             <div className="h-4 w-px bg-border" />
             <Tooltip><TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowDocuments(true)}>
+              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setDocumentScope('chat'); setShowDocuments(true); }}>
                 <Paperclip className="h-4 w-4" />
               </Button>
             </TooltipTrigger><TooltipContent>Attach files</TooltipContent></Tooltip>
