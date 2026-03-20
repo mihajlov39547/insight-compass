@@ -1,5 +1,5 @@
-import React from 'react';
-import { MessageSquarePlus, FileText, Zap, Shield } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
@@ -8,15 +8,30 @@ import { ChatInput } from './ChatInput';
 import { useApp } from '@/contexts/AppContext';
 import { useMessages } from '@/hooks/useMessages';
 import { useProjects } from '@/hooks/useProjects';
+import { useAIChat } from '@/hooks/useAIChat';
 import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export function ChatWorkspace() {
   const { selectedProjectId, selectedChatId, setSelectedChatId } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
   const createChat = useCreateChat();
+  const scrollRef = useRef<HTMLDivElement>(null);
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  const { sendMessage, isGenerating, streamingContent, error, clearError } = useAIChat({
+    chatId: selectedChatId ?? '',
+    projectDescription: selectedProject?.description,
+  });
+
+  // Auto-scroll on new messages or streaming
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, streamingContent]);
 
   if (!selectedProjectId || !selectedProject) {
     return <ProjectsLanding />;
@@ -57,6 +72,11 @@ export function ChatWorkspace() {
     );
   }
 
+  const handleSend = (content: string, modelId?: string) => {
+    clearError();
+    sendMessage(content, modelId);
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <ScrollArea className="flex-1 p-4">
@@ -84,9 +104,52 @@ export function ChatWorkspace() {
               }} />
             ))
           )}
+
+          {/* Streaming assistant message */}
+          {isGenerating && streamingContent !== null && (
+            <div className="flex gap-3 animate-fade-in">
+              <Avatar className="h-8 w-8 shrink-0 bg-gradient-to-br from-accent to-accent/70">
+                <AvatarFallback className="bg-transparent text-accent-foreground">
+                  <Sparkles className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="max-w-[75%] space-y-2">
+                <div className="chat-bubble-assistant">
+                  {streamingContent ? (
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap">{streamingContent}</div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex gap-1">
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span>Thinking...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error state */}
+          {error && (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5 animate-fade-in">
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-destructive">Failed to get response</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{error}</p>
+              </div>
+              <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={clearError}>
+                <RefreshCw className="h-3 w-3" /> Dismiss
+              </Button>
+            </div>
+          )}
+
+          <div ref={scrollRef} />
         </div>
       </ScrollArea>
-      <ChatInput />
+      <ChatInput onSend={handleSend} isGenerating={isGenerating} />
     </div>
   );
 }

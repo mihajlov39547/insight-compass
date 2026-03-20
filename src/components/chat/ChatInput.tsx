@@ -6,27 +6,25 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useApp } from '@/contexts/AppContext';
 import { modelOptions } from '@/data/mockData';
-import { useSendMessage } from '@/hooks/useMessages';
 import { cn } from '@/lib/utils';
 
-export function ChatInput() {
+interface ChatInputProps {
+  onSend: (message: string, modelId?: string) => void;
+  isGenerating?: boolean;
+}
+
+export function ChatInput({ onSend, isGenerating }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [selectedModel, setSelectedModel] = useState('default');
   const { setShowSettings, setShowDocuments, selectedChatId } = useApp();
-  const sendMessage = useSendMessage();
 
   const currentModel = modelOptions.find(m => m.id === selectedModel);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && selectedChatId) {
-      sendMessage.mutate({
-        chatId: selectedChatId,
-        role: 'user',
-        content: message.trim(),
-        modelId: selectedModel,
-      });
+    if (message.trim() && selectedChatId && !isGenerating) {
+      onSend(message.trim(), selectedModel);
       setMessage('');
     }
   };
@@ -53,9 +51,10 @@ export function ChatInput() {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask a question about your documents..."
+            placeholder={isGenerating ? "Waiting for response..." : "Ask a question about your documents..."}
             className="min-h-[56px] max-h-[200px] resize-none border-0 bg-transparent pr-32 focus-visible:ring-0 focus-visible:ring-offset-0"
             rows={1}
+            disabled={isGenerating}
           />
           <div className="absolute right-2 bottom-2 flex items-center gap-1">
             <DropdownMenu>
@@ -93,13 +92,15 @@ export function ChatInput() {
                 <Settings2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger><TooltipContent>Prompt settings</TooltipContent></Tooltip>
-            <Button type="submit" size="icon" disabled={!message.trim() || sendMessage.isPending} className={cn("h-8 w-8 rounded-lg transition-all", message.trim() ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+            <Button type="submit" size="icon" disabled={!message.trim() || isGenerating} className={cn("h-8 w-8 rounded-lg transition-all", message.trim() && !isGenerating ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
         </div>
         <div className="flex items-center justify-end mt-2 px-1">
-          <span className="text-xs text-muted-foreground">Press <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> to send</span>
+          <span className="text-xs text-muted-foreground">
+            {isGenerating ? 'AI is generating a response...' : <>Press <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> to send</>}
+          </span>
         </div>
       </form>
     </div>
