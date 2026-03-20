@@ -91,15 +91,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUser(prev => ({ ...prev, plan }));
   }, []);
 
-  // Reset activeView when changing project/chat selection
+  // Reset activeView when changing project/chat selection (unless explicitly setting view)
   const setSelectedProjectId = useCallback((id: string | null) => {
     setSelectedProjectIdRaw(id);
-    setActiveView('default');
+    // Don't reset activeView here — let callers manage it explicitly
   }, []);
 
   const setSelectedChatId = useCallback((id: string | null) => {
     setSelectedChatIdRaw(id);
-    setActiveView('default');
+    // Don't reset activeView here — let callers manage it explicitly
   }, []);
 
   return (
