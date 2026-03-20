@@ -167,7 +167,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                     variant="ghost" 
                     size="icon"
                     className="text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowDocuments(true)}
+                    onClick={() => { setDocumentScope('project'); setShowDocuments(true); }}
                   >
                     <FileText className="h-4 w-4" />
                   </Button>
