@@ -126,13 +126,41 @@ export function useAIChat({ chatId, chatName, projectDescription }: UseAIChatOpt
         model_id: resolvedModel,
       });
 
-      // 6. Update chat timestamp
+      // 6. Auto-rename chat if still "New Chat"
+      if (chatName === 'New Chat' && fullContent) {
+        // Fire-and-forget: don't block chat flow
+        fetch(TITLE_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            userMessage: content,
+            assistantMessage: fullContent,
+          }),
+        })
+          .then(r => r.json())
+          .then(async (data) => {
+            if (data.title) {
+              await supabase
+                .from('chats')
+                .update({ name: data.title, updated_at: new Date().toISOString() })
+                .eq('id', chatId);
+              qc.invalidateQueries({ queryKey: ['chats'] });
+              qc.invalidateQueries({ queryKey: ['allChats'] });
+            }
+          })
+          .catch((e) => console.warn('Auto-rename failed:', e.message));
+      }
+
+      // 7. Update chat timestamp
       await supabase
         .from('chats')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', chatId);
 
-      // 7. Refresh queries
+      // 8. Refresh queries
       qc.invalidateQueries({ queryKey: ['messages', chatId] });
       qc.invalidateQueries({ queryKey: ['chats'] });
       qc.invalidateQueries({ queryKey: ['allChats'] });
