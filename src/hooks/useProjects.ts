@@ -67,14 +67,55 @@ export function useUpdateProject() {
   });
 }
 
+export function useArchiveProject() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Archive the project
+      const { error: projError } = await supabase
+        .from('projects')
+        .update({ is_archived: true })
+        .eq('id', id);
+      if (projError) throw projError;
+
+      // Archive all chats belonging to this project
+      const { error: chatError } = await supabase
+        .from('chats')
+        .update({ is_archived: true })
+        .eq('project_id', id);
+      if (chatError) throw chatError;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projects'] });
+      qc.invalidateQueries({ queryKey: ['chats'] });
+    },
+  });
+}
+
 export function useDeleteProject() {
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Delete all messages for chats in this project
+      const { data: chats } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('project_id', id);
+      
+      if (chats && chats.length > 0) {
+        const chatIds = chats.map(c => c.id);
+        await supabase.from('messages').delete().in('chat_id', chatIds);
+        await supabase.from('chats').delete().eq('project_id', id);
+      }
+
       const { error } = await supabase.from('projects').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projects'] });
+      qc.invalidateQueries({ queryKey: ['chats'] });
+    },
   });
 }

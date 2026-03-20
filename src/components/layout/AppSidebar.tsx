@@ -15,8 +15,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { useProjects, useDeleteProject, DbProject } from '@/hooks/useProjects';
+import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats, useCreateChat, useDeleteChat, DbChat } from '@/hooks/useChats';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 import { toast } from 'sonner';
 
@@ -36,7 +37,12 @@ export function AppSidebar() {
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const createChat = useCreateChat();
   const deleteProject = useDeleteProject();
+  const archiveProject = useArchiveProject();
+  const updateProject = useUpdateProject();
   const deleteChat = useDeleteChat();
+
+  const [renameProjectId, setRenameProjectId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
@@ -132,7 +138,34 @@ export function AppSidebar() {
           setSelectedProjectId(null);
           setSelectedChatId(null);
         }
-        toast.success('Project deleted');
+        toast.success('Project and all its chats deleted');
+      }
+    });
+  };
+
+  const handleArchiveProject = (projectId: string) => {
+    archiveProject.mutate(projectId, {
+      onSuccess: () => {
+        if (selectedProjectId === projectId) {
+          setSelectedProjectId(null);
+          setSelectedChatId(null);
+        }
+        toast.success('Project archived');
+      }
+    });
+  };
+
+  const handleRenameProject = (projectId: string, currentName: string) => {
+    setRenameProjectId(projectId);
+    setRenameValue(currentName);
+  };
+
+  const handleRenameSubmit = () => {
+    if (!renameProjectId || !renameValue.trim()) return;
+    updateProject.mutate({ id: renameProjectId, name: renameValue.trim() }, {
+      onSuccess: () => {
+        toast.success('Project renamed');
+        setRenameProjectId(null);
       }
     });
   };
@@ -268,6 +301,8 @@ export function AppSidebar() {
               onSelect={() => handleProjectSelect(project)}
               onNewChat={(e) => handleNewChat(project.id, e)}
               onDelete={() => handleDeleteProject(project.id)}
+              onArchive={() => handleArchiveProject(project.id)}
+              onRename={() => handleRenameProject(project.id, project.name)}
               onChatSelect={handleChatSelect}
             />
           ))}
@@ -298,12 +333,32 @@ export function AppSidebar() {
           </Button>
         </div>
       </div>
+
+      {/* Rename Project Dialog */}
+      <Dialog open={!!renameProjectId} onOpenChange={(open) => !open && setRenameProjectId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()}
+            placeholder="Project name"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameProjectId(null)}>Cancel</Button>
+            <Button onClick={handleRenameSubmit} disabled={!renameValue.trim()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 // Extracted project item with its own chats query
-function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onChatSelect }: {
+function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect }: {
   project: DbProject;
   isExpanded: boolean;
   isSelected: boolean;
@@ -312,6 +367,8 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onSelect: () => void;
   onNewChat: (e: React.MouseEvent) => void;
   onDelete: () => void;
+  onArchive: () => void;
+  onRename: () => void;
   onChatSelect: (chat: DbChat) => void;
 }) {
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
@@ -350,10 +407,10 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>Rename project</DropdownMenuItem>
-            <DropdownMenuItem>Share project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onRename}>Rename project</DropdownMenuItem>
+            <DropdownMenuItem disabled>Share project</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Archive project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onArchive}>Archive project</DropdownMenuItem>
             <DropdownMenuItem className="text-destructive" onClick={onDelete}>Delete project</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
