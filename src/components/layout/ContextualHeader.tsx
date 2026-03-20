@@ -93,7 +93,7 @@ export function ContextualHeader() {
             <span>Updated {new Date(selectedProject.updated_at).toLocaleDateString()}</span>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowDocuments(true)}>
+        <Button variant="outline" size="sm" className="gap-2" onClick={() => { setDocumentScope('project'); setShowDocuments(true); }}>
           <FileText className="h-4 w-4" /> Manage Documents
         </Button>
       </div>
