@@ -9,7 +9,11 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { useProjects } from '@/hooks/useProjects';
 import { useChats } from '@/hooks/useAllChats';
+import { useDocuments } from '@/hooks/useDocuments';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const ICONS = [
   Atom, FlaskConical, Microscope, Scale, Landmark, Scroll,
@@ -74,6 +78,24 @@ export function ProjectsLanding() {
   const { data: projects = [], isLoading } = useProjects();
   const { data: allChats = [] } = useChats();
 
+  const { user } = useAuth();
+
+  const { data: allDocCounts = {} } = useQuery({
+    queryKey: ['all-document-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('documents' as any)
+        .select('project_id');
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      (data || []).forEach((d: any) => {
+        counts[d.project_id] = (counts[d.project_id] || 0) + 1;
+      });
+      return counts;
+    },
+    enabled: !!user,
+  });
+
   const chatCountByProject = useMemo(() => {
     const map: Record<string, number> = {};
     allChats.forEach(c => {
@@ -128,6 +150,7 @@ export function ProjectsLanding() {
               const iconIdx = h % ICONS.length;
               const IconComponent = ICONS[iconIdx];
               const chatCount = chatCountByProject[project.id] || 0;
+              const docCount = allDocCounts[project.id] || 0;
 
               return (
                 <button
@@ -144,12 +167,16 @@ export function ProjectsLanding() {
                       {project.name}
                     </h3>
                   </div>
-                  <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 mt-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <MessageSquare className="h-3.5 w-3.5" />
                       <span>{chatCount}</span>
                     </div>
-                    <span>{formatLastActivity(project.updated_at)}</span>
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>{docCount}</span>
+                    </div>
+                    <span className="ml-auto">{formatLastActivity(project.updated_at)}</span>
                   </div>
                 </button>
               );
