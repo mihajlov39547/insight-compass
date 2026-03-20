@@ -469,21 +469,34 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
 
       <CollapsibleContent className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5 animate-fade-in">
         {chats.map((chat) => (
-          <button
-            key={chat.id}
-            className={cn(
-              "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
-              selectedChatId === chat.id
-                ? "bg-accent/50 text-accent-foreground font-medium"
-                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            )}
-            onClick={() => onChatSelect(chat)}
-          >
-            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedChatId === chat.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-              <MessageSquare className="h-3 w-3" />
-            </div>
-            <span className="truncate">{chat.name}</span>
-          </button>
+          <div key={chat.id} className="group/chat flex items-center">
+            <button
+              className={cn(
+                "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                selectedChatId === chat.id
+                  ? "bg-accent/50 text-accent-foreground font-medium"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+              onClick={() => onChatSelect(chat)}
+            >
+              <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedChatId === chat.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                <MessageSquare className="h-3 w-3" />
+              </div>
+              <span className="truncate">{chat.name}</span>
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover/chat:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+                  <MoreHorizontal className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={() => onRenameChat(chat.id, chat.name)}>Rename chat</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={() => onDeleteChat(chat.id)}>Delete chat</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ))}
         {chats.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No chats yet</p>}
       </CollapsibleContent>
