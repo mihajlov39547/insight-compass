@@ -20,7 +20,14 @@ export interface DbDocument {
   page_count: number | null;
   word_count: number | null;
   char_count: number | null;
+  retry_count: number;
+  last_retry_at: string | null;
 }
+
+const PROCESSING_STATES = new Set([
+  'uploaded', 'extracting_metadata', 'extracting_content',
+  'detecting_language', 'summarizing', 'indexing',
+]);
 
 export function useDocuments(projectId?: string, chatId?: string | null) {
   const { user } = useAuth();
@@ -46,6 +53,12 @@ export function useDocuments(projectId?: string, chatId?: string | null) {
       return (data || []) as unknown as DbDocument[];
     },
     enabled: !!user && !!projectId,
+    // Poll every 4s while any document is still processing
+    refetchInterval: (query) => {
+      const docs = query.state.data as DbDocument[] | undefined;
+      if (docs?.some(d => PROCESSING_STATES.has(d.processing_status))) return 4000;
+      return false;
+    },
   });
 }
 
@@ -144,6 +157,21 @@ export function useUploadDocuments() {
         throw new Error(errors.join('\n'));
       }
 
+      // Fire-and-forget: trigger processing for each uploaded doc
+      for (const doc of results) {
+        fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ documentId: doc.id }),
+          }
+        ).catch(() => { /* processing failure is tracked server-side */ });
+      }
+
       return { uploaded: results, errors };
     },
     onSuccess: (_, variables) => {
@@ -153,10 +181,10 @@ export function useUploadDocuments() {
   });
 }
 
-export function useProcessDocument() {
+export function useRetryProcessing() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (doc: DbDocument) => {
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
@@ -169,27 +197,20 @@ export function useProcessDocument() {
           body: JSON.stringify({ documentId: doc.id }),
         }
       );
-
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: 'Processing failed' }));
         throw new Error(err.error || 'Processing failed');
       }
-
       return resp.json();
     },
     onSuccess: (_, doc) => {
       queryClient.invalidateQueries({ queryKey: ['documents', doc.project_id] });
-      queryClient.invalidateQueries({ queryKey: ['document-count', doc.project_id] });
     },
   });
-}
-
-export function useRetryProcessing() {
-  const processMutation = useProcessDocument();
 
   return {
-    retry: (doc: DbDocument) => processMutation.mutate(doc),
-    isPending: processMutation.isPending,
+    retry: (doc: DbDocument) => mutation.mutate(doc),
+    isPending: mutation.isPending,
   };
 }
 

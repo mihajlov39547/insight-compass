@@ -41,12 +41,21 @@ function truncateFileName(name: string, maxBase = 30): string {
   return base.slice(0, maxBase) + '…' + ext;
 }
 
+const STAGE_LABELS: Record<string, string> = {
+  uploaded: 'Queued',
+  extracting_metadata: 'Extracting metadata',
+  extracting_content: 'Analyzing content',
+  detecting_language: 'Detecting language',
+  summarizing: 'Generating summary',
+  indexing: 'Creating search index',
+};
+
 function ProcessingBadge({ status }: { status: string }) {
   switch (status) {
     case 'completed':
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
-          <CheckCircle2 className="h-2.5 w-2.5" /> Analyzed
+          <CheckCircle2 className="h-2.5 w-2.5" /> Searchable
         </Badge>
       );
     case 'failed':
@@ -55,18 +64,14 @@ function ProcessingBadge({ status }: { status: string }) {
           <AlertCircle className="h-2.5 w-2.5" /> Failed
         </Badge>
       );
-    case 'uploaded':
-      return (
-        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1">
-          Pending
-        </Badge>
-      );
-    default:
+    default: {
+      const label = STAGE_LABELS[status] || 'Processing';
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-accent/10 text-accent border-accent/20">
-          <Loader2 className="h-2.5 w-2.5 animate-spin" /> Processing
+          <Loader2 className="h-2.5 w-2.5 animate-spin" /> {label}
         </Badge>
       );
+    }
   }
 }
 
