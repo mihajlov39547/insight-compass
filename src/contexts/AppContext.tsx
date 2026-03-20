@@ -1,16 +1,14 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import {
-  Project,
-  Chat,
+  Plan,
   currentUser,
-  mockProjects,
-  sharedProjects,
   mockNotifications,
   Notification,
   User,
-  Plan,
   Document
 } from '@/data/mockData';
+import { DbProject } from '@/hooks/useProjects';
+import { DbChat } from '@/hooks/useChats';
 
 interface AppContextType {
   // User
@@ -25,20 +23,13 @@ interface AppContextType {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
   
-  // Projects
-  projects: Project[];
-  sharedWithMeProjects: Project[];
-  selectedProject: Project | null;
-  setSelectedProject: (project: Project | null) => void;
-  addProject: (name: string, description: string, language: 'en' | 'sr-lat') => void;
+  // Projects (now IDs for selection, data from hooks)
+  selectedProjectId: string | null;
+  setSelectedProjectId: (id: string | null) => void;
   
   // Chats
-  selectedChat: Chat | null;
-  setSelectedChat: (chat: Chat | null) => void;
-  addChat: (projectId: string) => void;
-
-  // Documents
-  addDocuments: (documents: Document[], context: 'project' | 'chat' | 'all') => void;
+  selectedChatId: string | null;
+  setSelectedChatId: (id: string | null) => void;
 
   // Search
   searchQuery: string;
@@ -71,11 +62,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(currentUser);
-  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false); // Set to true to demo onboarding
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(mockProjects[0]);
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(mockProjects[0].chats[0] || null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
   const [showSettings, setShowSettings] = useState<'project' | 'chat' | 'prompt' | null>(null);
@@ -87,129 +77,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const unreadCount = mockNotifications.filter(n => !n.read).length;
 
-  const setUserPlan = (plan: Plan) => {
+  const setUserPlan = useCallback((plan: Plan) => {
     setUser(prev => ({ ...prev, plan }));
-  };
-
-  const addProject = (name: string, description: string, projectLanguage: 'en' | 'sr-lat') => {
-    const now = new Date().toISOString();
-    const newProject: Project = {
-      id: `proj-${Date.now()}`,
-      name,
-      description: description || 'No description provided.',
-      ownerId: currentUser.id,
-      sharedWith: [],
-      chats: [],
-      documents: [],
-      language: projectLanguage,
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    setProjects(prev => [newProject, ...prev]);
-    setSelectedProject(newProject);
-    setSelectedChat(null);
-  };
-
-  const addChat = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return;
-
-    const now = new Date().toISOString();
-    const chatNumber = project.chats.length + 1;
-
-    const newChat: Chat = {
-      id: `chat-${Date.now()}`,
-      name: `New Chat ${chatNumber}`,
-      projectId,
-      messages: [
-        {
-          id: `msg-${Date.now()}`,
-          role: 'assistant',
-          content: 'Welcome! You can start asking questions about your documents. Upload files to enhance the knowledge base for this chat.',
-          timestamp: now,
-        }
-      ],
-      documents: [],
-      language: project.language,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    const updatedProjects = projects.map(p => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          chats: [...p.chats, newChat],
-          updatedAt: now,
-        };
-      }
-      return p;
-    });
-
-    setProjects(updatedProjects);
-
-    const updatedProject = updatedProjects.find(p => p.id === projectId);
-    if (updatedProject) {
-      setSelectedProject(updatedProject);
-      setSelectedChat(newChat);
-    }
-  };
-
-  const addDocuments = (documents: Document[], context: 'project' | 'chat' | 'all') => {
-    const now = new Date().toISOString();
-
-    if (context === 'chat' && selectedChat && selectedProject) {
-      const updatedProjects = projects.map(p => {
-        if (p.id === selectedProject.id) {
-          return {
-            ...p,
-            chats: p.chats.map(c => {
-              if (c.id === selectedChat.id) {
-                return {
-                  ...c,
-                  documents: [...c.documents, ...documents],
-                  updatedAt: now,
-                };
-              }
-              return c;
-            }),
-            updatedAt: now,
-          };
-        }
-        return p;
-      });
-
-      setProjects(updatedProjects);
-
-      const updatedProject = updatedProjects.find(p => p.id === selectedProject.id);
-      if (updatedProject) {
-        setSelectedProject(updatedProject);
-        const updatedChat = updatedProject.chats.find(c => c.id === selectedChat.id);
-        if (updatedChat) {
-          setSelectedChat(updatedChat);
-        }
-      }
-    } else if (context === 'project' && selectedProject) {
-      const updatedProjects = projects.map(p => {
-        if (p.id === selectedProject.id) {
-          return {
-            ...p,
-            documents: [...p.documents, ...documents],
-            updatedAt: now,
-          };
-        }
-        return p;
-      });
-
-      setProjects(updatedProjects);
-
-      const updatedProject = updatedProjects.find(p => p.id === selectedProject.id);
-      if (updatedProject) {
-        setSelectedProject(updatedProject);
-      }
-    }
-  };
+  }, []);
 
   return (
     <AppContext.Provider
@@ -220,15 +90,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIsFirstTimeUser,
         sidebarCollapsed,
         setSidebarCollapsed,
-        projects,
-        sharedWithMeProjects: sharedProjects,
-        selectedProject,
-        setSelectedProject,
-        addProject,
-        selectedChat,
-        setSelectedChat,
-        addChat,
-        addDocuments,
+        selectedProjectId,
+        setSelectedProjectId,
+        selectedChatId,
+        setSelectedChatId,
         searchQuery,
         setSearchQuery,
         language,
