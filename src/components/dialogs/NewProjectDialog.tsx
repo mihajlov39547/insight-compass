@@ -40,6 +40,10 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
       setNameError('Project name is required');
       return;
     }
+    if (!description.trim()) {
+      setDescriptionError('Project description is required — it helps the AI provide better answers');
+      return;
+    }
     
     onCreateProject(name.trim(), description.trim(), language);
     handleClose();
