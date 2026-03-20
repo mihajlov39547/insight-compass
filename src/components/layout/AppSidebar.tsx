@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   ChevronLeft, ChevronRight, Plus, Search, Users, MessageSquare, FolderOpen,
   MoreHorizontal, Bell, ChevronDown, ChevronUp, Sparkles, Crown, Zap, Building2,
-  ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp
+  ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
