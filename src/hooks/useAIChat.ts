@@ -277,7 +277,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         user_id: user.id,
         role: 'assistant',
         content: fullContent,
-        sources: sources.length > 0 ? sources : [],
+        sources: (sources.length > 0 ? sources : []) as any,
         model_id: resolvedModel,
       });
 
