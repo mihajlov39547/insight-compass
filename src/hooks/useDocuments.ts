@@ -13,6 +13,13 @@ export interface DbDocument {
   file_size: number;
   storage_path: string;
   created_at: string;
+  processing_status: string;
+  processing_error: string | null;
+  detected_language: string | null;
+  summary: string | null;
+  page_count: number | null;
+  word_count: number | null;
+  char_count: number | null;
 }
 
 export function useDocuments(projectId?: string, chatId?: string | null) {
@@ -29,13 +36,10 @@ export function useDocuments(projectId?: string, chatId?: string | null) {
         .order('created_at', { ascending: false });
 
       if (chatId) {
-        // Chat-scoped: only docs attached to this chat
         query = query.eq('chat_id', chatId);
       } else if (chatId === null) {
-        // Project-scoped: only docs with no chat association
         query = query.is('chat_id', null);
       }
-      // chatId === undefined: return all docs for the project (both scopes)
 
       const { data, error } = await query;
       if (error) throw error;
@@ -103,7 +107,6 @@ export function useUploadDocuments() {
         const ext = file.name.split('.').pop()?.toLowerCase() || '';
         const storagePath = `${user.id}/${projectId}/${crypto.randomUUID()}.${ext}`;
 
-        // Upload to storage
         const { error: uploadError } = await supabase.storage
           .from('insight-navigator')
           .upload(storagePath, file);
@@ -113,7 +116,6 @@ export function useUploadDocuments() {
           continue;
         }
 
-        // Create DB record
         const { data, error: dbError } = await supabase
           .from('documents' as any)
           .insert({
@@ -125,6 +127,7 @@ export function useUploadDocuments() {
             mime_type: file.type || 'application/octet-stream',
             file_size: file.size,
             storage_path: storagePath,
+            processing_status: 'uploaded',
           })
           .select()
           .single();
@@ -150,17 +153,55 @@ export function useUploadDocuments() {
   });
 }
 
+export function useProcessDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (doc: DbDocument) => {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ documentId: doc.id }),
+        }
+      );
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Processing failed' }));
+        throw new Error(err.error || 'Processing failed');
+      }
+
+      return resp.json();
+    },
+    onSuccess: (_, doc) => {
+      queryClient.invalidateQueries({ queryKey: ['documents', doc.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['document-count', doc.project_id] });
+    },
+  });
+}
+
+export function useRetryProcessing() {
+  const processMutation = useProcessDocument();
+
+  return {
+    retry: (doc: DbDocument) => processMutation.mutate(doc),
+    isPending: processMutation.isPending,
+  };
+}
+
 export function useDeleteDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (doc: DbDocument) => {
-      // Delete from storage
       await supabase.storage
         .from('insight-navigator')
         .remove([doc.storage_path]);
 
-      // Delete DB record
       const { error } = await supabase
         .from('documents' as any)
         .delete()
