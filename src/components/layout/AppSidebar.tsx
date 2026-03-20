@@ -495,7 +495,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={onRename}>Rename project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onRename}>Manage project</DropdownMenuItem>
             <DropdownMenuItem disabled>Share project</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onArchive}>Archive project</DropdownMenuItem>
