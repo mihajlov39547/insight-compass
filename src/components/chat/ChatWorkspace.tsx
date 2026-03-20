@@ -21,8 +21,12 @@ export function ChatWorkspace() {
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
+  const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
+  const selectedChat = chats.find(c => c.id === selectedChatId);
+
   const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt } = useAIChat({
     chatId: selectedChatId ?? '',
+    chatName: selectedChat?.name,
     projectDescription: selectedProject?.description,
   });
 
