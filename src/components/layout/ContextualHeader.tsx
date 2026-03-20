@@ -13,7 +13,7 @@ import { useDocuments } from '@/hooks/useDocuments';
 import { cn } from '@/lib/utils';
 
 export function ContextualHeader() {
-  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowSettings, setShowDocuments, setDocumentScope } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowSettings, setShowDocuments, setDocumentScope, setActiveView } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: documents = [] } = useDocuments(selectedProjectId ?? undefined, undefined);
