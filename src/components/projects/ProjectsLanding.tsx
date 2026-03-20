@@ -150,6 +150,7 @@ export function ProjectsLanding() {
               const iconIdx = h % ICONS.length;
               const IconComponent = ICONS[iconIdx];
               const chatCount = chatCountByProject[project.id] || 0;
+              const docCount = allDocCounts[project.id] || 0;
 
               return (
                 <button
