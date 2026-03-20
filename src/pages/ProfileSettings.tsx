@@ -267,21 +267,17 @@ export default function ProfileSettings() {
                   <Input value={website} onChange={e => setWebsite(e.target.value)} disabled={!isProfileEditing} placeholder="https://..." />
                 </div>
               </div>
-              {isProfileEditing && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <Label>Banner URL</Label>
-                    <Input value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} placeholder="https://..." />
-                    <p className="text-xs text-muted-foreground">Direct link to a banner image</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Avatar URL</Label>
-                    <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="Managed by Google — or paste a URL" />
-                    <p className="text-xs text-muted-foreground">Your Google profile picture is used by default</p>
-                  </div>
-                </>
-              )}
+              <Separator />
+              <div className="space-y-2">
+                <Label>Banner URL</Label>
+                <Input value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} disabled={!isProfileEditing} placeholder="https://..." />
+                <p className="text-xs text-muted-foreground">Direct link to a banner image</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Avatar URL</Label>
+                <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} disabled={!isProfileEditing} placeholder="Managed by Google — or paste a URL" />
+                <p className="text-xs text-muted-foreground">Your Google profile picture is used by default</p>
+              </div>
             </div>
           </TabsContent>
 
