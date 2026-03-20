@@ -76,6 +76,15 @@ export function AppSidebar() {
     setShowNotifications,
   } = useApp();
 
+  const { user: authUser, profile } = useAuth();
+
+  const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
+  const displayEmail = profile?.email || authUser?.email || '';
+  const avatarUrl = profile?.avatar_url || authUser?.user_metadata?.avatar_url || '';
+  const initials = displayName
+    ? displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : displayEmail?.[0]?.toUpperCase() || '?';
+
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set([selectedProject?.id || ''])
   );
