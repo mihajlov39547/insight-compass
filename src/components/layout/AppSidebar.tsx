@@ -37,9 +37,10 @@ import {
   CollapsibleTrigger 
 } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Project, Chat } from '@/data/mockData';
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
