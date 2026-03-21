@@ -223,6 +223,7 @@ export type Database = {
           id: string
           location: string | null
           phone: string | null
+          plan: string
           updated_at: string
           user_id: string
           username: string | null
@@ -238,6 +239,7 @@ export type Database = {
           id?: string
           location?: string | null
           phone?: string | null
+          plan?: string
           updated_at?: string
           user_id: string
           username?: string | null
@@ -253,6 +255,7 @@ export type Database = {
           id?: string
           location?: string | null
           phone?: string | null
+          plan?: string
           updated_at?: string
           user_id?: string
           username?: string | null
