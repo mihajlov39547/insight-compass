@@ -43,12 +43,13 @@ function AppContent() {
     setShowPricing,
     showNotifications,
     setShowNotifications,
-    user: appUser,
     setUserPlan,
     sidebarCollapsed
   } = useApp();
 
-  const { user: authUser, loading } = useAuth();
+  const { user: authUser, profile, loading } = useAuth();
+  const createProject = useCreateProject();
+  const currentPlan = (profile?.plan || 'free') as import('@/data/mockData').Plan;
   const createProject = useCreateProject();
 
   const handleCreateProject = async (name: string, description: string, language: 'en' | 'sr-lat') => {
