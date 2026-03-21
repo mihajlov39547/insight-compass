@@ -230,11 +230,11 @@ export function AppSidebar() {
         <div className="flex flex-col items-center gap-3 mb-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `plan-badge-${user.plan}`)}>
+              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `plan-badge-${currentPlan}`)}>
                 <PlanIcon className="h-4 w-4" />
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right">{planLabels[user.plan]} Plan</TooltipContent>
+            <TooltipContent side="right">{planLabels[currentPlan]} Plan</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
