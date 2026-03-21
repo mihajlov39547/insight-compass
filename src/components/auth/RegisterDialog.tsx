@@ -1,0 +1,133 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+
+interface RegisterDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSwitchToSignIn: () => void;
+}
+
+export function RegisterDialog({ open, onOpenChange, onSwitchToSignIn }: RegisterDialogProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirm?: string }>({});
+
+  const validate = () => {
+    const newErrors: typeof errors = {};
+    if (!email.trim()) newErrors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Invalid email address';
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (password !== confirmPassword) newErrors.confirm = 'Passwords do not match';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      if (data.user) {
+        toast.success('Account created successfully!');
+        onOpenChange(false);
+        resetForm();
+      }
+    } catch (err) {
+      toast.error('Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setErrors({});
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetForm(); }}>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle className="text-xl">Create an account</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-2">
+            <Label htmlFor="reg-email">Email</Label>
+            <Input
+              id="reg-email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+            />
+            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="reg-password">Password</Label>
+            <Input
+              id="reg-password"
+              type="password"
+              placeholder="At least 6 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+            {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="reg-confirm">Repeat password</Label>
+            <Input
+              id="reg-confirm"
+              type="password"
+              placeholder="Repeat your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+            {errors.confirm && <p className="text-sm text-destructive">{errors.confirm}</p>}
+          </div>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Create account
+          </Button>
+          <p className="text-sm text-center text-muted-foreground">
+            Already have an account?{' '}
+            <button
+              type="button"
+              className="text-primary hover:underline font-medium"
+              onClick={() => { onOpenChange(false); resetForm(); onSwitchToSignIn(); }}
+            >
+              Sign in
+            </button>
+          </p>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
