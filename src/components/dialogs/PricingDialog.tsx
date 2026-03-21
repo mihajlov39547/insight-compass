@@ -26,7 +26,7 @@ const plans = [
     price: '$0',
     period: 'forever',
     description: 'Perfect for getting started',
-    icon: Zap,
+    icon: planIcons.free,
     features: [
       'Up to 3 projects',
       '10 document uploads',
