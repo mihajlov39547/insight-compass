@@ -114,32 +114,8 @@ export function ContextualHeader() {
         )}
       </div>
 
-      {/* Recent chats preview */}
-      {chats.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-border">
-          <h3 className="text-sm font-medium text-foreground mb-2">Recent Chats</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {chats.slice(0, 3).map((chat) => (
-              <button
-                key={chat.id}
-                className="p-3 rounded-lg border border-border bg-card hover:bg-secondary/50 text-left transition-colors hover-lift"
-                onClick={() => setSelectedChatId(chat.id)}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <MessageSquare className="h-3.5 w-3.5 text-accent" />
-                  <span className="font-medium text-sm text-foreground truncate">{chat.name}</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {new Date(chat.updated_at).toLocaleDateString()}
-                </p>
-              </button>
-            ))}
-          </div>
-          {chats.length > 3 && (
-            <p className="mt-3 text-sm text-accent">View all {chats.length} chats →</p>
-          )}
-        </div>
-      )}
+      {/* Chat grid */}
+      {chats.length > 0 && <ProjectChatGrid chats={chats} />}
     </div>
   );
 }
