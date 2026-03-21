@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RegisterDialog } from '@/components/auth/RegisterDialog';
-import { SignInDialog } from '@/components/auth/SignInDialog';
+import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Share2, 
   Settings, 
@@ -64,8 +63,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
   const { user: authUser, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [showSignIn, setShowSignIn] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   const PlanIcon = planIcons[appUser.plan];
 
@@ -130,10 +128,8 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
               </svg>
               {isGoogleLoading ? '...' : 'Google'}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowSignIn(true)}>Sign in</Button>
-            <Button variant="secondary" size="sm" onClick={() => setShowRegister(true)}>Register</Button>
-            <RegisterDialog open={showRegister} onOpenChange={setShowRegister} onSwitchToSignIn={() => setShowSignIn(true)} />
-            <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} onSwitchToRegister={() => setShowRegister(true)} />
+            <Button variant="outline" size="sm" onClick={() => setShowAuth(true)}>Sign in</Button>
+            <AuthDialog open={showAuth} onOpenChange={setShowAuth} />
           </>
         )}
 
