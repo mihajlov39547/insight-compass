@@ -34,7 +34,7 @@ export function AppSidebar() {
     selectedProjectId, setSelectedProjectId,
     selectedChatId, setSelectedChatId,
     setActiveView,
-    user, unreadCount, setShowNewProject, setShowNotifications,
+    unreadCount, setShowNewProject, setShowNotifications,
   } = useApp();
 
   const { user: authUser, profile } = useAuth();
@@ -186,7 +186,8 @@ export function AppSidebar() {
 
   const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
 
-  const PlanIcon = planIcons[user.plan];
+  const currentPlan = ((profile?.plan as keyof typeof planIcons) || 'free') as keyof typeof planIcons;
+  const PlanIcon = planIcons[currentPlan];
 
   if (sidebarCollapsed) {
     return (
@@ -229,11 +230,11 @@ export function AppSidebar() {
         <div className="flex flex-col items-center gap-3 mb-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `plan-badge-${user.plan}`)}>
+              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `plan-badge-${currentPlan}`)}>
                 <PlanIcon className="h-4 w-4" />
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right">{planLabels[user.plan]} Plan</TooltipContent>
+            <TooltipContent side="right">{planLabels[currentPlan]} Plan</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -337,11 +338,11 @@ export function AppSidebar() {
 
       {/* Bottom Section */}
       <div className="p-3 border-t border-sidebar-border space-y-3">
-        <div className={cn("rounded-lg p-3 flex items-center gap-3", `plan-badge-${user.plan}`)}>
+        <div className={cn("rounded-lg p-3 flex items-center gap-3", `plan-badge-${currentPlan}`)}>
           <PlanIcon className="h-5 w-5" />
           <div className="flex-1">
-            <p className="text-sm font-medium">{planLabels[user.plan]} Plan</p>
-            {user.plan !== 'enterprise' && <p className="text-xs opacity-80">Upgrade for more features</p>}
+            <p className="text-sm font-medium">{planLabels[currentPlan]} Plan</p>
+            {currentPlan !== 'enterprise' && <p className="text-xs opacity-80">Upgrade for more features</p>}
           </div>
         </div>
         <div className="flex items-center gap-3">

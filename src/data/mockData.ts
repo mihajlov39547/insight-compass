@@ -71,7 +71,7 @@ export const currentUser: User = {
   name: '',
   email: '',
   initials: '',
-  plan: 'premium',
+  plan: 'free',
 };
 
 // Mock documents

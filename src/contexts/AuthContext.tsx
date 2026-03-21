@@ -14,6 +14,7 @@ interface Profile {
   website: string | null;
   username: string | null;
   banner_url: string | null;
+  plan: string;
 }
 
 interface AuthContextType {
