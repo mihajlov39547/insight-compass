@@ -128,10 +128,8 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
               </svg>
               {isGoogleLoading ? '...' : 'Google'}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowSignIn(true)}>Sign in</Button>
-            <Button variant="secondary" size="sm" onClick={() => setShowRegister(true)}>Register</Button>
-            <RegisterDialog open={showRegister} onOpenChange={setShowRegister} onSwitchToSignIn={() => setShowSignIn(true)} />
-            <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} onSwitchToRegister={() => setShowRegister(true)} />
+            <Button variant="outline" size="sm" onClick={() => setShowAuth(true)}>Sign in</Button>
+            <AuthDialog open={showAuth} onOpenChange={setShowAuth} />
           </>
         )}
 
