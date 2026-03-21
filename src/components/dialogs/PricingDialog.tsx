@@ -59,7 +59,7 @@ const plans = [
     price: '$49',
     period: 'per month',
     description: 'For growing teams',
-    icon: Crown,
+    icon: planIcons.premium,
     features: [
       'Unlimited projects',
       '500 document uploads',
