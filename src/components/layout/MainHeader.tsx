@@ -64,6 +64,8 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
   const { user: authUser, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   const PlanIcon = planIcons[appUser.plan];
 
