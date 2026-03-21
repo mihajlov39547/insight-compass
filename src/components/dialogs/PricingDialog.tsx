@@ -42,7 +42,7 @@ const plans = [
     price: '$19',
     period: 'per month',
     description: 'For individuals and small teams',
-    icon: Rocket,
+    icon: planIcons.basic,
     features: [
       'Up to 10 projects',
       '100 document uploads',
