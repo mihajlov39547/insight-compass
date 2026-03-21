@@ -512,14 +512,22 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={onRename}>Manage project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onRename}>
+              <Settings className="h-3.5 w-3.5 mr-2" /> Manage project
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleManageProjectDocs}>
               <FileText className="h-3.5 w-3.5 mr-2" /> Manage documents
             </DropdownMenuItem>
-            <DropdownMenuItem disabled>Share project</DropdownMenuItem>
+            <DropdownMenuItem disabled>
+              <Share2 className="h-3.5 w-3.5 mr-2" /> Share project
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onArchive}>Archive project</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onClick={onDelete}>Delete project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onArchive}>
+              <Archive className="h-3.5 w-3.5 mr-2" /> Archive project
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={onDelete}>
+              <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete project
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
