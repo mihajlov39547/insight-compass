@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   ChevronLeft, ChevronRight, Plus, Search, Users, MessageSquare, FolderOpen,
-  MoreHorizontal, Bell, ChevronDown, ChevronUp, Sparkles, Crown, Zap, Building2,
+  MoreHorizontal, Bell, ChevronDown, ChevronUp,
   ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText,
   Settings, Share2, Archive, Trash2, Pencil
 } from 'lucide-react';
