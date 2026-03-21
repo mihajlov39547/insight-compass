@@ -331,6 +331,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_email_by_username: {
+        Args: { lookup_username: string }
+        Returns: string
+      }
       search_documents: {
         Args: { search_query: string }
         Returns: {
