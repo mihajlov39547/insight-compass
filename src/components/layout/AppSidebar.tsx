@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   ChevronLeft, ChevronRight, Plus, Search, Users, MessageSquare, FolderOpen,
   MoreHorizontal, Bell, ChevronDown, ChevronUp, Sparkles, Crown, Zap, Building2,
-  ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText
+  ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText,
+  Settings, Share2, Archive, Trash2, Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -511,14 +512,22 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={onRename}>Manage project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onRename}>
+              <Settings className="h-3.5 w-3.5 mr-2" /> Manage project
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleManageProjectDocs}>
               <FileText className="h-3.5 w-3.5 mr-2" /> Manage documents
             </DropdownMenuItem>
-            <DropdownMenuItem disabled>Share project</DropdownMenuItem>
+            <DropdownMenuItem disabled>
+              <Share2 className="h-3.5 w-3.5 mr-2" /> Share project
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onArchive}>Archive project</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onClick={onDelete}>Delete project</DropdownMenuItem>
+            <DropdownMenuItem onClick={onArchive}>
+              <Archive className="h-3.5 w-3.5 mr-2" /> Archive project
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={onDelete}>
+              <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete project
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -547,12 +556,16 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => onRenameChat(chat.id, chat.name)}>Rename chat</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onRenameChat(chat.id, chat.name)}>
+                  <Pencil className="h-3.5 w-3.5 mr-2" /> Rename chat
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleManageChatDocs(chat)}>
                   <FileText className="h-3.5 w-3.5 mr-2" /> Manage documents
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive" onClick={() => onDeleteChat(chat.id)}>Delete chat</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => onDeleteChat(chat.id)}>
+                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete chat
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
