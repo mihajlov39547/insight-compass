@@ -34,7 +34,7 @@ export function AppSidebar() {
     selectedProjectId, setSelectedProjectId,
     selectedChatId, setSelectedChatId,
     setActiveView,
-    user, unreadCount, setShowNewProject, setShowNotifications,
+    unreadCount, setShowNewProject, setShowNotifications,
   } = useApp();
 
   const { user: authUser, profile } = useAuth();
