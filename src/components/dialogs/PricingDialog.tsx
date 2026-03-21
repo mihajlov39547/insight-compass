@@ -77,7 +77,7 @@ const plans = [
     price: 'Custom',
     period: 'contact us',
     description: 'For large organizations',
-    icon: Building2,
+    icon: planIcons.enterprise,
     features: [
       'Everything in Premium',
       'Unlimited documents',

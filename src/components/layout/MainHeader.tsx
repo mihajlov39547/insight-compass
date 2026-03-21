@@ -6,9 +6,6 @@ import {
   Settings, 
   ChevronDown,
   Sparkles,
-  Crown,
-  Zap,
-  Building2,
   Globe,
   FileText,
   LogOut
