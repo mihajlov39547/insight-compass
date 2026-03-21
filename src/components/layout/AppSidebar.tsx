@@ -25,8 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 import { toast } from 'sonner';
 
-const planIcons = { free: Sparkles, basic: Zap, premium: Crown, enterprise: Building2 };
-const planLabels = { free: 'Free', basic: 'Basic', premium: 'Premium', enterprise: 'Enterprise' };
+import { planIcons, planLabels } from '@/lib/planConfig';
 
 export function AppSidebar() {
   const { 
