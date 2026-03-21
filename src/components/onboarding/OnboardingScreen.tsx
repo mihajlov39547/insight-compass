@@ -44,8 +44,7 @@ const features = [
 
 export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScreenProps) {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [showSignIn, setShowSignIn] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
