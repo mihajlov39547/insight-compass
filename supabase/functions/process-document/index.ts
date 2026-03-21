@@ -1,162 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import pako from "https://esm.sh/pako@2.1.0";
+import { extractText as extractPdfText } from "https://esm.sh/unpdf@0.12.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-// ─── PDF Text Extraction ───────────────────────────────────────────────
-
-function extractPdfText(bytes: Uint8Array): { text: string; method: string } {
-  const raw = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-
-  // Method 1: Decompress FlateDecode streams and extract text operators
-  const decompressedText = extractFromCompressedStreams(bytes, raw);
-  if (decompressedText && assessTextQuality(decompressedText).readable) {
-    return { text: decompressedText, method: "flatedecode_decompress" };
-  }
-
-  // Method 2: Direct text operator extraction (uncompressed PDFs)
-  const directText = extractTextOperators(raw);
-  if (directText && assessTextQuality(directText).readable) {
-    return { text: directText, method: "direct_text_operators" };
-  }
-
-  // Method 3: Extract from ToUnicode CMaps + text operators
-  const cmapText = extractWithCMap(raw);
-  if (cmapText && assessTextQuality(cmapText).readable) {
-    return { text: cmapText, method: "cmap_extraction" };
-  }
-
-  // No usable text found
-  return { text: "", method: "none" };
-}
-
-function extractFromCompressedStreams(bytes: Uint8Array, raw: string): string {
-  const textParts: string[] = [];
-
-  try {
-    // Find all stream positions in the raw bytes
-    const streamMarker = new TextEncoder().encode("stream");
-    const endstreamMarker = new TextEncoder().encode("endstream");
-
-    let searchPos = 0;
-    while (searchPos < bytes.length - 20) {
-      // Find "stream" marker
-      const streamIdx = findBytes(bytes, streamMarker, searchPos);
-      if (streamIdx === -1) break;
-
-      // Skip past "stream\r\n" or "stream\n"
-      let dataStart = streamIdx + 6;
-      if (bytes[dataStart] === 0x0d && bytes[dataStart + 1] === 0x0a) {
-        dataStart += 2;
-      } else if (bytes[dataStart] === 0x0a) {
-        dataStart += 1;
-      } else if (bytes[dataStart] === 0x0d) {
-        dataStart += 1;
-      }
-
-      // Find "endstream"
-      const endIdx = findBytes(bytes, endstreamMarker, dataStart);
-      if (endIdx === -1) {
-        searchPos = dataStart;
-        continue;
-      }
-
-      // Check if this stream uses FlateDecode by looking at the object header before "stream"
-      const headerStart = Math.max(0, streamIdx - 500);
-      const header = raw.substring(headerStart, streamIdx);
-      const isFlateDecode = /\/Filter\s*\/FlateDecode/.test(header) ||
-        /\/Filter\s*\[?\s*\/FlateDecode/.test(header);
-
-      if (isFlateDecode) {
-        const streamData = bytes.slice(dataStart, endIdx);
-        try {
-          const decompressed = pako.inflate(streamData);
-          const text = new TextDecoder("utf-8", { fatal: false }).decode(decompressed);
-
-          // Extract text operators from decompressed content
-          const extracted = extractTextOperators(text);
-          if (extracted.trim()) {
-            textParts.push(extracted);
-          }
-        } catch {
-          // Decompression failed for this stream, skip
-        }
-      }
-
-      searchPos = endIdx + 9;
-    }
-  } catch {
-    // Fallback silently
-  }
-
-  return textParts.join("\n").trim();
-}
-
-function findBytes(haystack: Uint8Array, needle: Uint8Array, start: number): number {
-  outer: for (let i = start; i <= haystack.length - needle.length; i++) {
-    for (let j = 0; j < needle.length; j++) {
-      if (haystack[i + j] !== needle[j]) continue outer;
-    }
-    return i;
-  }
-  return -1;
-}
-
-function extractTextOperators(content: string): string {
-  const parts: string[] = [];
-
-  // Extract text from Tj operator: (text) Tj
-  const tjMatches = content.matchAll(/\(([^)]*(?:\\\)[^)]*)*)\)\s*Tj/g);
-  for (const m of tjMatches) {
-    parts.push(decodePdfString(m[1]));
-  }
-
-  // Extract text from TJ operator (array of strings): [(text) 123 (text)] TJ
-  const tjArrayMatches = content.matchAll(/\[((?:\([^)]*(?:\\\)[^)]*)*\)\s*[-\d.]*\s*)*)\]\s*TJ/gi);
-  for (const m of tjArrayMatches) {
-    const innerMatches = m[1].matchAll(/\(([^)]*(?:\\\)[^)]*)*)\)/g);
-    const innerParts: string[] = [];
-    for (const im of innerMatches) {
-      innerParts.push(decodePdfString(im[1]));
-    }
-    parts.push(innerParts.join(""));
-  }
-
-  // Extract text from Td/TD operators that indicate new lines
-  // Add newlines where we see significant vertical movement
-  let result = parts.join(" ");
-
-  // Clean up excessive spaces
-  result = result.replace(/\s{3,}/g, "\n").replace(/\n{3,}/g, "\n\n");
-
-  return result.trim();
-}
-
-function extractWithCMap(raw: string): string {
-  // Simple fallback: extract anything that looks like readable text between BT/ET blocks
-  const btBlocks = raw.matchAll(/BT\s*([\s\S]*?)\s*ET/g);
-  const parts: string[] = [];
-  for (const block of btBlocks) {
-    const blockText = extractTextOperators(block[1]);
-    if (blockText) parts.push(blockText);
-  }
-  return parts.join("\n").trim();
-}
-
-function decodePdfString(s: string): string {
-  return s
-    .replace(/\\n/g, "\n")
-    .replace(/\\r/g, "\r")
-    .replace(/\\t/g, "\t")
-    .replace(/\\\(/g, "(")
-    .replace(/\\\)/g, ")")
-    .replace(/\\\\/g, "\\");
-}
 
 // ─── Text Quality Assessment ───────────────────────────────────────────
 
@@ -177,16 +27,13 @@ function assessTextQuality(text: string): TextQuality {
   const sample = text.slice(0, 10000);
   const totalChars = sample.length;
 
-  // Count readable characters (letters, digits, common punctuation, spaces)
   const readableChars = (sample.match(/[a-zA-Z0-9\s.,;:!?'"()\-–—\/\u00C0-\u024F\u0400-\u04FF\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\u0600-\u06FF]/g) || []).length;
   const readableCharRatio = readableChars / totalChars;
 
-  // Count PDF syntax tokens
   const pdfSyntaxTokens = (sample.match(/\b(obj|endobj|stream|endstream|FlateDecode|xref|trailer|startxref|\/Type|\/Font|\/Page|\/Length|\/Filter)\b/gi) || []).length;
   const words = sample.split(/\s+/).filter(Boolean);
   const pdfSyntaxRatio = words.length > 0 ? pdfSyntaxTokens / words.length : 1;
 
-  // Count actual words (3+ letter sequences)
   const realWords = (sample.match(/[a-zA-Z\u00C0-\u024F\u0400-\u04FF]{3,}/g) || []).length;
 
   let score = 0;
@@ -263,7 +110,7 @@ function normalizeForSearch(text: string, fileName: string, summary?: string): s
   return parts.join(" ").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function extractText(bytes: Uint8Array, mimeType: string, fileName: string): { text: string; method: string; quality: TextQuality } {
+async function extractText(bytes: Uint8Array, mimeType: string, fileName: string): Promise<{ text: string; method: string; quality: TextQuality }> {
   const ext = fileName.split(".").pop()?.toLowerCase() || "";
 
   // Plain text formats
@@ -272,10 +119,21 @@ function extractText(bytes: Uint8Array, mimeType: string, fileName: string): { t
     return { text, method: "plaintext", quality: assessTextQuality(text) };
   }
 
-  // PDF
+  // PDF — use unpdf library for proper extraction
   if (ext === "pdf" || mimeType === "application/pdf") {
-    const result = extractPdfText(bytes);
-    return { text: result.text, method: result.method, quality: assessTextQuality(result.text) };
+    try {
+      const result = await extractPdfText(bytes, { mergePages: true });
+      const text = result.text || "";
+      const quality = assessTextQuality(text);
+      if (quality.readable) {
+        return { text, method: "unpdf", quality };
+      }
+      // If unpdf returned low-quality text, still return it but mark quality
+      return { text, method: "unpdf_low_quality", quality };
+    } catch (e) {
+      console.warn("unpdf extraction failed:", e);
+      return { text: "", method: "unpdf_error", quality: assessTextQuality("") };
+    }
   }
 
   // DOCX
@@ -383,7 +241,7 @@ serve(async (req) => {
 
     // Extract content
     await supabase.from("documents").update({ processing_status: "extracting_content" }).eq("id", documentId);
-    const extraction = extractText(bytes, doc.mime_type, doc.file_name);
+    const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
     const stats = countStats(extraction.text);
 
     console.log(`[${documentId}] Extraction: method=${extraction.method}, quality_score=${extraction.quality.score}, readable=${extraction.quality.readable}, words=${extraction.quality.wordCount}, reason=${extraction.quality.reason}`);
@@ -397,7 +255,6 @@ serve(async (req) => {
         char_count: stats.char_count,
       }).eq("id", documentId);
 
-      // Still persist whatever we got for diagnostics
       await supabase.from("document_analysis").upsert({
         document_id: documentId,
         user_id: doc.user_id,
@@ -438,7 +295,7 @@ serve(async (req) => {
       detected_language: langResult.language,
     }).eq("id", documentId);
 
-    // Generate summary using only clean extracted text
+    // Generate summary
     let summary = "";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (LOVABLE_API_KEY && extraction.text.trim().length > 50) {
