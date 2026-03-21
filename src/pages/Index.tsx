@@ -120,7 +120,7 @@ function AppContent() {
       <PricingDialog
         open={showPricing}
         onOpenChange={setShowPricing}
-        currentPlan={appUser.plan}
+        currentPlan={currentPlan}
         onSelectPlan={setUserPlan}
       />
       <NotificationPanel
