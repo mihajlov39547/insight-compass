@@ -492,6 +492,11 @@ export default function ProfileSettings() {
 
             <Separator />
 
+            {/* Subscription */}
+            <SubscriptionSection plan={profile?.plan || 'free'} />
+
+            <Separator />
+
             {/* Toggles */}
             <section className="space-y-4">
               <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
