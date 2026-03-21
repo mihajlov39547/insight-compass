@@ -556,12 +556,16 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => onRenameChat(chat.id, chat.name)}>Rename chat</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onRenameChat(chat.id, chat.name)}>
+                  <Pencil className="h-3.5 w-3.5 mr-2" /> Rename chat
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleManageChatDocs(chat)}>
                   <FileText className="h-3.5 w-3.5 mr-2" /> Manage documents
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive" onClick={() => onDeleteChat(chat.id)}>Delete chat</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => onDeleteChat(chat.id)}>
+                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete chat
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
