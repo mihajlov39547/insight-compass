@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Zap, Building2, Crown, Rocket } from 'lucide-react';
+import { Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Plan } from '@/data/mockData';
+import { planIcons } from '@/lib/planConfig';
 
 interface PricingDialogProps {
   open: boolean;
