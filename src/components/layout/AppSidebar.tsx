@@ -186,7 +186,8 @@ export function AppSidebar() {
 
   const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
 
-  const PlanIcon = planIcons[user.plan];
+  const currentPlan = ((profile?.plan as keyof typeof planIcons) || 'free') as keyof typeof planIcons;
+  const PlanIcon = planIcons[currentPlan];
 
   if (sidebarCollapsed) {
     return (
