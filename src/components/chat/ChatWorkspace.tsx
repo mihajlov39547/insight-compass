@@ -45,9 +45,6 @@ export function ChatWorkspace() {
     return (
       <div className="flex-1 flex items-center justify-center bg-muted/30">
         <div className="text-center space-y-6 max-w-lg px-4 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center">
-            <MessageSquarePlus className="h-8 w-8 text-accent-foreground" />
-          </div>
           <div className="grid grid-cols-3 gap-4 pt-4">
             <FeatureCard icon={<FileText className="h-5 w-5" />} title="Document Analysis" description="Query across all your uploaded documents" />
             <FeatureCard icon={<Zap className="h-5 w-5" />} title="Instant Answers" description="Get accurate responses with source citations" />
