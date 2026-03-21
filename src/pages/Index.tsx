@@ -50,7 +50,6 @@ function AppContent() {
   const { user: authUser, profile, loading } = useAuth();
   const createProject = useCreateProject();
   const currentPlan = (profile?.plan || 'free') as import('@/data/mockData').Plan;
-  const createProject = useCreateProject();
 
   const handleCreateProject = async (name: string, description: string, language: 'en' | 'sr-lat') => {
     createProject.mutate({ name, description, language });
