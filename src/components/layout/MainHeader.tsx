@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RegisterDialog } from '@/components/auth/RegisterDialog';
-import { SignInDialog } from '@/components/auth/SignInDialog';
+import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Share2, 
   Settings, 
