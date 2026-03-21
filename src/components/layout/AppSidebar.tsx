@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   ChevronLeft, ChevronRight, Plus, Search, Users, MessageSquare, FolderOpen,
-  MoreHorizontal, Bell, ChevronDown, ChevronUp, Sparkles, Crown, Zap, Building2,
+  MoreHorizontal, Bell, ChevronDown, ChevronUp,
   ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText,
   Settings, Share2, Archive, Trash2, Pencil
 } from 'lucide-react';
@@ -25,8 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 import { toast } from 'sonner';
 
-const planIcons = { free: Sparkles, basic: Zap, premium: Crown, enterprise: Building2 };
-const planLabels = { free: 'Free', basic: 'Basic', premium: 'Premium', enterprise: 'Enterprise' };
+import { planIcons, planLabels } from '@/lib/planConfig';
 
 export function AppSidebar() {
   const { 

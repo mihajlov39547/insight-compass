@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Zap, Building2, Crown, Rocket } from 'lucide-react';
+import { Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Plan } from '@/data/mockData';
+import { planIcons } from '@/lib/planConfig';
 
 interface PricingDialogProps {
   open: boolean;
@@ -25,7 +26,7 @@ const plans = [
     price: '$0',
     period: 'forever',
     description: 'Perfect for getting started',
-    icon: Zap,
+    icon: planIcons.free,
     features: [
       'Up to 3 projects',
       '10 document uploads',
@@ -41,7 +42,7 @@ const plans = [
     price: '$19',
     period: 'per month',
     description: 'For individuals and small teams',
-    icon: Rocket,
+    icon: planIcons.basic,
     features: [
       'Up to 10 projects',
       '100 document uploads',
@@ -58,7 +59,7 @@ const plans = [
     price: '$49',
     period: 'per month',
     description: 'For growing teams',
-    icon: Crown,
+    icon: planIcons.premium,
     features: [
       'Unlimited projects',
       '500 document uploads',
@@ -76,7 +77,7 @@ const plans = [
     price: 'Custom',
     period: 'contact us',
     description: 'For large organizations',
-    icon: Building2,
+    icon: planIcons.enterprise,
     features: [
       'Everything in Premium',
       'Unlimited documents',

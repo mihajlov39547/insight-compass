@@ -6,9 +6,6 @@ import {
   Settings, 
   ChevronDown,
   Sparkles,
-  Crown,
-  Zap,
-  Building2,
   Globe,
   FileText,
   LogOut
@@ -30,19 +27,7 @@ import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-const planIcons = {
-  free: Sparkles,
-  basic: Zap,
-  premium: Crown,
-  enterprise: Building2,
-};
-
-const planLabels = {
-  free: 'Free',
-  basic: 'Basic',
-  premium: 'Premium',
-  enterprise: 'Enterprise',
-};
+import { planIcons, planLabels } from '@/lib/planConfig';
 
 interface MainHeaderProps {
   minimal?: boolean;
