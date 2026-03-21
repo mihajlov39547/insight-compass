@@ -158,16 +158,7 @@ export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScree
         </div>
       </div>
 
-      <RegisterDialog
-        open={showRegister}
-        onOpenChange={setShowRegister}
-        onSwitchToSignIn={() => setShowSignIn(true)}
-      />
-      <SignInDialog
-        open={showSignIn}
-        onOpenChange={setShowSignIn}
-        onSwitchToRegister={() => setShowRegister(true)}
-      />
+      <AuthDialog open={showAuth} onOpenChange={setShowAuth} />
     </div>
   );
 }
