@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
+import { RegisterDialog } from '@/components/auth/RegisterDialog';
+import { SignInDialog } from '@/components/auth/SignInDialog';
 
 interface OnboardingScreenProps {
   onStartFree: () => void;
@@ -41,6 +43,8 @@ const features = [
 
 export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScreenProps) {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
@@ -82,7 +86,7 @@ export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScree
             reliable information retrieval.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button 
               size="lg" 
               onClick={handleGoogleSignIn}
@@ -100,8 +104,26 @@ export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScree
             <Button 
               variant="outline" 
               size="lg" 
-              onClick={onViewPricing}
+              onClick={() => setShowSignIn(true)}
               className="min-w-[180px]"
+            >
+              Sign in
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="lg" 
+              onClick={() => setShowRegister(true)}
+              className="min-w-[180px]"
+            >
+              Register
+            </Button>
+          </div>
+          <div className="mt-3">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onViewPricing}
+              className="text-muted-foreground"
             >
               View Pricing
             </Button>
@@ -145,6 +167,17 @@ export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScree
           </div>
         </div>
       </div>
+
+      <RegisterDialog
+        open={showRegister}
+        onOpenChange={setShowRegister}
+        onSwitchToSignIn={() => setShowSignIn(true)}
+      />
+      <SignInDialog
+        open={showSignIn}
+        onOpenChange={setShowSignIn}
+        onSwitchToRegister={() => setShowRegister(true)}
+      />
     </div>
   );
 }
