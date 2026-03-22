@@ -162,7 +162,7 @@ export function ChatWorkspace() {
           <div ref={scrollRef} />
         </div>
       </ScrollArea>
-      <ChatInput onSend={handleSend} isGenerating={isGenerating} />
+      <ChatInput onSend={handleSend} isGenerating={isGenerating} previousUserMessage={previousUserMessage} previousAssistantMessage={previousAssistantMessage} />
     </div>
   );
 }
