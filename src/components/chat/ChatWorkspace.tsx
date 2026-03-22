@@ -67,6 +67,17 @@ export function ChatWorkspace() {
     );
   }
 
+  // Get previous user and assistant messages for prompt improvement context
+  const previousUserMessage = useMemo(() => {
+    const userMsgs = messages.filter(m => m.role === 'user');
+    return userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content : undefined;
+  }, [messages]);
+
+  const previousAssistantMessage = useMemo(() => {
+    const assistantMsgs = messages.filter(m => m.role === 'assistant');
+    return assistantMsgs.length > 0 ? assistantMsgs[assistantMsgs.length - 1].content : undefined;
+  }, [messages]);
+
   const handleSend = (content: string, modelId?: string) => {
     clearError();
     sendMessage(content, modelId);
