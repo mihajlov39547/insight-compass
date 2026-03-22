@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,17 @@ export function ChatWorkspace() {
     projectId: selectedProjectId ?? undefined,
     projectDescription: selectedProject?.description,
   });
+
+  // Get previous user and assistant messages for prompt improvement context
+  const previousUserMessage = useMemo(() => {
+    const userMsgs = messages.filter(m => m.role === 'user');
+    return userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content : undefined;
+  }, [messages]);
+
+  const previousAssistantMessage = useMemo(() => {
+    const assistantMsgs = messages.filter(m => m.role === 'assistant');
+    return assistantMsgs.length > 0 ? assistantMsgs[assistantMsgs.length - 1].content : undefined;
+  }, [messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -151,7 +162,7 @@ export function ChatWorkspace() {
           <div ref={scrollRef} />
         </div>
       </ScrollArea>
-      <ChatInput onSend={handleSend} isGenerating={isGenerating} />
+      <ChatInput onSend={handleSend} isGenerating={isGenerating} previousUserMessage={previousUserMessage} previousAssistantMessage={previousAssistantMessage} />
     </div>
   );
 }
