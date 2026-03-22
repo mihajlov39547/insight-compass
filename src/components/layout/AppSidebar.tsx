@@ -433,7 +433,24 @@ export function AppSidebar() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-project-desc">Description <span className="text-destructive">*</span></Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-project-desc">Description <span className="text-destructive">*</span></Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-accent"
+                  onClick={handleImproveDescription}
+                  disabled={isImprovingDesc}
+                >
+                  {isImprovingDesc ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  {isImprovingDesc ? 'Improving…' : 'Improve with AI'}
+                </Button>
+              </div>
               <Textarea
                 id="edit-project-desc"
                 value={editDescription}
