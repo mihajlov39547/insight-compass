@@ -184,6 +184,58 @@ export function AppSidebar() {
     });
   };
 
+  const handleImproveDescription = async () => {
+    if (!editProject || isImprovingDesc) return;
+    setIsImprovingDesc(true);
+    try {
+      // Gather project documents
+      const { data: docs } = await supabase
+        .from('documents')
+        .select('file_name, summary')
+        .eq('project_id', editProject.id)
+        .eq('processing_status', 'completed')
+        .limit(15);
+
+      // Gather project chats
+      const { data: chatList } = await supabase
+        .from('chats')
+        .select('name')
+        .eq('project_id', editProject.id)
+        .eq('is_archived', false)
+        .order('updated_at', { ascending: false })
+        .limit(10);
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-description`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            projectName: editName,
+            currentDescription: editDescription,
+            documents: (docs ?? []).map(d => ({ fileName: d.file_name, summary: d.summary })),
+            chats: (chatList ?? []).map(c => ({ name: c.name })),
+          }),
+        }
+      );
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+      if (data.description) {
+        setEditDescription(data.description);
+        toast.success('Description improved');
+      }
+    } catch (err: any) {
+      console.error('Improve description error:', err);
+      toast.error(err.message || 'Failed to improve description');
+    } finally {
+      setIsImprovingDesc(false);
+    }
+  };
+
   const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
 
   const currentPlan = ((profile?.plan as keyof typeof planIcons) || 'free') as keyof typeof planIcons;
