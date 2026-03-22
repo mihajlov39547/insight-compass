@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Search, Users, MessageSquare, FolderOpen,
   MoreHorizontal, Bell, ChevronDown, ChevronUp,
   ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText,
-  Settings, Share2, Archive, Trash2, Pencil
+  Settings, Share2, Archive, Trash2, Pencil, Sparkles, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 import { planIcons, planLabels } from '@/lib/planConfig';
 
@@ -50,6 +51,7 @@ export function AppSidebar() {
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editLanguage, setEditLanguage] = useState<'en' | 'sr-lat'>('en');
+  const [isImprovingDesc, setIsImprovingDesc] = useState(false);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
 
@@ -181,6 +183,58 @@ export function AppSidebar() {
         setEditProject(null);
       }
     });
+  };
+
+  const handleImproveDescription = async () => {
+    if (!editProject || isImprovingDesc) return;
+    setIsImprovingDesc(true);
+    try {
+      // Gather project documents
+      const { data: docs } = await supabase
+        .from('documents')
+        .select('file_name, summary')
+        .eq('project_id', editProject.id)
+        .eq('processing_status', 'completed')
+        .limit(15);
+
+      // Gather project chats
+      const { data: chatList } = await supabase
+        .from('chats')
+        .select('name')
+        .eq('project_id', editProject.id)
+        .eq('is_archived', false)
+        .order('updated_at', { ascending: false })
+        .limit(10);
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-description`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            projectName: editName,
+            currentDescription: editDescription,
+            documents: (docs ?? []).map(d => ({ fileName: d.file_name, summary: d.summary })),
+            chats: (chatList ?? []).map(c => ({ name: c.name })),
+          }),
+        }
+      );
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+      if (data.description) {
+        setEditDescription(data.description);
+        toast.success('Description improved');
+      }
+    } catch (err: any) {
+      console.error('Improve description error:', err);
+      toast.error(err.message || 'Failed to improve description');
+    } finally {
+      setIsImprovingDesc(false);
+    }
   };
 
   const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
@@ -379,7 +433,24 @@ export function AppSidebar() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-project-desc">Description <span className="text-destructive">*</span></Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-project-desc">Description <span className="text-destructive">*</span></Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-accent"
+                  onClick={handleImproveDescription}
+                  disabled={isImprovingDesc}
+                >
+                  {isImprovingDesc ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  {isImprovingDesc ? 'Improving…' : 'Improve with AI'}
+                </Button>
+              </div>
               <Textarea
                 id="edit-project-desc"
                 value={editDescription}
