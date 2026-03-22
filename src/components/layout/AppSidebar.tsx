@@ -50,6 +50,7 @@ export function AppSidebar() {
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editLanguage, setEditLanguage] = useState<'en' | 'sr-lat'>('en');
+  const [isImprovingDesc, setIsImprovingDesc] = useState(false);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
 
