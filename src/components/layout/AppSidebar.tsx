@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ProjectActionsMenuContent, ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
 
 import { planIcons, planLabels } from '@/lib/planConfig';
 
@@ -582,24 +583,12 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
               <MoreHorizontal className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={onRename}>
-              <Settings className="h-3.5 w-3.5 mr-2" /> Manage project
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleManageProjectDocs}>
-              <FileText className="h-3.5 w-3.5 mr-2" /> Manage documents
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled>
-              <Share2 className="h-3.5 w-3.5 mr-2" /> Share project
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onArchive}>
-              <Archive className="h-3.5 w-3.5 mr-2" /> Archive project
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onClick={onDelete}>
-              <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete project
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+          <ProjectActionsMenuContent
+            onManageProject={onRename}
+            onManageDocuments={handleManageProjectDocs}
+            onArchiveProject={onArchive}
+            onDeleteProject={onDelete}
+          />
         </DropdownMenu>
       </div>
 
@@ -626,18 +615,11 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => onRenameChat(chat.id, chat.name)}>
-                  <Pencil className="h-3.5 w-3.5 mr-2" /> Rename chat
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleManageChatDocs(chat)}>
-                  <FileText className="h-3.5 w-3.5 mr-2" /> Manage documents
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive" onClick={() => onDeleteChat(chat.id)}>
-                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete chat
-                </DropdownMenuItem>
-              </DropdownMenuContent>
+              <ChatActionsMenuContent
+                onRenameChat={() => onRenameChat(chat.id, chat.name)}
+                onManageDocuments={() => handleManageChatDocs(chat)}
+                onDeleteChat={() => onDeleteChat(chat.id)}
+              />
             </DropdownMenu>
           </div>
         ))}

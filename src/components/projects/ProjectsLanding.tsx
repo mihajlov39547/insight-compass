@@ -4,16 +4,25 @@ import {
   Atom, FlaskConical, Microscope, Scale, Landmark,
   Scroll, Wrench, Rocket, Cpu, Leaf, Globe, BookOpen,
   Brain, Library, Lightbulb, Palette, Music, Heart,
-  BarChart3, GraduationCap, Camera
+  BarChart3, GraduationCap, Camera, MoreHorizontal, Sparkles, Loader2
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
-import { useProjects } from '@/hooks/useProjects';
+import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats } from '@/hooks/useAllChats';
 import { useDocuments } from '@/hooks/useDocuments';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ProjectActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 const ICONS = [
   Atom, FlaskConical, Microscope, Scale, Landmark, Scroll,
@@ -74,11 +83,26 @@ function formatLastActivity(dateStr: string): string {
 }
 
 export function ProjectsLanding() {
-  const { setShowNewProject, setSelectedProjectId } = useApp();
+  const {
+    setShowNewProject,
+    setSelectedProjectId,
+    selectedProjectId,
+    setSelectedChatId,
+    setActiveView,
+  } = useApp();
   const { data: projects = [], isLoading } = useProjects();
+  const deleteProject = useDeleteProject();
+  const archiveProject = useArchiveProject();
+  const updateProject = useUpdateProject();
   const { data: allChats = [] } = useChats();
 
   const { user } = useAuth();
+
+  const [editProject, setEditProject] = React.useState<DbProject | null>(null);
+  const [editName, setEditName] = React.useState('');
+  const [editDescription, setEditDescription] = React.useState('');
+  const [editLanguage, setEditLanguage] = React.useState<'en' | 'sr-lat'>('en');
+  const [isImprovingDesc, setIsImprovingDesc] = React.useState(false);
 
   const { data: allDocCounts = {} } = useQuery({
     queryKey: ['all-document-counts'],
@@ -103,6 +127,108 @@ export function ProjectsLanding() {
     });
     return map;
   }, [allChats]);
+
+  const handleManageProject = (project: DbProject) => {
+    setEditProject(project);
+    setEditName(project.name);
+    setEditDescription(project.description || '');
+    setEditLanguage((project.language as 'en' | 'sr-lat') || 'en');
+  };
+
+  const handleManageSubmit = () => {
+    if (!editProject || !editName.trim() || !editDescription.trim()) return;
+    updateProject.mutate({
+      id: editProject.id,
+      name: editName.trim(),
+      description: editDescription.trim(),
+      language: editLanguage,
+    }, {
+      onSuccess: () => {
+        toast.success('Project updated');
+        setEditProject(null);
+      },
+    });
+  };
+
+  const handleImproveDescription = async () => {
+    if (!editProject || isImprovingDesc) return;
+    setIsImprovingDesc(true);
+    try {
+      const { data: docs } = await supabase
+        .from('documents')
+        .select('file_name, summary')
+        .eq('project_id', editProject.id)
+        .eq('processing_status', 'completed')
+        .limit(15);
+
+      const { data: chatList } = await supabase
+        .from('chats')
+        .select('name')
+        .eq('project_id', editProject.id)
+        .eq('is_archived', false)
+        .order('updated_at', { ascending: false })
+        .limit(10);
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-description`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            projectName: editName,
+            currentDescription: editDescription,
+            documents: (docs ?? []).map(d => ({ fileName: d.file_name, summary: d.summary })),
+            chats: (chatList ?? []).map(c => ({ name: c.name })),
+          }),
+        }
+      );
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+      if (data.description) {
+        setEditDescription(data.description);
+        toast.success('Description improved');
+      }
+    } catch (err: any) {
+      console.error('Improve description error:', err);
+      toast.error(err.message || 'Failed to improve description');
+    } finally {
+      setIsImprovingDesc(false);
+    }
+  };
+
+  const handleManageProjectDocs = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    setSelectedChatId(null);
+    setActiveView('project-documents');
+  };
+
+  const handleArchiveProject = (projectId: string) => {
+    archiveProject.mutate(projectId, {
+      onSuccess: () => {
+        if (selectedProjectId === projectId) {
+          setSelectedProjectId(null);
+          setSelectedChatId(null);
+        }
+        toast.success('Project archived');
+      },
+    });
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    deleteProject.mutate(projectId, {
+      onSuccess: () => {
+        if (selectedProjectId === projectId) {
+          setSelectedProjectId(null);
+          setSelectedChatId(null);
+        }
+        toast.success('Project and all its chats deleted');
+      },
+    });
+  };
 
   if (isLoading) {
     return (
@@ -153,17 +279,46 @@ export function ProjectsLanding() {
               const docCount = allDocCounts[project.id] || 0;
 
               return (
-                <button
+                <div
                   key={project.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedProjectId(project.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedProjectId(project.id);
+                    }
+                  }}
                   className={`group relative flex flex-col justify-between min-h-[180px] rounded-xl border p-5 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer active:scale-[0.98] ${CARD_COLORS[colorIdx]}`}
                   style={{ animationDelay: `${idx * 60}ms` }}
                 >
+                  <div className="absolute top-2 right-2 z-10">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-foreground"
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <ProjectActionsMenuContent
+                        onManageProject={() => handleManageProject(project)}
+                        onManageDocuments={() => handleManageProjectDocs(project.id)}
+                        onArchiveProject={() => handleArchiveProject(project.id)}
+                        onDeleteProject={() => handleDeleteProject(project.id)}
+                      />
+                    </DropdownMenu>
+                  </div>
                   <div>
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${ICON_COLORS[colorIdx]}`}>
                       <IconComponent className="h-6 w-6" />
                     </div>
-                    <h3 className="font-semibold text-foreground text-sm leading-snug line-clamp-2 overflow-wrap-break-word">
+                    <h3 className="pr-8 font-semibold text-foreground text-sm leading-snug line-clamp-2 overflow-wrap-break-word">
                       {project.name}
                     </h3>
                   </div>
@@ -178,7 +333,7 @@ export function ProjectsLanding() {
                     </div>
                     <span className="ml-auto">{formatLastActivity(project.updated_at)}</span>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -224,6 +379,72 @@ export function ProjectsLanding() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!editProject} onOpenChange={(open) => !open && setEditProject(null)}>
+        <DialogContent className="sm:max-w-[480px]" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Manage Project</DialogTitle>
+            <DialogDescription>Update your project details. The description helps the AI provide better answers.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label htmlFor="card-edit-project-name">Project name <span className="text-destructive">*</span></Label>
+              <Input
+                id="card-edit-project-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Project name"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="card-edit-project-desc">Description <span className="text-destructive">*</span></Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-accent"
+                  onClick={handleImproveDescription}
+                  disabled={isImprovingDesc}
+                >
+                  {isImprovingDesc ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  {isImprovingDesc ? 'Improving…' : 'Improve with AI'}
+                </Button>
+              </div>
+              <Textarea
+                id="card-edit-project-desc"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Describe what this project is about..."
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">This helps the AI understand the project context and provide better answers.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="card-edit-project-lang">Language</Label>
+              <Select value={editLanguage} onValueChange={(val: 'en' | 'sr-lat') => setEditLanguage(val)}>
+                <SelectTrigger id="card-edit-project-lang">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 pt-4">
+            <Button variant="outline" onClick={() => setEditProject(null)}>Cancel</Button>
+            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

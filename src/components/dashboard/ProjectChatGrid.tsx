@@ -1,10 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { MessageSquare, FileText, ChevronRight } from 'lucide-react';
+import { MessageSquare, FileText, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/contexts/AppContext';
-import { DbChat } from '@/hooks/useChats';
+import { DbChat, useDeleteChat, useUpdateChat } from '@/hooks/useChats';
 import { useChatPreviews } from '@/hooks/useChatPreviews';
 import { formatDistanceToNow } from 'date-fns';
+import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 const BATCH_SIZE = 6;
 
@@ -28,8 +33,13 @@ interface Props {
 }
 
 export function ProjectChatGrid({ chats }: Props) {
-  const { setSelectedChatId } = useApp();
+  const { selectedChatId, setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const [renameChatId, setRenameChatId] = useState<string | null>(null);
+  const [renameChatValue, setRenameChatValue] = useState('');
+
+  const deleteChat = useDeleteChat();
+  const updateChat = useUpdateChat();
 
   const chatIds = useMemo(() => chats.map(c => c.id), [chats]);
   const { data: previews = {} } = useChatPreviews(chatIds);
@@ -37,6 +47,21 @@ export function ProjectChatGrid({ chats }: Props) {
   const visibleChats = chats.slice(0, visibleCount);
   const hasMore = chats.length > visibleCount;
   const allShown = visibleCount >= chats.length;
+
+  const handleManageChatDocs = (chat: DbChat) => {
+    setSelectedProjectId(chat.project_id);
+    setSelectedChatId(chat.id);
+    setActiveView('chat-documents');
+  };
+
+  const handleDeleteChat = (chat: DbChat) => {
+    deleteChat.mutate({ id: chat.id, projectId: chat.project_id }, {
+      onSuccess: () => {
+        if (selectedChatId === chat.id) setSelectedChatId(null);
+        toast.success('Chat deleted');
+      },
+    });
+  };
 
   return (
     <div className="mt-4 pt-4 border-t border-border">
@@ -53,13 +78,45 @@ export function ProjectChatGrid({ chats }: Props) {
           const lastMessage = preview?.lastMessage;
 
           return (
-            <button
+            <div
               key={chat.id}
-              className="group p-4 rounded-lg border border-border bg-card hover:bg-secondary/50 text-left transition-all duration-200 hover:shadow-sm hover:-translate-y-0.5 cursor-pointer active:scale-[0.99]"
+              role="button"
+              tabIndex={0}
+              className="group relative p-4 rounded-lg border border-border bg-card hover:bg-secondary/50 text-left transition-all duration-200 hover:shadow-sm hover:-translate-y-0.5 cursor-pointer active:scale-[0.99]"
               onClick={() => setSelectedChatId(chat.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSelectedChatId(chat.id);
+                }
+              }}
             >
+              <div className="absolute top-2 right-2 z-10">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-foreground"
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <ChatActionsMenuContent
+                    onRenameChat={() => {
+                      setRenameChatId(chat.id);
+                      setRenameChatValue(chat.name);
+                    }}
+                    onManageDocuments={() => handleManageChatDocs(chat)}
+                    onDeleteChat={() => handleDeleteChat(chat)}
+                  />
+                </DropdownMenu>
+              </div>
+
               {/* Title */}
-              <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex items-center gap-2 mb-1.5 pr-8">
                 <MessageSquare className="h-3.5 w-3.5 text-accent shrink-0" />
                 <span className="font-medium text-sm text-foreground truncate">
                   {chat.name}
@@ -79,7 +136,7 @@ export function ProjectChatGrid({ chats }: Props) {
                 </div>
                 <span className="ml-auto">{formatActivity(chat.updated_at)}</span>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
@@ -99,6 +156,45 @@ export function ProjectChatGrid({ chats }: Props) {
       {allShown && chats.length > BATCH_SIZE && (
         <p className="mt-3 text-xs text-muted-foreground text-center">All chats shown</p>
       )}
+
+      <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
+        <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Rename Chat</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameChatValue}
+            onChange={(e) => setRenameChatValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && renameChatId && renameChatValue.trim()) {
+                updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
+                  onSuccess: () => {
+                    toast.success('Chat renamed');
+                    setRenameChatId(null);
+                  },
+                });
+              }
+            }}
+            placeholder="Chat name"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameChatId(null)}>Cancel</Button>
+            <Button
+              disabled={!renameChatValue.trim()}
+              onClick={() => {
+                if (!renameChatId || !renameChatValue.trim()) return;
+                updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
+                  onSuccess: () => {
+                    toast.success('Chat renamed');
+                    setRenameChatId(null);
+                  },
+                });
+              }}
+            >Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
