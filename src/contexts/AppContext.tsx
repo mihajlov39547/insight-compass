@@ -54,8 +54,8 @@ interface AppContextType {
   unreadCount: number;
   
   // Dialogs
-  showSettings: 'project' | 'chat' | 'prompt' | null;
-  setShowSettings: (type: 'project' | 'chat' | 'prompt' | null) => void;
+  showSettings: boolean | null;
+  setShowSettings: (show: boolean | null) => void;
   showDocuments: boolean;
   setShowDocuments: (show: boolean) => void;
   documentScope: 'project' | 'chat';
