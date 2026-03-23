@@ -17,7 +17,7 @@ interface UploadDocumentsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUploadComplete: () => void;
-  context: 'project' | 'chat';
+  context: 'project' | 'chat' | 'notebook';
 }
 
 interface PendingFile {
