@@ -184,6 +184,60 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       });
 
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
+
+      // 7. Auto-improve notebook title/description after first exchange
+      const totalMessages = (history ?? []).filter((m: any) => m.role === 'user').length;
+      if (totalMessages <= 1) {
+        // This is the first exchange — trigger auto-improvement
+        try {
+          // Gather notebook document info for context
+          const { data: nbDocs } = await (supabase.from('documents') as any)
+            .select('file_name, summary')
+            .eq('notebook_id', notebookId)
+            .limit(10);
+
+          const docContext = (nbDocs || []).map((d: any) => ({
+            fileName: d.file_name,
+            summary: d.summary || undefined,
+          }));
+
+          const resp2 = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-notebook`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: JSON.stringify({
+                notebookName: notebookName || '',
+                currentDescription: notebookDescription || '',
+                documents: docContext,
+                userMessage: content,
+                assistantMessage: fullContent,
+                mode: 'auto',
+              }),
+            }
+          );
+
+          if (resp2.ok) {
+            const improved = await resp2.json();
+            const updates: any = {};
+            if (improved.title) updates.name = improved.title;
+            if (improved.description) updates.description = improved.description;
+
+            if (Object.keys(updates).length > 0) {
+              await (supabase.from('notebooks' as any) as any)
+                .update(updates)
+                .eq('id', notebookId);
+              qc.invalidateQueries({ queryKey: ['notebooks'] });
+            }
+          }
+        } catch (err) {
+          console.error('Auto-improve notebook failed:', err);
+          // Non-critical, don't surface to user
+        }
+      }
     } catch (err: any) {
       console.error('Notebook chat error:', err);
       setError(err.message || 'Failed to get AI response.');
