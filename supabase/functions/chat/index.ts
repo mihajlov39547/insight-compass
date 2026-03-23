@@ -74,10 +74,11 @@ ${projectDescription ? `The user is working in a project described as: "${projec
 
 Guidelines:
 - Be clear, accurate, and concise
-- Use markdown formatting for readability (headers, lists, bold, code blocks)
+- Use markdown formatting judiciously: bold for emphasis, headings only for multi-section answers, bullet lists when listing items
+- Keep responses conversational and well-structured without over-formatting
+- Prefer short paragraphs over dense walls of text
 - When you don't know something, say so honestly
-- Help users think through problems and explore ideas
-- Be conversational but professional`;
+- Help users think through problems and explore ideas`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
