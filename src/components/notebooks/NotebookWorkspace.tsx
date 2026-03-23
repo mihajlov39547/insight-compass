@@ -174,17 +174,17 @@ export function NotebookWorkspace() {
       const markdownContent = `# ${noteTitle}\n\n${noteBody}`;
       const blob = new Blob([markdownContent], { type: 'text/plain' });
       const fileName = `Note: ${noteTitle}.md`;
-      // Use note id in path for deduplication
-      const storagePath = `notebooks/${selectedNotebookId}/notes/${editingNote.id}.md`;
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user!.id;
+
+      // Use note id in path for deduplication, prefixed with userId for RLS
+      const storagePath = `${userId}/${selectedNotebookId}/notes/${editingNote.id}.md`;
 
       // Upload (upsert so re-adding updates the file)
       const { error: uploadError } = await supabase.storage
         .from('insight-navigator')
         .upload(storagePath, blob, { upsert: true });
       if (uploadError) throw uploadError;
-
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user!.id;
 
       // Check if a document already exists for this note (same storage_path)
       const { data: existingDocs } = await supabase
