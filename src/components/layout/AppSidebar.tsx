@@ -392,6 +392,73 @@ export function AppSidebar() {
               }}
             />
           ))}
+
+          {/* My Notebooks Section */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between px-2 py-2">
+              <p className="text-xs font-medium text-sidebar-muted uppercase tracking-wider">My Notebooks</p>
+            </div>
+
+            {/* Notebooks nav item */}
+            <button
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activeView === 'notebooks' && !selectedProjectId && !selectedChatId
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+              onClick={() => {
+                setSelectedProjectId(null);
+                setSelectedChatId(null);
+                setSelectedNotebookId(null);
+                setActiveView('notebooks');
+              }}
+            >
+              <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'notebooks' ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
+                <BookOpenCheck className="h-3.5 w-3.5" />
+              </div>
+              <span className="truncate">All Notebooks</span>
+            </button>
+
+            {/* Individual notebooks */}
+            {notebooks.map((nb) => (
+              <div key={nb.id} className="group flex items-center">
+                <button
+                  className={cn(
+                    "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                    selectedNotebookId === nb.id
+                      ? "bg-accent/50 text-accent-foreground font-medium"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  )}
+                  onClick={() => {
+                    setSelectedProjectId(null);
+                    setSelectedChatId(null);
+                    setSelectedNotebookId(nb.id);
+                    setActiveView('notebooks');
+                  }}
+                >
+                  <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                    <BookOpenCheck className="h-3 w-3" />
+                  </div>
+                  <span className="truncate">{nb.name}</span>
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+                      <MoreHorizontal className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <NotebookActionsMenuContent
+                    onManageNotebook={() => {/* handled in landing */}}
+                    onManageDocuments={() => {/* TODO */}}
+                    onArchiveNotebook={() => archiveNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook archived') })}
+                    onDeleteNotebook={() => deleteNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook deleted') })}
+                  />
+                </DropdownMenu>
+              </div>
+            ))}
+            {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
+          </div>
         </div>
       </ScrollArea>
 
