@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Sparkles,
   Globe,
-  FileText,
   LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,8 +38,6 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
     language, 
     setLanguage,
     setShowSettings,
-    setShowDocuments,
-    setDocumentScope,
     setShowShare,
     setShowPricing,
   } = useApp();
@@ -142,23 +139,6 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
-
-            {/* Documents - hide in minimal mode */}
-            {!minimal && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => { setDocumentScope('project'); setShowDocuments(true); }}
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Documents</TooltipContent>
-              </Tooltip>
             )}
 
             {/* Share - hide in minimal mode */}
