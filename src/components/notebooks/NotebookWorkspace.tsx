@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ArrowLeft, Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
   Trash2, Sparkles, Send, ChevronDown, Copy, BookmarkPlus, StickyNote,
-  Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User
+  Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
+  FileUp
 } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useApp } from '@/contexts/AppContext';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
@@ -49,9 +51,11 @@ export function NotebookWorkspace() {
   const [showUpload, setShowUpload] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<DbNotebookNote | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [addingToSources, setAddingToSources] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
@@ -89,8 +93,15 @@ export function NotebookWorkspace() {
       notebookId: selectedNotebookId,
       title: 'AI Insight',
       content,
+    }, {
+      onSuccess: (note) => {
+        setEditingNote(note);
+        setEditTitle(note.title);
+        setEditContent(note.content);
+        setNoteModalOpen(true);
+        toast.success('Saved to notes — you can edit it now');
+      },
     });
-    toast.success('Saved to notes');
   };
 
   const handleCopyContent = (content: string) => {
@@ -102,33 +113,93 @@ export function NotebookWorkspace() {
     if (!selectedNotebookId) return;
     createNote.mutate({ notebookId: selectedNotebookId, title: '', content: '' }, {
       onSuccess: (note) => {
-        setEditingNoteId(note.id);
+        setEditingNote(note);
         setEditTitle('');
         setEditContent('');
+        setNoteModalOpen(true);
       },
     });
   };
 
   const handleStartEdit = (note: DbNotebookNote) => {
-    setEditingNoteId(note.id);
+    setEditingNote(note);
     setEditTitle(note.title);
     setEditContent(note.content);
+    setNoteModalOpen(true);
   };
 
   const handleSaveNote = () => {
-    if (!editingNoteId || !selectedNotebookId) return;
+    if (!editingNote || !selectedNotebookId) return;
     updateNote.mutate({
-      id: editingNoteId,
+      id: editingNote.id,
       notebookId: selectedNotebookId,
       title: editTitle,
       content: editContent,
+    }, {
+      onSuccess: () => {
+        setNoteModalOpen(false);
+        setEditingNote(null);
+      },
     });
-    setEditingNoteId(null);
   };
 
   const handleDeleteNote = (note: DbNotebookNote) => {
     if (!selectedNotebookId) return;
     deleteNote.mutate({ id: note.id, notebookId: selectedNotebookId });
+    if (editingNote?.id === note.id) {
+      setNoteModalOpen(false);
+      setEditingNote(null);
+    }
+  };
+
+  const handleAddNoteToSources = async () => {
+    if (!editingNote || !selectedNotebookId) return;
+    // Save note first
+    if (editTitle !== editingNote.title || editContent !== editingNote.content) {
+      updateNote.mutate({
+        id: editingNote.id,
+        notebookId: selectedNotebookId,
+        title: editTitle,
+        content: editContent,
+      });
+    }
+    setAddingToSources(true);
+    try {
+      const noteTitle = editTitle || 'Untitled Note';
+      const noteContent = editContent || '';
+      // Create a text blob from the note content and upload as a document source
+      const blob = new Blob([noteContent], { type: 'text/plain' });
+      const fileName = `Note: ${noteTitle}.txt`;
+      const storagePath = `notebooks/${selectedNotebookId}/notes/${editingNote.id}.txt`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('insight-navigator')
+        .upload(storagePath, blob, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: userData } = await supabase.auth.getUser();
+      const { error: docError } = await supabase.from('documents').insert({
+        user_id: userData.user!.id,
+        notebook_id: selectedNotebookId,
+        file_name: fileName,
+        file_type: 'txt',
+        mime_type: 'text/plain',
+        file_size: blob.size,
+        storage_path: storagePath,
+        processing_status: 'uploaded',
+        notebook_enabled: true,
+      });
+      if (docError) throw docError;
+
+      queryClient.invalidateQueries({ queryKey: ['notebook-documents', selectedNotebookId] });
+      toast.success('Note added to sources');
+      setNoteModalOpen(false);
+      setEditingNote(null);
+    } catch (err: any) {
+      toast.error('Failed to add note to sources');
+    } finally {
+      setAddingToSources(false);
+    }
   };
 
   if (!notebook) return null;
@@ -383,49 +454,20 @@ export function NotebookWorkspace() {
               ) : (
                 <div className="p-2 space-y-2">
                   {notes.map((note) => (
-                    <div key={note.id} className="p-3 rounded-lg border border-border bg-card">
-                      {editingNoteId === note.id ? (
-                        <div className="space-y-2">
-                          <Input
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            placeholder="Note title"
-                            className="h-8 text-sm"
-                            autoFocus
-                          />
-                          <Textarea
-                            value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
-                            placeholder="Write your note…"
-                            className="min-h-[80px] text-sm resize-none"
-                          />
-                          <div className="flex items-center gap-1 justify-end">
-                            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditingNoteId(null)}>
-                              Cancel
-                            </Button>
-                            <Button size="sm" className="h-7 text-xs bg-accent hover:bg-accent/90 text-accent-foreground gap-1" onClick={handleSaveNote} disabled={updateNote.isPending}>
-                              <Save className="h-3 w-3" /> Save
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          {note.title && <p className="text-sm font-medium text-foreground mb-1">{note.title}</p>}
-                          <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-6">{note.content || 'Empty note'}</p>
-                          <div className="flex items-center gap-1 mt-2">
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => handleStartEdit(note)}>
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteNote(note)}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                            <span className="text-[10px] text-muted-foreground ml-auto">
-                              {new Date(note.updated_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    <button
+                      key={note.id}
+                      className="w-full text-left p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
+                      onClick={() => handleStartEdit(note)}
+                    >
+                      {note.title && <p className="text-sm font-medium text-foreground mb-1 truncate">{note.title}</p>}
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">{note.content || 'Empty note'}</p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground ml-auto">
+                          {new Date(note.updated_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -433,6 +475,64 @@ export function NotebookWorkspace() {
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      {/* Edit Note Modal */}
+      <Dialog open={noteModalOpen} onOpenChange={(open) => { if (!open) { setNoteModalOpen(false); setEditingNote(null); } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Note</DialogTitle>
+            <DialogDescription className="sr-only">Edit your notebook note</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Note title"
+              className="text-base font-medium"
+              autoFocus
+            />
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              placeholder="Write your note…"
+              className="min-h-[200px] resize-none text-sm leading-relaxed"
+            />
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <div className="flex items-center gap-2 mr-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-xs"
+                onClick={handleAddNoteToSources}
+                disabled={addingToSources || !editContent.trim()}
+              >
+                {addingToSources ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileUp className="h-3 w-3" />}
+                Add to sources
+              </Button>
+              {editingNote && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => editingNote && handleDeleteNote(editingNote)}
+                >
+                  <Trash2 className="h-3 w-3" /> Delete
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => { setNoteModalOpen(false); setEditingNote(null); }}>
+                Cancel
+              </Button>
+              <Button size="sm" className="gap-1 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleSaveNote} disabled={updateNote.isPending}>
+                {updateNote.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                Save
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Upload dialog */}
       <UploadDocumentsDialog
