@@ -85,15 +85,18 @@ export function UploadDocumentsDialog({
   const validFiles = pendingFiles.filter(f => f.valid);
 
   const handleDone = async () => {
-    if (!selectedProjectId || validFiles.length === 0) return;
+    // For notebook context, we need a projectId placeholder — use a dummy or the notebookId
+    const effectiveProjectId = context === 'notebook' ? (selectedNotebookId || '') : selectedProjectId;
+    if (!effectiveProjectId || validFiles.length === 0) return;
 
     setPendingFiles(prev => prev.map(f => f.valid ? { ...f, status: 'uploading' as const } : f));
 
     try {
       const result = await uploadMutation.mutateAsync({
         files: validFiles.map(f => f.file),
-        projectId: selectedProjectId,
+        projectId: effectiveProjectId,
         chatId: context === 'chat' ? selectedChatId : null,
+        notebookId: context === 'notebook' ? selectedNotebookId : undefined,
       });
 
       if (result.errors.length > 0) {
