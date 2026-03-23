@@ -45,6 +45,7 @@ export function AppSidebar() {
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: notebooks = [] } = useNotebooks();
   const createChat = useCreateChat();
+  const createNotebook = useCreateNotebook();
   const deleteProject = useDeleteProject();
   const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
