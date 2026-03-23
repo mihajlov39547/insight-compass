@@ -169,36 +169,82 @@ export function NotebookWorkspace() {
     setAddingToSources(true);
     try {
       const noteTitle = editTitle || 'Untitled Note';
-      const noteContent = editContent || '';
-      // Create a text blob from the note content and upload as a document source
-      const blob = new Blob([noteContent], { type: 'text/plain' });
-      const fileName = `Note: ${noteTitle}.txt`;
-      const storagePath = `notebooks/${selectedNotebookId}/notes/${editingNote.id}.txt`;
+      const noteBody = editContent || '';
+      // Build markdown content with title as heading
+      const markdownContent = `# ${noteTitle}\n\n${noteBody}`;
+      const blob = new Blob([markdownContent], { type: 'text/plain' });
+      const fileName = `Note: ${noteTitle}.md`;
+      // Use note id in path for deduplication
+      const storagePath = `notebooks/${selectedNotebookId}/notes/${editingNote.id}.md`;
 
+      // Upload (upsert so re-adding updates the file)
       const { error: uploadError } = await supabase.storage
         .from('insight-navigator')
         .upload(storagePath, blob, { upsert: true });
       if (uploadError) throw uploadError;
 
       const { data: userData } = await supabase.auth.getUser();
-      const { error: docError } = await supabase.from('documents').insert({
-        user_id: userData.user!.id,
-        notebook_id: selectedNotebookId,
-        file_name: fileName,
-        file_type: 'txt',
-        mime_type: 'text/plain',
-        file_size: blob.size,
-        storage_path: storagePath,
-        processing_status: 'uploaded',
-        notebook_enabled: true,
-      });
-      if (docError) throw docError;
+      const userId = userData.user!.id;
+
+      // Check if a document already exists for this note (same storage_path)
+      const { data: existingDocs } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('storage_path', storagePath)
+        .limit(1);
+
+      let documentId: string;
+
+      if (existingDocs && existingDocs.length > 0) {
+        // Update existing document and re-process
+        documentId = existingDocs[0].id;
+        await supabase.from('documents').update({
+          file_name: fileName,
+          file_size: blob.size,
+          processing_status: 'uploaded',
+          processing_error: null,
+          summary: null,
+          detected_language: null,
+          word_count: null,
+          char_count: null,
+        }).eq('id', documentId);
+        toast.success('Note source updated — re-processing');
+      } else {
+        // Create new document
+        const { data: docData, error: docError } = await supabase.from('documents').insert({
+          user_id: userId,
+          notebook_id: selectedNotebookId,
+          file_name: fileName,
+          file_type: 'md',
+          mime_type: 'text/plain',
+          file_size: blob.size,
+          storage_path: storagePath,
+          processing_status: 'uploaded',
+          notebook_enabled: true,
+        }).select('id').single();
+        if (docError) throw docError;
+        documentId = docData.id;
+        toast.success('Note added to sources');
+      }
+
+      // Trigger processing pipeline
+      fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ documentId }),
+        }
+      ).catch(() => { /* processing failure tracked server-side */ });
 
       queryClient.invalidateQueries({ queryKey: ['notebook-documents', selectedNotebookId] });
-      toast.success('Note added to sources');
       setNoteModalOpen(false);
       setEditingNote(null);
     } catch (err: any) {
+      console.error('Add note to sources error:', err);
       toast.error('Failed to add note to sources');
     } finally {
       setAddingToSources(false);
