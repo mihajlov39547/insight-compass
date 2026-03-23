@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface DbDocument {
   id: string;
   user_id: string;
-  project_id: string;
+  project_id: string | null;
   chat_id: string | null;
+  notebook_id: string | null;
   file_name: string;
   file_type: string;
   mime_type: string;
@@ -98,6 +99,7 @@ interface UploadParams {
   files: File[];
   projectId: string;
   chatId?: string | null;
+  notebookId?: string | null;
 }
 
 export function useUploadDocuments() {
@@ -105,7 +107,7 @@ export function useUploadDocuments() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ files, projectId, chatId }: UploadParams) => {
+    mutationFn: async ({ files, projectId, chatId, notebookId }: UploadParams) => {
       if (!user) throw new Error('Not authenticated');
 
       const results: DbDocument[] = [];
@@ -133,8 +135,9 @@ export function useUploadDocuments() {
           .from('documents' as any)
           .insert({
             user_id: user.id,
-            project_id: projectId,
+            project_id: notebookId ? null : projectId,
             chat_id: chatId || null,
+            notebook_id: notebookId || null,
             file_name: file.name,
             file_type: ext,
             mime_type: file.type || 'application/octet-stream',
@@ -177,6 +180,10 @@ export function useUploadDocuments() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['documents', variables.projectId] });
       queryClient.invalidateQueries({ queryKey: ['document-count', variables.projectId] });
+      if (variables.notebookId) {
+        queryClient.invalidateQueries({ queryKey: ['notebook-documents', variables.notebookId] });
+        queryClient.invalidateQueries({ queryKey: ['notebook-document-counts'] });
+      }
     },
   });
 }
@@ -234,6 +241,10 @@ export function useDeleteDocument() {
     onSuccess: (doc) => {
       queryClient.invalidateQueries({ queryKey: ['documents', doc.project_id] });
       queryClient.invalidateQueries({ queryKey: ['document-count', doc.project_id] });
+      if (doc.notebook_id) {
+        queryClient.invalidateQueries({ queryKey: ['notebook-documents', doc.notebook_id] });
+        queryClient.invalidateQueries({ queryKey: ['notebook-document-counts'] });
+      }
     },
   });
 }

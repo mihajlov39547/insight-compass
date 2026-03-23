@@ -121,7 +121,7 @@ export type Database = {
           page_count: number | null
           processing_error: string | null
           processing_status: string
-          project_id: string
+          project_id: string | null
           retry_count: number
           storage_path: string
           summary: string | null
@@ -143,7 +143,7 @@ export type Database = {
           page_count?: number | null
           processing_error?: string | null
           processing_status?: string
-          project_id: string
+          project_id?: string | null
           retry_count?: number
           storage_path: string
           summary?: string | null
@@ -165,7 +165,7 @@ export type Database = {
           page_count?: number | null
           processing_error?: string | null
           processing_status?: string
-          project_id?: string
+          project_id?: string | null
           retry_count?: number
           storage_path?: string
           summary?: string | null

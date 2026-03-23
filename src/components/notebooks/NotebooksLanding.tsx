@@ -80,7 +80,7 @@ function formatLastActivity(dateStr: string): string {
 
 export function NotebooksLanding() {
   const { user } = useAuth();
-  const { setSelectedNotebookId } = useApp();
+  const { setSelectedNotebookId, setActiveView } = useApp();
   const { data: notebooks = [], isLoading } = useNotebooks();
   const deleteNotebook = useDeleteNotebook();
   const archiveNotebook = useArchiveNotebook();
@@ -226,7 +226,10 @@ export function NotebooksLanding() {
                     </DropdownMenuTrigger>
                     <NotebookActionsMenuContent
                       onManageNotebook={() => handleManage(notebook)}
-                      onManageDocuments={() => {/* TODO: notebook documents view */}}
+                      onManageDocuments={() => {
+                        setSelectedNotebookId(notebook.id);
+                        setActiveView('notebook-documents');
+                      }}
                       onArchiveNotebook={() => handleArchive(notebook.id)}
                       onDeleteNotebook={() => handleDelete(notebook.id)}
                     />
