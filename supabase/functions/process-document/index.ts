@@ -44,19 +44,17 @@ function isOLE2(bytes: Uint8Array): boolean {
 }
 
 function extractUTF16LEText(bytes: Uint8Array): string {
-  // Try to find runs of UTF-16LE text in the binary
   const chunks: string[] = [];
   let currentChunk = "";
   for (let i = 0; i + 1 < bytes.length; i += 2) {
     const code = bytes[i] | (bytes[i + 1] << 8);
-    // Accept printable chars, common unicode ranges, whitespace
     if (
-      (code >= 0x20 && code <= 0x7E) ||  // ASCII printable
-      (code >= 0x00A0 && code <= 0x024F) || // Latin extended
-      (code >= 0x0400 && code <= 0x04FF) || // Cyrillic
-      (code >= 0x0600 && code <= 0x06FF) || // Arabic
-      (code >= 0x4E00 && code <= 0x9FFF) || // CJK
-      code === 0x0D || code === 0x0A || code === 0x09 // CR/LF/Tab
+      (code >= 0x20 && code <= 0x7E) ||
+      (code >= 0x00A0 && code <= 0x024F) ||
+      (code >= 0x0400 && code <= 0x04FF) ||
+      (code >= 0x0600 && code <= 0x06FF) ||
+      (code >= 0x4E00 && code <= 0x9FFF) ||
+      code === 0x0D || code === 0x0A || code === 0x09
     ) {
       currentChunk += String.fromCharCode(code);
     } else {
@@ -71,27 +69,22 @@ function extractUTF16LEText(bytes: Uint8Array): string {
 }
 
 function extractDocText(bytes: Uint8Array): { text: string; method: string; encoding: string } {
-  // 1. Try UTF-16LE extraction (Unicode .doc files)
   const utf16Text = extractUTF16LEText(bytes);
   const utf16Quality = assessTextQuality(utf16Text);
   
-  // 2. Try Windows-1251 for Cyrillic content
   const win1251Text = extractCleanWin1251(bytes);
   const win1251Quality = assessTextQuality(win1251Text);
   
-  // 3. Try UTF-8 fallback
   const utf8Text = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
   const cleanUtf8 = extractReadableSequences(utf8Text);
   const utf8Quality = assessTextQuality(cleanUtf8);
   
-  // Pick best result
   const candidates = [
     { text: utf16Text, quality: utf16Quality, method: "doc_utf16le", encoding: "utf-16le" },
     { text: win1251Text, quality: win1251Quality, method: "doc_win1251", encoding: "windows-1251" },
     { text: cleanUtf8, quality: utf8Quality, method: "doc_utf8_fallback", encoding: "utf-8" },
   ];
   
-  // Sort by: readable first, then by score, then by word count
   candidates.sort((a, b) => {
     if (a.quality.readable !== b.quality.readable) return a.quality.readable ? -1 : 1;
     if (a.quality.score !== b.quality.score) return b.quality.score - a.quality.score;
@@ -108,18 +101,17 @@ function extractCleanWin1251(bytes: Uint8Array): string {
 }
 
 function extractReadableSequences(raw: string): string {
-  // Extract sequences of readable characters (including Cyrillic)
   const sequences: string[] = [];
   let current = "";
   for (let i = 0; i < raw.length; i++) {
     const c = raw.charCodeAt(i);
     if (
-      (c >= 0x20 && c <= 0x7E) ||  // ASCII printable
-      (c >= 0x00A0 && c <= 0x024F) || // Latin extended
-      (c >= 0x0400 && c <= 0x04FF) || // Cyrillic
-      (c >= 0x0600 && c <= 0x06FF) || // Arabic
-      (c >= 0x4E00 && c <= 0x9FFF) || // CJK
-      c === 0x0A || c === 0x0D || c === 0x09 // whitespace
+      (c >= 0x20 && c <= 0x7E) ||
+      (c >= 0x00A0 && c <= 0x024F) ||
+      (c >= 0x0400 && c <= 0x04FF) ||
+      (c >= 0x0600 && c <= 0x06FF) ||
+      (c >= 0x4E00 && c <= 0x9FFF) ||
+      c === 0x0A || c === 0x0D || c === 0x09
     ) {
       current += raw[i];
     } else {
@@ -129,7 +121,6 @@ function extractReadableSequences(raw: string): string {
   }
   if (current.trim().length >= 4) sequences.push(current.trim());
   
-  // Filter out sequences that look like binary noise (too many special chars)
   return sequences
     .filter(s => {
       const letterCount = (s.match(/[\p{L}\p{N}]/gu) || []).length;
@@ -141,6 +132,133 @@ function extractReadableSequences(raw: string): string {
     .slice(0, 100000);
 }
 
+// ─── Structural / XML Noise Filtering ──────────────────────────────────
+
+const STRUCTURAL_PATTERNS = [
+  /\[Content_Types\]\.xml/gi,
+  /word\/document\.xml/gi,
+  /word\/styles\.xml/gi,
+  /word\/settings\.xml/gi,
+  /word\/fontTable\.xml/gi,
+  /word\/theme\//gi,
+  /word\/_rels\//gi,
+  /customXml\//gi,
+  /docProps\//gi,
+  /\bxmlns[:=]/gi,
+  /<\/?[a-z]+:[a-z]+[^>]*>/gi,
+  /PK\x03\x04/g,
+  /Content-Type:\s*application\//gi,
+  /urn:schemas-microsoft-com/gi,
+  /http:\/\/schemas\.(openxmlformats|microsoft)\.org/gi,
+  /\brels\/\w+/gi,
+  /w:rsid\w*="[^"]*"/gi,
+  /mc:Ignorable/gi,
+  /w14:|w15:|wps:|wpc:|wpg:/g,
+];
+
+const STRUCTURAL_KEYWORDS = new Set([
+  "content_types", "rels", "docprops", "customxml", "fonttable",
+  "settings", "styles", "theme", "numbering", "footnotes",
+  "endnotes", "header", "footer", "webextensions", "bibliography",
+  "xmlnamespacuri", "pkzipcontent", "relationship", "override",
+  "partname", "contenttype",
+]);
+
+function computeStructuralNoiseRatio(text: string): number {
+  if (!text || text.length < 50) return 0;
+  const sample = text.slice(0, 20000);
+  let noiseChars = 0;
+  for (const pat of STRUCTURAL_PATTERNS) {
+    const matches = sample.match(pat);
+    if (matches) {
+      for (const m of matches) noiseChars += m.length;
+    }
+  }
+  return noiseChars / sample.length;
+}
+
+function filterStructuralNoise(text: string): string {
+  if (!text) return text;
+  
+  // Split into paragraphs/blocks
+  const blocks = text.split(/\n{2,}|\r\n\r\n/);
+  const cleanBlocks: string[] = [];
+  
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed || trimmed.length < 3) continue;
+    
+    // Skip blocks that are mostly XML/structural
+    let structuralHits = 0;
+    for (const pat of STRUCTURAL_PATTERNS) {
+      if (pat.test(trimmed)) structuralHits++;
+      pat.lastIndex = 0; // reset regex state
+    }
+    if (structuralHits >= 3) continue;
+    
+    // Skip blocks with structural keywords dominating
+    const lowerWords = trimmed.toLowerCase().split(/\s+/);
+    const structKeywordCount = lowerWords.filter(w => STRUCTURAL_KEYWORDS.has(w.replace(/[^a-z]/g, ''))).length;
+    if (lowerWords.length > 0 && structKeywordCount / lowerWords.length > 0.3) continue;
+    
+    // Skip very short blocks that look like paths or XML fragments
+    if (trimmed.length < 20 && (trimmed.includes('/') || trimmed.includes('<') || trimmed.includes('xmlns'))) continue;
+    
+    cleanBlocks.push(trimmed);
+  }
+  
+  return cleanBlocks.join("\n\n").trim();
+}
+
+// ─── Script Detection ──────────────────────────────────────────────────
+
+interface ScriptInfo {
+  primary: "latin" | "cyrillic" | "arabic" | "cjk" | "mixed" | "unknown";
+  latinRatio: number;
+  cyrillicRatio: number;
+  arabicRatio: number;
+  cjkRatio: number;
+}
+
+function detectScript(text: string): ScriptInfo {
+  if (!text || text.trim().length < 10) {
+    return { primary: "unknown", latinRatio: 0, cyrillicRatio: 0, arabicRatio: 0, cjkRatio: 0 };
+  }
+  
+  const sample = text.slice(0, 10000);
+  const letters = sample.match(/\p{L}/gu) || [];
+  const total = letters.length;
+  if (total === 0) {
+    return { primary: "unknown", latinRatio: 0, cyrillicRatio: 0, arabicRatio: 0, cjkRatio: 0 };
+  }
+
+  const latinCount = (sample.match(/[\u0041-\u005A\u0061-\u007A\u00C0-\u024F\u0100-\u017F]/gu) || []).length;
+  const cyrillicCount = (sample.match(/[\u0400-\u04FF]/gu) || []).length;
+  const arabicCount = (sample.match(/[\u0600-\u06FF]/gu) || []).length;
+  const cjkCount = (sample.match(/[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF]/gu) || []).length;
+
+  const latinRatio = latinCount / total;
+  const cyrillicRatio = cyrillicCount / total;
+  const arabicRatio = arabicCount / total;
+  const cjkRatio = cjkCount / total;
+
+  let primary: ScriptInfo["primary"] = "unknown";
+  const max = Math.max(latinRatio, cyrillicRatio, arabicRatio, cjkRatio);
+  if (max < 0.3) primary = "mixed";
+  else if (max === cyrillicRatio) primary = "cyrillic";
+  else if (max === arabicRatio) primary = "arabic";
+  else if (max === cjkRatio) primary = "cjk";
+  else primary = "latin";
+
+  return {
+    primary,
+    latinRatio: Math.round(latinRatio * 100) / 100,
+    cyrillicRatio: Math.round(cyrillicRatio * 100) / 100,
+    arabicRatio: Math.round(arabicRatio * 100) / 100,
+    cjkRatio: Math.round(cjkRatio * 100) / 100,
+  };
+}
+
 // ─── Text Quality Assessment ───────────────────────────────────────────
 
 interface TextQuality {
@@ -149,18 +267,18 @@ interface TextQuality {
   wordCount: number;
   readableCharRatio: number;
   pdfSyntaxRatio: number;
+  structuralNoiseRatio: number;
   reason: string;
 }
 
 function assessTextQuality(text: string): TextQuality {
   if (!text || text.trim().length < 20) {
-    return { readable: false, score: 0, wordCount: 0, readableCharRatio: 0, pdfSyntaxRatio: 0, reason: "too_short" };
+    return { readable: false, score: 0, wordCount: 0, readableCharRatio: 0, pdfSyntaxRatio: 0, structuralNoiseRatio: 0, reason: "too_short" };
   }
 
   const sample = text.slice(0, 10000);
   const totalChars = sample.length;
 
-  // Count readable chars: Latin, digits, whitespace, punctuation, AND extended Unicode scripts
   const readableChars = (sample.match(/[\p{L}\p{N}\p{P}\p{Z}\p{S}]/gu) || []).length;
   const readableCharRatio = readableChars / totalChars;
 
@@ -168,7 +286,8 @@ function assessTextQuality(text: string): TextQuality {
   const words = sample.split(/\s+/).filter(Boolean);
   const pdfSyntaxRatio = words.length > 0 ? pdfSyntaxTokens / words.length : 1;
 
-  // Count real words using Unicode letter property
+  const structuralNoiseRatio = computeStructuralNoiseRatio(sample);
+
   const realWords = (sample.match(/\p{L}{3,}/gu) || []).length;
 
   let score = 0;
@@ -178,10 +297,12 @@ function assessTextQuality(text: string): TextQuality {
     reason = "low_readable_char_ratio";
   } else if (pdfSyntaxRatio > 0.15) {
     reason = "high_pdf_syntax_ratio";
+  } else if (structuralNoiseRatio > 0.4) {
+    reason = "high_structural_noise";
   } else if (realWords < 5) {
     reason = "too_few_real_words";
   } else {
-    score = Math.min(1, readableCharRatio * (1 - pdfSyntaxRatio) * Math.min(realWords / 50, 1));
+    score = Math.min(1, readableCharRatio * (1 - pdfSyntaxRatio) * (1 - structuralNoiseRatio) * Math.min(realWords / 50, 1));
   }
 
   return {
@@ -190,27 +311,122 @@ function assessTextQuality(text: string): TextQuality {
     wordCount: realWords,
     readableCharRatio: Math.round(readableCharRatio * 100) / 100,
     pdfSyntaxRatio: Math.round(pdfSyntaxRatio * 100) / 100,
+    structuralNoiseRatio: Math.round(structuralNoiseRatio * 100) / 100,
     reason,
   };
 }
 
 // ─── Language Detection ────────────────────────────────────────────────
 
-function detectLanguage(text: string): { language: string; confidence: number } {
-  if (!text || text.trim().length < 20) return { language: "unknown", confidence: 0 };
+interface LanguageResult {
+  language: string;
+  script: string;
+  confidence: number;
+}
 
-  const sample = text.slice(0, 5000).toLowerCase();
+// Serbian Latin-specific diacritics
+const SR_LATIN_CHARS = /[čćžšđČĆŽŠĐ]/g;
 
-  const cyrillicCount = (sample.match(/[\u0400-\u04FF]/g) || []).length;
-  if (cyrillicCount > sample.length * 0.2) return { language: "sr", confidence: 0.8 };
+// Common Serbian words (Latin) — high-frequency function words
+const SR_LATIN_WORDS = new Set([
+  "je", "i", "u", "na", "da", "se", "su", "za", "sa", "od", "kao",
+  "ili", "ali", "koji", "koja", "koje", "koji", "iz", "po", "do",
+  "ne", "će", "bi", "bio", "bila", "bilo", "su", "sve", "svi",
+  "ima", "može", "tako", "samo", "kad", "ako", "što", "šta", "već",
+  "još", "između", "preko", "prema", "kroz", "bez", "oko", "pred",
+  "pod", "nad", "zbog", "prema", "prema", "dok", "jer", "nego",
+  "niti", "ni", "neka", "ova", "taj", "tog", "tom", "tim",
+  "ovaj", "ona", "ono", "oni", "one", "ove", "ovi", "toga",
+  "tome", "ovom", "onog", "onom", "svaki", "svaka", "svako",
+  "jedan", "jedna", "jedno", "jednog", "jednom", "jednoj",
+  "biti", "imati", "trebati", "moći", "znati", "hteti",
+  "godine", "godina", "dana", "dan", "rad", "rada", "član",
+  "člana", "zakon", "zakona", "pravo", "prava", "strana",
+  "strane", "republika", "srbija", "srbije", "beograd",
+  "takođe", "odnosno", "naime", "dakle", "zatim", "potom",
+  "međutim", "ipak", "upravo", "ukoliko", "uslovi",
+]);
 
-  const cjkCount = (sample.match(/[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF]/g) || []).length;
-  if (cjkCount > sample.length * 0.1) return { language: "zh", confidence: 0.7 };
+// Serbian Cyrillic common words
+const SR_CYRILLIC_WORDS = new Set([
+  "је", "и", "у", "на", "да", "се", "су", "за", "са", "од", "као",
+  "или", "али", "који", "која", "које", "из", "по", "до",
+  "не", "ће", "би", "био", "била", "било", "све", "сви",
+  "има", "може", "тако", "само", "кад", "ако", "што", "шта", "већ",
+  "још", "између", "преко", "према", "кроз", "без", "око", "пред",
+  "под", "над", "због", "док", "јер", "него",
+  "нити", "ни", "нека", "ова", "тај", "тог", "том", "тим",
+  "овај", "она", "оно", "они", "оне", "ове", "ови", "тога",
+  "томе", "овом", "оног", "оном", "сваки", "свака", "свако",
+  "један", "једна", "једно", "једног", "једном", "једној",
+  "бити", "имати", "требати", "моћи", "знати", "хтети",
+  "године", "година", "дана", "дан", "рад", "рада", "члан",
+  "члана", "закон", "закона", "право", "права", "страна",
+  "стране", "република", "србија", "србије", "београд",
+  "такође", "односно", "наиме", "дакле", "затим", "потом",
+  "међутим", "ипак", "управо", "уколико", "услови",
+]);
 
-  const arabicCount = (sample.match(/[\u0600-\u06FF]/g) || []).length;
-  if (arabicCount > sample.length * 0.2) return { language: "ar", confidence: 0.8 };
+function detectLanguage(text: string): LanguageResult {
+  if (!text || text.trim().length < 20) return { language: "unknown", script: "unknown", confidence: 0 };
 
-  const words = sample.split(/\s+/);
+  // Use body text, skip structural noise
+  const cleaned = filterStructuralNoise(text);
+  const sample = (cleaned.length > 100 ? cleaned : text).slice(0, 8000).toLowerCase();
+
+  const scriptInfo = detectScript(sample);
+
+  // Count Serbian-specific Latin diacritics
+  const srLatinDiacritics = (sample.match(SR_LATIN_CHARS) || []).length;
+
+  const words = sample.split(/\s+/).filter(w => w.length >= 2);
+  const totalWords = words.length;
+  if (totalWords === 0) return { language: "unknown", script: scriptInfo.primary, confidence: 0 };
+
+  // ── Cyrillic-dominant text ──
+  if (scriptInfo.cyrillicRatio > 0.2) {
+    let srCyrScore = 0;
+    for (const w of words) {
+      if (SR_CYRILLIC_WORDS.has(w)) srCyrScore++;
+    }
+    const srCyrRatio = srCyrScore / totalWords;
+    if (srCyrRatio > 0.05 || scriptInfo.cyrillicRatio > 0.4) {
+      return {
+        language: "sr",
+        script: "cyrillic",
+        confidence: Math.min(0.95, 0.5 + srCyrRatio * 5 + scriptInfo.cyrillicRatio),
+      };
+    }
+    // Generic Cyrillic but not clearly Serbian — could be Russian, etc.
+    return { language: "sr", script: "cyrillic", confidence: 0.5 };
+  }
+
+  // ── Latin-dominant text — check Serbian Latin ──
+  let srLatinScore = 0;
+  for (const w of words) {
+    if (SR_LATIN_WORDS.has(w)) srLatinScore++;
+  }
+  const srLatinRatio = srLatinScore / totalWords;
+  const diacriticDensity = srLatinDiacritics / sample.length;
+
+  // Strong Serbian Latin signals: diacritics + common words
+  if (srLatinRatio > 0.08 || (srLatinRatio > 0.03 && diacriticDensity > 0.005)) {
+    return {
+      language: "sr",
+      script: "latin",
+      confidence: Math.min(0.95, 0.4 + srLatinRatio * 5 + diacriticDensity * 50),
+    };
+  }
+  // Diacritics alone as a weaker signal
+  if (diacriticDensity > 0.01) {
+    return {
+      language: "sr",
+      script: "latin",
+      confidence: Math.min(0.7, 0.3 + diacriticDensity * 30),
+    };
+  }
+
+  // ── Other Latin-script languages ──
   const enWords = new Set(["the", "and", "is", "in", "to", "of", "a", "for", "that", "it", "with", "on", "as", "are", "was", "be", "this", "have", "from", "or", "an", "but", "not", "by", "at", "they", "which", "do", "their", "if", "will", "each", "about", "how", "up", "out", "them", "then", "she", "many", "some", "so", "these", "would", "other"]);
   const deWords = new Set(["der", "die", "und", "ist", "von", "den", "das", "mit", "auf", "für", "ein", "eine", "des", "dem", "nicht", "sich", "auch", "als", "noch", "nach", "bei", "aus", "wie", "aber", "wenn"]);
   const frWords = new Set(["le", "la", "les", "de", "des", "du", "un", "une", "et", "est", "en", "que", "qui", "dans", "pour", "pas", "sur", "ce", "par", "sont", "avec", "au", "aux", "mais", "ou", "ne"]);
@@ -225,12 +441,12 @@ function detectLanguage(text: string): { language: string; confidence: number } 
   }
 
   const maxScore = Math.max(enScore, deScore, frScore, esScore);
-  if (maxScore < 3) return { language: "en", confidence: 0.3 };
-  if (maxScore === enScore) return { language: "en", confidence: Math.min(enScore / words.length * 10, 0.95) };
-  if (maxScore === deScore) return { language: "de", confidence: Math.min(deScore / words.length * 10, 0.9) };
-  if (maxScore === frScore) return { language: "fr", confidence: Math.min(frScore / words.length * 10, 0.9) };
-  if (maxScore === esScore) return { language: "es", confidence: Math.min(esScore / words.length * 10, 0.9) };
-  return { language: "en", confidence: 0.3 };
+  if (maxScore < 3) return { language: "en", script: scriptInfo.primary, confidence: 0.3 };
+  if (maxScore === enScore) return { language: "en", script: "latin", confidence: Math.min(enScore / totalWords * 10, 0.95) };
+  if (maxScore === deScore) return { language: "de", script: "latin", confidence: Math.min(deScore / totalWords * 10, 0.9) };
+  if (maxScore === frScore) return { language: "fr", script: "latin", confidence: Math.min(frScore / totalWords * 10, 0.9) };
+  if (maxScore === esScore) return { language: "es", script: "latin", confidence: Math.min(esScore / totalWords * 10, 0.9) };
+  return { language: "en", script: scriptInfo.primary, confidence: 0.3 };
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────
@@ -242,7 +458,6 @@ function countStats(text: string) {
 
 function normalizeForSearch(text: string, fileName: string, summary?: string): string {
   const parts = [fileName, summary || "", text].filter(Boolean);
-  // Preserve Unicode letters and digits for non-Latin script support
   return parts.join(" ").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
 }
 
@@ -255,7 +470,7 @@ async function extractText(bytes: Uint8Array, mimeType: string, fileName: string
     return { text, method: "plaintext", encoding: "utf-8", quality: assessTextQuality(text) };
   }
 
-  // PDF — use unpdf library for proper extraction
+  // PDF
   if (ext === "pdf" || mimeType === "application/pdf") {
     try {
       const result = await extractPdfText(bytes, { mergePages: true });
@@ -271,7 +486,7 @@ async function extractText(bytes: Uint8Array, mimeType: string, fileName: string
     }
   }
 
-  // Legacy .doc (binary OLE2 Word format)
+  // Legacy .doc
   if (ext === "doc" || mimeType === "application/msword") {
     const result = extractDocText(bytes);
     const quality = assessTextQuality(result.text);
@@ -385,9 +600,15 @@ serve(async (req) => {
     // Extract content
     await supabase.from("documents").update({ processing_status: "extracting_content" }).eq("id", documentId);
     const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
-    const stats = countStats(extraction.text);
 
-    console.log(`[${documentId}] Extraction: method=${extraction.method}, encoding=${extraction.encoding || "n/a"}, quality_score=${extraction.quality.score}, readable=${extraction.quality.readable}, words=${extraction.quality.wordCount}, readableCharRatio=${extraction.quality.readableCharRatio}, reason=${extraction.quality.reason}`);
+    // Filter structural noise from extracted text
+    const cleanedText = filterStructuralNoise(extraction.text);
+    const effectiveText = cleanedText.length > 50 ? cleanedText : extraction.text;
+    const stats = countStats(effectiveText);
+    const scriptInfo = detectScript(effectiveText);
+    const noiseRatio = computeStructuralNoiseRatio(extraction.text);
+
+    console.log(`[${documentId}] Extraction: method=${extraction.method}, encoding=${extraction.encoding || "n/a"}, quality_score=${extraction.quality.score}, readable=${extraction.quality.readable}, words=${extraction.quality.wordCount}, readableCharRatio=${extraction.quality.readableCharRatio}, structuralNoiseRatio=${Math.round(noiseRatio * 100)}%, script=${scriptInfo.primary}, cleanedTextLen=${cleanedText.length}, rawTextLen=${extraction.text.length}`);
 
     // If extraction produced no readable text, mark as failed
     if (!extraction.quality.readable) {
@@ -411,8 +632,11 @@ serve(async (req) => {
           quality_score: extraction.quality.score,
           readable_char_ratio: extraction.quality.readableCharRatio,
           pdf_syntax_ratio: extraction.quality.pdfSyntaxRatio,
+          structural_noise_ratio: noiseRatio,
           quality_reason: extraction.quality.reason,
           file_category: categorizeFile(doc.file_type),
+          detected_script: scriptInfo.primary,
+          script_ratios: { latin: scriptInfo.latinRatio, cyrillic: scriptInfo.cyrillicRatio },
         },
         ocr_used: false,
       }, { onConflict: "document_id" });
@@ -426,26 +650,34 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Language detection
+    // Language detection — use cleaned text
     await supabase.from("documents").update({
       processing_status: "detecting_language",
       word_count: stats.word_count,
       char_count: stats.char_count,
     }).eq("id", documentId);
 
-    const langResult = detectLanguage(extraction.text);
+    const langResult = detectLanguage(effectiveText);
+
+    console.log(`[${documentId}] Language: ${langResult.language}, script=${langResult.script}, confidence=${langResult.confidence}`);
 
     await supabase.from("documents").update({
       processing_status: "summarizing",
       detected_language: langResult.language,
     }).eq("id", documentId);
 
-    // Generate summary
+    // Generate summary — use cleaned text, not raw
     let summary = "";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (LOVABLE_API_KEY && extraction.text.trim().length > 50) {
+    if (LOVABLE_API_KEY && effectiveText.trim().length > 50) {
       try {
-        const textForSummary = extraction.text.slice(0, 8000);
+        const textForSummary = effectiveText.slice(0, 8000);
+        const langHint = langResult.language === "sr"
+          ? `The document is in Serbian (${langResult.script} script). Produce the summary in Serbian.`
+          : langResult.language !== "en"
+            ? `The document is in ${langResult.language}. Produce the summary in that language.`
+            : "";
+
         const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -455,7 +687,7 @@ serve(async (req) => {
           body: JSON.stringify({
             model: "google/gemini-2.5-flash-lite",
             messages: [
-              { role: "system", content: "You are a document summarizer. Produce a concise summary of 2-5 sentences. Be factual, neutral, and informative. No markdown. If the document is in a non-English language, produce the summary in that language." },
+              { role: "system", content: `You are a document summarizer. Produce a concise summary of 2-5 sentences based on the actual content of the document. Be factual, neutral, and informative. No markdown. Focus on the main topics, arguments, or information in the document body. Ignore any structural metadata, XML fragments, or file container information. ${langHint}` },
               { role: "user", content: `Summarize this document titled "${doc.file_name}":\n\n${textForSummary}` },
             ],
           }),
@@ -475,12 +707,12 @@ serve(async (req) => {
       summary: summary || null,
     }).eq("id", documentId);
 
-    const searchText = normalizeForSearch(extraction.text, doc.file_name, summary);
+    const searchText = normalizeForSearch(effectiveText, doc.file_name, summary);
 
     await supabase.from("document_analysis").upsert({
       document_id: documentId,
       user_id: doc.user_id,
-      extracted_text: extraction.text.slice(0, 500000),
+      extracted_text: effectiveText.slice(0, 500000),
       normalized_search_text: searchText.slice(0, 500000),
       metadata_json: {
         original_size: doc.file_size,
@@ -489,6 +721,7 @@ serve(async (req) => {
         char_count: stats.char_count,
         line_count: stats.line_count,
         detected_language: langResult.language,
+        detected_script: langResult.script,
         language_confidence: langResult.confidence,
         file_category: categorizeFile(doc.file_type),
         extraction_method: extraction.method,
@@ -496,6 +729,14 @@ serve(async (req) => {
         quality_score: extraction.quality.score,
         readable_char_ratio: extraction.quality.readableCharRatio,
         pdf_syntax_ratio: extraction.quality.pdfSyntaxRatio,
+        structural_noise_ratio: noiseRatio,
+        structural_noise_filtered: cleanedText.length < extraction.text.length,
+        script_ratios: {
+          latin: scriptInfo.latinRatio,
+          cyrillic: scriptInfo.cyrillicRatio,
+          arabic: scriptInfo.arabicRatio,
+          cjk: scriptInfo.cjkRatio,
+        },
       },
       ocr_used: false,
       indexed_at: new Date().toISOString(),
@@ -511,10 +752,13 @@ serve(async (req) => {
       documentId,
       word_count: stats.word_count,
       detected_language: langResult.language,
+      detected_script: langResult.script,
+      language_confidence: langResult.confidence,
       summary_length: summary.length,
       extraction_method: extraction.method,
       extraction_encoding: extraction.encoding || null,
       quality_score: extraction.quality.score,
+      structural_noise_filtered: cleanedText.length < extraction.text.length,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("process-document error:", e);
