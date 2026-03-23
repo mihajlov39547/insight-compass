@@ -613,7 +613,10 @@ export function AppSidebar() {
                         </DropdownMenuTrigger>
                         <NotebookActionsMenuContent
                           onManageNotebook={() => handleManageNotebook(nb)}
-                          onManageDocuments={() => {/* TODO */}}
+                          onManageDocuments={() => {
+                            setSelectedNotebookId(nb.id);
+                            setActiveView('notebook-documents');
+                          }}
                           onArchiveNotebook={() => handleArchiveNotebookSidebar(nb.id)}
                           onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id)}
                         />
