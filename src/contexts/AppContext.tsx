@@ -77,8 +77,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedProjectId, setSelectedProjectIdRaw] = useState<string | null>(null);
-  const [selectedChatIdRaw, setSelectedChatIdRaw] = useState<string | null>(null);
-  const [selectedNotebookIdRaw, setSelectedNotebookIdRaw] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatIdRaw] = useState<string | null>(null);
+  const [selectedNotebookId, setSelectedNotebookIdRaw] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>('default');
   const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
