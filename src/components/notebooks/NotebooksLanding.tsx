@@ -226,7 +226,10 @@ export function NotebooksLanding() {
                     </DropdownMenuTrigger>
                     <NotebookActionsMenuContent
                       onManageNotebook={() => handleManage(notebook)}
-                      onManageDocuments={() => {/* TODO: notebook documents view */}}
+                      onManageDocuments={() => {
+                        setSelectedNotebookId(notebook.id);
+                        setActiveView('notebook-documents');
+                      }}
                       onArchiveNotebook={() => handleArchive(notebook.id)}
                       onDeleteNotebook={() => handleDelete(notebook.id)}
                     />
