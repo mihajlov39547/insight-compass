@@ -13,6 +13,7 @@ import { PricingDialog } from '@/components/dialogs/PricingDialog';
 import { OnboardingScreen } from '@/components/onboarding/OnboardingScreen';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
 import { DocumentDashboard } from '@/components/documents/DocumentDashboard';
+import { NotebooksLanding } from '@/components/notebooks/NotebooksLanding';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
 import { useCreateProject } from '@/hooks/useProjects';
@@ -25,6 +26,9 @@ function MainContent() {
   }
   if (activeView === 'chat-documents') {
     return <DocumentDashboard scope="chat" />;
+  }
+  if (activeView === 'notebooks') {
+    return <NotebooksLanding />;
   }
 
   return (

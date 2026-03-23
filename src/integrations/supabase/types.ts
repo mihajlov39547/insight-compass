@@ -117,6 +117,7 @@ export type Database = {
           id: string
           last_retry_at: string | null
           mime_type: string
+          notebook_id: string | null
           page_count: number | null
           processing_error: string | null
           processing_status: string
@@ -138,6 +139,7 @@ export type Database = {
           id?: string
           last_retry_at?: string | null
           mime_type: string
+          notebook_id?: string | null
           page_count?: number | null
           processing_error?: string | null
           processing_status?: string
@@ -159,6 +161,7 @@ export type Database = {
           id?: string
           last_retry_at?: string | null
           mime_type?: string
+          notebook_id?: string | null
           page_count?: number | null
           processing_error?: string | null
           processing_status?: string
@@ -211,6 +214,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notebooks: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string
+          icon: string | null
+          id: string
+          is_archived: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string
+          icon?: string | null
+          id?: string
+          is_archived?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string
+          icon?: string | null
+          id?: string
+          is_archived?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

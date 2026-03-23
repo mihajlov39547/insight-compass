@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Search, Users, MessageSquare, FolderOpen,
   MoreHorizontal, Bell, ChevronDown, ChevronUp,
   ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText,
-  Settings, Share2, Archive, Trash2, Pencil, Sparkles, Loader2
+  Settings, Share2, Archive, Trash2, Pencil, Sparkles, Loader2, BookOpenCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat } from '@/hooks/useChats';
+import { useNotebooks, useDeleteNotebook, useArchiveNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ProjectActionsMenuContent, ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
 
 import { planIcons, planLabels } from '@/lib/planConfig';
 
@@ -34,19 +35,23 @@ export function AppSidebar() {
     sidebarCollapsed, setSidebarCollapsed, 
     selectedProjectId, setSelectedProjectId,
     selectedChatId, setSelectedChatId,
-    setActiveView,
+    selectedNotebookId, setSelectedNotebookId,
+    activeView, setActiveView,
     unreadCount, setShowNewProject, setShowNotifications,
   } = useApp();
 
   const { user: authUser, profile } = useAuth();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
+  const { data: notebooks = [] } = useNotebooks();
   const createChat = useCreateChat();
   const deleteProject = useDeleteProject();
   const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
+  const deleteNotebook = useDeleteNotebook();
+  const archiveNotebook = useArchiveNotebook();
 
   const [editProject, setEditProject] = useState<DbProject | null>(null);
   const [editName, setEditName] = useState('');
@@ -387,6 +392,73 @@ export function AppSidebar() {
               }}
             />
           ))}
+
+          {/* My Notebooks Section */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between px-2 py-2">
+              <p className="text-xs font-medium text-sidebar-muted uppercase tracking-wider">My Notebooks</p>
+            </div>
+
+            {/* Notebooks nav item */}
+            <button
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activeView === 'notebooks' && !selectedProjectId && !selectedChatId
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+              onClick={() => {
+                setSelectedProjectId(null);
+                setSelectedChatId(null);
+                setSelectedNotebookId(null);
+                setActiveView('notebooks');
+              }}
+            >
+              <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'notebooks' ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
+                <BookOpenCheck className="h-3.5 w-3.5" />
+              </div>
+              <span className="truncate">All Notebooks</span>
+            </button>
+
+            {/* Individual notebooks */}
+            {notebooks.map((nb) => (
+              <div key={nb.id} className="group flex items-center">
+                <button
+                  className={cn(
+                    "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                    selectedNotebookId === nb.id
+                      ? "bg-accent/50 text-accent-foreground font-medium"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  )}
+                  onClick={() => {
+                    setSelectedProjectId(null);
+                    setSelectedChatId(null);
+                    setSelectedNotebookId(nb.id);
+                    setActiveView('notebooks');
+                  }}
+                >
+                  <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                    <BookOpenCheck className="h-3 w-3" />
+                  </div>
+                  <span className="truncate">{nb.name}</span>
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+                      <MoreHorizontal className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <NotebookActionsMenuContent
+                    onManageNotebook={() => {/* handled in landing */}}
+                    onManageDocuments={() => {/* TODO */}}
+                    onArchiveNotebook={() => archiveNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook archived') })}
+                    onDeleteNotebook={() => deleteNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook deleted') })}
+                  />
+                </DropdownMenu>
+              </div>
+            ))}
+            {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
+          </div>
         </div>
       </ScrollArea>
 

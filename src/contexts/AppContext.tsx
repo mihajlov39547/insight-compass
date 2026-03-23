@@ -10,7 +10,7 @@ import {
 import { DbProject } from '@/hooks/useProjects';
 import { DbChat } from '@/hooks/useChats';
 
-export type ActiveView = 'default' | 'project-documents' | 'chat-documents';
+export type ActiveView = 'default' | 'project-documents' | 'chat-documents' | 'notebooks';
 
 interface AppContextType {
   // User
@@ -32,6 +32,10 @@ interface AppContextType {
   // Chats
   selectedChatId: string | null;
   setSelectedChatId: (id: string | null) => void;
+
+  // Notebooks
+  selectedNotebookId: string | null;
+  setSelectedNotebookId: (id: string | null) => void;
 
   // Active view
   activeView: ActiveView;
@@ -74,6 +78,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedProjectId, setSelectedProjectIdRaw] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatIdRaw] = useState<string | null>(null);
+  const [selectedNotebookId, setSelectedNotebookIdRaw] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>('default');
   const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
@@ -99,7 +104,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setSelectedChatId = useCallback((id: string | null) => {
     setSelectedChatIdRaw(id);
-    // Don't reset activeView here — let callers manage it explicitly
+  }, []);
+
+  const setSelectedNotebookId = useCallback((id: string | null) => {
+    setSelectedNotebookIdRaw(id);
   }, []);
 
   return (
@@ -115,6 +123,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSelectedProjectId,
         selectedChatId,
         setSelectedChatId,
+        selectedNotebookId,
+        setSelectedNotebookId,
         activeView,
         setActiveView,
         searchQuery,
