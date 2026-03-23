@@ -614,9 +614,13 @@ async function extractText(bytes: Uint8Array, mimeType: string, fileName: string
         }
         const text = paragraphs.join("\n");
         console.log(`[docx-extraction] ZIP ok, document.xml found, w:t nodes=${wtNodesFound}, paragraphs=${paragraphs.length}, textLen=${text.length}`);
-        const quality = assessTextQuality(text);
-        if (quality.readable || text.length > 50) {
-          return { text, method: "docx_zip", encoding: "utf-8", quality: quality.readable ? quality : assessTextQuality(text.length > 20 ? text : "") };
+        let quality = assessTextQuality(text);
+        // If ZIP extraction found real w:t nodes with substantial text, trust it
+        if (!quality.readable && text.length > 50 && wtNodesFound > 3) {
+          quality = { ...quality, readable: true, score: Math.max(quality.score, 0.5), reason: "docx_zip_trusted" };
+        }
+        if (quality.readable) {
+          return { text, method: "docx_zip", encoding: "utf-8", quality };
         }
       } else {
         console.log(`[docx-extraction] word/document.xml not found in ZIP`);
