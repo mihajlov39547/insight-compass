@@ -136,6 +136,7 @@ export function useUploadDocuments() {
             user_id: user.id,
             project_id: projectId,
             chat_id: chatId || null,
+            notebook_id: notebookId || null,
             file_name: file.name,
             file_type: ext,
             mime_type: file.type || 'application/octet-stream',
