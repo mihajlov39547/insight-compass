@@ -154,7 +154,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
               </Button>
             </TooltipTrigger><TooltipContent>Attach files</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowSettings('prompt')}>
+              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowSettings(true)}>
                 <Settings2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger><TooltipContent>Prompt settings</TooltipContent></Tooltip>

@@ -405,30 +405,57 @@ export type Database = {
         Row: {
           agent_action_notifications: boolean
           auto_accept_invitations: boolean
+          auto_summarize: boolean
           chat_suggestions: boolean
+          cite_sources: boolean
           created_at: string
+          enable_answer_formatting: boolean
           generation_sound: string
           id: string
+          language_preference: string
+          layout_preference: string
+          preferred_model: string
+          response_length: string
+          retrieval_depth: string
+          show_suggested_prompts: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           agent_action_notifications?: boolean
           auto_accept_invitations?: boolean
+          auto_summarize?: boolean
           chat_suggestions?: boolean
+          cite_sources?: boolean
           created_at?: string
+          enable_answer_formatting?: boolean
           generation_sound?: string
           id?: string
+          language_preference?: string
+          layout_preference?: string
+          preferred_model?: string
+          response_length?: string
+          retrieval_depth?: string
+          show_suggested_prompts?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           agent_action_notifications?: boolean
           auto_accept_invitations?: boolean
+          auto_summarize?: boolean
           chat_suggestions?: boolean
+          cite_sources?: boolean
           created_at?: string
+          enable_answer_formatting?: boolean
           generation_sound?: string
           id?: string
+          language_preference?: string
+          layout_preference?: string
+          preferred_model?: string
+          response_length?: string
+          retrieval_depth?: string
+          show_suggested_prompts?: boolean
           updated_at?: string
           user_id?: string
         }

@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, FolderOpen, MessageSquare, Wand2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Settings } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -17,51 +16,149 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/contexts/AppContext';
-import { settingsConfig } from '@/data/mockData';
-
-const icons = {
-  project: FolderOpen,
-  chat: MessageSquare,
-  prompt: Wand2,
-};
-
-const titles = {
-  project: 'Project Settings',
-  chat: 'Chat Settings',
-  prompt: 'Prompt Settings',
-};
+import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/useUserSettings';
+import { modelOptions } from '@/data/mockData';
+import { toast } from 'sonner';
 
 export function SettingsDialog() {
   const { showSettings, setShowSettings } = useApp();
+  const { data: settings } = useUserSettings();
+  const saveSettings = useSaveUserSettings();
 
-  if (!showSettings) return null;
+  const [local, setLocal] = useState<GeneralSettings | null>(null);
 
-  const Icon = icons[showSettings];
+  useEffect(() => {
+    if (showSettings && settings) {
+      setLocal({ ...settings });
+    }
+  }, [showSettings, settings]);
+
+  if (!showSettings || !local) return null;
+
+  const update = <K extends keyof GeneralSettings>(key: K, value: GeneralSettings[K]) => {
+    setLocal(prev => prev ? { ...prev, [key]: value } : prev);
+  };
+
+  const handleSave = async () => {
+    try {
+      await saveSettings.mutateAsync(local);
+      toast.success('Settings saved');
+      setShowSettings(null);
+    } catch {
+      toast.error('Failed to save settings');
+    }
+  };
 
   return (
     <Dialog open={!!showSettings} onOpenChange={() => setShowSettings(null)}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Icon className="h-5 w-5 text-accent" />
-            {titles[showSettings]}
+            <Settings className="h-5 w-5 text-accent" />
+            General Settings
           </DialogTitle>
         </DialogHeader>
 
-        <div className="py-4">
-          {showSettings === 'project' && <ProjectSettings />}
-          {showSettings === 'chat' && <ChatSettings />}
-          {showSettings === 'prompt' && <PromptSettings />}
+        <div className="py-4 space-y-6">
+          {/* AI Response Preferences */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">AI Response Preferences</h3>
+
+            <SettingSelect
+              label="Default Response Length"
+              value={local.response_length}
+              options={['Concise', 'Standard', 'Detailed']}
+              onChange={v => update('response_length', v)}
+            />
+            <SettingSelect
+              label="Retrieval Depth"
+              value={local.retrieval_depth}
+              options={['Shallow', 'Medium', 'Deep']}
+              onChange={v => update('retrieval_depth', v)}
+            />
+            <SettingToggle
+              label="Cite Sources"
+              checked={local.cite_sources}
+              onChange={v => update('cite_sources', v)}
+            />
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Auto-summarize Documents</Label>
+                <p className="text-xs text-muted-foreground">Enabled by default</p>
+              </div>
+              <Switch checked={true} disabled />
+            </div>
+            <SettingToggle
+              label="Enable Answer Formatting"
+              description="Rich markdown rendering for AI answers"
+              checked={local.enable_answer_formatting}
+              onChange={v => update('enable_answer_formatting', v)}
+            />
+          </section>
+
+          <Separator />
+
+          {/* Interface Preferences */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">Interface Preferences</h3>
+
+            <SettingSelect
+              label="Language"
+              value={local.language_preference}
+              options={['en', 'sr-lat']}
+              optionLabels={{ en: 'English', 'sr-lat': 'Serbian (Latin)' }}
+              onChange={v => update('language_preference', v)}
+            />
+            <SettingToggle
+              label="Show Suggested Prompts"
+              checked={local.show_suggested_prompts}
+              onChange={v => update('show_suggested_prompts', v)}
+            />
+            <SettingSelect
+              label="Layout"
+              value={local.layout_preference}
+              options={['comfortable', 'compact']}
+              optionLabels={{ comfortable: 'Comfortable', compact: 'Compact' }}
+              onChange={v => update('layout_preference', v)}
+            />
+          </section>
+
+          <Separator />
+
+          {/* Defaults */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">Defaults</h3>
+
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Preferred AI Model</Label>
+              <Select value={local.preferred_model} onValueChange={v => update('preferred_model', v)}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {modelOptions.map(m => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </section>
         </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button variant="outline" onClick={() => setShowSettings(null)}>
             Cancel
           </Button>
-          <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            Save Changes
+          <Button
+            className="bg-accent hover:bg-accent/90 text-accent-foreground"
+            onClick={handleSave}
+            disabled={saveSettings.isPending}
+          >
+            {saveSettings.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </DialogContent>
@@ -69,93 +166,30 @@ export function SettingsDialog() {
   );
 }
 
-function ProjectSettings() {
-  const config = settingsConfig.project;
-  
-  return (
-    <div className="space-y-6">
-      <SettingSelect 
-        label={config.responseLength.label}
-        options={config.responseLength.options}
-        defaultValue="Standard"
-      />
-      <SettingSelect 
-        label={config.retrievalDepth.label}
-        options={config.retrievalDepth.options}
-        defaultValue="Medium"
-      />
-      <SettingToggle label={config.citeSources.label} defaultChecked={true} />
-      <SettingToggle label={config.autoSummarize.label} defaultChecked={false} />
-    </div>
-  );
-}
-
-function ChatSettings() {
-  const config = settingsConfig.chat;
-  
-  return (
-    <div className="space-y-6">
-      <SettingSelect 
-        label={config.temperature.label}
-        options={config.temperature.options}
-        defaultValue="Balanced"
-      />
-      <SettingSelect 
-        label={config.maxSources.label}
-        options={config.maxSources.options}
-        defaultValue="5"
-      />
-      <SettingToggle label={config.streamResponse.label} defaultChecked={true} />
-    </div>
-  );
-}
-
-function PromptSettings() {
-  const config = settingsConfig.prompt;
-  
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">{config.systemPrompt.label}</Label>
-        <Textarea 
-          placeholder="Enter custom system prompt..."
-          className="min-h-[120px] resize-none"
-          defaultValue="You are a helpful knowledge assistant that provides accurate, well-sourced answers based on the uploaded documents."
-        />
-        <p className="text-xs text-muted-foreground">
-          This prompt guides the assistant's behavior and response style.
-        </p>
-      </div>
-      <SettingSelect 
-        label={config.outputFormat.label}
-        options={config.outputFormat.options}
-        defaultValue="Markdown"
-      />
-      <SettingToggle label={config.includeMetadata.label} defaultChecked={true} />
-    </div>
-  );
-}
-
-function SettingSelect({ 
-  label, 
-  options, 
-  defaultValue 
-}: { 
-  label: string; 
-  options: string[]; 
-  defaultValue: string;
+function SettingSelect({
+  label,
+  value,
+  options,
+  optionLabels,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  optionLabels?: Record<string, string>;
+  onChange: (v: string) => void;
 }) {
   return (
     <div className="flex items-center justify-between">
       <Label className="text-sm">{label}</Label>
-      <Select defaultValue={defaultValue}>
+      <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="w-[150px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option} value={option}>
-              {option}
+          {options.map(opt => (
+            <SelectItem key={opt} value={opt}>
+              {optionLabels?.[opt] ?? opt}
             </SelectItem>
           ))}
         </SelectContent>
@@ -164,17 +198,24 @@ function SettingSelect({
   );
 }
 
-function SettingToggle({ 
-  label, 
-  defaultChecked 
-}: { 
-  label: string; 
-  defaultChecked: boolean;
+function SettingToggle({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
 }) {
   return (
     <div className="flex items-center justify-between">
-      <Label className="text-sm">{label}</Label>
-      <Switch defaultChecked={defaultChecked} />
+      <div>
+        <Label className="text-sm">{label}</Label>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   );
 }

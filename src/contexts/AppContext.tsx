@@ -54,8 +54,8 @@ interface AppContextType {
   unreadCount: number;
   
   // Dialogs
-  showSettings: 'project' | 'chat' | 'prompt' | null;
-  setShowSettings: (type: 'project' | 'chat' | 'prompt' | null) => void;
+  showSettings: boolean | null;
+  setShowSettings: (show: boolean | null) => void;
   showDocuments: boolean;
   setShowDocuments: (show: boolean) => void;
   documentScope: 'project' | 'chat';
@@ -82,7 +82,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeView, setActiveView] = useState<ActiveView>('default');
   const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
-  const [showSettings, setShowSettings] = useState<'project' | 'chat' | 'prompt' | null>(null);
+  const [showSettings, setShowSettings] = useState<boolean | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
   const [documentScope, setDocumentScope] = useState<'project' | 'chat'>('project');
   const [showShare, setShowShare] = useState(false);
