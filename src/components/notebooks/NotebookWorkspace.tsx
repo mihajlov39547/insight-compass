@@ -80,7 +80,7 @@ export function NotebookWorkspace() {
     await (supabase.from('documents') as any)
       .update({ notebook_enabled: !currentEnabled })
       .eq('id', doc.id);
-    // Refetch handled by react-query invalidation
+    queryClient.invalidateQueries({ queryKey: ['notebook-documents', selectedNotebookId] });
   };
 
   const handleSaveToNote = (content: string) => {
