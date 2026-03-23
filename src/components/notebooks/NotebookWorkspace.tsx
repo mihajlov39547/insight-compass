@@ -3,7 +3,7 @@ import {
   ArrowLeft, Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
   Trash2, Sparkles, Send, ChevronDown, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
-  FileUp
+  FileUp, Share2
 } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
