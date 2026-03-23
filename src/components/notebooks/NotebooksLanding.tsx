@@ -80,7 +80,7 @@ function formatLastActivity(dateStr: string): string {
 
 export function NotebooksLanding() {
   const { user } = useAuth();
-  const { setSelectedNotebookId } = useApp();
+  const { setSelectedNotebookId, setActiveView } = useApp();
   const { data: notebooks = [], isLoading } = useNotebooks();
   const deleteNotebook = useDeleteNotebook();
   const archiveNotebook = useArchiveNotebook();
