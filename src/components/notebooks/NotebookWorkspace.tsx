@@ -51,9 +51,11 @@ export function NotebookWorkspace() {
   const [showUpload, setShowUpload] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<DbNotebookNote | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [addingToSources, setAddingToSources] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
