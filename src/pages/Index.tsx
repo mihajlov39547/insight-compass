@@ -39,6 +39,9 @@ function MainContent() {
   if (activeView === 'notebook-documents') {
     return <NotebookDocumentDashboard />;
   }
+  if (activeView === 'notebook-workspace') {
+    return <NotebookWorkspace />;
+  }
 
   return (
     <>
