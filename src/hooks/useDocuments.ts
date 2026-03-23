@@ -179,6 +179,10 @@ export function useUploadDocuments() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['documents', variables.projectId] });
       queryClient.invalidateQueries({ queryKey: ['document-count', variables.projectId] });
+      if (variables.notebookId) {
+        queryClient.invalidateQueries({ queryKey: ['notebook-documents', variables.notebookId] });
+        queryClient.invalidateQueries({ queryKey: ['notebook-document-counts'] });
+      }
     },
   });
 }
