@@ -35,6 +35,9 @@ function MainContent() {
   if (activeView === 'notebooks') {
     return <NotebooksLanding />;
   }
+  if (activeView === 'notebook-documents') {
+    return <NotebookDocumentDashboard />;
+  }
 
   return (
     <>
