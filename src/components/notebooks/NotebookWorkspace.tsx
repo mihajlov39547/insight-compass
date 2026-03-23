@@ -31,7 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 
 export function NotebookWorkspace() {
-  const { selectedNotebookId, setSelectedNotebookId, setActiveView } = useApp();
+  const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare } = useApp();
   const queryClient = useQueryClient();
   const { data: notebooks = [] } = useNotebooks();
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
