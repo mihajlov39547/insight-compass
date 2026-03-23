@@ -277,13 +277,21 @@ export function AppSidebar() {
   const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
 
   const handleCreateNotebook = () => {
-    createNotebook.mutate({ name: 'New Notebook', description: '' }, {
+    setShowCreateNotebook(true);
+  };
+
+  const handleCreateNotebookSubmit = () => {
+    if (!createNbName.trim()) return;
+    createNotebook.mutate({ name: createNbName.trim(), description: createNbDescription.trim() }, {
       onSuccess: (nb) => {
         setSelectedProjectId(null);
         setSelectedChatId(null);
         setSelectedNotebookId(nb.id);
         setActiveView('notebooks');
         toast.success('Notebook created');
+        setShowCreateNotebook(false);
+        setCreateNbName('');
+        setCreateNbDescription('');
       }
     });
   };
