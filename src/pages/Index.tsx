@@ -15,6 +15,7 @@ import { NotificationPanel } from '@/components/notifications/NotificationPanel'
 import { DocumentDashboard } from '@/components/documents/DocumentDashboard';
 import { NotebookDocumentDashboard } from '@/components/documents/NotebookDocumentDashboard';
 import { NotebooksLanding } from '@/components/notebooks/NotebooksLanding';
+import { NotebookWorkspace } from '@/components/notebooks/NotebookWorkspace';
 import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
@@ -37,6 +38,9 @@ function MainContent() {
   }
   if (activeView === 'notebook-documents') {
     return <NotebookDocumentDashboard />;
+  }
+  if (activeView === 'notebook-workspace') {
+    return <NotebookWorkspace />;
   }
 
   return (

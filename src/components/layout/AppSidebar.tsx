@@ -294,7 +294,7 @@ export function AppSidebar() {
         setSelectedProjectId(null);
         setSelectedChatId(null);
         setSelectedNotebookId(nb.id);
-        setActiveView('notebooks');
+        setActiveView('notebook-workspace');
         toast.success('Notebook created');
         setShowCreateNotebook(false);
         setCreateNbName('');
@@ -597,7 +597,7 @@ export function AppSidebar() {
                           setSelectedProjectId(null);
                           setSelectedChatId(null);
                           setSelectedNotebookId(nb.id);
-                          setActiveView('notebooks');
+                          setActiveView('notebook-workspace');
                         }}
                       >
                         <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>

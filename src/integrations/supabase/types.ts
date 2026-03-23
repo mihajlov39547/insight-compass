@@ -117,6 +117,7 @@ export type Database = {
           id: string
           last_retry_at: string | null
           mime_type: string
+          notebook_enabled: boolean
           notebook_id: string | null
           page_count: number | null
           processing_error: string | null
@@ -139,6 +140,7 @@ export type Database = {
           id?: string
           last_retry_at?: string | null
           mime_type: string
+          notebook_enabled?: boolean
           notebook_id?: string | null
           page_count?: number | null
           processing_error?: string | null
@@ -161,6 +163,7 @@ export type Database = {
           id?: string
           last_retry_at?: string | null
           mime_type?: string
+          notebook_enabled?: boolean
           notebook_id?: string | null
           page_count?: number | null
           processing_error?: string | null
@@ -214,6 +217,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notebook_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          model_id: string | null
+          notebook_id: string
+          role: string
+          sources: Json | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          model_id?: string | null
+          notebook_id: string
+          role: string
+          sources?: Json | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          model_id?: string | null
+          notebook_id?: string
+          role?: string
+          sources?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notebook_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          notebook_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          notebook_id: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          notebook_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       notebooks: {
         Row: {
