@@ -78,9 +78,14 @@ export function ContextualHeader() {
           </div>
           <p className="text-sm text-muted-foreground max-w-2xl">{selectedProject.description}</p>
         </div>
-        <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleNewChat}>
-          <Plus className="h-4 w-4" /> New Chat
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowShare(true)}>
+            <Share2 className="h-4 w-4" /> Share
+          </Button>
+          <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleNewChat}>
+            <Plus className="h-4 w-4" /> New Chat
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

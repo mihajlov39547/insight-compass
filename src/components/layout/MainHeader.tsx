@@ -37,7 +37,6 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
     language, 
     setLanguage,
     setShowSettings,
-    setShowShare,
     setShowPricing,
   } = useApp();
 
