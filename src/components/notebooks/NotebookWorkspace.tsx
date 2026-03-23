@@ -131,7 +131,7 @@ export function NotebookWorkspace() {
     setNoteModalOpen(true);
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!editingNote || !selectedNotebookId) return;
     updateNote.mutate({
       id: editingNote.id,
@@ -139,7 +139,64 @@ export function NotebookWorkspace() {
       title: editTitle,
       content: editContent,
     }, {
-      onSuccess: () => {
+      onSuccess: async () => {
+        // Check if this note has a linked source document — if so, reprocess it
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          const userId = userData.user?.id;
+          if (userId) {
+            const storagePath = `${userId}/${selectedNotebookId}/notes/${editingNote.id}.md`;
+            const { data: existingDocs } = await supabase
+              .from('documents')
+              .select('id')
+              .eq('storage_path', storagePath)
+              .limit(1);
+
+            if (existingDocs && existingDocs.length > 0) {
+              const documentId = existingDocs[0].id;
+              const noteTitle = editTitle || 'Untitled Note';
+              const markdownContent = `# ${noteTitle}\n\n${editContent || ''}`;
+              const blob = new Blob([markdownContent], { type: 'text/plain' });
+
+              // Delete old file and upload fresh
+              await supabase.storage.from('insight-navigator').remove([storagePath]);
+              await supabase.storage.from('insight-navigator').upload(storagePath, blob);
+
+              // Reset document for reprocessing
+              await supabase.from('documents').update({
+                file_name: `Note: ${noteTitle}.md`,
+                file_size: blob.size,
+                processing_status: 'uploaded',
+                processing_error: null,
+                summary: null,
+                detected_language: null,
+                word_count: null,
+                char_count: null,
+              }).eq('id', documentId);
+
+              // Also clear old analysis
+              await supabase.from('document_analysis').delete().eq('document_id', documentId);
+
+              // Trigger reprocessing
+              fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                  },
+                  body: JSON.stringify({ documentId }),
+                }
+              ).catch(() => {});
+
+              queryClient.invalidateQueries({ queryKey: ['notebook-documents', selectedNotebookId] });
+              toast.success('Note source updated — reprocessing started');
+            }
+          }
+        } catch (err) {
+          console.error('Failed to reprocess note source:', err);
+        }
         setNoteModalOpen(false);
         setEditingNote(null);
       },
