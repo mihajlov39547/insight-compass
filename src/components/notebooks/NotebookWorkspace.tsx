@@ -59,6 +59,7 @@ export function NotebookWorkspace() {
   const [editContent, setEditContent] = useState('');
   const [addingToSources, setAddingToSources] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
   const hasSources = documents.length > 0;
