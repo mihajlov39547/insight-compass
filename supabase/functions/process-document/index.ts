@@ -35,6 +35,102 @@ function decodeWindows1251(bytes: Uint8Array): string {
   return result;
 }
 
+// ─── DOCX ZIP Extraction ───────────────────────────────────────────────
+
+async function extractDocxEntry(zipBytes: Uint8Array, targetPath: string): Promise<string | null> {
+  // Parse ZIP central directory to find the target entry
+  // ZIP end-of-central-directory is at the end of the file
+  const view = new DataView(zipBytes.buffer, zipBytes.byteOffset, zipBytes.byteLength);
+  
+  // Find End of Central Directory record (signature 0x06054b50)
+  let eocdOffset = -1;
+  for (let i = zipBytes.length - 22; i >= Math.max(0, zipBytes.length - 65557); i--) {
+    if (view.getUint32(i, true) === 0x06054b50) {
+      eocdOffset = i;
+      break;
+    }
+  }
+  if (eocdOffset === -1) {
+    console.log("[docx-zip] EOCD not found");
+    return null;
+  }
+
+  const cdOffset = view.getUint32(eocdOffset + 16, true);
+  const cdEntries = view.getUint16(eocdOffset + 10, true);
+
+  let offset = cdOffset;
+  for (let i = 0; i < cdEntries; i++) {
+    if (offset + 46 > zipBytes.length) break;
+    if (view.getUint32(offset, true) !== 0x02014b50) break;
+
+    const compressionMethod = view.getUint16(offset + 10, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const uncompressedSize = view.getUint32(offset + 24, true);
+    const fileNameLen = view.getUint16(offset + 28, true);
+    const extraLen = view.getUint16(offset + 30, true);
+    const commentLen = view.getUint16(offset + 32, true);
+    const localHeaderOffset = view.getUint32(offset + 42, true);
+
+    const fileName = new TextDecoder().decode(zipBytes.subarray(offset + 46, offset + 46 + fileNameLen));
+    
+    if (fileName === targetPath) {
+      // Read from local file header
+      const lfhOffset = localHeaderOffset;
+      if (lfhOffset + 30 > zipBytes.length) return null;
+      const lfhFileNameLen = view.getUint16(lfhOffset + 26, true);
+      const lfhExtraLen = view.getUint16(lfhOffset + 28, true);
+      const dataStart = lfhOffset + 30 + lfhFileNameLen + lfhExtraLen;
+
+      const compressedData = zipBytes.subarray(dataStart, dataStart + compressedSize);
+
+      if (compressionMethod === 0) {
+        // Stored (no compression)
+        return new TextDecoder("utf-8").decode(compressedData);
+      } else if (compressionMethod === 8) {
+        // Deflate
+        try {
+          const ds = new DecompressionStream("raw");
+          const writer = ds.writable.getWriter();
+          const reader = ds.readable.getReader();
+          
+          const chunks: Uint8Array[] = [];
+          const readAll = (async () => {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+            }
+          })();
+          
+          await writer.write(compressedData);
+          await writer.close();
+          await readAll;
+          
+          const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+          const result = new Uint8Array(totalLen);
+          let pos = 0;
+          for (const chunk of chunks) {
+            result.set(chunk, pos);
+            pos += chunk.length;
+          }
+          return new TextDecoder("utf-8").decode(result);
+        } catch (e) {
+          console.warn(`[docx-zip] Deflate failed for ${targetPath}: ${e}`);
+          return null;
+        }
+      } else {
+        console.log(`[docx-zip] Unsupported compression method: ${compressionMethod}`);
+        return null;
+      }
+    }
+
+    offset += 46 + fileNameLen + extraLen + commentLen;
+  }
+  
+  console.log(`[docx-zip] Entry "${targetPath}" not found among ${cdEntries} entries`);
+  return null;
+}
+
 // ─── Legacy .doc Extraction ────────────────────────────────────────────
 
 function isOLE2(bytes: Uint8Array): boolean {
