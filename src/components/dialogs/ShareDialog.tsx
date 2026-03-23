@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApp } from '@/contexts/AppContext';
 import { useProjects } from '@/hooks/useProjects';
-import { useChats } from '@/hooks/useChats';
+import { useNotebooks } from '@/hooks/useNotebooks';
 
 export function ShareDialog() {
   const { showShare, setShowShare, selectedProjectId, selectedChatId } = useApp();
