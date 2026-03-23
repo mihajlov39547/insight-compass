@@ -585,29 +585,34 @@ export function AppSidebar() {
               {notebooksListOpen && (
                 <div className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5">
                   {sortedNotebooks.map((nb) => (
-                    <div key={nb.id} className="group flex items-center">
-                      <button
-                        className={cn(
-                          "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
-                          selectedNotebookId === nb.id
-                            ? "bg-accent/50 text-accent-foreground font-medium"
-                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                        )}
-                        onClick={() => {
-                          setSelectedProjectId(null);
-                          setSelectedChatId(null);
-                          setSelectedNotebookId(nb.id);
-                          setActiveView('notebook-workspace');
-                        }}
-                      >
-                        <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-                          <BookOpenCheck className="h-3 w-3" />
-                        </div>
-                        <span className="truncate">{nb.name}</span>
-                      </button>
+                    <div key={nb.id} className="group flex items-center gap-0.5">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            className={cn(
+                              "flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                              selectedNotebookId === nb.id
+                                ? "bg-accent/50 text-accent-foreground font-medium"
+                                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                            )}
+                            onClick={() => {
+                              setSelectedProjectId(null);
+                              setSelectedChatId(null);
+                              setSelectedNotebookId(nb.id);
+                              setActiveView('notebook-workspace');
+                            }}
+                          >
+                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                              <BookOpenCheck className="h-3 w-3" />
+                            </div>
+                            <span className="truncate">{nb.name}</span>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[250px]">{nb.name}</TooltipContent>
+                      </Tooltip>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+                          <Button variant="ghost" size="icon" className="h-5 w-5 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
                             <MoreHorizontal className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -868,66 +873,78 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
-      <div className="group flex items-center">
+      <div className="group flex items-center gap-0.5">
         <CollapsibleTrigger asChild>
-          <button className="p-1 hover:bg-sidebar-accent rounded">
+          <button className="p-1 hover:bg-sidebar-accent rounded flex-shrink-0">
             {isExpanded ? <ChevronDown className="h-3 w-3 text-sidebar-muted" /> : <ChevronRight className="h-3 w-3 text-sidebar-muted" />}
           </button>
         </CollapsibleTrigger>
-        <button
-          className={cn(
-            "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            isSelected
-              ? "bg-primary/10 text-primary border border-primary/20"
-              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-          onClick={onSelect}
-        >
-          <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", isSelected ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
-            <FolderOpen className="h-3.5 w-3.5" />
-          </div>
-          <span className="truncate">{project.name}</span>
-        </button>
-        <Tooltip><TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent" onClick={onNewChat}>
-            <Plus className="h-3 w-3" />
-          </Button>
-        </TooltipTrigger><TooltipContent>New Chat</TooltipContent></Tooltip>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent">
-              <MoreHorizontal className="h-3 w-3" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className={cn(
+                "flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                isSelected
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+              onClick={onSelect}
+            >
+              <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", isSelected ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
+                <FolderOpen className="h-3.5 w-3.5" />
+              </div>
+              <span className="truncate">{project.name}</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-[250px]">{project.name}</TooltipContent>
+        </Tooltip>
+        <div className="flex items-center flex-shrink-0">
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent" onClick={onNewChat}>
+              <Plus className="h-3 w-3" />
             </Button>
-          </DropdownMenuTrigger>
-          <ProjectActionsMenuContent
-            onManageProject={onRename}
-            onManageDocuments={handleManageProjectDocs}
-            onArchiveProject={onArchive}
-            onDeleteProject={onDelete}
-          />
-        </DropdownMenu>
+          </TooltipTrigger><TooltipContent>New Chat</TooltipContent></Tooltip>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent">
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <ProjectActionsMenuContent
+              onManageProject={onRename}
+              onManageDocuments={handleManageProjectDocs}
+              onArchiveProject={onArchive}
+              onDeleteProject={onDelete}
+            />
+          </DropdownMenu>
+        </div>
       </div>
 
       <CollapsibleContent className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5 animate-fade-in">
         {chats.map((chat) => (
-          <div key={chat.id} className="group/chat flex items-center">
-            <button
-              className={cn(
-                "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
-                selectedChatId === chat.id
-                  ? "bg-accent/50 text-accent-foreground font-medium"
-                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              )}
-              onClick={() => onChatSelect(chat)}
-            >
-              <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedChatId === chat.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-                <MessageSquare className="h-3 w-3" />
-              </div>
-              <span className="truncate">{chat.name}</span>
-            </button>
+          <div key={chat.id} className="group/chat flex items-center gap-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className={cn(
+                    "flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                    selectedChatId === chat.id
+                      ? "bg-accent/50 text-accent-foreground font-medium"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  )}
+                  onClick={() => onChatSelect(chat)}
+                >
+                  <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedChatId === chat.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                    <MessageSquare className="h-3 w-3" />
+                  </div>
+                  <span className="truncate">{chat.name}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-[250px]">{chat.name}</TooltipContent>
+            </Tooltip>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover/chat:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+                <Button variant="ghost" size="icon" className="h-5 w-5 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
