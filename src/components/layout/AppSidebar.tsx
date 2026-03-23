@@ -89,7 +89,7 @@ export function AppSidebar() {
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editNbName, setEditNbName] = useState('');
   const [editNbDescription, setEditNbDescription] = useState('');
-  const updateNotebook = (await import('@/hooks/useNotebooks')).useUpdateNotebook;
+  const updateNotebook = useUpdateNotebook();
 
   // Auto-expand selected project
   useEffect(() => {
