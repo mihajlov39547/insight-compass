@@ -13,6 +13,7 @@ import { PricingDialog } from '@/components/dialogs/PricingDialog';
 import { OnboardingScreen } from '@/components/onboarding/OnboardingScreen';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
 import { DocumentDashboard } from '@/components/documents/DocumentDashboard';
+import { NotebookDocumentDashboard } from '@/components/documents/NotebookDocumentDashboard';
 import { NotebooksLanding } from '@/components/notebooks/NotebooksLanding';
 import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
