@@ -89,12 +89,12 @@ export function useDeleteNotebook() {
   return useMutation({
     mutationFn: async (id: string) => {
       // Remove notebook association from documents
-      await supabase
+      const { error: docError } = await supabase
         .from('documents')
         .update({ notebook_id: null } as any)
         .eq('notebook_id' as any, id);
 
-      const { error } = await supabase.from('notebooks' as any).delete().eq('id', id);
+      const { error } = await (supabase.from('notebooks' as any) as any).delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notebooks'] }),
