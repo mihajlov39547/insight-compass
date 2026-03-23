@@ -273,6 +273,18 @@ export function AppSidebar() {
 
   const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
 
+  const handleCreateNotebook = () => {
+    createNotebook.mutate({ name: 'New Notebook', description: '' }, {
+      onSuccess: (nb) => {
+        setSelectedProjectId(null);
+        setSelectedChatId(null);
+        setSelectedNotebookId(nb.id);
+        setActiveView('notebooks');
+        toast.success('Notebook created');
+      }
+    });
+  };
+
   const currentPlan = ((profile?.plan as keyof typeof planIcons) || 'free') as keyof typeof planIcons;
   const PlanIcon = planIcons[currentPlan];
 
