@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Message, modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import { MarkdownContent } from './MarkdownContent';
 
 interface ChatMessageProps {
   message: Message;
