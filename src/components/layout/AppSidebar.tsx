@@ -118,6 +118,29 @@ export function AppSidebar() {
   const expandAll = () => setExpandedProjects(new Set(projects.map(p => p.id)));
   const collapseAll = () => setExpandedProjects(new Set());
 
+  const sortedNotebooks = useMemo(() => {
+    const sorted = [...notebooks];
+    if (nbAlphaSort === 'asc') return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    if (nbAlphaSort === 'desc') return sorted.sort((a, b) => b.name.localeCompare(a.name));
+    if (nbDateSort === 'newest') return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    if (nbDateSort === 'oldest') return sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    return sorted.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  }, [notebooks, nbAlphaSort, nbDateSort]);
+
+  const cycleNbAlphaSort = () => {
+    const next = nbAlphaSort === 'none' ? 'asc' : nbAlphaSort === 'asc' ? 'desc' : 'none';
+    setNbAlphaSort(next);
+    if (next !== 'none') setNbDateSort('updated');
+  };
+  const cycleNbDateSort = () => {
+    const next = nbDateSort === 'updated' ? 'newest' : nbDateSort === 'newest' ? 'oldest' : 'updated';
+    setNbDateSort(next);
+    if (next !== 'updated') setNbAlphaSort('none');
+  };
+
+  const nbAlphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[nbAlphaSort];
+  const nbDateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[nbDateSort];
+
   useEffect(() => { searchQuery.trim() ? setShowSearchResults(true) : setShowSearchResults(false); }, [searchQuery]);
   useEffect(() => { if (showSearch && searchInputRef.current) searchInputRef.current.focus(); }, [showSearch]);
 
