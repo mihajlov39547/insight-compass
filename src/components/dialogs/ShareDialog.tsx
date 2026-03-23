@@ -34,7 +34,7 @@ export function ShareDialog() {
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-accent" />Share "{context}"
           </DialogTitle>
-          <DialogDescription>Invite team members to collaborate on this {selectedChat ? 'chat' : 'project'}.</DialogDescription>
+          <DialogDescription>Invite team members to collaborate on this {entityType}.</DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-6">
           <div className="space-y-3">
