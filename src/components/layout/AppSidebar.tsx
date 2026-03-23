@@ -544,6 +544,11 @@ export function AppSidebar() {
                     <Clock className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger><TooltipContent side="top" className="text-xs">{nbDateLabel}</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={(e) => { e.stopPropagation(); setNotebooksListOpen(prev => !prev); }}>
+                    {notebooksListOpen ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{notebooksListOpen ? 'Collapse notebooks' : 'Expand notebooks'}</TooltipContent></Tooltip>
               </div>
             </div>
 
@@ -576,44 +581,48 @@ export function AppSidebar() {
                 </TooltipTrigger><TooltipContent>New Notebook</TooltipContent></Tooltip>
               </div>
 
-              {/* Individual notebooks */}
-              {sortedNotebooks.map((nb) => (
-                <div key={nb.id} className="group flex items-center">
-                  <button
-                    className={cn(
-                      "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
-                      selectedNotebookId === nb.id
-                        ? "bg-accent/50 text-accent-foreground font-medium"
-                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                    )}
-                    onClick={() => {
-                      setSelectedProjectId(null);
-                      setSelectedChatId(null);
-                      setSelectedNotebookId(nb.id);
-                      setActiveView('notebooks');
-                    }}
-                  >
-                    <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-                      <BookOpenCheck className="h-3 w-3" />
+              {/* Collapsible notebook list */}
+              {notebooksListOpen && (
+                <div className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5">
+                  {sortedNotebooks.map((nb) => (
+                    <div key={nb.id} className="group flex items-center">
+                      <button
+                        className={cn(
+                          "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                          selectedNotebookId === nb.id
+                            ? "bg-accent/50 text-accent-foreground font-medium"
+                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        )}
+                        onClick={() => {
+                          setSelectedProjectId(null);
+                          setSelectedChatId(null);
+                          setSelectedNotebookId(nb.id);
+                          setActiveView('notebooks');
+                        }}
+                      >
+                        <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                          <BookOpenCheck className="h-3 w-3" />
+                        </div>
+                        <span className="truncate">{nb.name}</span>
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+                            <MoreHorizontal className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <NotebookActionsMenuContent
+                          onManageNotebook={() => handleManageNotebook(nb)}
+                          onManageDocuments={() => {/* TODO */}}
+                          onArchiveNotebook={() => handleArchiveNotebookSidebar(nb.id)}
+                          onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id)}
+                        />
+                      </DropdownMenu>
                     </div>
-                    <span className="truncate">{nb.name}</span>
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
-                        <MoreHorizontal className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <NotebookActionsMenuContent
-                      onManageNotebook={() => {/* handled in landing */}}
-                      onManageDocuments={() => {/* TODO */}}
-                      onArchiveNotebook={() => archiveNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook archived') })}
-                      onDeleteNotebook={() => deleteNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook deleted') })}
-                    />
-                  </DropdownMenu>
+                  ))}
+                  {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
                 </div>
-              ))}
-              {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
+              )}
             </CollapsibleContent>
           </Collapsible>
         </div>
