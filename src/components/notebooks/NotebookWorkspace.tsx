@@ -5,6 +5,7 @@ import {
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
   FileUp, Share2
 } from 'lucide-react';
+import { NoteFormatToolbar } from '@/components/notebooks/NoteFormatToolbar';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ export function NotebookWorkspace() {
   const [editContent, setEditContent] = useState('');
   const [addingToSources, setAddingToSources] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
   const hasSources = documents.length > 0;
@@ -487,7 +489,7 @@ export function NotebookWorkspace() {
             <DialogTitle>Edit Note</DialogTitle>
             <DialogDescription className="sr-only">Edit your notebook note</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-3 py-2">
             <Input
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
@@ -495,11 +497,17 @@ export function NotebookWorkspace() {
               className="text-base font-medium"
               autoFocus
             />
+            <NoteFormatToolbar
+              textareaRef={noteTextareaRef}
+              value={editContent}
+              onChange={setEditContent}
+            />
             <Textarea
+              ref={noteTextareaRef}
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               placeholder="Write your note…"
-              className="min-h-[200px] resize-none text-sm leading-relaxed"
+              className="min-h-[200px] resize-none text-sm leading-relaxed font-mono"
             />
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
