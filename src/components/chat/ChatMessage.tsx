@@ -40,7 +40,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
         <div className={cn(
           isUser ? "chat-bubble-user" : "chat-bubble-assistant"
         )}>
-          <MessageContent content={message.content} />
+          {isUser ? <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div> : <MarkdownContent content={message.content} />}
         </div>
 
         {/* Sources */}

@@ -563,7 +563,7 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy }: {
       </Avatar>
       <div className={cn("max-w-[75%] space-y-2", isUser ? "items-end" : "items-start")}>
         <div className={cn(isUser ? "chat-bubble-user" : "chat-bubble-assistant")}>
-          <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div>
+          {isUser ? <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div> : <MarkdownContent content={message.content} />}
         </div>
 
         {/* Sources */}
