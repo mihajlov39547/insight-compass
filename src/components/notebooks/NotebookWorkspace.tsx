@@ -93,8 +93,15 @@ export function NotebookWorkspace() {
       notebookId: selectedNotebookId,
       title: 'AI Insight',
       content,
+    }, {
+      onSuccess: (note) => {
+        setEditingNote(note);
+        setEditTitle(note.title);
+        setEditContent(note.content);
+        setNoteModalOpen(true);
+        toast.success('Saved to notes — you can edit it now');
+      },
     });
-    toast.success('Saved to notes');
   };
 
   const handleCopyContent = (content: string) => {
