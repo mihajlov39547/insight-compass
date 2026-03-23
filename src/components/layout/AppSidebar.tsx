@@ -73,6 +73,7 @@ export function AppSidebar() {
     : displayEmail?.[0]?.toUpperCase() || '?';
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [notebooksListOpen, setNotebooksListOpen] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -83,6 +84,12 @@ export function AppSidebar() {
   const [nbAlphaSort, setNbAlphaSort] = useState<'none' | 'asc' | 'desc'>('none');
   const [nbDateSort, setNbDateSort] = useState<'updated' | 'newest' | 'oldest'>('updated');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Manage notebook from sidebar
+  const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
+  const [editNbName, setEditNbName] = useState('');
+  const [editNbDescription, setEditNbDescription] = useState('');
+  const updateNotebook = (await import('@/hooks/useNotebooks')).useUpdateNotebook;
 
   // Auto-expand selected project
   useEffect(() => {
