@@ -205,7 +205,7 @@ export function NotebooksLanding() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    setSelectedNotebookId(notebook.id);
+                    setSelectedNotebookId(notebook.id); setActiveView('notebook-workspace');
                   }
                 }}
                 className={`group relative flex flex-col justify-between min-h-[200px] rounded-xl border p-5 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer active:scale-[0.98] ${CARD_COLORS[colorIdx]}`}
