@@ -494,14 +494,47 @@ async function extractText(bytes: Uint8Array, mimeType: string, fileName: string
     return { text: result.text, method: result.method, encoding: result.encoding, quality };
   }
 
-  // DOCX
+  // DOCX — proper ZIP-based extraction
   if (ext === "docx" || mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    try {
+      // DOCX is a ZIP archive; use DecompressionStream to read word/document.xml
+      const docXml = await extractDocxEntry(bytes, "word/document.xml");
+      if (docXml) {
+        // Parse w:t text nodes, respecting w:p paragraph boundaries
+        const paragraphs: string[] = [];
+        // Split by <w:p ...> paragraphs
+        const pBlocks = docXml.split(/<w:p[\s>]/);
+        let wtNodesFound = 0;
+        for (const block of pBlocks) {
+          const textParts: string[] = [];
+          const wtMatches = block.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g);
+          for (const m of wtMatches) {
+            textParts.push(m[1]);
+            wtNodesFound++;
+          }
+          if (textParts.length > 0) {
+            paragraphs.push(textParts.join(""));
+          }
+        }
+        const text = paragraphs.join("\n");
+        console.log(`[docx-extraction] ZIP ok, document.xml found, w:t nodes=${wtNodesFound}, paragraphs=${paragraphs.length}, textLen=${text.length}`);
+        const quality = assessTextQuality(text);
+        if (quality.readable || text.length > 50) {
+          return { text, method: "docx_zip", encoding: "utf-8", quality: quality.readable ? quality : assessTextQuality(text.length > 20 ? text : "") };
+        }
+      } else {
+        console.log(`[docx-extraction] word/document.xml not found in ZIP`);
+      }
+    } catch (e) {
+      console.warn(`[docx-extraction] ZIP extraction failed: ${e}`);
+    }
+    // Fallback: try raw regex on decoded bytes (unlikely to work but preserves old path)
     const raw = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
     const matches = raw.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g);
     const parts: string[] = [];
     for (const m of matches) parts.push(m[1]);
     const text = parts.join(" ");
-    return { text, method: "docx_xml", encoding: "utf-8", quality: assessTextQuality(text) };
+    return { text, method: "docx_xml_fallback", encoding: "utf-8", quality: assessTextQuality(text) };
   }
 
   // XLSX/XLS
