@@ -35,6 +35,102 @@ function decodeWindows1251(bytes: Uint8Array): string {
   return result;
 }
 
+// ─── DOCX ZIP Extraction ───────────────────────────────────────────────
+
+async function extractDocxEntry(zipBytes: Uint8Array, targetPath: string): Promise<string | null> {
+  // Parse ZIP central directory to find the target entry
+  // ZIP end-of-central-directory is at the end of the file
+  const view = new DataView(zipBytes.buffer, zipBytes.byteOffset, zipBytes.byteLength);
+  
+  // Find End of Central Directory record (signature 0x06054b50)
+  let eocdOffset = -1;
+  for (let i = zipBytes.length - 22; i >= Math.max(0, zipBytes.length - 65557); i--) {
+    if (view.getUint32(i, true) === 0x06054b50) {
+      eocdOffset = i;
+      break;
+    }
+  }
+  if (eocdOffset === -1) {
+    console.log("[docx-zip] EOCD not found");
+    return null;
+  }
+
+  const cdOffset = view.getUint32(eocdOffset + 16, true);
+  const cdEntries = view.getUint16(eocdOffset + 10, true);
+
+  let offset = cdOffset;
+  for (let i = 0; i < cdEntries; i++) {
+    if (offset + 46 > zipBytes.length) break;
+    if (view.getUint32(offset, true) !== 0x02014b50) break;
+
+    const compressionMethod = view.getUint16(offset + 10, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const uncompressedSize = view.getUint32(offset + 24, true);
+    const fileNameLen = view.getUint16(offset + 28, true);
+    const extraLen = view.getUint16(offset + 30, true);
+    const commentLen = view.getUint16(offset + 32, true);
+    const localHeaderOffset = view.getUint32(offset + 42, true);
+
+    const fileName = new TextDecoder().decode(zipBytes.subarray(offset + 46, offset + 46 + fileNameLen));
+    
+    if (fileName === targetPath) {
+      // Read from local file header
+      const lfhOffset = localHeaderOffset;
+      if (lfhOffset + 30 > zipBytes.length) return null;
+      const lfhFileNameLen = view.getUint16(lfhOffset + 26, true);
+      const lfhExtraLen = view.getUint16(lfhOffset + 28, true);
+      const dataStart = lfhOffset + 30 + lfhFileNameLen + lfhExtraLen;
+
+      const compressedData = zipBytes.subarray(dataStart, dataStart + compressedSize);
+
+      if (compressionMethod === 0) {
+        // Stored (no compression)
+        return new TextDecoder("utf-8").decode(compressedData);
+      } else if (compressionMethod === 8) {
+        // Deflate
+        try {
+          const ds = new DecompressionStream("raw");
+          const writer = ds.writable.getWriter();
+          const reader = ds.readable.getReader();
+          
+          const chunks: Uint8Array[] = [];
+          const readAll = (async () => {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+            }
+          })();
+          
+          await writer.write(compressedData);
+          await writer.close();
+          await readAll;
+          
+          const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+          const result = new Uint8Array(totalLen);
+          let pos = 0;
+          for (const chunk of chunks) {
+            result.set(chunk, pos);
+            pos += chunk.length;
+          }
+          return new TextDecoder("utf-8").decode(result);
+        } catch (e) {
+          console.warn(`[docx-zip] Deflate failed for ${targetPath}: ${e}`);
+          return null;
+        }
+      } else {
+        console.log(`[docx-zip] Unsupported compression method: ${compressionMethod}`);
+        return null;
+      }
+    }
+
+    offset += 46 + fileNameLen + extraLen + commentLen;
+  }
+  
+  console.log(`[docx-zip] Entry "${targetPath}" not found among ${cdEntries} entries`);
+  return null;
+}
+
 // ─── Legacy .doc Extraction ────────────────────────────────────────────
 
 function isOLE2(bytes: Uint8Array): boolean {
@@ -494,14 +590,51 @@ async function extractText(bytes: Uint8Array, mimeType: string, fileName: string
     return { text: result.text, method: result.method, encoding: result.encoding, quality };
   }
 
-  // DOCX
+  // DOCX — proper ZIP-based extraction
   if (ext === "docx" || mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    try {
+      // DOCX is a ZIP archive; use DecompressionStream to read word/document.xml
+      const docXml = await extractDocxEntry(bytes, "word/document.xml");
+      if (docXml) {
+        // Parse w:t text nodes, respecting w:p paragraph boundaries
+        const paragraphs: string[] = [];
+        // Split by <w:p ...> paragraphs
+        const pBlocks = docXml.split(/<w:p[\s>]/);
+        let wtNodesFound = 0;
+        for (const block of pBlocks) {
+          const textParts: string[] = [];
+          const wtMatches = block.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g);
+          for (const m of wtMatches) {
+            textParts.push(m[1]);
+            wtNodesFound++;
+          }
+          if (textParts.length > 0) {
+            paragraphs.push(textParts.join(""));
+          }
+        }
+        const text = paragraphs.join("\n");
+        console.log(`[docx-extraction] ZIP ok, document.xml found, w:t nodes=${wtNodesFound}, paragraphs=${paragraphs.length}, textLen=${text.length}`);
+        let quality = assessTextQuality(text);
+        // If ZIP extraction found real w:t nodes with substantial text, trust it
+        if (!quality.readable && text.length > 50 && wtNodesFound > 3) {
+          quality = { ...quality, readable: true, score: Math.max(quality.score, 0.5), reason: "docx_zip_trusted" };
+        }
+        if (quality.readable) {
+          return { text, method: "docx_zip", encoding: "utf-8", quality };
+        }
+      } else {
+        console.log(`[docx-extraction] word/document.xml not found in ZIP`);
+      }
+    } catch (e) {
+      console.warn(`[docx-extraction] ZIP extraction failed: ${e}`);
+    }
+    // Fallback: try raw regex on decoded bytes (unlikely to work but preserves old path)
     const raw = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
     const matches = raw.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g);
     const parts: string[] = [];
     for (const m of matches) parts.push(m[1]);
     const text = parts.join(" ");
-    return { text, method: "docx_xml", encoding: "utf-8", quality: assessTextQuality(text) };
+    return { text, method: "docx_xml_fallback", encoding: "utf-8", quality: assessTextQuality(text) };
   }
 
   // XLSX/XLS
