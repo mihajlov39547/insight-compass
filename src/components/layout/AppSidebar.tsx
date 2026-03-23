@@ -879,20 +879,25 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             {isExpanded ? <ChevronDown className="h-3 w-3 text-sidebar-muted" /> : <ChevronRight className="h-3 w-3 text-sidebar-muted" />}
           </button>
         </CollapsibleTrigger>
-        <button
-          className={cn(
-            "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            isSelected
-              ? "bg-primary/10 text-primary border border-primary/20"
-              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-          onClick={onSelect}
-        >
-          <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", isSelected ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
-            <FolderOpen className="h-3.5 w-3.5" />
-          </div>
-          <span className="truncate">{project.name}</span>
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className={cn(
+                "flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                isSelected
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+              onClick={onSelect}
+            >
+              <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", isSelected ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
+                <FolderOpen className="h-3.5 w-3.5" />
+              </div>
+              <span className="truncate">{project.name}</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-[250px]">{project.name}</TooltipContent>
+        </Tooltip>
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent" onClick={onNewChat}>
             <Plus className="h-3 w-3" />
