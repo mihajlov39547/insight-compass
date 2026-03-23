@@ -489,7 +489,7 @@ export function NotebookWorkspace() {
             <DialogTitle>Edit Note</DialogTitle>
             <DialogDescription className="sr-only">Edit your notebook note</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-3 py-2">
             <Input
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
@@ -497,11 +497,17 @@ export function NotebookWorkspace() {
               className="text-base font-medium"
               autoFocus
             />
+            <NoteFormatToolbar
+              textareaRef={noteTextareaRef}
+              value={editContent}
+              onChange={setEditContent}
+            />
             <Textarea
+              ref={noteTextareaRef}
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               placeholder="Write your note…"
-              className="min-h-[200px] resize-none text-sm leading-relaxed"
+              className="min-h-[200px] resize-none text-sm leading-relaxed font-mono"
             />
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
