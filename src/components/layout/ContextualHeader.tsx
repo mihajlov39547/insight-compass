@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Plus, Search, Settings, FileText, MessageSquare, FolderOpen, Calendar, Upload
+  Plus, Search, Settings, FileText, MessageSquare, FolderOpen, Calendar, Upload, Share2
 } from 'lucide-react';
 import { ProjectChatGrid } from '@/components/dashboard/ProjectChatGrid';
 import { Button } from '@/components/ui/button';
