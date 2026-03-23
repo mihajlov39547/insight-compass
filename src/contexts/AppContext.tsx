@@ -122,6 +122,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSelectedProjectId,
         selectedChatId,
         setSelectedChatId,
+        selectedNotebookId,
+        setSelectedNotebookId,
         activeView,
         setActiveView,
         searchQuery,
