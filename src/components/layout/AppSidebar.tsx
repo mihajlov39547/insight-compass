@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat } from '@/hooks/useChats';
-import { useNotebooks, useDeleteNotebook, useArchiveNotebook, DbNotebook } from '@/hooks/useNotebooks';
+import { useNotebooks, useCreateNotebook, useDeleteNotebook, useArchiveNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,6 +45,7 @@ export function AppSidebar() {
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: notebooks = [] } = useNotebooks();
   const createChat = useCreateChat();
+  const createNotebook = useCreateNotebook();
   const deleteProject = useDeleteProject();
   const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
@@ -72,8 +73,12 @@ export function AppSidebar() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [projectsSectionOpen, setProjectsSectionOpen] = useState(true);
+  const [notebooksSectionOpen, setNotebooksSectionOpen] = useState(true);
   const [alphaSort, setAlphaSort] = useState<'none' | 'asc' | 'desc'>('none');
   const [dateSort, setDateSort] = useState<'updated' | 'newest' | 'oldest'>('updated');
+  const [nbAlphaSort, setNbAlphaSort] = useState<'none' | 'asc' | 'desc'>('none');
+  const [nbDateSort, setNbDateSort] = useState<'updated' | 'newest' | 'oldest'>('updated');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-expand selected project
@@ -112,6 +117,29 @@ export function AppSidebar() {
 
   const expandAll = () => setExpandedProjects(new Set(projects.map(p => p.id)));
   const collapseAll = () => setExpandedProjects(new Set());
+
+  const sortedNotebooks = useMemo(() => {
+    const sorted = [...notebooks];
+    if (nbAlphaSort === 'asc') return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    if (nbAlphaSort === 'desc') return sorted.sort((a, b) => b.name.localeCompare(a.name));
+    if (nbDateSort === 'newest') return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    if (nbDateSort === 'oldest') return sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    return sorted.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  }, [notebooks, nbAlphaSort, nbDateSort]);
+
+  const cycleNbAlphaSort = () => {
+    const next = nbAlphaSort === 'none' ? 'asc' : nbAlphaSort === 'asc' ? 'desc' : 'none';
+    setNbAlphaSort(next);
+    if (next !== 'none') setNbDateSort('updated');
+  };
+  const cycleNbDateSort = () => {
+    const next = nbDateSort === 'updated' ? 'newest' : nbDateSort === 'newest' ? 'oldest' : 'updated';
+    setNbDateSort(next);
+    if (next !== 'updated') setNbAlphaSort('none');
+  };
+
+  const nbAlphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[nbAlphaSort];
+  const nbDateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[nbDateSort];
 
   useEffect(() => { searchQuery.trim() ? setShowSearchResults(true) : setShowSearchResults(false); }, [searchQuery]);
   useEffect(() => { if (showSearch && searchInputRef.current) searchInputRef.current.focus(); }, [showSearch]);
@@ -245,6 +273,18 @@ export function AppSidebar() {
 
   const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
 
+  const handleCreateNotebook = () => {
+    createNotebook.mutate({ name: 'New Notebook', description: '' }, {
+      onSuccess: (nb) => {
+        setSelectedProjectId(null);
+        setSelectedChatId(null);
+        setSelectedNotebookId(nb.id);
+        setActiveView('notebooks');
+        toast.success('Notebook created');
+      }
+    });
+  };
+
   const currentPlan = ((profile?.plan as keyof typeof planIcons) || 'free') as keyof typeof planIcons;
   const PlanIcon = planIcons[currentPlan];
 
@@ -338,127 +378,196 @@ export function AppSidebar() {
         )}
       </div>
 
-      {/* Projects List */}
+      {/* Projects & Notebooks */}
       <ScrollArea className="flex-1 px-3">
         <div className="space-y-1">
-          <div className="flex items-center justify-between px-2 py-2">
-            <p className="text-xs font-medium text-sidebar-muted uppercase tracking-wider">My Projects</p>
-            <div className="flex items-center gap-0.5">
-              <Tooltip><TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", alphaSort !== 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleAlphaSort}>
-                  {alphaSort === 'desc' ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
-                </Button>
-              </TooltipTrigger><TooltipContent side="top" className="text-xs">{alphaLabel}</TooltipContent></Tooltip>
-              <Tooltip><TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", alphaSort === 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleDateSort}>
-                  <Clock className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger><TooltipContent side="top" className="text-xs">{dateLabel}</TooltipContent></Tooltip>
-              <Tooltip><TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={expandedProjects.size === projects.length ? collapseAll : expandAll}>
-                  {expandedProjects.size === projects.length ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
-                </Button>
-              </TooltipTrigger><TooltipContent side="top" className="text-xs">{expandedProjects.size === projects.length ? 'Collapse all' : 'Expand all'}</TooltipContent></Tooltip>
-            </div>
-          </div>
-          
-          {projectsLoading && <p className="text-xs text-sidebar-muted px-2 py-4 text-center">Loading projects...</p>}
-          
-          {sortedProjects.map((project) => (
-            <ProjectItem
-              key={project.id}
-              project={project}
-              isExpanded={expandedProjects.has(project.id)}
-              isSelected={selectedProjectId === project.id && !selectedChatId}
-              selectedChatId={selectedChatId}
-              onToggle={() => toggleProject(project.id)}
-              onSelect={() => handleProjectSelect(project)}
-              onNewChat={(e) => handleNewChat(project.id, e)}
-              onDelete={() => handleDeleteProject(project.id)}
-              onArchive={() => handleArchiveProject(project.id)}
-              onRename={() => handleManageProject(project)}
-              onChatSelect={handleChatSelect}
-              onDeleteChat={(chatId) => {
-                deleteChat.mutate({ id: chatId, projectId: project.id }, {
-                  onSuccess: () => {
-                    if (selectedChatId === chatId) setSelectedChatId(null);
-                    toast.success('Chat deleted');
-                  }
-                });
-              }}
-              onRenameChat={(chatId, currentName) => {
-                setRenameChatId(chatId);
-                setRenameChatValue(currentName);
-              }}
-            />
-          ))}
-
-          {/* My Notebooks Section */}
-          <div className="mt-4">
+          {/* My Projects Section */}
+          <Collapsible open={projectsSectionOpen} onOpenChange={setProjectsSectionOpen}>
             <div className="flex items-center justify-between px-2 py-2">
-              <p className="text-xs font-medium text-sidebar-muted uppercase tracking-wider">My Notebooks</p>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
+                  {projectsSectionOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  My Projects
+                </button>
+              </CollapsibleTrigger>
             </div>
 
-            {/* Notebooks nav item */}
-            <button
-              className={cn(
-                "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                activeView === 'notebooks' && !selectedProjectId && !selectedChatId
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              )}
-              onClick={() => {
-                setSelectedProjectId(null);
-                setSelectedChatId(null);
-                setSelectedNotebookId(null);
-                setActiveView('notebooks');
-              }}
-            >
-              <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'notebooks' ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
-                <BookOpenCheck className="h-3.5 w-3.5" />
-              </div>
-              <span className="truncate">All Notebooks</span>
-            </button>
-
-            {/* Individual notebooks */}
-            {notebooks.map((nb) => (
-              <div key={nb.id} className="group flex items-center">
+            <CollapsibleContent className="space-y-0.5 animate-fade-in">
+              {/* All projects + create */}
+              <div className="flex items-center gap-1">
                 <button
                   className={cn(
-                    "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
-                    selectedNotebookId === nb.id
-                      ? "bg-accent/50 text-accent-foreground font-medium"
-                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    activeView === 'projects' && !selectedProjectId && !selectedChatId
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
                   onClick={() => {
                     setSelectedProjectId(null);
                     setSelectedChatId(null);
-                    setSelectedNotebookId(nb.id);
+                    setSelectedNotebookId(null);
+                    setActiveView('projects');
+                  }}
+                >
+                  <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'projects' ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
+                    <FolderOpen className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="truncate">All projects</span>
+                </button>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent flex-shrink-0" onClick={() => setShowNewProject(true)}>
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger><TooltipContent>New Project</TooltipContent></Tooltip>
+              </div>
+
+              {/* Sort controls */}
+              <div className="flex items-center justify-end gap-0.5 px-2">
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", alphaSort !== 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleAlphaSort}>
+                    {alphaSort === 'desc' ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{alphaLabel}</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", alphaSort === 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleDateSort}>
+                    <Clock className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{dateLabel}</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={expandedProjects.size === projects.length ? collapseAll : expandAll}>
+                    {expandedProjects.size === projects.length ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{expandedProjects.size === projects.length ? 'Collapse all' : 'Expand all'}</TooltipContent></Tooltip>
+              </div>
+
+              {projectsLoading && <p className="text-xs text-sidebar-muted px-2 py-4 text-center">Loading projects...</p>}
+
+              {sortedProjects.map((project) => (
+                <ProjectItem
+                  key={project.id}
+                  project={project}
+                  isExpanded={expandedProjects.has(project.id)}
+                  isSelected={selectedProjectId === project.id && !selectedChatId}
+                  selectedChatId={selectedChatId}
+                  onToggle={() => toggleProject(project.id)}
+                  onSelect={() => handleProjectSelect(project)}
+                  onNewChat={(e) => handleNewChat(project.id, e)}
+                  onDelete={() => handleDeleteProject(project.id)}
+                  onArchive={() => handleArchiveProject(project.id)}
+                  onRename={() => handleManageProject(project)}
+                  onChatSelect={handleChatSelect}
+                  onDeleteChat={(chatId) => {
+                    deleteChat.mutate({ id: chatId, projectId: project.id }, {
+                      onSuccess: () => {
+                        if (selectedChatId === chatId) setSelectedChatId(null);
+                        toast.success('Chat deleted');
+                      }
+                    });
+                  }}
+                  onRenameChat={(chatId, currentName) => {
+                    setRenameChatId(chatId);
+                    setRenameChatValue(currentName);
+                  }}
+                />
+              ))}
+              {!projectsLoading && projects.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No projects yet</p>}
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* My Notebooks Section */}
+          <Collapsible open={notebooksSectionOpen} onOpenChange={setNotebooksSectionOpen}>
+            <div className="flex items-center justify-between px-2 py-2 mt-2">
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
+                  {notebooksSectionOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  My Notebooks
+                </button>
+              </CollapsibleTrigger>
+            </div>
+
+            <CollapsibleContent className="space-y-0.5 animate-fade-in">
+              {/* All notebooks + create */}
+              <div className="flex items-center gap-1">
+                <button
+                  className={cn(
+                    "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    activeView === 'notebooks' && !selectedNotebookId
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  )}
+                  onClick={() => {
+                    setSelectedProjectId(null);
+                    setSelectedChatId(null);
+                    setSelectedNotebookId(null);
                     setActiveView('notebooks');
                   }}
                 >
-                  <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-                    <BookOpenCheck className="h-3 w-3" />
+                  <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'notebooks' && !selectedNotebookId ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
+                    <BookOpenCheck className="h-3.5 w-3.5" />
                   </div>
-                  <span className="truncate">{nb.name}</span>
+                  <span className="truncate">All notebooks</span>
                 </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
-                      <MoreHorizontal className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <NotebookActionsMenuContent
-                    onManageNotebook={() => {/* handled in landing */}}
-                    onManageDocuments={() => {/* TODO */}}
-                    onArchiveNotebook={() => archiveNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook archived') })}
-                    onDeleteNotebook={() => deleteNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook deleted') })}
-                  />
-                </DropdownMenu>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent flex-shrink-0" onClick={handleCreateNotebook}>
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger><TooltipContent>New Notebook</TooltipContent></Tooltip>
               </div>
-            ))}
-            {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
-          </div>
+
+              {/* Sort controls */}
+              <div className="flex items-center justify-end gap-0.5 px-2">
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", nbAlphaSort !== 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleNbAlphaSort}>
+                    {nbAlphaSort === 'desc' ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{nbAlphaLabel}</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", nbAlphaSort === 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleNbDateSort}>
+                    <Clock className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{nbDateLabel}</TooltipContent></Tooltip>
+              </div>
+
+              {/* Individual notebooks */}
+              {sortedNotebooks.map((nb) => (
+                <div key={nb.id} className="group flex items-center">
+                  <button
+                    className={cn(
+                      "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                      selectedNotebookId === nb.id
+                        ? "bg-accent/50 text-accent-foreground font-medium"
+                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    )}
+                    onClick={() => {
+                      setSelectedProjectId(null);
+                      setSelectedChatId(null);
+                      setSelectedNotebookId(nb.id);
+                      setActiveView('notebooks');
+                    }}
+                  >
+                    <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                      <BookOpenCheck className="h-3 w-3" />
+                    </div>
+                    <span className="truncate">{nb.name}</span>
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+                        <MoreHorizontal className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <NotebookActionsMenuContent
+                      onManageNotebook={() => {/* handled in landing */}}
+                      onManageDocuments={() => {/* TODO */}}
+                      onArchiveNotebook={() => archiveNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook archived') })}
+                      onDeleteNotebook={() => deleteNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook deleted') })}
+                    />
+                  </DropdownMenu>
+                </div>
+              ))}
+              {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </ScrollArea>
 
