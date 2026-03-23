@@ -294,7 +294,7 @@ export function AppSidebar() {
         setSelectedProjectId(null);
         setSelectedChatId(null);
         setSelectedNotebookId(nb.id);
-        setActiveView('notebooks');
+        setActiveView('notebook-workspace');
         toast.success('Notebook created');
         setShowCreateNotebook(false);
         setCreateNbName('');
