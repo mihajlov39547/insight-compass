@@ -134,7 +134,7 @@ export function useUploadDocuments() {
           .from('documents' as any)
           .insert({
             user_id: user.id,
-            project_id: projectId,
+            project_id: notebookId ? null : projectId,
             chat_id: chatId || null,
             notebook_id: notebookId || null,
             file_name: file.name,

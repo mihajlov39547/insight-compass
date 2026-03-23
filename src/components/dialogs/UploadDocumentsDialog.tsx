@@ -85,7 +85,6 @@ export function UploadDocumentsDialog({
   const validFiles = pendingFiles.filter(f => f.valid);
 
   const handleDone = async () => {
-    // For notebook context, we need a projectId placeholder — use a dummy or the notebookId
     const effectiveProjectId = context === 'notebook' ? (selectedNotebookId || '') : selectedProjectId;
     if (!effectiveProjectId || validFiles.length === 0) return;
 
