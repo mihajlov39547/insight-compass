@@ -35,19 +35,23 @@ export function AppSidebar() {
     sidebarCollapsed, setSidebarCollapsed, 
     selectedProjectId, setSelectedProjectId,
     selectedChatId, setSelectedChatId,
-    setActiveView,
+    selectedNotebookId, setSelectedNotebookId,
+    activeView, setActiveView,
     unreadCount, setShowNewProject, setShowNotifications,
   } = useApp();
 
   const { user: authUser, profile } = useAuth();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
+  const { data: notebooks = [] } = useNotebooks();
   const createChat = useCreateChat();
   const deleteProject = useDeleteProject();
   const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
+  const deleteNotebook = useDeleteNotebook();
+  const archiveNotebook = useArchiveNotebook();
 
   const [editProject, setEditProject] = useState<DbProject | null>(null);
   const [editName, setEditName] = useState('');
