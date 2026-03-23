@@ -14,6 +14,7 @@ import { OnboardingScreen } from '@/components/onboarding/OnboardingScreen';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
 import { DocumentDashboard } from '@/components/documents/DocumentDashboard';
 import { NotebooksLanding } from '@/components/notebooks/NotebooksLanding';
+import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
 import { useCreateProject } from '@/hooks/useProjects';
@@ -21,6 +22,9 @@ import { useCreateProject } from '@/hooks/useProjects';
 function MainContent() {
   const { activeView } = useApp();
 
+  if (activeView === 'projects') {
+    return <ProjectsLanding />;
+  }
   if (activeView === 'project-documents') {
     return <DocumentDashboard scope="project" />;
   }
