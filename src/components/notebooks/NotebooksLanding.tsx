@@ -201,7 +201,7 @@ export function NotebooksLanding() {
                 key={notebook.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => setSelectedNotebookId(notebook.id)}
+                onClick={() => { setSelectedNotebookId(notebook.id); setActiveView('notebook-workspace'); }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
