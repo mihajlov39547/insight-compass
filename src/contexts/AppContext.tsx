@@ -33,6 +33,10 @@ interface AppContextType {
   selectedChatId: string | null;
   setSelectedChatId: (id: string | null) => void;
 
+  // Notebooks
+  selectedNotebookId: string | null;
+  setSelectedNotebookId: (id: string | null) => void;
+
   // Active view
   activeView: ActiveView;
   setActiveView: (view: ActiveView) => void;
