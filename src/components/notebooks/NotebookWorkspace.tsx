@@ -106,33 +106,93 @@ export function NotebookWorkspace() {
     if (!selectedNotebookId) return;
     createNote.mutate({ notebookId: selectedNotebookId, title: '', content: '' }, {
       onSuccess: (note) => {
-        setEditingNoteId(note.id);
+        setEditingNote(note);
         setEditTitle('');
         setEditContent('');
+        setNoteModalOpen(true);
       },
     });
   };
 
   const handleStartEdit = (note: DbNotebookNote) => {
-    setEditingNoteId(note.id);
+    setEditingNote(note);
     setEditTitle(note.title);
     setEditContent(note.content);
+    setNoteModalOpen(true);
   };
 
   const handleSaveNote = () => {
-    if (!editingNoteId || !selectedNotebookId) return;
+    if (!editingNote || !selectedNotebookId) return;
     updateNote.mutate({
-      id: editingNoteId,
+      id: editingNote.id,
       notebookId: selectedNotebookId,
       title: editTitle,
       content: editContent,
+    }, {
+      onSuccess: () => {
+        setNoteModalOpen(false);
+        setEditingNote(null);
+      },
     });
-    setEditingNoteId(null);
   };
 
   const handleDeleteNote = (note: DbNotebookNote) => {
     if (!selectedNotebookId) return;
     deleteNote.mutate({ id: note.id, notebookId: selectedNotebookId });
+    if (editingNote?.id === note.id) {
+      setNoteModalOpen(false);
+      setEditingNote(null);
+    }
+  };
+
+  const handleAddNoteToSources = async () => {
+    if (!editingNote || !selectedNotebookId) return;
+    // Save note first
+    if (editTitle !== editingNote.title || editContent !== editingNote.content) {
+      updateNote.mutate({
+        id: editingNote.id,
+        notebookId: selectedNotebookId,
+        title: editTitle,
+        content: editContent,
+      });
+    }
+    setAddingToSources(true);
+    try {
+      const noteTitle = editTitle || 'Untitled Note';
+      const noteContent = editContent || '';
+      // Create a text blob from the note content and upload as a document source
+      const blob = new Blob([noteContent], { type: 'text/plain' });
+      const fileName = `Note: ${noteTitle}.txt`;
+      const storagePath = `notebooks/${selectedNotebookId}/notes/${editingNote.id}.txt`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('insight-navigator')
+        .upload(storagePath, blob, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: userData } = await supabase.auth.getUser();
+      const { error: docError } = await supabase.from('documents').insert({
+        user_id: userData.user!.id,
+        notebook_id: selectedNotebookId,
+        file_name: fileName,
+        file_type: 'txt',
+        mime_type: 'text/plain',
+        file_size: blob.size,
+        storage_path: storagePath,
+        processing_status: 'uploaded',
+        notebook_enabled: true,
+      });
+      if (docError) throw docError;
+
+      queryClient.invalidateQueries({ queryKey: ['notebook-documents', selectedNotebookId] });
+      toast.success('Note added to sources');
+      setNoteModalOpen(false);
+      setEditingNote(null);
+    } catch (err: any) {
+      toast.error('Failed to add note to sources');
+    } finally {
+      setAddingToSources(false);
+    }
   };
 
   if (!notebook) return null;
