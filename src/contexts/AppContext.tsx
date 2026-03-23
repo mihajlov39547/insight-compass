@@ -103,7 +103,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setSelectedChatId = useCallback((id: string | null) => {
     setSelectedChatIdRaw(id);
-    // Don't reset activeView here — let callers manage it explicitly
+  }, []);
+
+  const setSelectedNotebookId = useCallback((id: string | null) => {
+    setSelectedNotebookIdRaw(id);
   }, []);
 
   return (
