@@ -26,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResults';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ProjectActionsMenuContent, ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
 
 import { planIcons, planLabels } from '@/lib/planConfig';
 
