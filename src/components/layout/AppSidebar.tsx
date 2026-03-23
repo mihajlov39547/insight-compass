@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat } from '@/hooks/useChats';
-import { useNotebooks, useDeleteNotebook, useArchiveNotebook, DbNotebook } from '@/hooks/useNotebooks';
+import { useNotebooks, useCreateNotebook, useDeleteNotebook, useArchiveNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
