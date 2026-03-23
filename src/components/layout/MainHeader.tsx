@@ -95,7 +95,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
       </div>
 
       {/* Right Side - Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {/* Not logged in: show auth options */}
         {!authUser && (
           <>
@@ -120,7 +120,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
             {!minimal && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 text-muted-foreground hover:text-foreground rounded-lg">
                     <Globe className="h-4 w-4" />
                     <span className="text-sm">{language === 'en' ? 'EN' : 'SR'}</span>
                     <ChevronDown className="h-3 w-3" />
@@ -139,29 +139,48 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
               </DropdownMenu>
             )}
 
-
-            {/* Plan Icon */}
+            {/* Plan Badge with label */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all hover:ring-2 hover:ring-primary/30",
+                    "h-9 px-3 gap-1.5 rounded-lg",
                     `plan-badge-${appUser.plan}`
                   )}
                   onClick={() => setShowPricing(true)}
                 >
                   <PlanIcon className="h-4 w-4" />
-                </div>
+                  <span className="text-sm font-medium">{planLabels[appUser.plan]}</span>
+                </Button>
               </TooltipTrigger>
               <TooltipContent>{planLabels[appUser.plan]} Plan</TooltipContent>
             </Tooltip>
 
+            {/* General Settings - hide in minimal mode */}
+            {!minimal && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="h-9 w-9 p-0 rounded-lg text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowSettings(true)}
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>General Settings</TooltipContent>
+              </Tooltip>
+            )}
+
             {/* User Avatar with dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-accent/50 transition-all">
+                <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-accent/50 transition-all rounded-lg">
                   {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm rounded-lg">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -183,23 +202,6 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Project Settings - hide in minimal mode */}
-            {!minimal && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowSettings('project')}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Project Settings</TooltipContent>
-              </Tooltip>
-            )}
           </>
         )}
       </div>
