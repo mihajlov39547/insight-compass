@@ -240,6 +240,10 @@ export function useDeleteDocument() {
     onSuccess: (doc) => {
       queryClient.invalidateQueries({ queryKey: ['documents', doc.project_id] });
       queryClient.invalidateQueries({ queryKey: ['document-count', doc.project_id] });
+      if ((doc as any).notebook_id) {
+        queryClient.invalidateQueries({ queryKey: ['notebook-documents', (doc as any).notebook_id] });
+        queryClient.invalidateQueries({ queryKey: ['notebook-document-counts'] });
+      }
     },
   });
 }
