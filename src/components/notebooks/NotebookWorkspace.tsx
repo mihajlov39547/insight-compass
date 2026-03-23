@@ -3,7 +3,7 @@ import {
   ArrowLeft, Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
   Trash2, Sparkles, Send, ChevronDown, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
-  FileUp
+  FileUp, Share2
 } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -31,7 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 
 export function NotebookWorkspace() {
-  const { selectedNotebookId, setSelectedNotebookId, setActiveView } = useApp();
+  const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare } = useApp();
   const queryClient = useQueryClient();
   const { data: notebooks = [] } = useNotebooks();
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
@@ -218,6 +218,9 @@ export function NotebookWorkspace() {
             <p className="text-xs text-muted-foreground truncate">{notebook.description}</p>
           )}
         </div>
+        <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setShowShare(true)}>
+          <Share2 className="h-4 w-4" /> Share
+        </Button>
       </div>
 
       {/* 3-column layout */}

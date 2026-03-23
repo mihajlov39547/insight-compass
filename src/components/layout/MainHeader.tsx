@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
-  Share2, 
   Settings, 
   ChevronDown,
   Sparkles,
@@ -38,7 +37,6 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
     language, 
     setLanguage,
     setShowSettings,
-    setShowShare,
     setShowPricing,
   } = useApp();
 
@@ -141,18 +139,6 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
               </DropdownMenu>
             )}
 
-            {/* Share - hide in minimal mode */}
-            {!minimal && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2"
-                onClick={() => setShowShare(true)}
-              >
-                <Share2 className="h-4 w-4" />
-                Share
-              </Button>
-            )}
 
             {/* Plan Icon */}
             <Tooltip>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Plus, Search, Settings, FileText, MessageSquare, FolderOpen, Calendar, Upload
+  Plus, Search, Settings, FileText, MessageSquare, FolderOpen, Calendar, Upload, Share2
 } from 'lucide-react';
 import { ProjectChatGrid } from '@/components/dashboard/ProjectChatGrid';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { useDocuments } from '@/hooks/useDocuments';
 import { cn } from '@/lib/utils';
 
 export function ContextualHeader() {
-  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowSettings, setShowDocuments, setDocumentScope, setActiveView } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowSettings, setShowDocuments, setDocumentScope, setActiveView, setShowShare } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: documents = [] } = useDocuments(selectedProjectId ?? undefined, undefined);
@@ -78,9 +78,14 @@ export function ContextualHeader() {
           </div>
           <p className="text-sm text-muted-foreground max-w-2xl">{selectedProject.description}</p>
         </div>
-        <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleNewChat}>
-          <Plus className="h-4 w-4" /> New Chat
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowShare(true)}>
+            <Share2 className="h-4 w-4" /> Share
+          </Button>
+          <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleNewChat}>
+            <Plus className="h-4 w-4" /> New Chat
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

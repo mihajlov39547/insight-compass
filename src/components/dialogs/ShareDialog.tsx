@@ -9,21 +9,23 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApp } from '@/contexts/AppContext';
 import { useProjects } from '@/hooks/useProjects';
-import { useChats } from '@/hooks/useChats';
+import { useNotebooks } from '@/hooks/useNotebooks';
 
 export function ShareDialog() {
-  const { showShare, setShowShare, selectedProjectId, selectedChatId } = useApp();
+  const { showShare, setShowShare, selectedProjectId, selectedNotebookId, activeView } = useApp();
   const { data: projects = [] } = useProjects();
-  const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
+  const { data: notebooks = [] } = useNotebooks();
   const [email, setEmail] = useState('');
   const [copied, setCopied] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
-  const selectedChat = chats.find(c => c.id === selectedChatId);
+  const selectedNotebook = notebooks.find(n => n.id === selectedNotebookId);
 
   const handleCopyLink = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
-  const context = selectedChat ? selectedChat.name : selectedProject?.name || 'Project';
+  const isNotebook = activeView === 'notebook-workspace';
+  const context = isNotebook ? selectedNotebook?.name || 'Notebook' : selectedProject?.name || 'Project';
+  const entityType = isNotebook ? 'notebook' : 'project';
 
   return (
     <Dialog open={showShare} onOpenChange={setShowShare}>
@@ -32,7 +34,7 @@ export function ShareDialog() {
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-accent" />Share "{context}"
           </DialogTitle>
-          <DialogDescription>Invite team members to collaborate on this {selectedChat ? 'chat' : 'project'}.</DialogDescription>
+          <DialogDescription>Invite team members to collaborate on this {entityType}.</DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-6">
           <div className="space-y-3">
