@@ -58,7 +58,7 @@ export function ContextualHeader() {
             <Input placeholder="Search in this chat..." className="pl-9 h-8 text-sm bg-secondary/50" />
           </div>
           <Tooltip><TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowSettings('chat')}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowSettings(true)}>
               <Settings className="h-4 w-4" />
             </Button>
           </TooltipTrigger><TooltipContent>Chat Settings</TooltipContent></Tooltip>
