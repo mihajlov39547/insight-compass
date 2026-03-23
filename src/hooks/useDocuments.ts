@@ -98,6 +98,7 @@ interface UploadParams {
   files: File[];
   projectId: string;
   chatId?: string | null;
+  notebookId?: string | null;
 }
 
 export function useUploadDocuments() {
