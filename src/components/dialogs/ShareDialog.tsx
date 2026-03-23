@@ -12,18 +12,20 @@ import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
 
 export function ShareDialog() {
-  const { showShare, setShowShare, selectedProjectId, selectedChatId } = useApp();
+  const { showShare, setShowShare, selectedProjectId, selectedNotebookId, activeView } = useApp();
   const { data: projects = [] } = useProjects();
-  const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
+  const { data: notebooks = [] } = useNotebooks();
   const [email, setEmail] = useState('');
   const [copied, setCopied] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
-  const selectedChat = chats.find(c => c.id === selectedChatId);
+  const selectedNotebook = notebooks.find(n => n.id === selectedNotebookId);
 
   const handleCopyLink = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
-  const context = selectedChat ? selectedChat.name : selectedProject?.name || 'Project';
+  const isNotebook = activeView === 'notebook-workspace';
+  const context = isNotebook ? selectedNotebook?.name || 'Notebook' : selectedProject?.name || 'Project';
+  const entityType = isNotebook ? 'notebook' : 'project';
 
   return (
     <Dialog open={showShare} onOpenChange={setShowShare}>
