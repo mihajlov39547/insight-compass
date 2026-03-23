@@ -3,8 +3,9 @@ import {
   ArrowLeft, Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
   Trash2, Sparkles, Send, ChevronDown, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
-  FileUp
+  FileUp, Share2
 } from 'lucide-react';
+import { NoteFormatToolbar } from '@/components/notebooks/NoteFormatToolbar';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 
 export function NotebookWorkspace() {
-  const { selectedNotebookId, setSelectedNotebookId, setActiveView } = useApp();
+  const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare } = useApp();
   const queryClient = useQueryClient();
   const { data: notebooks = [] } = useNotebooks();
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
@@ -58,6 +59,7 @@ export function NotebookWorkspace() {
   const [editContent, setEditContent] = useState('');
   const [addingToSources, setAddingToSources] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
   const hasSources = documents.length > 0;
@@ -167,36 +169,82 @@ export function NotebookWorkspace() {
     setAddingToSources(true);
     try {
       const noteTitle = editTitle || 'Untitled Note';
-      const noteContent = editContent || '';
-      // Create a text blob from the note content and upload as a document source
-      const blob = new Blob([noteContent], { type: 'text/plain' });
-      const fileName = `Note: ${noteTitle}.txt`;
-      const storagePath = `notebooks/${selectedNotebookId}/notes/${editingNote.id}.txt`;
+      const noteBody = editContent || '';
+      // Build markdown content with title as heading
+      const markdownContent = `# ${noteTitle}\n\n${noteBody}`;
+      const blob = new Blob([markdownContent], { type: 'text/plain' });
+      const fileName = `Note: ${noteTitle}.md`;
+      // Use note id in path for deduplication
+      const storagePath = `notebooks/${selectedNotebookId}/notes/${editingNote.id}.md`;
 
+      // Upload (upsert so re-adding updates the file)
       const { error: uploadError } = await supabase.storage
         .from('insight-navigator')
         .upload(storagePath, blob, { upsert: true });
       if (uploadError) throw uploadError;
 
       const { data: userData } = await supabase.auth.getUser();
-      const { error: docError } = await supabase.from('documents').insert({
-        user_id: userData.user!.id,
-        notebook_id: selectedNotebookId,
-        file_name: fileName,
-        file_type: 'txt',
-        mime_type: 'text/plain',
-        file_size: blob.size,
-        storage_path: storagePath,
-        processing_status: 'uploaded',
-        notebook_enabled: true,
-      });
-      if (docError) throw docError;
+      const userId = userData.user!.id;
+
+      // Check if a document already exists for this note (same storage_path)
+      const { data: existingDocs } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('storage_path', storagePath)
+        .limit(1);
+
+      let documentId: string;
+
+      if (existingDocs && existingDocs.length > 0) {
+        // Update existing document and re-process
+        documentId = existingDocs[0].id;
+        await supabase.from('documents').update({
+          file_name: fileName,
+          file_size: blob.size,
+          processing_status: 'uploaded',
+          processing_error: null,
+          summary: null,
+          detected_language: null,
+          word_count: null,
+          char_count: null,
+        }).eq('id', documentId);
+        toast.success('Note source updated — re-processing');
+      } else {
+        // Create new document
+        const { data: docData, error: docError } = await supabase.from('documents').insert({
+          user_id: userId,
+          notebook_id: selectedNotebookId,
+          file_name: fileName,
+          file_type: 'md',
+          mime_type: 'text/plain',
+          file_size: blob.size,
+          storage_path: storagePath,
+          processing_status: 'uploaded',
+          notebook_enabled: true,
+        }).select('id').single();
+        if (docError) throw docError;
+        documentId = docData.id;
+        toast.success('Note added to sources');
+      }
+
+      // Trigger processing pipeline
+      fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ documentId }),
+        }
+      ).catch(() => { /* processing failure tracked server-side */ });
 
       queryClient.invalidateQueries({ queryKey: ['notebook-documents', selectedNotebookId] });
-      toast.success('Note added to sources');
       setNoteModalOpen(false);
       setEditingNote(null);
     } catch (err: any) {
+      console.error('Add note to sources error:', err);
       toast.error('Failed to add note to sources');
     } finally {
       setAddingToSources(false);
@@ -218,6 +266,9 @@ export function NotebookWorkspace() {
             <p className="text-xs text-muted-foreground truncate">{notebook.description}</p>
           )}
         </div>
+        <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setShowShare(true)}>
+          <Share2 className="h-4 w-4" /> Share
+        </Button>
       </div>
 
       {/* 3-column layout */}
@@ -484,7 +535,7 @@ export function NotebookWorkspace() {
             <DialogTitle>Edit Note</DialogTitle>
             <DialogDescription className="sr-only">Edit your notebook note</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-3 py-2">
             <Input
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
@@ -492,11 +543,17 @@ export function NotebookWorkspace() {
               className="text-base font-medium"
               autoFocus
             />
+            <NoteFormatToolbar
+              textareaRef={noteTextareaRef}
+              value={editContent}
+              onChange={setEditContent}
+            />
             <Textarea
+              ref={noteTextareaRef}
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               placeholder="Write your note…"
-              className="min-h-[200px] resize-none text-sm leading-relaxed"
+              className="min-h-[200px] resize-none text-sm leading-relaxed font-mono"
             />
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
