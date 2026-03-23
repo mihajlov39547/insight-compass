@@ -19,6 +19,7 @@ import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDeleteNotebookNote, DbNotebookNote } from '@/hooks/useNotebookNotes';
 import { useNotebookMessages, useNotebookAIChat } from '@/hooks/useNotebookChat';
 import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
+import { useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge';
 import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
