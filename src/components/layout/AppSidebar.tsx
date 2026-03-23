@@ -61,6 +61,9 @@ export function AppSidebar() {
   const [isImprovingDesc, setIsImprovingDesc] = useState(false);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
+  const [showCreateNotebook, setShowCreateNotebook] = useState(false);
+  const [createNbName, setCreateNbName] = useState('');
+  const [createNbDescription, setCreateNbDescription] = useState('');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
@@ -274,13 +277,21 @@ export function AppSidebar() {
   const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
 
   const handleCreateNotebook = () => {
-    createNotebook.mutate({ name: 'New Notebook', description: '' }, {
+    setShowCreateNotebook(true);
+  };
+
+  const handleCreateNotebookSubmit = () => {
+    if (!createNbName.trim()) return;
+    createNotebook.mutate({ name: createNbName.trim(), description: createNbDescription.trim() }, {
       onSuccess: (nb) => {
         setSelectedProjectId(null);
         setSelectedChatId(null);
         setSelectedNotebookId(nb.id);
         setActiveView('notebooks');
         toast.success('Notebook created');
+        setShowCreateNotebook(false);
+        setCreateNbName('');
+        setCreateNbDescription('');
       }
     });
   };
@@ -390,6 +401,23 @@ export function AppSidebar() {
                   My Projects
                 </button>
               </CollapsibleTrigger>
+              <div className="flex items-center gap-0.5">
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", alphaSort !== 'none' ? "text-primary" : "text-sidebar-muted")} onClick={(e) => { e.stopPropagation(); cycleAlphaSort(); }}>
+                    {alphaSort === 'desc' ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{alphaLabel}</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", alphaSort === 'none' ? "text-primary" : "text-sidebar-muted")} onClick={(e) => { e.stopPropagation(); cycleDateSort(); }}>
+                    <Clock className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{dateLabel}</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={(e) => { e.stopPropagation(); expandedProjects.size === projects.length ? collapseAll() : expandAll(); }}>
+                    {expandedProjects.size === projects.length ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{expandedProjects.size === projects.length ? 'Collapse all' : 'Expand all'}</TooltipContent></Tooltip>
+              </div>
             </div>
 
             <CollapsibleContent className="space-y-0.5 animate-fade-in">
@@ -419,25 +447,6 @@ export function AppSidebar() {
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger><TooltipContent>New Project</TooltipContent></Tooltip>
-              </div>
-
-              {/* Sort controls */}
-              <div className="flex items-center justify-end gap-0.5 px-2">
-                <Tooltip><TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", alphaSort !== 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleAlphaSort}>
-                    {alphaSort === 'desc' ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
-                  </Button>
-                </TooltipTrigger><TooltipContent side="top" className="text-xs">{alphaLabel}</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", alphaSort === 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleDateSort}>
-                    <Clock className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger><TooltipContent side="top" className="text-xs">{dateLabel}</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={expandedProjects.size === projects.length ? collapseAll : expandAll}>
-                    {expandedProjects.size === projects.length ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
-                  </Button>
-                </TooltipTrigger><TooltipContent side="top" className="text-xs">{expandedProjects.size === projects.length ? 'Collapse all' : 'Expand all'}</TooltipContent></Tooltip>
               </div>
 
               {projectsLoading && <p className="text-xs text-sidebar-muted px-2 py-4 text-center">Loading projects...</p>}
@@ -483,6 +492,18 @@ export function AppSidebar() {
                   My Notebooks
                 </button>
               </CollapsibleTrigger>
+              <div className="flex items-center gap-0.5">
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", nbAlphaSort !== 'none' ? "text-primary" : "text-sidebar-muted")} onClick={(e) => { e.stopPropagation(); cycleNbAlphaSort(); }}>
+                    {nbAlphaSort === 'desc' ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{nbAlphaLabel}</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", nbAlphaSort === 'none' ? "text-primary" : "text-sidebar-muted")} onClick={(e) => { e.stopPropagation(); cycleNbDateSort(); }}>
+                    <Clock className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{nbDateLabel}</TooltipContent></Tooltip>
+              </div>
             </div>
 
             <CollapsibleContent className="space-y-0.5 animate-fade-in">
@@ -512,20 +533,6 @@ export function AppSidebar() {
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger><TooltipContent>New Notebook</TooltipContent></Tooltip>
-              </div>
-
-              {/* Sort controls */}
-              <div className="flex items-center justify-end gap-0.5 px-2">
-                <Tooltip><TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", nbAlphaSort !== 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleNbAlphaSort}>
-                    {nbAlphaSort === 'desc' ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
-                  </Button>
-                </TooltipTrigger><TooltipContent side="top" className="text-xs">{nbAlphaLabel}</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 hover:text-sidebar-foreground hover:bg-sidebar-accent", nbAlphaSort === 'none' ? "text-primary" : "text-sidebar-muted")} onClick={cycleNbDateSort}>
-                    <Clock className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger><TooltipContent side="top" className="text-xs">{nbDateLabel}</TooltipContent></Tooltip>
               </div>
 
               {/* Individual notebooks */}
@@ -693,6 +700,44 @@ export function AppSidebar() {
                 });
               }}
             >Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Notebook Dialog */}
+      <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); } }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Create Notebook</DialogTitle>
+            <DialogDescription>Create a new notebook to organize your research and documents.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label htmlFor="create-nb-name">Notebook name <span className="text-destructive">*</span></Label>
+              <Input
+                id="create-nb-name"
+                value={createNbName}
+                onChange={(e) => setCreateNbName(e.target.value)}
+                placeholder="My Notebook"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter' && createNbName.trim()) handleCreateNotebookSubmit(); }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="create-nb-desc">Description</Label>
+              <Textarea
+                id="create-nb-desc"
+                value={createNbDescription}
+                onChange={(e) => setCreateNbDescription(e.target.value)}
+                placeholder="What is this notebook about?"
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 pt-4">
+            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); }}>Cancel</Button>
+            <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>Create Notebook</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
