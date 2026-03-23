@@ -56,7 +56,7 @@ export function UploadDocumentsDialog({
 }: UploadDocumentsDialogProps) {
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const { selectedProjectId, selectedChatId } = useApp();
+  const { selectedProjectId, selectedChatId, selectedNotebookId } = useApp();
   const uploadMutation = useUploadDocuments();
 
   const addFiles = useCallback((fileList: FileList | File[]) => {
