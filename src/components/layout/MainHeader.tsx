@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
-  Share2, 
   Settings, 
   ChevronDown,
   Sparkles,
