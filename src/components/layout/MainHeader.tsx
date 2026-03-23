@@ -141,18 +141,6 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
               </DropdownMenu>
             )}
 
-            {/* Share - hide in minimal mode */}
-            {!minimal && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2"
-                onClick={() => setShowShare(true)}
-              >
-                <Share2 className="h-4 w-4" />
-                Share
-              </Button>
-            )}
 
             {/* Plan Icon */}
             <Tooltip>
