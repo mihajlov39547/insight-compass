@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface DbDocument {
   id: string;
   user_id: string;
-  project_id: string;
+  project_id: string | null;
   chat_id: string | null;
+  notebook_id: string | null;
   file_name: string;
   file_type: string;
   mime_type: string;
