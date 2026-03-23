@@ -898,24 +898,26 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
           </TooltipTrigger>
           <TooltipContent side="right" className="max-w-[250px]">{project.name}</TooltipContent>
         </Tooltip>
-        <Tooltip><TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent" onClick={onNewChat}>
-            <Plus className="h-3 w-3" />
-          </Button>
-        </TooltipTrigger><TooltipContent>New Chat</TooltipContent></Tooltip>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent">
-              <MoreHorizontal className="h-3 w-3" />
+        <div className="flex items-center flex-shrink-0">
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent" onClick={onNewChat}>
+              <Plus className="h-3 w-3" />
             </Button>
-          </DropdownMenuTrigger>
-          <ProjectActionsMenuContent
-            onManageProject={onRename}
-            onManageDocuments={handleManageProjectDocs}
-            onArchiveProject={onArchive}
-            onDeleteProject={onDelete}
-          />
-        </DropdownMenu>
+          </TooltipTrigger><TooltipContent>New Chat</TooltipContent></Tooltip>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent">
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <ProjectActionsMenuContent
+              onManageProject={onRename}
+              onManageDocuments={handleManageProjectDocs}
+              onArchiveProject={onArchive}
+              onDeleteProject={onDelete}
+            />
+          </DropdownMenu>
+        </div>
       </div>
 
       <CollapsibleContent className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5 animate-fade-in">
