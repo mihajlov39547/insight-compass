@@ -28,6 +28,7 @@ import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { MarkdownContent } from '@/components/chat/MarkdownContent';
 
 export function NotebookWorkspace() {
   const { selectedNotebookId, setSelectedNotebookId, setActiveView } = useApp();
@@ -563,7 +564,7 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy }: {
       </Avatar>
       <div className={cn("max-w-[75%] space-y-2", isUser ? "items-end" : "items-start")}>
         <div className={cn(isUser ? "chat-bubble-user" : "chat-bubble-assistant")}>
-          <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div>
+          {isUser ? <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div> : <MarkdownContent content={message.content} />}
         </div>
 
         {/* Sources */}
