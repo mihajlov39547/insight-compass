@@ -608,7 +608,7 @@ export function AppSidebar() {
                             <span className="truncate">{nb.name}</span>
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-[250px]">{nb.name}</TooltipContent>
+                        <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{nb.name}</TooltipContent>
                       </Tooltip>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -896,7 +896,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
               <span className="truncate">{project.name}</span>
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">{project.name}</TooltipContent>
+          <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{project.name}</TooltipContent>
         </Tooltip>
         <div className="flex items-center flex-shrink-0">
           <Tooltip><TooltipTrigger asChild>
@@ -940,7 +940,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <span className="truncate">{chat.name}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-[250px]">{chat.name}</TooltipContent>
+              <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{chat.name}</TooltipContent>
             </Tooltip>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
