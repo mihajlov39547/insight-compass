@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat } from '@/hooks/useChats';
-import { useNotebooks, useCreateNotebook, useDeleteNotebook, useArchiveNotebook, DbNotebook } from '@/hooks/useNotebooks';
+import { useNotebooks, useCreateNotebook, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -73,6 +73,7 @@ export function AppSidebar() {
     : displayEmail?.[0]?.toUpperCase() || '?';
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [notebooksListOpen, setNotebooksListOpen] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -83,6 +84,12 @@ export function AppSidebar() {
   const [nbAlphaSort, setNbAlphaSort] = useState<'none' | 'asc' | 'desc'>('none');
   const [nbDateSort, setNbDateSort] = useState<'updated' | 'newest' | 'oldest'>('updated');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Manage notebook from sidebar
+  const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
+  const [editNbName, setEditNbName] = useState('');
+  const [editNbDescription, setEditNbDescription] = useState('');
+  const updateNotebook = useUpdateNotebook();
 
   // Auto-expand selected project
   useEffect(() => {
@@ -296,6 +303,40 @@ export function AppSidebar() {
     });
   };
 
+  const handleManageNotebook = (nb: DbNotebook) => {
+    setEditNotebook(nb);
+    setEditNbName(nb.name);
+    setEditNbDescription(nb.description || '');
+  };
+
+  const handleManageNotebookSubmit = () => {
+    if (!editNotebook || !editNbName.trim()) return;
+    updateNotebook.mutate({ id: editNotebook.id, name: editNbName.trim(), description: editNbDescription.trim() }, {
+      onSuccess: () => {
+        toast.success('Notebook updated');
+        setEditNotebook(null);
+      },
+    });
+  };
+
+  const handleArchiveNotebookSidebar = (id: string) => {
+    archiveNotebook.mutate(id, {
+      onSuccess: () => {
+        if (selectedNotebookId === id) setSelectedNotebookId(null);
+        toast.success('Notebook archived');
+      }
+    });
+  };
+
+  const handleDeleteNotebookSidebar = (id: string) => {
+    deleteNotebook.mutate(id, {
+      onSuccess: () => {
+        if (selectedNotebookId === id) setSelectedNotebookId(null);
+        toast.success('Notebook deleted');
+      }
+    });
+  };
+
   const currentPlan = ((profile?.plan as keyof typeof planIcons) || 'free') as keyof typeof planIcons;
   const PlanIcon = planIcons[currentPlan];
 
@@ -503,6 +544,11 @@ export function AppSidebar() {
                     <Clock className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger><TooltipContent side="top" className="text-xs">{nbDateLabel}</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={(e) => { e.stopPropagation(); setNotebooksListOpen(prev => !prev); }}>
+                    {notebooksListOpen ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{notebooksListOpen ? 'Collapse notebooks' : 'Expand notebooks'}</TooltipContent></Tooltip>
               </div>
             </div>
 
@@ -535,44 +581,48 @@ export function AppSidebar() {
                 </TooltipTrigger><TooltipContent>New Notebook</TooltipContent></Tooltip>
               </div>
 
-              {/* Individual notebooks */}
-              {sortedNotebooks.map((nb) => (
-                <div key={nb.id} className="group flex items-center">
-                  <button
-                    className={cn(
-                      "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
-                      selectedNotebookId === nb.id
-                        ? "bg-accent/50 text-accent-foreground font-medium"
-                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                    )}
-                    onClick={() => {
-                      setSelectedProjectId(null);
-                      setSelectedChatId(null);
-                      setSelectedNotebookId(nb.id);
-                      setActiveView('notebooks');
-                    }}
-                  >
-                    <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-                      <BookOpenCheck className="h-3 w-3" />
+              {/* Collapsible notebook list */}
+              {notebooksListOpen && (
+                <div className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5">
+                  {sortedNotebooks.map((nb) => (
+                    <div key={nb.id} className="group flex items-center">
+                      <button
+                        className={cn(
+                          "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+                          selectedNotebookId === nb.id
+                            ? "bg-accent/50 text-accent-foreground font-medium"
+                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        )}
+                        onClick={() => {
+                          setSelectedProjectId(null);
+                          setSelectedChatId(null);
+                          setSelectedNotebookId(nb.id);
+                          setActiveView('notebooks');
+                        }}
+                      >
+                        <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                          <BookOpenCheck className="h-3 w-3" />
+                        </div>
+                        <span className="truncate">{nb.name}</span>
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+                            <MoreHorizontal className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <NotebookActionsMenuContent
+                          onManageNotebook={() => handleManageNotebook(nb)}
+                          onManageDocuments={() => {/* TODO */}}
+                          onArchiveNotebook={() => handleArchiveNotebookSidebar(nb.id)}
+                          onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id)}
+                        />
+                      </DropdownMenu>
                     </div>
-                    <span className="truncate">{nb.name}</span>
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
-                        <MoreHorizontal className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <NotebookActionsMenuContent
-                      onManageNotebook={() => {/* handled in landing */}}
-                      onManageDocuments={() => {/* TODO */}}
-                      onArchiveNotebook={() => archiveNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook archived') })}
-                      onDeleteNotebook={() => deleteNotebook.mutate(nb.id, { onSuccess: () => toast.success('Notebook deleted') })}
-                    />
-                  </DropdownMenu>
+                  ))}
+                  {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
                 </div>
-              ))}
-              {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
+              )}
             </CollapsibleContent>
           </Collapsible>
         </div>
@@ -738,6 +788,43 @@ export function AppSidebar() {
           <DialogFooter className="gap-2 pt-4">
             <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); }}>Cancel</Button>
             <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>Create Notebook</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Notebook Dialog */}
+      <Dialog open={!!editNotebook} onOpenChange={(open) => !open && setEditNotebook(null)}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Manage Notebook</DialogTitle>
+            <DialogDescription>Update your notebook details.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-nb-name-sidebar">Notebook name <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-nb-name-sidebar"
+                value={editNbName}
+                onChange={(e) => setEditNbName(e.target.value)}
+                placeholder="Notebook name"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-nb-desc-sidebar">Description</Label>
+              <Textarea
+                id="edit-nb-desc-sidebar"
+                value={editNbDescription}
+                onChange={(e) => setEditNbDescription(e.target.value)}
+                placeholder="Describe what this notebook is about..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 pt-4">
+            <Button variant="outline" onClick={() => setEditNotebook(null)}>Cancel</Button>
+            <Button onClick={handleManageNotebookSubmit} disabled={!editNbName.trim()}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
