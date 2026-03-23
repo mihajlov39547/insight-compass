@@ -106,7 +106,7 @@ export function useUploadDocuments() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ files, projectId, chatId }: UploadParams) => {
+    mutationFn: async ({ files, projectId, chatId, notebookId }: UploadParams) => {
       if (!user) throw new Error('Not authenticated');
 
       const results: DbDocument[] = [];
