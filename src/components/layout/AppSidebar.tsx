@@ -303,6 +303,40 @@ export function AppSidebar() {
     });
   };
 
+  const handleManageNotebook = (nb: DbNotebook) => {
+    setEditNotebook(nb);
+    setEditNbName(nb.name);
+    setEditNbDescription(nb.description || '');
+  };
+
+  const handleManageNotebookSubmit = () => {
+    if (!editNotebook || !editNbName.trim()) return;
+    updateNotebook.mutate({ id: editNotebook.id, name: editNbName.trim(), description: editNbDescription.trim() }, {
+      onSuccess: () => {
+        toast.success('Notebook updated');
+        setEditNotebook(null);
+      },
+    });
+  };
+
+  const handleArchiveNotebookSidebar = (id: string) => {
+    archiveNotebook.mutate(id, {
+      onSuccess: () => {
+        if (selectedNotebookId === id) setSelectedNotebookId(null);
+        toast.success('Notebook archived');
+      }
+    });
+  };
+
+  const handleDeleteNotebookSidebar = (id: string) => {
+    deleteNotebook.mutate(id, {
+      onSuccess: () => {
+        if (selectedNotebookId === id) setSelectedNotebookId(null);
+        toast.success('Notebook deleted');
+      }
+    });
+  };
+
   const currentPlan = ((profile?.plan as keyof typeof planIcons) || 'free') as keyof typeof planIcons;
   const PlanIcon = planIcons[currentPlan];
 
