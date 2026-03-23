@@ -135,6 +135,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           projectDescription: notebookDescription || `Notebook: ${notebookName || 'Untitled'}`,
           model: resolvedModel,
           documentContext: contextForAI,
+          notebookScope: true,
         }),
       });
 

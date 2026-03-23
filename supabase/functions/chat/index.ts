@@ -33,7 +33,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, projectDescription, model, documentContext } = await req.json();
+    const { messages, projectDescription, model, documentContext, notebookScope } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -53,7 +53,24 @@ serve(async (req) => {
         return section;
       }).join("\n\n");
 
-      documentGrounding = `
+      if (notebookScope) {
+        documentGrounding = `
+
+You are working within a notebook that has exactly ${docs.length} enabled source(s). These are the ONLY sources you have access to. You do NOT have access to any other documents, sources, or materials beyond what is listed below.
+
+--- BEGIN ENABLED NOTEBOOK SOURCES (${docs.length} total) ---
+${docSections}
+--- END ENABLED NOTEBOOK SOURCES ---
+
+STRICT RULES for notebook-scoped answers:
+- You can ONLY reference the ${docs.length} source(s) listed above
+- Do NOT mention, summarize, or reference any documents not listed above
+- Do NOT invent or hallucinate additional sources
+- If asked "what sources do you have access to" or "what documents are available", list ONLY the ${docs.length} source(s) above by name
+- If the provided sources don't cover a topic, say so honestly — do NOT pretend you have other sources
+- When you use information from a source, mention which source it came from`;
+      } else {
+        documentGrounding = `
 
 You have access to the following documents from the user's workspace. Use them to ground your answers when relevant. If you use information from a document, mention which document it came from naturally in your response.
 
@@ -66,6 +83,12 @@ When answering:
 - If the documents contain relevant information, reference it
 - If the documents don't cover the topic, answer from general knowledge and note that
 - Do not fabricate document content`;
+      }
+    } else if (notebookScope) {
+      documentGrounding = `
+
+You are working within a notebook. Currently, there are NO enabled sources available. You do not have access to any documents or sources.
+If the user asks about available sources or documents, tell them no sources are currently enabled in this notebook.`;
     }
 
     const systemPrompt = `You are a helpful workspace assistant for a document and knowledge management application. Your role is to help users explore project information, answer questions clearly, and support research and notebook-style workflows.
