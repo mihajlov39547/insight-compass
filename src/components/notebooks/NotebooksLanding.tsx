@@ -324,7 +324,59 @@ export function NotebooksLanding() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-desc">Description</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-nb-desc">Description</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  disabled={improvingDescription}
+                  onClick={async () => {
+                    if (!editNotebook) return;
+                    setImprovingDescription(true);
+                    try {
+                      // Gather notebook documents for context
+                      const { data: nbDocs } = await supabase
+                        .from('documents' as any)
+                        .select('file_name, summary')
+                        .eq('notebook_id', editNotebook.id)
+                        .limit(15);
+
+                      const resp = await fetch(
+                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-notebook`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                          },
+                          body: JSON.stringify({
+                            notebookName: editName,
+                            currentDescription: editDescription,
+                            documents: (nbDocs || []).map((d: any) => ({ fileName: d.file_name, summary: d.summary })),
+                            mode: 'description',
+                          }),
+                        }
+                      );
+
+                      if (resp.ok) {
+                        const result = await resp.json();
+                        if (result.description) setEditDescription(result.description);
+                      } else {
+                        toast.error('Failed to improve description');
+                      }
+                    } catch {
+                      toast.error('Failed to improve description');
+                    } finally {
+                      setImprovingDescription(false);
+                    }
+                  }}
+                >
+                  {improvingDescription ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Improve with AI
+                </Button>
+              </div>
               <Textarea
                 id="edit-nb-desc"
                 value={editDescription}
