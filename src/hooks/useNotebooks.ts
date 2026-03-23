@@ -1,0 +1,102 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+export interface DbNotebook {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string;
+  icon: string | null;
+  color: string | null;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useNotebooks() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['notebooks', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notebooks' as any)
+        .select('*')
+        .eq('is_archived', false)
+        .order('updated_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as DbNotebook[];
+    },
+    enabled: !!user,
+  });
+}
+
+export function useCreateNotebook() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ name, description, icon, color }: { name: string; description: string; icon?: string; color?: string }) => {
+      const { data, error } = await supabase
+        .from('notebooks' as any)
+        .insert({ user_id: user!.id, name, description, icon: icon || null, color: color || null })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as unknown as DbNotebook;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['notebooks'] }),
+  });
+}
+
+export function useUpdateNotebook() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<DbNotebook> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('notebooks' as any)
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as unknown as DbNotebook;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['notebooks'] }),
+  });
+}
+
+export function useArchiveNotebook() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('notebooks' as any)
+        .update({ is_archived: true })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['notebooks'] }),
+  });
+}
+
+export function useDeleteNotebook() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Remove notebook association from documents
+      await supabase
+        .from('documents')
+        .update({ notebook_id: null } as any)
+        .eq('notebook_id' as any, id);
+
+      const { error } = await supabase.from('notebooks' as any).delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['notebooks'] }),
+  });
+}
