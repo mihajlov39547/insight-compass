@@ -873,7 +873,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
-      <div className="group flex items-center">
+      <div className="group flex items-center gap-0.5">
         <CollapsibleTrigger asChild>
           <button className="p-1 hover:bg-sidebar-accent rounded">
             {isExpanded ? <ChevronDown className="h-3 w-3 text-sidebar-muted" /> : <ChevronRight className="h-3 w-3 text-sidebar-muted" />}
