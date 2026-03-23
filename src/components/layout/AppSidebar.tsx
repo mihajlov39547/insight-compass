@@ -61,6 +61,9 @@ export function AppSidebar() {
   const [isImprovingDesc, setIsImprovingDesc] = useState(false);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
+  const [showCreateNotebook, setShowCreateNotebook] = useState(false);
+  const [createNbName, setCreateNbName] = useState('');
+  const [createNbDescription, setCreateNbDescription] = useState('');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
