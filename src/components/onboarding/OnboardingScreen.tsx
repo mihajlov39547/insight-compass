@@ -4,7 +4,9 @@ import {
   Database, 
   MessageSquare, 
   Users, 
-  Sparkles
+  Sparkles,
+  BookOpen,
+  StickyNote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
