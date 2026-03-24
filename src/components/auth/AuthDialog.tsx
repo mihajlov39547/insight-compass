@@ -22,6 +22,7 @@ export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthD
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const resetForm = () => {
