@@ -42,28 +42,9 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
 
   const { user: authUser, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
 
   const PlanIcon = planIcons[appUser.plan];
-
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    try {
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (error) {
-        toast.error("Failed to sign in with Google");
-        console.error("Google sign-in error:", error);
-      }
-    } catch (e) {
-      toast.error("Failed to sign in with Google");
-      console.error("Google sign-in error:", e);
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();
