@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
 import { planIcons, planLabels } from '@/lib/planConfig';
 import { formatDistanceToNow } from 'date-fns';
+import { useRecentChats } from '@/hooks/useRecentChats';
 
 export function AppSidebar() {
   const { 
@@ -45,6 +46,7 @@ export function AppSidebar() {
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: notebooks = [] } = useNotebooks();
+  const { data: recentChats = [] } = useRecentChats(10);
   const createChat = useCreateChat();
   const createNotebook = useCreateNotebook();
   const deleteProject = useDeleteProject();
@@ -151,16 +153,16 @@ export function AppSidebar() {
   const nbAlphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[nbAlphaSort];
   const nbDateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[nbDateSort];
 
-  // Recents data
+  // Recents data — notebooks and chats only, 2 items in sidebar
   const recentItems = useMemo(() => {
     const items = [
-      ...projects.map(p => ({ type: 'project' as const, id: p.id, name: p.name, updatedAt: p.updated_at })),
-      ...notebooks.map(n => ({ type: 'notebook' as const, id: n.id, name: n.name, updatedAt: n.updated_at })),
+      ...recentChats.map(c => ({ type: 'chat' as const, id: c.id, name: c.name, updatedAt: c.updated_at, projectId: c.project_id })),
+      ...notebooks.map(n => ({ type: 'notebook' as const, id: n.id, name: n.name, updatedAt: n.updated_at, projectId: undefined as string | undefined })),
     ]
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-      .slice(0, 5);
+      .slice(0, 2);
     return items;
-  }, [projects, notebooks]);
+  }, [recentChats, notebooks]);
 
   useEffect(() => { searchQuery.trim() ? setShowSearchResults(true) : setShowSearchResults(false); }, [searchQuery]);
   useEffect(() => { if (showSearch && searchInputRef.current) searchInputRef.current.focus(); }, [showSearch]);
@@ -295,9 +297,9 @@ export function AppSidebar() {
     setActiveView(view);
   };
 
-  const handleRecentClick = (item: { type: 'project' | 'notebook'; id: string }) => {
-    if (item.type === 'project') {
-      setSelectedProjectId(item.id); setSelectedChatId(null); setSelectedNotebookId(null); setActiveView('default');
+  const handleRecentClick = (item: { type: 'chat' | 'notebook'; id: string; projectId?: string }) => {
+    if (item.type === 'chat') {
+      setSelectedProjectId(item.projectId || null); setSelectedChatId(item.id); setSelectedNotebookId(null); setActiveView('default');
     } else {
       setSelectedProjectId(null); setSelectedChatId(null); setSelectedNotebookId(item.id); setActiveView('notebook-workspace');
     }
@@ -661,7 +663,7 @@ export function AppSidebar() {
                         className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                         onClick={() => handleRecentClick(item)}
                       >
-                        {item.type === 'project' ? <FolderOpen className="h-3.5 w-3.5 flex-shrink-0" /> : <BookOpenCheck className="h-3.5 w-3.5 flex-shrink-0" />}
+                        {item.type === 'chat' ? <MessageSquare className="h-3.5 w-3.5 flex-shrink-0" /> : <BookOpenCheck className="h-3.5 w-3.5 flex-shrink-0" />}
                         <span className="truncate flex-1 text-left">{item.name}</span>
                         <span className="text-[10px] text-sidebar-muted flex-shrink-0">
                           {formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true }).replace('about ', '')}

@@ -1,27 +1,26 @@
 import React from 'react';
-import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
+import { useRecentChats } from '@/hooks/useRecentChats';
 import { useApp } from '@/contexts/AppContext';
-import { Clock, FolderOpen, BookOpenCheck } from 'lucide-react';
+import { Clock, BookOpenCheck, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export function RecentsLanding() {
-  const { data: projects = [] } = useProjects();
   const { data: notebooks = [] } = useNotebooks();
+  const { data: recentChats = [] } = useRecentChats(10);
   const { setSelectedProjectId, setSelectedChatId, setSelectedNotebookId, setActiveView } = useApp();
 
-  // Merge and sort by updated_at
   const recentItems = [
-    ...projects.map(p => ({ type: 'project' as const, id: p.id, name: p.name, updatedAt: p.updated_at })),
-    ...notebooks.map(n => ({ type: 'notebook' as const, id: n.id, name: n.name, updatedAt: n.updated_at })),
+    ...recentChats.map(c => ({ type: 'chat' as const, id: c.id, name: c.name, updatedAt: c.updated_at, projectId: c.project_id })),
+    ...notebooks.map(n => ({ type: 'notebook' as const, id: n.id, name: n.name, updatedAt: n.updated_at, projectId: undefined as string | undefined })),
   ]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 20);
+    .slice(0, 10);
 
   const handleClick = (item: typeof recentItems[0]) => {
-    if (item.type === 'project') {
-      setSelectedProjectId(item.id);
-      setSelectedChatId(null);
+    if (item.type === 'chat') {
+      setSelectedProjectId(item.projectId || null);
+      setSelectedChatId(item.id);
       setSelectedNotebookId(null);
       setActiveView('default');
     } else {
@@ -51,8 +50,8 @@ export function RecentsLanding() {
               onClick={() => handleClick(item)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors text-left"
             >
-              {item.type === 'project' ? (
-                <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+              {item.type === 'chat' ? (
+                <MessageSquare className="h-4 w-4 text-primary flex-shrink-0" />
               ) : (
                 <BookOpenCheck className="h-4 w-4 text-primary flex-shrink-0" />
               )}
