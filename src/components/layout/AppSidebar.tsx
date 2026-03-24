@@ -153,16 +153,16 @@ export function AppSidebar() {
   const nbAlphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[nbAlphaSort];
   const nbDateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[nbDateSort];
 
-  // Recents data
+  // Recents data — notebooks and chats only, 2 items in sidebar
   const recentItems = useMemo(() => {
     const items = [
-      ...projects.map(p => ({ type: 'project' as const, id: p.id, name: p.name, updatedAt: p.updated_at })),
-      ...notebooks.map(n => ({ type: 'notebook' as const, id: n.id, name: n.name, updatedAt: n.updated_at })),
+      ...recentChats.map(c => ({ type: 'chat' as const, id: c.id, name: c.name, updatedAt: c.updated_at, projectId: c.project_id })),
+      ...notebooks.map(n => ({ type: 'notebook' as const, id: n.id, name: n.name, updatedAt: n.updated_at, projectId: undefined as string | undefined })),
     ]
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-      .slice(0, 5);
+      .slice(0, 2);
     return items;
-  }, [projects, notebooks]);
+  }, [recentChats, notebooks]);
 
   useEffect(() => { searchQuery.trim() ? setShowSearchResults(true) : setShowSearchResults(false); }, [searchQuery]);
   useEffect(() => { if (showSearch && searchInputRef.current) searchInputRef.current.focus(); }, [showSearch]);
