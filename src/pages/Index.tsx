@@ -21,6 +21,7 @@ import { HomeLanding } from '@/components/views/HomeLanding';
 import { ResourcesLanding } from '@/components/views/ResourcesLanding';
 import { StarredLanding } from '@/components/views/StarredLanding';
 import { RecentsLanding } from '@/components/views/RecentsLanding';
+import { SharedLanding } from '@/components/views/SharedLanding';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
 import { useCreateProject } from '@/hooks/useProjects';
