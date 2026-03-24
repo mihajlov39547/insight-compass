@@ -283,11 +283,11 @@ export function ProjectsLanding() {
                   key={project.id}
                   role="button"
                   tabIndex={0}
-                  onClick={() => setSelectedProjectId(project.id)}
+                  onClick={() => { setSelectedProjectId(project.id); setSelectedChatId(null); setActiveView('default'); }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setSelectedProjectId(project.id);
+                      setSelectedProjectId(project.id); setSelectedChatId(null); setActiveView('default');
                     }
                   }}
                   className={`group relative flex flex-col justify-between min-h-[180px] rounded-xl border p-5 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer active:scale-[0.98] ${CARD_COLORS[colorIdx]}`}
