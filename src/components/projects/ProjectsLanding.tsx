@@ -283,7 +283,7 @@ export function ProjectsLanding() {
                   key={project.id}
                   role="button"
                   tabIndex={0}
-                  onClick={() => setSelectedProjectId(project.id)}
+                  onClick={() => { setSelectedProjectId(project.id); setSelectedChatId(null); setActiveView('default'); }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
