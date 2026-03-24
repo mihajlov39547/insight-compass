@@ -21,7 +21,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
