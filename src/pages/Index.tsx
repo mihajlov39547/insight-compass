@@ -39,6 +39,7 @@ function MainContent() {
   if (activeView === 'resources') return <ResourcesLanding />;
   if (activeView === 'starred') return <StarredLanding />;
   if (activeView === 'recents') return <RecentsLanding />;
+  if (activeView === 'shared') return <SharedLanding />;
 
   return (
     <>
