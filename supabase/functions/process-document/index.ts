@@ -89,7 +89,7 @@ async function extractDocxEntry(zipBytes: Uint8Array, targetPath: string): Promi
       } else if (compressionMethod === 8) {
         // Deflate
         try {
-          const ds = new DecompressionStream("raw");
+          const ds = new DecompressionStream("deflate-raw" as CompressionFormat);
           const writer = ds.writable.getWriter();
           const reader = ds.readable.getReader();
           
@@ -102,7 +102,7 @@ async function extractDocxEntry(zipBytes: Uint8Array, targetPath: string): Promi
             }
           })();
           
-          await writer.write(compressedData);
+          await writer.write(new Uint8Array(compressedData.buffer));
           await writer.close();
           await readAll;
           
