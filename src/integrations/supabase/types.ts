@@ -401,6 +401,36 @@ export type Database = {
         }
         Relationships: []
       }
+      shares: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          permission: string
+          shared_by_user_id: string
+          shared_with_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          permission?: string
+          shared_by_user_id: string
+          shared_with_user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          permission?: string
+          shared_by_user_id?: string
+          shared_with_user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           agent_action_notifications: boolean

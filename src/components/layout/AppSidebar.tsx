@@ -4,7 +4,7 @@ import {
   MoreHorizontal, Bell, ChevronDown, ChevronUp,
   ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText,
   Settings, Share2, Archive, Trash2, Pencil, Sparkles, Loader2, BookOpenCheck,
-  Home, Star, FolderPlus, BookPlus
+  Home, Star, FolderPlus, BookPlus, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -361,6 +361,12 @@ export function AppSidebar() {
         </TooltipTrigger><TooltipContent side="right">Starred</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'shared' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('shared')}>
+            <Users className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">Shared with me</TooltipContent></Tooltip>
+
+        <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'recents' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('recents')}>
             <Clock className="h-4 w-4" />
           </Button>
@@ -639,6 +645,20 @@ export function AppSidebar() {
             >
               <Star className="h-4 w-4 flex-shrink-0" />
               <span>Starred</span>
+            </button>
+          </div>
+
+          {/* ── Shared with me ────────────────────── */}
+          <div>
+            <button
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+                activeView === 'shared' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
+              )}
+              onClick={() => navigateTo('shared')}
+            >
+              <Users className="h-4 w-4 flex-shrink-0" />
+              <span>Shared with me</span>
             </button>
           </div>
 
