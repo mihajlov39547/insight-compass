@@ -361,6 +361,12 @@ export function AppSidebar() {
         </TooltipTrigger><TooltipContent side="right">Starred</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'shared' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('shared')}>
+            <Users className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">Shared with me</TooltipContent></Tooltip>
+
+        <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'recents' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('recents')}>
             <Clock className="h-4 w-4" />
           </Button>
