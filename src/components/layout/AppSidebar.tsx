@@ -648,6 +648,20 @@ export function AppSidebar() {
             </button>
           </div>
 
+          {/* ── Shared with me ────────────────────── */}
+          <div>
+            <button
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+                activeView === 'shared' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
+              )}
+              onClick={() => navigateTo('shared')}
+            >
+              <Users className="h-4 w-4 flex-shrink-0" />
+              <span>Shared with me</span>
+            </button>
+          </div>
+
           {/* ── Recents ───────────────────────────── */}
           <Collapsible defaultOpen>
             <div className="flex items-center justify-between px-2 py-2 mt-1">
