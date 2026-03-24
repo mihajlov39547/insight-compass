@@ -4,7 +4,9 @@ import {
   Database, 
   MessageSquare, 
   Users, 
-  Sparkles
+  Sparkles,
+  BookOpen,
+  StickyNote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -106,6 +108,49 @@ export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScree
           ))}
         </div>
 
+        {/* Notebook & Notes Section */}
+        <div className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+              Organize Insights with Notebooks
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Go beyond Q&A — structure your knowledge, capture findings, and build reusable research workflows.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl mx-auto">
+            <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-5">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-accent/60 flex items-center justify-center group-hover:bg-accent transition-colors">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1.5 text-sm">Build Research Notebooks</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Organize documents, questions, and sources into focused knowledge workspaces.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-5">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-accent/60 flex items-center justify-center group-hover:bg-accent transition-colors">
+                    <StickyNote className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1.5 text-sm">Save and Reuse Insights</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Turn useful answers into notes, refine them, and add them back as reusable sources.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
         {/* Social Proof / Trust Section */}
         <div className="text-center py-8 border-t border-border/50">
           <p className="text-sm text-muted-foreground mb-4">
