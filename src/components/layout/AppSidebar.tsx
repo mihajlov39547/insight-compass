@@ -663,7 +663,7 @@ export function AppSidebar() {
                         className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                         onClick={() => handleRecentClick(item)}
                       >
-                        {item.type === 'project' ? <FolderOpen className="h-3.5 w-3.5 flex-shrink-0" /> : <BookOpenCheck className="h-3.5 w-3.5 flex-shrink-0" />}
+                        {item.type === 'chat' ? <MessageSquare className="h-3.5 w-3.5 flex-shrink-0" /> : <BookOpenCheck className="h-3.5 w-3.5 flex-shrink-0" />}
                         <span className="truncate flex-1 text-left">{item.name}</span>
                         <span className="text-[10px] text-sidebar-muted flex-shrink-0">
                           {formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true }).replace('about ', '')}
