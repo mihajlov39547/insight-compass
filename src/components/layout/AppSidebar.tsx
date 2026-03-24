@@ -297,9 +297,9 @@ export function AppSidebar() {
     setActiveView(view);
   };
 
-  const handleRecentClick = (item: { type: 'project' | 'notebook'; id: string }) => {
-    if (item.type === 'project') {
-      setSelectedProjectId(item.id); setSelectedChatId(null); setSelectedNotebookId(null); setActiveView('default');
+  const handleRecentClick = (item: { type: 'chat' | 'notebook'; id: string; projectId?: string }) => {
+    if (item.type === 'chat') {
+      setSelectedProjectId(item.projectId || null); setSelectedChatId(item.id); setSelectedNotebookId(null); setActiveView('default');
     } else {
       setSelectedProjectId(null); setSelectedChatId(null); setSelectedNotebookId(item.id); setActiveView('notebook-workspace');
     }
