@@ -43,6 +43,22 @@ export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthD
     if (!v) { resetForm(); setMode(initialMode); }
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (error) {
+        toast.error("Failed to sign in with Google");
+      }
+    } catch {
+      toast.error("Failed to sign in with Google");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
