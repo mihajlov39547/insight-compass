@@ -4,7 +4,7 @@ import {
   MoreHorizontal, Bell, ChevronDown, ChevronUp,
   ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText,
   Settings, Share2, Archive, Trash2, Pencil, Sparkles, Loader2, BookOpenCheck,
-  Home, Star, FolderPlus, BookPlus
+  Home, Star, FolderPlus, BookPlus, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
