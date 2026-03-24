@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
 import { planIcons, planLabels } from '@/lib/planConfig';
 import { formatDistanceToNow } from 'date-fns';
+import { useRecentChats } from '@/hooks/useRecentChats';
 
 export function AppSidebar() {
   const { 
