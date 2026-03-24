@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
-  ChevronLeft, ChevronRight, Plus, Search, Users, MessageSquare, FolderOpen,
+  ChevronLeft, ChevronRight, Plus, Search, MessageSquare, FolderOpen,
   MoreHorizontal, Bell, ChevronDown, ChevronUp,
   ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText,
-  Settings, Share2, Archive, Trash2, Pencil, Sparkles, Loader2, BookOpenCheck
+  Settings, Share2, Archive, Trash2, Pencil, Sparkles, Loader2, BookOpenCheck,
+  Home, Star, FolderPlus, BookPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,8 +28,8 @@ import { WorkspaceSearchResults } from '@/components/search/WorkspaceSearchResul
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
-
 import { planIcons, planLabels } from '@/lib/planConfig';
+import { formatDistanceToNow } from 'date-fns';
 
 export function AppSidebar() {
   const { 
@@ -68,6 +69,7 @@ export function AppSidebar() {
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
   const avatarUrl = profile?.avatar_url || authUser?.user_metadata?.avatar_url || '';
+  const firstName = displayName ? displayName.split(' ')[0] : 'User';
   const initials = displayName
     ? displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : displayEmail?.[0]?.toUpperCase() || '?';
@@ -85,13 +87,11 @@ export function AppSidebar() {
   const [nbDateSort, setNbDateSort] = useState<'updated' | 'newest' | 'oldest'>('updated');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Manage notebook from sidebar
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editNbName, setEditNbName] = useState('');
   const [editNbDescription, setEditNbDescription] = useState('');
   const updateNotebook = useUpdateNotebook();
 
-  // Auto-expand selected project
   useEffect(() => {
     if (selectedProjectId) {
       setExpandedProjects(prev => {
@@ -151,6 +151,17 @@ export function AppSidebar() {
   const nbAlphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[nbAlphaSort];
   const nbDateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[nbDateSort];
 
+  // Recents data
+  const recentItems = useMemo(() => {
+    const items = [
+      ...projects.map(p => ({ type: 'project' as const, id: p.id, name: p.name, updatedAt: p.updated_at })),
+      ...notebooks.map(n => ({ type: 'notebook' as const, id: n.id, name: n.name, updatedAt: n.updated_at })),
+    ]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 5);
+    return items;
+  }, [projects, notebooks]);
+
   useEffect(() => { searchQuery.trim() ? setShowSearchResults(true) : setShowSearchResults(false); }, [searchQuery]);
   useEffect(() => { if (showSearch && searchInputRef.current) searchInputRef.current.focus(); }, [showSearch]);
 
@@ -191,10 +202,7 @@ export function AppSidebar() {
   const handleDeleteProject = (projectId: string) => {
     deleteProject.mutate(projectId, {
       onSuccess: () => {
-        if (selectedProjectId === projectId) {
-          setSelectedProjectId(null);
-          setSelectedChatId(null);
-        }
+        if (selectedProjectId === projectId) { setSelectedProjectId(null); setSelectedChatId(null); }
         toast.success('Project and all its chats deleted');
       }
     });
@@ -203,10 +211,7 @@ export function AppSidebar() {
   const handleArchiveProject = (projectId: string) => {
     archiveProject.mutate(projectId, {
       onSuccess: () => {
-        if (selectedProjectId === projectId) {
-          setSelectedProjectId(null);
-          setSelectedChatId(null);
-        }
+        if (selectedProjectId === projectId) { setSelectedProjectId(null); setSelectedChatId(null); }
         toast.success('Project archived');
       }
     });
@@ -222,10 +227,7 @@ export function AppSidebar() {
   const handleManageSubmit = () => {
     if (!editProject || !editName.trim() || !editDescription.trim()) return;
     updateProject.mutate({ id: editProject.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
-      onSuccess: () => {
-        toast.success('Project updated');
-        setEditProject(null);
-      }
+      onSuccess: () => { toast.success('Project updated'); setEditProject(null); }
     });
   };
 
@@ -233,169 +235,150 @@ export function AppSidebar() {
     if (!editProject || isImprovingDesc) return;
     setIsImprovingDesc(true);
     try {
-      // Gather project documents
-      const { data: docs } = await supabase
-        .from('documents')
-        .select('file_name, summary')
-        .eq('project_id', editProject.id)
-        .eq('processing_status', 'completed')
-        .limit(15);
-
-      // Gather project chats
-      const { data: chatList } = await supabase
-        .from('chats')
-        .select('name')
-        .eq('project_id', editProject.id)
-        .eq('is_archived', false)
-        .order('updated_at', { ascending: false })
-        .limit(10);
-
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-description`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            projectName: editName,
-            currentDescription: editDescription,
-            documents: (docs ?? []).map(d => ({ fileName: d.file_name, summary: d.summary })),
-            chats: (chatList ?? []).map(c => ({ name: c.name })),
-          }),
-        }
-      );
-
+      const { data: docs } = await supabase.from('documents').select('file_name, summary').eq('project_id', editProject.id).eq('processing_status', 'completed').limit(15);
+      const { data: chatList } = await supabase.from('chats').select('name').eq('project_id', editProject.id).eq('is_archived', false).order('updated_at', { ascending: false }).limit(10);
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-description`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({
+          projectName: editName, currentDescription: editDescription,
+          documents: (docs ?? []).map(d => ({ fileName: d.file_name, summary: d.summary })),
+          chats: (chatList ?? []).map(c => ({ name: c.name })),
+        }),
+      });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
-      if (data.description) {
-        setEditDescription(data.description);
-        toast.success('Description improved');
-      }
+      if (data.description) { setEditDescription(data.description); toast.success('Description improved'); }
     } catch (err: any) {
       console.error('Improve description error:', err);
       toast.error(err.message || 'Failed to improve description');
-    } finally {
-      setIsImprovingDesc(false);
-    }
+    } finally { setIsImprovingDesc(false); }
   };
 
   const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
 
-  const handleCreateNotebook = () => {
-    setShowCreateNotebook(true);
-  };
+  const handleCreateNotebook = () => setShowCreateNotebook(true);
 
   const handleCreateNotebookSubmit = () => {
     if (!createNbName.trim()) return;
     createNotebook.mutate({ name: createNbName.trim(), description: createNbDescription.trim() }, {
       onSuccess: (nb) => {
-        setSelectedProjectId(null);
-        setSelectedChatId(null);
-        setSelectedNotebookId(nb.id);
-        setActiveView('notebook-workspace');
+        setSelectedProjectId(null); setSelectedChatId(null);
+        setSelectedNotebookId(nb.id); setActiveView('notebook-workspace');
         toast.success('Notebook created');
-        setShowCreateNotebook(false);
-        setCreateNbName('');
-        setCreateNbDescription('');
+        setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription('');
       }
     });
   };
 
   const handleManageNotebook = (nb: DbNotebook) => {
-    setEditNotebook(nb);
-    setEditNbName(nb.name);
-    setEditNbDescription(nb.description || '');
+    setEditNotebook(nb); setEditNbName(nb.name); setEditNbDescription(nb.description || '');
   };
 
   const handleManageNotebookSubmit = () => {
     if (!editNotebook || !editNbName.trim()) return;
     updateNotebook.mutate({ id: editNotebook.id, name: editNbName.trim(), description: editNbDescription.trim() }, {
-      onSuccess: () => {
-        toast.success('Notebook updated');
-        setEditNotebook(null);
-      },
+      onSuccess: () => { toast.success('Notebook updated'); setEditNotebook(null); },
     });
   };
 
   const handleArchiveNotebookSidebar = (id: string) => {
-    archiveNotebook.mutate(id, {
-      onSuccess: () => {
-        if (selectedNotebookId === id) setSelectedNotebookId(null);
-        toast.success('Notebook archived');
-      }
-    });
+    archiveNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success('Notebook archived'); } });
   };
 
   const handleDeleteNotebookSidebar = (id: string) => {
-    deleteNotebook.mutate(id, {
-      onSuccess: () => {
-        if (selectedNotebookId === id) setSelectedNotebookId(null);
-        toast.success('Notebook deleted');
-      }
-    });
+    deleteNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success('Notebook deleted'); } });
+  };
+
+  const navigateTo = (view: typeof activeView) => {
+    setSelectedProjectId(null); setSelectedChatId(null); setSelectedNotebookId(null);
+    setActiveView(view);
+  };
+
+  const handleRecentClick = (item: { type: 'project' | 'notebook'; id: string }) => {
+    if (item.type === 'project') {
+      setSelectedProjectId(item.id); setSelectedChatId(null); setSelectedNotebookId(null); setActiveView('default');
+    } else {
+      setSelectedProjectId(null); setSelectedChatId(null); setSelectedNotebookId(item.id); setActiveView('notebook-workspace');
+    }
   };
 
   const currentPlan = ((profile?.plan as keyof typeof planIcons) || 'free') as keyof typeof planIcons;
   const PlanIcon = planIcons[currentPlan];
 
+  // ─── COLLAPSED ─────────────────────────────────────────────────
   if (sidebarCollapsed) {
     return (
-      <div className="w-14 h-screen bg-sidebar flex flex-col items-center py-4 border-r border-sidebar-border">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-sidebar-foreground hover:bg-sidebar-accent mb-4" onClick={() => setSidebarCollapsed(false)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Expand sidebar</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-sidebar-primary hover:bg-sidebar-accent mb-2" onClick={() => setShowNewProject(true)}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">New Project</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-sidebar-foreground/70 hover:bg-sidebar-accent mb-2" onClick={() => setSidebarCollapsed(false)}>
-              <Search className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Search workspace</TooltipContent>
-        </Tooltip>
-        {selectedProjectId && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-sidebar-foreground/70 hover:bg-sidebar-accent mb-2" onClick={(e) => handleNewChat(selectedProjectId, e)}>
-                <MessageSquare className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">New Chat</TooltipContent>
-          </Tooltip>
-        )}
+      <div className="w-14 h-screen bg-sidebar flex flex-col items-center py-3 border-r border-sidebar-border">
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="text-sidebar-foreground hover:bg-sidebar-accent mb-3" onClick={() => setSidebarCollapsed(false)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">Expand sidebar</TooltipContent></Tooltip>
+
+        {/* Global nav */}
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'home' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('home')}>
+            <Home className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">Home</TooltipContent></Tooltip>
+
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="text-sidebar-foreground/70 hover:bg-sidebar-accent mb-1" onClick={() => { setSidebarCollapsed(false); setShowSearch(true); }}>
+            <Search className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">Search</TooltipContent></Tooltip>
+
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'resources' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('resources')}>
+            <FileText className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">Resources</TooltipContent></Tooltip>
+
+        <div className="w-6 border-t border-sidebar-border my-2" />
+
+        {/* Create actions */}
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="text-sidebar-primary hover:bg-sidebar-accent mb-1" onClick={() => setShowNewProject(true)}>
+            <FolderPlus className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">New Project</TooltipContent></Tooltip>
+
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="text-sidebar-primary hover:bg-sidebar-accent mb-1" onClick={handleCreateNotebook}>
+            <BookPlus className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">New Notebook</TooltipContent></Tooltip>
+
+        <div className="w-6 border-t border-sidebar-border my-2" />
+
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'starred' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('starred')}>
+            <Star className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">Starred</TooltipContent></Tooltip>
+
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'recents' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('recents')}>
+            <Clock className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent side="right">Recents</TooltipContent></Tooltip>
+
         <div className="flex-1" />
-        <div className="flex flex-col items-center gap-3 mb-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `plan-badge-${currentPlan}`)}>
-                <PlanIcon className="h-4 w-4" />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="right">{planLabels[currentPlan]} Plan</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent" onClick={() => setShowNotifications(true)}>
-                <Bell className="h-4 w-4" />
-                {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center">{unreadCount}</span>}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Notifications</TooltipContent>
-          </Tooltip>
+
+        {/* Bottom */}
+        <div className="flex flex-col items-center gap-3 mb-3">
+          <Tooltip><TooltipTrigger asChild>
+            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `plan-badge-${currentPlan}`)}>
+              <PlanIcon className="h-4 w-4" />
+            </div>
+          </TooltipTrigger><TooltipContent side="right">{planLabels[currentPlan]} Plan</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent" onClick={() => setShowNotifications(true)}>
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center">{unreadCount}</span>}
+            </Button>
+          </TooltipTrigger><TooltipContent side="right">Notifications</TooltipContent></Tooltip>
           <Avatar className="h-8 w-8 cursor-pointer">
             {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
             <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">{initials}</AvatarFallback>
@@ -405,37 +388,70 @@ export function AppSidebar() {
     );
   }
 
+  // ─── EXPANDED ──────────────────────────────────────────────────
   return (
     <div className="w-full h-screen bg-sidebar flex flex-col border-r border-sidebar-border animate-slide-in-left">
-      {/* Header */}
+      {/* Workspace Banner */}
       <div className="p-3 flex items-center justify-between border-b border-sidebar-border">
-        <Button className="flex-1 justify-start gap-2 bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground" size="sm" onClick={() => setShowNewProject(true)}>
-          <Plus className="h-4 w-4" /> New Project
-        </Button>
-        <Button variant="ghost" size="icon" className="ml-2 text-sidebar-foreground/70 hover:bg-sidebar-accent" onClick={() => setSidebarCollapsed(true)}>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <span className="text-sm font-semibold text-sidebar-foreground truncate">{firstName}'s Knowledge Assistant</span>
+        </div>
+        <Button variant="ghost" size="icon" className="ml-2 text-sidebar-foreground/70 hover:bg-sidebar-accent flex-shrink-0 h-7 w-7" onClick={() => setSidebarCollapsed(true)}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="p-3 relative">
-        <button className="sidebar-item w-full justify-start" onClick={() => setShowSearch(!showSearch)}>
-          <Search className="h-4 w-4" /><span className="text-sm">Search workspace</span>
+      {/* Global Navigation */}
+      <div className="px-3 pt-3 pb-1 space-y-0.5">
+        <button
+          className={cn(
+            "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+            activeView === 'home' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
+          )}
+          onClick={() => navigateTo('home')}
+        >
+          <Home className="h-4 w-4 flex-shrink-0" />
+          <span>Home</span>
+        </button>
+
+        <button
+          className={cn(
+            "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+            showSearch ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
+          )}
+          onClick={() => setShowSearch(!showSearch)}
+        >
+          <Search className="h-4 w-4 flex-shrink-0" />
+          <span>Search</span>
         </button>
         {showSearch && (
-          <div className="mt-2 animate-fade-in relative">
-            <Input ref={searchInputRef} placeholder="Search projects, chats..." className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-muted text-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          <div className="px-1 pb-1 animate-fade-in relative">
+            <Input ref={searchInputRef} placeholder="Search projects, chats..." className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-muted text-sm h-8" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             {showSearchResults && <WorkspaceSearchResults query={searchQuery} onClose={handleCloseSearch} />}
           </div>
         )}
+
+        <button
+          className={cn(
+            "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+            activeView === 'resources' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
+          )}
+          onClick={() => navigateTo('resources')}
+        >
+          <FileText className="h-4 w-4 flex-shrink-0" />
+          <span>Resources</span>
+        </button>
       </div>
 
-      {/* Projects & Notebooks */}
+      {/* Scrollable Collections */}
       <ScrollArea className="flex-1 px-3">
-        <div className="space-y-1">
-          {/* My Projects Section */}
+        <div className="space-y-1 pb-2">
+          {/* ── My Projects ───────────────────────── */}
           <Collapsible open={projectsSectionOpen} onOpenChange={setProjectsSectionOpen}>
-            <div className="flex items-center justify-between px-2 py-2">
+            <div className="flex items-center justify-between px-2 py-2 mt-1">
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
                   {projectsSectionOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -462,7 +478,6 @@ export function AppSidebar() {
             </div>
 
             <CollapsibleContent className="space-y-0.5 animate-fade-in">
-              {/* All projects + create */}
               <div className="flex items-center gap-1">
                 <button
                   className={cn(
@@ -471,12 +486,7 @@ export function AppSidebar() {
                       ? "bg-primary/10 text-primary border border-primary/20"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
-                  onClick={() => {
-                    setSelectedProjectId(null);
-                    setSelectedChatId(null);
-                    setSelectedNotebookId(null);
-                    setActiveView('projects');
-                  }}
+                  onClick={() => navigateTo('projects')}
                 >
                   <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'projects' ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -508,23 +518,17 @@ export function AppSidebar() {
                   onChatSelect={handleChatSelect}
                   onDeleteChat={(chatId) => {
                     deleteChat.mutate({ id: chatId, projectId: project.id }, {
-                      onSuccess: () => {
-                        if (selectedChatId === chatId) setSelectedChatId(null);
-                        toast.success('Chat deleted');
-                      }
+                      onSuccess: () => { if (selectedChatId === chatId) setSelectedChatId(null); toast.success('Chat deleted'); }
                     });
                   }}
-                  onRenameChat={(chatId, currentName) => {
-                    setRenameChatId(chatId);
-                    setRenameChatValue(currentName);
-                  }}
+                  onRenameChat={(chatId, currentName) => { setRenameChatId(chatId); setRenameChatValue(currentName); }}
                 />
               ))}
               {!projectsLoading && projects.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No projects yet</p>}
             </CollapsibleContent>
           </Collapsible>
 
-          {/* My Notebooks Section */}
+          {/* ── My Notebooks ──────────────────────── */}
           <Collapsible open={notebooksSectionOpen} onOpenChange={setNotebooksSectionOpen}>
             <div className="flex items-center justify-between px-2 py-2 mt-2">
               <CollapsibleTrigger asChild>
@@ -553,7 +557,6 @@ export function AppSidebar() {
             </div>
 
             <CollapsibleContent className="space-y-0.5 animate-fade-in">
-              {/* All notebooks + create */}
               <div className="flex items-center gap-1">
                 <button
                   className={cn(
@@ -562,12 +565,7 @@ export function AppSidebar() {
                       ? "bg-primary/10 text-primary border border-primary/20"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
-                  onClick={() => {
-                    setSelectedProjectId(null);
-                    setSelectedChatId(null);
-                    setSelectedNotebookId(null);
-                    setActiveView('notebooks');
-                  }}
+                  onClick={() => navigateTo('notebooks')}
                 >
                   <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'notebooks' && !selectedNotebookId ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
                     <BookOpenCheck className="h-3.5 w-3.5" />
@@ -581,7 +579,6 @@ export function AppSidebar() {
                 </TooltipTrigger><TooltipContent>New Notebook</TooltipContent></Tooltip>
               </div>
 
-              {/* Collapsible notebook list */}
               {notebooksListOpen && (
                 <div className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5">
                   {sortedNotebooks.map((nb) => (
@@ -596,10 +593,8 @@ export function AppSidebar() {
                                 : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                             )}
                             onClick={() => {
-                              setSelectedProjectId(null);
-                              setSelectedChatId(null);
-                              setSelectedNotebookId(nb.id);
-                              setActiveView('notebook-workspace');
+                              setSelectedProjectId(null); setSelectedChatId(null);
+                              setSelectedNotebookId(nb.id); setActiveView('notebook-workspace');
                             }}
                           >
                             <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
@@ -618,10 +613,7 @@ export function AppSidebar() {
                         </DropdownMenuTrigger>
                         <NotebookActionsMenuContent
                           onManageNotebook={() => handleManageNotebook(nb)}
-                          onManageDocuments={() => {
-                            setSelectedNotebookId(nb.id);
-                            setActiveView('notebook-documents');
-                          }}
+                          onManageDocuments={() => { setSelectedNotebookId(nb.id); setActiveView('notebook-documents'); }}
                           onArchiveNotebook={() => handleArchiveNotebookSidebar(nb.id)}
                           onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id)}
                         />
@@ -630,6 +622,63 @@ export function AppSidebar() {
                   ))}
                   {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
                 </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* ── Starred ───────────────────────────── */}
+          <div className="mt-3">
+            <button
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+                activeView === 'starred' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
+              )}
+              onClick={() => navigateTo('starred')}
+            >
+              <Star className="h-4 w-4 flex-shrink-0" />
+              <span>Starred</span>
+            </button>
+          </div>
+
+          {/* ── Recents ───────────────────────────── */}
+          <Collapsible defaultOpen>
+            <div className="flex items-center justify-between px-2 py-2 mt-1">
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
+                  <Clock className="h-3 w-3" />
+                  Recents
+                </button>
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent className="space-y-0.5 animate-fade-in">
+              {recentItems.length === 0 ? (
+                <p className="text-xs text-sidebar-muted px-2 py-1">No recent activity</p>
+              ) : (
+                recentItems.map((item) => (
+                  <Tooltip key={`${item.type}-${item.id}`}>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                        onClick={() => handleRecentClick(item)}
+                      >
+                        {item.type === 'project' ? <FolderOpen className="h-3.5 w-3.5 flex-shrink-0" /> : <BookOpenCheck className="h-3.5 w-3.5 flex-shrink-0" />}
+                        <span className="truncate flex-1 text-left">{item.name}</span>
+                        <span className="text-[10px] text-sidebar-muted flex-shrink-0">
+                          {formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true }).replace('about ', '')}
+                        </span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{item.name}</TooltipContent>
+                  </Tooltip>
+                ))
+              )}
+              {recentItems.length > 0 && (
+                <button
+                  className="w-full text-xs text-sidebar-muted hover:text-sidebar-foreground px-2.5 py-1 transition-colors text-left"
+                  onClick={() => navigateTo('recents')}
+                >
+                  View all →
+                </button>
               )}
             </CollapsibleContent>
           </Collapsible>
@@ -661,6 +710,7 @@ export function AppSidebar() {
         </div>
       </div>
 
+      {/* ── Dialogs ───────────────────────────────── */}
       {/* Manage Project Dialog */}
       <Dialog open={!!editProject} onOpenChange={(open) => !open && setEditProject(null)}>
         <DialogContent className="sm:max-w-[480px]">
@@ -671,49 +721,23 @@ export function AppSidebar() {
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
               <Label htmlFor="edit-project-name">Project name <span className="text-destructive">*</span></Label>
-              <Input
-                id="edit-project-name"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                placeholder="Project name"
-                autoFocus
-              />
+              <Input id="edit-project-name" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Project name" autoFocus />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="edit-project-desc">Description <span className="text-destructive">*</span></Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-accent"
-                  onClick={handleImproveDescription}
-                  disabled={isImprovingDesc}
-                >
-                  {isImprovingDesc ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3 w-3" />
-                  )}
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-accent" onClick={handleImproveDescription} disabled={isImprovingDesc}>
+                  {isImprovingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                   {isImprovingDesc ? 'Improving…' : 'Improve with AI'}
                 </Button>
               </div>
-              <Textarea
-                id="edit-project-desc"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Describe what this project is about..."
-                rows={3}
-                className="resize-none"
-              />
+              <Textarea id="edit-project-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Describe what this project is about..." rows={3} className="resize-none" />
               <p className="text-xs text-muted-foreground">This helps the AI understand the project context and provide better answers.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-project-lang">Language</Label>
               <Select value={editLanguage} onValueChange={(val: 'en' | 'sr-lat') => setEditLanguage(val)}>
-                <SelectTrigger id="edit-project-lang">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger id="edit-project-lang"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
                   <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
@@ -731,33 +755,18 @@ export function AppSidebar() {
       {/* Rename Chat Dialog */}
       <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Rename Chat</DialogTitle>
-          </DialogHeader>
-          <Input
-            value={renameChatValue}
-            onChange={(e) => setRenameChatValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && renameChatId && renameChatValue.trim()) {
-                updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
-                  onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); }
-                });
-              }
-            }}
-            placeholder="Chat name"
-            autoFocus
-          />
+          <DialogHeader><DialogTitle>Rename Chat</DialogTitle></DialogHeader>
+          <Input value={renameChatValue} onChange={(e) => setRenameChatValue(e.target.value)} onKeyDown={(e) => {
+            if (e.key === 'Enter' && renameChatId && renameChatValue.trim()) {
+              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); } });
+            }
+          }} placeholder="Chat name" autoFocus />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenameChatId(null)}>Cancel</Button>
-            <Button
-              disabled={!renameChatValue.trim()}
-              onClick={() => {
-                if (!renameChatId || !renameChatValue.trim()) return;
-                updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
-                  onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); }
-                });
-              }}
-            >Save</Button>
+            <Button disabled={!renameChatValue.trim()} onClick={() => {
+              if (!renameChatId || !renameChatValue.trim()) return;
+              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); } });
+            }}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -772,25 +781,11 @@ export function AppSidebar() {
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
               <Label htmlFor="create-nb-name">Notebook name <span className="text-destructive">*</span></Label>
-              <Input
-                id="create-nb-name"
-                value={createNbName}
-                onChange={(e) => setCreateNbName(e.target.value)}
-                placeholder="My Notebook"
-                autoFocus
-                onKeyDown={(e) => { if (e.key === 'Enter' && createNbName.trim()) handleCreateNotebookSubmit(); }}
-              />
+              <Input id="create-nb-name" value={createNbName} onChange={(e) => setCreateNbName(e.target.value)} placeholder="My Notebook" autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && createNbName.trim()) handleCreateNotebookSubmit(); }} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="create-nb-desc">Description</Label>
-              <Textarea
-                id="create-nb-desc"
-                value={createNbDescription}
-                onChange={(e) => setCreateNbDescription(e.target.value)}
-                placeholder="What is this notebook about?"
-                rows={3}
-                className="resize-none"
-              />
+              <Textarea id="create-nb-desc" value={createNbDescription} onChange={(e) => setCreateNbDescription(e.target.value)} placeholder="What is this notebook about?" rows={3} className="resize-none" />
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
@@ -810,24 +805,11 @@ export function AppSidebar() {
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
               <Label htmlFor="edit-nb-name-sidebar">Notebook name <span className="text-destructive">*</span></Label>
-              <Input
-                id="edit-nb-name-sidebar"
-                value={editNbName}
-                onChange={(e) => setEditNbName(e.target.value)}
-                placeholder="Notebook name"
-                autoFocus
-              />
+              <Input id="edit-nb-name-sidebar" value={editNbName} onChange={(e) => setEditNbName(e.target.value)} placeholder="Notebook name" autoFocus />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-nb-desc-sidebar">Description</Label>
-              <Textarea
-                id="edit-nb-desc-sidebar"
-                value={editNbDescription}
-                onChange={(e) => setEditNbDescription(e.target.value)}
-                placeholder="Describe what this notebook is about..."
-                rows={3}
-                className="resize-none"
-              />
+              <Textarea id="edit-nb-desc-sidebar" value={editNbDescription} onChange={(e) => setEditNbDescription(e.target.value)} placeholder="Describe what this notebook is about..." rows={3} className="resize-none" />
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
@@ -840,7 +822,7 @@ export function AppSidebar() {
   );
 }
 
-// Extracted project item with its own chats query
+// ── ProjectItem ──────────────────────────────────────────────────
 function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect, onDeleteChat, onRenameChat }: {
   project: DbProject;
   isExpanded: boolean;
@@ -859,17 +841,8 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
   const { setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
 
-  const handleManageProjectDocs = () => {
-    setSelectedProjectId(project.id);
-    setSelectedChatId(null);
-    setActiveView('project-documents');
-  };
-
-  const handleManageChatDocs = (chat: DbChat) => {
-    setSelectedProjectId(project.id);
-    setSelectedChatId(chat.id);
-    setActiveView('chat-documents');
-  };
+  const handleManageProjectDocs = () => { setSelectedProjectId(project.id); setSelectedChatId(null); setActiveView('project-documents'); };
+  const handleManageChatDocs = (chat: DbChat) => { setSelectedProjectId(project.id); setSelectedChatId(chat.id); setActiveView('chat-documents'); };
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -884,9 +857,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             <button
               className={cn(
                 "flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                isSelected
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                isSelected ? "bg-primary/10 text-primary border border-primary/20" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
               )}
               onClick={onSelect}
             >
@@ -910,12 +881,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                 <MoreHorizontal className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <ProjectActionsMenuContent
-              onManageProject={onRename}
-              onManageDocuments={handleManageProjectDocs}
-              onArchiveProject={onArchive}
-              onDeleteProject={onDelete}
-            />
+            <ProjectActionsMenuContent onManageProject={onRename} onManageDocuments={handleManageProjectDocs} onArchiveProject={onArchive} onDeleteProject={onDelete} />
           </DropdownMenu>
         </div>
       </div>
@@ -928,9 +894,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                 <button
                   className={cn(
                     "flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
-                    selectedChatId === chat.id
-                      ? "bg-accent/50 text-accent-foreground font-medium"
-                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    selectedChatId === chat.id ? "bg-accent/50 text-accent-foreground font-medium" : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
                   onClick={() => onChatSelect(chat)}
                 >
@@ -948,11 +912,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <ChatActionsMenuContent
-                onRenameChat={() => onRenameChat(chat.id, chat.name)}
-                onManageDocuments={() => handleManageChatDocs(chat)}
-                onDeleteChat={() => onDeleteChat(chat.id)}
-              />
+              <ChatActionsMenuContent onRenameChat={() => onRenameChat(chat.id, chat.name)} onManageDocuments={() => handleManageChatDocs(chat)} onDeleteChat={() => onDeleteChat(chat.id)} />
             </DropdownMenu>
           </div>
         ))}

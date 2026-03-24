@@ -17,6 +17,10 @@ import { NotebookDocumentDashboard } from '@/components/documents/NotebookDocume
 import { NotebooksLanding } from '@/components/notebooks/NotebooksLanding';
 import { NotebookWorkspace } from '@/components/notebooks/NotebookWorkspace';
 import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
+import { HomeLanding } from '@/components/views/HomeLanding';
+import { ResourcesLanding } from '@/components/views/ResourcesLanding';
+import { StarredLanding } from '@/components/views/StarredLanding';
+import { RecentsLanding } from '@/components/views/RecentsLanding';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/AppContext';
 import { useCreateProject } from '@/hooks/useProjects';
@@ -24,24 +28,16 @@ import { useCreateProject } from '@/hooks/useProjects';
 function MainContent() {
   const { activeView } = useApp();
 
-  if (activeView === 'projects') {
-    return <ProjectsLanding />;
-  }
-  if (activeView === 'project-documents') {
-    return <DocumentDashboard scope="project" />;
-  }
-  if (activeView === 'chat-documents') {
-    return <DocumentDashboard scope="chat" />;
-  }
-  if (activeView === 'notebooks') {
-    return <NotebooksLanding />;
-  }
-  if (activeView === 'notebook-documents') {
-    return <NotebookDocumentDashboard />;
-  }
-  if (activeView === 'notebook-workspace') {
-    return <NotebookWorkspace />;
-  }
+  if (activeView === 'home') return <HomeLanding />;
+  if (activeView === 'projects') return <ProjectsLanding />;
+  if (activeView === 'project-documents') return <DocumentDashboard scope="project" />;
+  if (activeView === 'chat-documents') return <DocumentDashboard scope="chat" />;
+  if (activeView === 'notebooks') return <NotebooksLanding />;
+  if (activeView === 'notebook-documents') return <NotebookDocumentDashboard />;
+  if (activeView === 'notebook-workspace') return <NotebookWorkspace />;
+  if (activeView === 'resources') return <ResourcesLanding />;
+  if (activeView === 'starred') return <StarredLanding />;
+  if (activeView === 'recents') return <RecentsLanding />;
 
   return (
     <>
