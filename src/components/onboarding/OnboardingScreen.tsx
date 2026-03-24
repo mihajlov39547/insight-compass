@@ -39,26 +39,7 @@ const features = [
 ];
 
 export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScreenProps) {
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    try {
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (error) {
-        toast.error("Failed to sign in with Google");
-        console.error("Google sign-in error:", error);
-      }
-    } catch (e) {
-      toast.error("Failed to sign in with Google");
-      console.error("Google sign-in error:", e);
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
 
   return (
     <div className="flex-1 overflow-auto bg-gradient-to-b from-background to-muted/20">
