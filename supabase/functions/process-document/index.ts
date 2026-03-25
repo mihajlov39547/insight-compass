@@ -734,51 +734,71 @@ function estimateTokenCount(text: string): number {
   return Math.ceil(text.length / 3.5);
 }
 
-// ─── Embeddings ────────────────────────────────────────────────────────
+// ─── Embeddings (local hash-based) ─────────────────────────────────────
+// The Lovable AI gateway does not support dedicated embedding models.
+// We use a deterministic hash-based embedding (character + word n-grams
+// projected into a 1536-dim vector via seeded hashing, then L2-normalised).
+// This enables cosine-similarity search with reasonable quality.
 
-const EMBEDDING_BATCH_SIZE = 20; // chunks per API call
+const EMBED_DIM = 1536;
 
-async function generateEmbeddings(
-  texts: string[],
-  apiKey: string,
-): Promise<(number[] | null)[]> {
-  const results: (number[] | null)[] = new Array(texts.length).fill(null);
+function hashCode(str: string, seed: number): number {
+  let h = seed | 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return h;
+}
 
-  for (let i = 0; i < texts.length; i += EMBEDDING_BATCH_SIZE) {
-    const batch = texts.slice(i, i + EMBEDDING_BATCH_SIZE);
-    try {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          input: batch,
-          model: "openai/text-embedding-3-small",
-        }),
-      });
+function localEmbedding(text: string): number[] {
+  const vec = new Float64Array(EMBED_DIM);
+  const lower = text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ");
+  const words = lower.split(/\s+/).filter(w => w.length >= 2);
 
-      if (!resp.ok) {
-        const errText = await resp.text();
-        console.error(`Embeddings API error (batch ${i}): ${resp.status} ${errText}`);
-        continue;
-      }
+  // Word unigrams
+  for (const w of words) {
+    const idx = Math.abs(hashCode(w, 42)) % EMBED_DIM;
+    const sign = (hashCode(w, 137) & 1) === 0 ? 1 : -1;
+    vec[idx] += sign;
+  }
 
-      const data = await resp.json();
-      if (data.data && Array.isArray(data.data)) {
-        for (const item of data.data) {
-          if (item.embedding && typeof item.index === "number") {
-            results[i + item.index] = item.embedding;
-          }
-        }
-      }
-    } catch (e) {
-      console.error(`Embeddings batch ${i} failed:`, e);
+  // Word bigrams
+  for (let i = 0; i < words.length - 1; i++) {
+    const bigram = words[i] + " " + words[i + 1];
+    const idx = Math.abs(hashCode(bigram, 99)) % EMBED_DIM;
+    const sign = (hashCode(bigram, 211) & 1) === 0 ? 1 : -1;
+    vec[idx] += sign * 0.7;
+  }
+
+  // Character trigrams (captures subword similarity)
+  for (const w of words) {
+    const padded = `#${w}#`;
+    for (let i = 0; i < padded.length - 2; i++) {
+      const tri = padded.slice(i, i + 3);
+      const idx = Math.abs(hashCode(tri, 313)) % EMBED_DIM;
+      const sign = (hashCode(tri, 479) & 1) === 0 ? 1 : -1;
+      vec[idx] += sign * 0.4;
     }
   }
 
-  return results;
+  // L2 normalise
+  let norm = 0;
+  for (let i = 0; i < EMBED_DIM; i++) norm += vec[i] * vec[i];
+  norm = Math.sqrt(norm) || 1;
+  const result: number[] = new Array(EMBED_DIM);
+  for (let i = 0; i < EMBED_DIM; i++) result[i] = vec[i] / norm;
+  return result;
+}
+
+function generateEmbeddingsLocal(texts: string[]): (number[] | null)[] {
+  return texts.map(t => {
+    try {
+      return localEmbedding(t);
+    } catch (e) {
+      console.error("Local embedding error:", e);
+      return null;
+    }
+  });
 }
 
 // ─── Main Handler ──────────────────────────────────────────────────────
