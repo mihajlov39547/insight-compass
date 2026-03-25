@@ -160,8 +160,6 @@ export function AppSidebar() {
     return items;
   }, [recentChats, notebooks]);
 
-  useEffect(() => { searchQuery.trim() ? setShowSearchResults(true) : setShowSearchResults(false); }, [searchQuery]);
-  useEffect(() => { if (showSearch && searchInputRef.current) searchInputRef.current.focus(); }, [showSearch]);
 
   const toggleProject = (projectId: string) => {
     const next = new Set(expandedProjects);
