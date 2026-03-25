@@ -7,16 +7,22 @@ export interface HybridResult {
   fileName: string;
   chunkText: string;
   chunkIndex: number;
+  chunkId: string;
   similarity: number;
   keywordRank: number;
   combinedScore: number;
-  matchType: 'semantic' | 'keyword' | 'hybrid';
+  matchType: 'semantic' | 'keyword' | 'hybrid' | 'chunk' | 'question';
   page: number | null;
   section: string | null;
   summary: string | null;
   projectId: string | null;
   chatId: string | null;
   notebookId: string | null;
+  chunkSimilarity: number;
+  questionSimilarity: number;
+  keywordScore: number;
+  finalScore: number;
+  matchedQuestionText: string | null;
 }
 
 interface RetrievalParams {
@@ -81,17 +87,33 @@ export function toDocumentContext(results: HybridResult[]) {
 
 /** Convert hybrid results to source items for UI display */
 export function toSources(results: HybridResult[]) {
-  const sources: { id: string; title: string; snippet: string; relevance: number; page?: number | null; section?: string | null; documentId: string }[] = [];
+  const sources: {
+    id: string;
+    title: string;
+    snippet: string;
+    relevance: number;
+    page?: number | null;
+    section?: string | null;
+    documentId: string;
+    chunkId: string;
+    chunkIndex: number;
+    matchType: string;
+    matchedQuestionText: string | null;
+  }[] = [];
 
   for (const r of results) {
     sources.push({
       id: `${r.documentId}-${r.chunkIndex}`,
       documentId: r.documentId,
+      chunkId: r.chunkId,
+      chunkIndex: r.chunkIndex,
       title: r.fileName,
       snippet: (r.chunkText || r.summary || '').slice(0, 250),
       relevance: r.combinedScore,
       page: r.page,
       section: r.section,
+      matchType: r.matchType,
+      matchedQuestionText: r.matchedQuestionText,
     });
   }
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
@@ -21,16 +22,22 @@ interface HybridResult {
   fileName: string;
   chunkText: string;
   chunkIndex: number;
+  chunkId: string;
   similarity: number;
   keywordRank: number;
   combinedScore: number;
-  matchType: "semantic" | "keyword" | "hybrid";
+  matchType: "semantic" | "keyword" | "hybrid" | "chunk" | "question";
   page: number | null;
   section: string | null;
   summary: string | null;
   projectId: string | null;
   chatId: string | null;
   notebookId: string | null;
+  chunkSimilarity: number;
+  questionSimilarity: number;
+  keywordScore: number;
+  finalScore: number;
+  matchedQuestionText: string | null;
 }
 
 // ─── Local hash-based embedding (must match process-document) ──────────
@@ -294,6 +301,7 @@ interface ChunkCandidate {
   chunkSimilarityRaw: number;
   questionSimilarityRaw: number;
   keywordRaw: number;
+  bestQuestionText: string | null;
 }
 
 async function runChunkSemanticSearch(
@@ -468,6 +476,7 @@ async function mergeResults(
         chunkSimilarityRaw: clampNonNegative(hit.similarity),
         questionSimilarityRaw: 0,
         keywordRaw: 0,
+        bestQuestionText: null,
       });
     } else {
       existing.chunkSimilarityRaw = Math.max(existing.chunkSimilarityRaw, clampNonNegative(hit.similarity));
@@ -478,6 +487,7 @@ async function mergeResults(
   for (const hit of questionHits) {
     const key = hit.chunkId;
     const existing = candidates.get(key);
+    const hitSim = clampNonNegative(hit.similarity);
     if (!existing) {
       candidates.set(key, {
         chunkId: hit.chunkId,
@@ -492,11 +502,15 @@ async function mergeResults(
         notebookId: hit.notebookId,
         summary: null,
         chunkSimilarityRaw: 0,
-        questionSimilarityRaw: clampNonNegative(hit.similarity),
+        questionSimilarityRaw: hitSim,
         keywordRaw: 0,
+        bestQuestionText: hit.questionText,
       });
     } else {
-      existing.questionSimilarityRaw = Math.max(existing.questionSimilarityRaw, clampNonNegative(hit.similarity));
+      if (hitSim > existing.questionSimilarityRaw) {
+        existing.questionSimilarityRaw = hitSim;
+        existing.bestQuestionText = hit.questionText;
+      }
     }
   }
 
@@ -539,6 +553,7 @@ async function mergeResults(
         chunkSimilarityRaw: 0,
         questionSimilarityRaw: 0,
         keywordRaw: clampNonNegative(kw.rank),
+        bestQuestionText: null,
       });
     }
   }
@@ -565,15 +580,23 @@ async function mergeResults(
     const hasQuestion = c.questionSimilarityRaw > 0;
     const hasKeyword = c.keywordRaw > 0;
 
-    const matchType: HybridResult["matchType"] = (hasKeyword && (hasChunk || hasQuestion))
-      ? "hybrid"
-      : (hasKeyword ? "keyword" : "semantic");
+    let matchType: HybridResult["matchType"] = "semantic";
+    if (hasKeyword && (hasChunk || hasQuestion)) {
+      matchType = "hybrid";
+    } else if (hasKeyword) {
+      matchType = "keyword";
+    } else if (hasQuestion && c.questionSimilarityRaw > c.chunkSimilarityRaw) {
+      matchType = "question";
+    } else if (hasChunk) {
+      matchType = "chunk";
+    }
 
     return {
       documentId: c.documentId,
       fileName: c.fileName,
       chunkText: (c.chunkText || "").slice(0, 500),
       chunkIndex: c.chunkIndex,
+      chunkId: c.chunkId,
       similarity: c.chunkSimilarityRaw,
       keywordRank: c.keywordRaw,
       combinedScore,
@@ -584,6 +607,11 @@ async function mergeResults(
       projectId: c.projectId,
       chatId: c.chatId,
       notebookId: c.notebookId,
+      chunkSimilarity: c.chunkSimilarityRaw,
+      questionSimilarity: c.questionSimilarityRaw,
+      keywordScore: c.keywordRaw,
+      finalScore: combinedScore,
+      matchedQuestionText: c.bestQuestionText || null,
     };
   });
 

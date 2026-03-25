@@ -12,6 +12,10 @@ export interface SourceItem {
   page?: number | null;
   section?: string | null;
   documentId?: string;
+  chunkId?: string;
+  chunkIndex?: number;
+  matchType?: 'semantic' | 'keyword' | 'hybrid' | 'chunk' | 'question';
+  matchedQuestionText?: string | null;
 }
 
 interface SourceAttributionProps {
@@ -81,11 +85,29 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
                 <CollapsibleContent>
                   <div className="border-t border-border/40 px-3 py-2 space-y-2">
                     {items.filter(i => i.snippet && i.snippet.trim()).map((item, idx) => (
-                      <div key={idx} className="text-[11px] leading-relaxed text-muted-foreground">
-                        {item.page && items.length > 1 && (
-                          <span className="text-[10px] font-medium text-foreground/70 mr-1">p.{item.page}:</span>
+                      <div key={idx} className="text-[11px] leading-relaxed text-muted-foreground space-y-1">
+                        <div>
+                          {item.page && items.length > 1 && (
+                            <span className="text-[10px] font-medium text-foreground/70 mr-1">p.{item.page}:</span>
+                          )}
+                          <span className="italic">"{item.snippet.slice(0, 200)}{item.snippet.length > 200 ? '…' : ''}"</span>
+                        </div>
+                        {item.matchType && (
+                          <div className="flex items-center gap-2 text-[10px] text-foreground/60">
+                            <span className="font-medium">Match:</span>
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-3 font-normal capitalize">
+                              {item.matchType}
+                            </Badge>
+                          </div>
                         )}
-                        <span className="italic">"{item.snippet.slice(0, 200)}{item.snippet.length > 200 ? '…' : ''}"</span>
+                        {item.matchedQuestionText && (
+                          <div className="border-l-2 border-accent/30 pl-2 py-0.5 space-y-0.5">
+                            <div className="text-[10px] font-medium text-foreground/70">Matched question:</div>
+                            <div className="text-[10px] italic text-foreground/60 max-h-[40px] overflow-hidden">
+                              "{item.matchedQuestionText.slice(0, 120)}{item.matchedQuestionText.length > 120 ? '…' : ''}"
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
