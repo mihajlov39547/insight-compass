@@ -369,8 +369,48 @@ export function SearchDashboard() {
                       </button>
                     ))}
                   </div>
+              {/* Documents */}
+              {grouped.documents.length > 0 && (filter === 'all' || filter === 'documents') && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Documents</h3>
+                  <div className="space-y-1">
+                    {grouped.documents.map(d => (
+                      <button
+                        key={d.documentId}
+                        className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors"
+                        onClick={() => {
+                          if (d.projectId) {
+                            setSelectedProjectId(d.projectId);
+                            setSelectedChatId(null);
+                            setSelectedNotebookId(null);
+                            setActiveView('default');
+                          }
+                        }}
+                      >
+                        <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">{d.fileName}</p>
+                          {d.summary && <p className="text-xs text-muted-foreground truncate mt-0.5">{d.summary}</p>}
+                          {d.chunkText && <p className="text-xs text-muted-foreground/70 line-clamp-2 mt-1">{d.chunkText}</p>}
+                        </div>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
+                          {d.matchType === 'hybrid' ? (
+                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />hybrid</span>
+                          ) : d.matchType === 'semantic' ? (
+                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />semantic</span>
+                          ) : (
+                            <span className="flex items-center gap-0.5"><Type className="h-2.5 w-2.5" />keyword</span>
+                          )}
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
+            </div>
+          )}
             </div>
           )}
         </div>
