@@ -10,7 +10,7 @@ import {
 import { DbProject } from '@/hooks/useProjects';
 import { DbChat } from '@/hooks/useChats';
 
-export type ActiveView = 'default' | 'home' | 'projects' | 'project-documents' | 'chat-documents' | 'notebooks' | 'notebook-documents' | 'notebook-workspace' | 'resources' | 'starred' | 'recents' | 'shared';
+export type ActiveView = 'default' | 'home' | 'projects' | 'project-documents' | 'chat-documents' | 'notebooks' | 'notebook-documents' | 'notebook-workspace' | 'resources' | 'starred' | 'recents' | 'shared' | 'search';
 
 interface AppContextType {
   // User
