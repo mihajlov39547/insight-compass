@@ -40,7 +40,18 @@ interface NotebookResult {
   snippet?: string;
 }
 
-type SearchResult = ProjectResult | ChatResult | NotebookResult;
+interface DocumentResult {
+  type: 'document';
+  documentId: string;
+  fileName: string;
+  chunkText: string;
+  matchType: 'semantic' | 'keyword' | 'hybrid';
+  combinedScore: number;
+  summary: string | null;
+  projectId: string | null;
+}
+
+type SearchResult = ProjectResult | ChatResult | NotebookResult | DocumentResult;
 
 function useSearchDashboard(query: string, filter: SearchFilter) {
   const { user } = useAuth();
