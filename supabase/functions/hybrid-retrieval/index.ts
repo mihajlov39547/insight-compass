@@ -126,9 +126,7 @@ serve(async (req) => {
     const adminClient = createClient(supabaseUrl, serviceKey);
 
     const keywordPromise = runKeywordSearch(adminClient, user.id, query, scope, projectId, notebookId);
-    const semanticPromise = LOVABLE_API_KEY
-      ? runSemanticSearch(adminClient, userClient, query, LOVABLE_API_KEY, scope, projectId, notebookId, chatId)
-      : Promise.resolve([]);
+    const semanticPromise = runSemanticSearch(adminClient, userClient, query, scope, projectId, notebookId, chatId);
 
     const [keywordResults, semanticResults] = await Promise.all([keywordPromise, semanticPromise]);
 
