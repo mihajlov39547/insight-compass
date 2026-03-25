@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, FolderOpen, MessageSquare, BookOpenCheck, StickyNote, Filter, X } from 'lucide-react';
+import { Search, FolderOpen, MessageSquare, BookOpenCheck, StickyNote, FileText, Filter, X, Sparkles, Type } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,9 @@ import { useNotebooks } from '@/hooks/useNotebooks';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { hybridRetrieve, type HybridResult } from '@/hooks/useHybridRetrieval';
 
-type SearchFilter = 'all' | 'projects' | 'notebooks';
+type SearchFilter = 'all' | 'projects' | 'notebooks' | 'documents';
 
 interface ProjectResult {
   type: 'project';
