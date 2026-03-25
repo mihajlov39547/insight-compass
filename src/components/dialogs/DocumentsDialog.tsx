@@ -96,7 +96,8 @@ export function DocumentsDialog() {
 
   const deleteMutation = useDeleteDocument();
   const { retry: retryProcessing, isPending: isRetrying } = useRetryProcessing();
-
+  const documentIds = documents.map(d => d.id);
+  const { data: chunkStatsMap } = useDocumentChunkStats(documentIds);
   const handleDelete = (doc: DbDocument) => {
     deleteMutation.mutate(doc, {
       onSuccess: () => toast({ title: `${doc.file_name} deleted` }),
