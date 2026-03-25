@@ -251,7 +251,7 @@ export function AppSidebar() {
     } finally { setIsImprovingDesc(false); }
   };
 
-  const handleCloseSearch = () => { setShowSearchResults(false); setSearchQuery(''); };
+  
 
   const handleCreateNotebook = () => setShowCreateNotebook(true);
 
