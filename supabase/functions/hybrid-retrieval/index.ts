@@ -542,7 +542,7 @@ async function mergeResults(
         chunkId: row.id,
         documentId: docId,
         fileName: kw.fileName,
-        chunkText: row.chunk_text || kw.snippet || kw.summary || "",
+        chunkText: row.chunk_text || "",
         chunkIndex: row.chunk_index,
         page: row.page,
         section: row.section,
@@ -617,9 +617,20 @@ async function mergeResults(
 
   scored.sort((a, b) => b.combinedScore - a.combinedScore);
 
+  // Filter out weak keyword-only matches (no semantic backing)
+  // Keep semantic/hybrid/question/chunk matches, or very strong keyword matches
+  const filtered = scored.filter(r => {
+    if (r.matchType === 'keyword') {
+      // Only keep keyword-only if score is strong (0.3+) or if it's the last resort
+      return r.combinedScore >= 0.3;
+    }
+    // Always keep semantic, hybrid, question, and chunk matches
+    return true;
+  });
+
   const docCounts = new Map<string, number>();
   const deduped: HybridResult[] = [];
-  for (const r of scored) {
+  for (const r of filtered) {
     const count = docCounts.get(r.documentId) ?? 0;
     if (count >= 2) continue;
     docCounts.set(r.documentId, count + 1);

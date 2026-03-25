@@ -102,13 +102,16 @@ export function toSources(results: HybridResult[]) {
   }[] = [];
 
   for (const r of results) {
+    // Always use chunk text if available; never fall back to summary for snippet
+    const snippetText = r.chunkText && r.chunkText.trim() ? r.chunkText : '';
+    
     sources.push({
       id: `${r.documentId}-${r.chunkIndex}`,
       documentId: r.documentId,
       chunkId: r.chunkId,
       chunkIndex: r.chunkIndex,
       title: r.fileName,
-      snippet: (r.chunkText || r.summary || '').slice(0, 250),
+      snippet: snippetText.slice(0, 250),
       relevance: r.combinedScore,
       page: r.page,
       section: r.section,
