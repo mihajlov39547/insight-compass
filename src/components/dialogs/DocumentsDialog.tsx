@@ -8,6 +8,8 @@ import { useApp } from '@/contexts/AppContext';
 import { useProjects } from '@/hooks/useProjects';
 import { useChats } from '@/hooks/useChats';
 import { useDocuments, useDeleteDocument, useRetryProcessing, DbDocument } from '@/hooks/useDocuments';
+import { useDocumentChunkStats } from '@/hooks/useDocumentChunkStats';
+import { AIReadyBadge } from '@/components/documents/AIReadyBadge';
 import { UploadDocumentsDialog } from './UploadDocumentsDialog';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -94,7 +96,8 @@ export function DocumentsDialog() {
 
   const deleteMutation = useDeleteDocument();
   const { retry: retryProcessing, isPending: isRetrying } = useRetryProcessing();
-
+  const documentIds = documents.map(d => d.id);
+  const { data: chunkStatsMap } = useDocumentChunkStats(documentIds);
   const handleDelete = (doc: DbDocument) => {
     deleteMutation.mutate(doc, {
       onSuccess: () => toast({ title: `${doc.file_name} deleted` }),
@@ -136,15 +139,18 @@ export function DocumentsDialog() {
                   {documents.map(doc => {
                     const Icon = fileIcons[doc.file_type] || FileIcon;
                     const color = fileColors[doc.file_type] || 'text-muted-foreground';
+                    const cs = chunkStatsMap?.get(doc.id);
+                    const isAIReady = doc.processing_status === 'completed' && (cs?.embeddedCount ?? 0) > 0 && cs?.embeddedCount === cs?.chunkCount;
                     return (
                       <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card">
                         <div className={cn('p-1.5 rounded bg-muted', color)}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-medium text-foreground truncate" title={doc.file_name}>{truncateFileName(doc.file_name)}</p>
                             <ProcessingBadge status={doc.processing_status} />
+                            <AIReadyBadge isReady={isAIReady} />
                           </div>
                           <p className="text-xs text-muted-foreground">
                             {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)}

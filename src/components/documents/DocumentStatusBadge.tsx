@@ -11,6 +11,7 @@ const STAGE_LABELS: Record<string, string> = {
   indexing: 'Creating search index',
   chunking: 'Chunking text',
   generating_embeddings: 'Generating embeddings',
+  embedding: 'Generating embeddings',
 };
 
 export function DocumentStatusBadge({ status }: { status: string }) {
