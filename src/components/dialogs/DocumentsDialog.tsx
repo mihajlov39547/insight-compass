@@ -8,6 +8,8 @@ import { useApp } from '@/contexts/AppContext';
 import { useProjects } from '@/hooks/useProjects';
 import { useChats } from '@/hooks/useChats';
 import { useDocuments, useDeleteDocument, useRetryProcessing, DbDocument } from '@/hooks/useDocuments';
+import { useDocumentChunkStats } from '@/hooks/useDocumentChunkStats';
+import { AIReadyBadge } from '@/components/documents/AIReadyBadge';
 import { UploadDocumentsDialog } from './UploadDocumentsDialog';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
