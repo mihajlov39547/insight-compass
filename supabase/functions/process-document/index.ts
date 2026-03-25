@@ -666,7 +666,7 @@ function categorizeFile(fileType: string): string {
 
 const ACTIVE_STATES = new Set([
   "extracting_metadata", "extracting_content", "detecting_language", "summarizing", "indexing",
-  "chunking", "generating_embeddings",
+  "chunking", "generating_embeddings", "generating_chunk_questions",
 ]);
 
 // ─── Chunking ──────────────────────────────────────────────────────────
