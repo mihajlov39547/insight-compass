@@ -102,7 +102,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: `Bearer ${token}` } },
@@ -125,12 +124,30 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey);
 
+    const embedding = generateQueryEmbedding(query);
+
     const keywordPromise = runKeywordSearch(adminClient, user.id, query, scope, projectId, notebookId);
-    const semanticPromise = runSemanticSearch(adminClient, userClient, query, scope, projectId, notebookId, chatId);
+    const chunkSemanticPromise = runChunkSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
+    const questionSemanticPromise = runQuestionSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
 
-    const [keywordResults, semanticResults] = await Promise.all([keywordPromise, semanticPromise]);
+    const [keywordResults, chunkSemanticResults, questionSemanticResults] = await Promise.all([
+      keywordPromise,
+      chunkSemanticPromise,
+      questionSemanticPromise,
+    ]);
 
-    const combined = mergeResults(keywordResults, semanticResults, maxResults);
+    const combined = await mergeResults(
+      adminClient,
+      user.id,
+      keywordResults,
+      chunkSemanticResults,
+      questionSemanticResults,
+      maxResults,
+      scope,
+      projectId,
+      notebookId,
+      chatId,
+    );
 
     return new Response(JSON.stringify({ results: combined }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -232,7 +249,8 @@ async function runKeywordSearch(
   }
 }
 
-interface SemanticHit {
+interface ChunkSemanticHit {
+  chunkId: string;
   documentId: string;
   fileName: string;
   chunkText: string;
@@ -245,38 +263,67 @@ interface SemanticHit {
   notebookId: string | null;
 }
 
-async function runSemanticSearch(
-  adminClient: any, userClient: any, query: string,
-  scope: string, projectId?: string, notebookId?: string, chatId?: string
-): Promise<SemanticHit[]> {
+interface QuestionSemanticHit {
+  chunkId: string;
+  documentId: string;
+  fileName: string;
+  chunkText: string;
+  chunkIndex: number;
+  questionText: string;
+  similarity: number;
+  page: number | null;
+  section: string | null;
+  projectId: string | null;
+  chatId: string | null;
+  notebookId: string | null;
+}
+
+interface ChunkCandidate {
+  chunkId: string;
+  documentId: string;
+  fileName: string;
+  chunkText: string;
+  chunkIndex: number;
+  page: number | null;
+  section: string | null;
+  projectId: string | null;
+  chatId: string | null;
+  notebookId: string | null;
+  summary: string | null;
+  chunkSimilarityRaw: number;
+  questionSimilarityRaw: number;
+  keywordRaw: number;
+}
+
+async function runChunkSemanticSearch(
+  userClient: any,
+  embedding: number[] | null,
+  scope: string,
+  projectId?: string,
+  notebookId?: string,
+  chatId?: string
+): Promise<ChunkSemanticHit[]> {
   try {
-    const embedding = generateQueryEmbedding(query);
     if (!embedding) return [];
 
     const rpcParams: any = {
       query_embedding: JSON.stringify(embedding),
-      match_count: 15,
+      match_count: 20,
       similarity_threshold: 0.15,
     };
 
-    if (scope === "project" && projectId) {
-      rpcParams.filter_project_id = projectId;
-    }
-    if (scope === "notebook" && notebookId) {
-      rpcParams.filter_notebook_id = notebookId;
-    }
-    if (chatId) {
-      rpcParams.filter_chat_id = chatId;
-    }
+    if (scope === "project" && projectId) rpcParams.filter_project_id = projectId;
+    if (scope === "notebook" && notebookId) rpcParams.filter_notebook_id = notebookId;
+    if (chatId) rpcParams.filter_chat_id = chatId;
 
     const { data, error } = await userClient.rpc("search_document_chunks", rpcParams);
-
     if (error) {
-      console.warn("Semantic search RPC error:", error);
+      console.warn("Chunk semantic search RPC error:", error);
       return [];
     }
 
     return (data ?? []).map((r: any) => ({
+      chunkId: r.chunk_id,
       documentId: r.document_id,
       fileName: r.file_name,
       chunkText: r.chunk_text,
@@ -289,77 +336,261 @@ async function runSemanticSearch(
       notebookId: r.notebook_id,
     }));
   } catch (e) {
-    console.warn("Semantic search failed:", e);
+    console.warn("Chunk semantic search failed:", e);
     return [];
   }
 }
 
-function mergeResults(
-  keywordHits: KeywordHit[],
-  semanticHits: SemanticHit[],
-  maxResults: number
-): HybridResult[] {
-  const resultMap = new Map<string, HybridResult>();
+async function runQuestionSemanticSearch(
+  userClient: any,
+  embedding: number[] | null,
+  scope: string,
+  projectId?: string,
+  notebookId?: string,
+  chatId?: string
+): Promise<QuestionSemanticHit[]> {
+  try {
+    if (!embedding) return [];
 
-  for (const hit of semanticHits) {
-    const key = `${hit.documentId}:${hit.chunkIndex}`;
-    resultMap.set(key, {
-      documentId: hit.documentId,
-      fileName: hit.fileName,
-      chunkText: hit.chunkText.slice(0, 500),
-      chunkIndex: hit.chunkIndex,
-      similarity: hit.similarity,
-      keywordRank: 0,
-      combinedScore: hit.similarity * 0.6,
-      matchType: "semantic",
-      page: hit.page,
-      section: hit.section,
-      summary: null,
-      projectId: hit.projectId,
-      chatId: hit.chatId,
-      notebookId: hit.notebookId,
-    });
-  }
+    const rpcParams: any = {
+      query_embedding: JSON.stringify(embedding),
+      match_count: 30,
+      similarity_threshold: 0.15,
+    };
 
-  for (const hit of keywordHits) {
-    let boosted = false;
-    for (const [key, existing] of resultMap.entries()) {
-      if (existing.documentId === hit.documentId) {
-        existing.keywordRank = hit.rank;
-        existing.combinedScore = existing.similarity * 0.6 + hit.rank * 0.4;
-        existing.matchType = "hybrid";
-        existing.summary = hit.summary;
-        boosted = true;
-      }
+    if (scope === "project" && projectId) rpcParams.filter_project_id = projectId;
+    if (scope === "notebook" && notebookId) rpcParams.filter_notebook_id = notebookId;
+    if (chatId) rpcParams.filter_chat_id = chatId;
+
+    const { data, error } = await userClient.rpc("search_document_chunk_questions", rpcParams);
+    if (error) {
+      console.warn("Question semantic search RPC error:", error);
+      return [];
     }
 
-    if (!boosted) {
-      const key = `kw:${hit.documentId}`;
-      resultMap.set(key, {
+    return (data ?? []).map((r: any) => ({
+      chunkId: r.chunk_id,
+      documentId: r.document_id,
+      fileName: r.file_name,
+      chunkText: r.chunk_text,
+      chunkIndex: r.chunk_index,
+      questionText: r.question_text,
+      similarity: r.similarity,
+      page: r.page,
+      section: r.section,
+      projectId: r.project_id,
+      chatId: r.chat_id,
+      notebookId: r.notebook_id,
+    }));
+  } catch (e) {
+    console.warn("Question semantic search failed:", e);
+    return [];
+  }
+}
+
+async function getKeywordFallbackChunks(
+  adminClient: any,
+  userId: string,
+  missingDocIds: string[]
+): Promise<Map<string, any>> {
+  const fallback = new Map<string, any>();
+  if (missingDocIds.length === 0) return fallback;
+
+  const { data, error } = await adminClient
+    .from("document_chunks")
+    .select("id, document_id, chunk_index, chunk_text, page, section, project_id, chat_id, notebook_id")
+    .eq("user_id", userId)
+    .in("document_id", missingDocIds)
+    .order("document_id", { ascending: true })
+    .order("chunk_index", { ascending: true });
+
+  if (error || !data) {
+    if (error) console.warn("Keyword fallback chunk query failed:", error);
+    return fallback;
+  }
+
+  for (const row of data) {
+    if (!fallback.has(row.document_id)) fallback.set(row.document_id, row);
+  }
+
+  return fallback;
+}
+
+function clampNonNegative(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+function minMaxNormalize(values: number[]): (value: number) => number {
+  const safe = values.map(clampNonNegative);
+  const min = safe.length ? Math.min(...safe) : 0;
+  const max = safe.length ? Math.max(...safe) : 0;
+  if (max <= min) {
+    return (v: number) => (clampNonNegative(v) > 0 ? 1 : 0);
+  }
+  return (v: number) => {
+    const s = clampNonNegative(v);
+    return (s - min) / (max - min);
+  };
+}
+
+async function mergeResults(
+  adminClient: any,
+  userId: string,
+  keywordHits: KeywordHit[],
+  chunkHits: ChunkSemanticHit[],
+  questionHits: QuestionSemanticHit[],
+  maxResults: number,
+  _scope: string,
+  _projectId?: string,
+  _notebookId?: string,
+  _chatId?: string,
+): Promise<HybridResult[]> {
+  const candidates = new Map<string, ChunkCandidate>();
+
+  // Seed with chunk-semantic hits
+  for (const hit of chunkHits) {
+    const key = hit.chunkId;
+    const existing = candidates.get(key);
+    if (!existing) {
+      candidates.set(key, {
+        chunkId: hit.chunkId,
         documentId: hit.documentId,
         fileName: hit.fileName,
-        chunkText: hit.snippet || hit.summary || "",
-        chunkIndex: -1,
-        similarity: 0,
-        keywordRank: hit.rank,
-        combinedScore: hit.rank * 0.4,
-        matchType: "keyword",
-        page: null,
-        section: null,
-        summary: hit.summary,
+        chunkText: hit.chunkText,
+        chunkIndex: hit.chunkIndex,
+        page: hit.page,
+        section: hit.section,
         projectId: hit.projectId,
         chatId: hit.chatId,
         notebookId: hit.notebookId,
+        summary: null,
+        chunkSimilarityRaw: clampNonNegative(hit.similarity),
+        questionSimilarityRaw: 0,
+        keywordRaw: 0,
+      });
+    } else {
+      existing.chunkSimilarityRaw = Math.max(existing.chunkSimilarityRaw, clampNonNegative(hit.similarity));
+    }
+  }
+
+  // Aggregate question-semantic hits to parent chunks using max similarity per chunk
+  for (const hit of questionHits) {
+    const key = hit.chunkId;
+    const existing = candidates.get(key);
+    if (!existing) {
+      candidates.set(key, {
+        chunkId: hit.chunkId,
+        documentId: hit.documentId,
+        fileName: hit.fileName,
+        chunkText: hit.chunkText,
+        chunkIndex: hit.chunkIndex,
+        page: hit.page,
+        section: hit.section,
+        projectId: hit.projectId,
+        chatId: hit.chatId,
+        notebookId: hit.notebookId,
+        summary: null,
+        chunkSimilarityRaw: 0,
+        questionSimilarityRaw: clampNonNegative(hit.similarity),
+        keywordRaw: 0,
+      });
+    } else {
+      existing.questionSimilarityRaw = Math.max(existing.questionSimilarityRaw, clampNonNegative(hit.similarity));
+    }
+  }
+
+  // Apply keyword score per document to all chunk candidates in that document
+  const keywordByDoc = new Map<string, KeywordHit>();
+  for (const kw of keywordHits) keywordByDoc.set(kw.documentId, kw);
+
+  for (const candidate of candidates.values()) {
+    const kw = keywordByDoc.get(candidate.documentId);
+    if (!kw) continue;
+    candidate.keywordRaw = clampNonNegative(kw.rank);
+    candidate.summary = kw.summary;
+  }
+
+  // Ensure keyword-only docs still return chunk-based results (backward compatibility)
+  const coveredDocs = new Set(Array.from(candidates.values()).map(c => c.documentId));
+  const missingKeywordDocs = keywordHits
+    .map(k => k.documentId)
+    .filter((docId, idx, arr) => arr.indexOf(docId) === idx && !coveredDocs.has(docId));
+
+  if (missingKeywordDocs.length > 0) {
+    const fallbackChunks = await getKeywordFallbackChunks(adminClient, userId, missingKeywordDocs);
+    for (const docId of missingKeywordDocs) {
+      const row = fallbackChunks.get(docId);
+      const kw = keywordByDoc.get(docId);
+      if (!row || !kw) continue;
+
+      candidates.set(row.id, {
+        chunkId: row.id,
+        documentId: docId,
+        fileName: kw.fileName,
+        chunkText: row.chunk_text || kw.snippet || kw.summary || "",
+        chunkIndex: row.chunk_index,
+        page: row.page,
+        section: row.section,
+        projectId: row.project_id,
+        chatId: row.chat_id,
+        notebookId: row.notebook_id,
+        summary: kw.summary,
+        chunkSimilarityRaw: 0,
+        questionSimilarityRaw: 0,
+        keywordRaw: clampNonNegative(kw.rank),
       });
     }
   }
 
-  const results = Array.from(resultMap.values());
-  results.sort((a, b) => b.combinedScore - a.combinedScore);
+  const allCandidates = Array.from(candidates.values());
+  if (allCandidates.length === 0) return [];
+
+  // Normalize all score components to same scale before fusion
+  const normChunk = minMaxNormalize(allCandidates.map(c => c.chunkSimilarityRaw));
+  const normQuestion = minMaxNormalize(allCandidates.map(c => c.questionSimilarityRaw));
+  const normKeyword = minMaxNormalize(allCandidates.map(c => c.keywordRaw));
+
+  const scored: HybridResult[] = allCandidates.map((c) => {
+    const chunkScore = normChunk(c.chunkSimilarityRaw);
+    const questionScore = normQuestion(c.questionSimilarityRaw);
+    const keywordScore = normKeyword(c.keywordRaw);
+
+    const combinedScore =
+      0.50 * chunkScore +
+      0.30 * questionScore +
+      0.20 * keywordScore;
+
+    const hasChunk = c.chunkSimilarityRaw > 0;
+    const hasQuestion = c.questionSimilarityRaw > 0;
+    const hasKeyword = c.keywordRaw > 0;
+
+    const matchType: HybridResult["matchType"] = (hasKeyword && (hasChunk || hasQuestion))
+      ? "hybrid"
+      : (hasKeyword ? "keyword" : "semantic");
+
+    return {
+      documentId: c.documentId,
+      fileName: c.fileName,
+      chunkText: (c.chunkText || "").slice(0, 500),
+      chunkIndex: c.chunkIndex,
+      similarity: c.chunkSimilarityRaw,
+      keywordRank: c.keywordRaw,
+      combinedScore,
+      matchType,
+      page: c.page,
+      section: c.section,
+      summary: c.summary,
+      projectId: c.projectId,
+      chatId: c.chatId,
+      notebookId: c.notebookId,
+    };
+  });
+
+  scored.sort((a, b) => b.combinedScore - a.combinedScore);
 
   const docCounts = new Map<string, number>();
   const deduped: HybridResult[] = [];
-  for (const r of results) {
+  for (const r of scored) {
     const count = docCounts.get(r.documentId) ?? 0;
     if (count >= 2) continue;
     docCounts.set(r.documentId, count + 1);
