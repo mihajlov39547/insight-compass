@@ -264,9 +264,10 @@ function EmptyState({ scope, hasDocuments, onUpload }: { scope: 'project' | 'cha
 }
 
 function DocumentRow({
-  doc, isExpanded, onToggle, onDelete, onRetry, isDeleting, isRetrying,
+  doc, chunkStats, isExpanded, onToggle, onDelete, onRetry, isDeleting, isRetrying,
 }: {
   doc: DbDocument;
+  chunkStats?: import('@/hooks/useDocumentChunkStats').ChunkStats;
   isExpanded: boolean;
   onToggle: () => void;
   onDelete: () => void;
@@ -276,6 +277,7 @@ function DocumentRow({
 }) {
   const Icon = fileIcons[doc.file_type] || FileIcon;
   const color = fileColors[doc.file_type] || 'text-muted-foreground';
+  const isAIReady = doc.processing_status === 'completed' && (chunkStats?.embeddedCount ?? 0) > 0 && chunkStats?.embeddedCount === chunkStats?.chunkCount;
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -286,11 +288,12 @@ function DocumentRow({
               <Icon className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-sm font-medium text-foreground truncate" title={doc.file_name}>
                   {truncateFileName(doc.file_name)}
                 </p>
                 <DocumentStatusBadge status={doc.processing_status} />
+                <AIReadyBadge isReady={isAIReady} />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
@@ -322,6 +325,8 @@ function DocumentRow({
               {doc.word_count != null && <MetaItem label="Words" value={doc.word_count.toLocaleString()} />}
               {doc.char_count != null && <MetaItem label="Characters" value={doc.char_count.toLocaleString()} />}
               {doc.page_count != null && <MetaItem label="Pages" value={doc.page_count.toString()} />}
+              {chunkStats && chunkStats.chunkCount > 0 && <MetaItem label="Chunks" value={chunkStats.chunkCount.toString()} />}
+              {chunkStats && chunkStats.embeddedCount > 0 && <MetaItem label="Embeddings" value={`${chunkStats.embeddedCount}/${chunkStats.chunkCount}`} />}
               {doc.retry_count > 0 && <MetaItem label="Retry attempts" value={doc.retry_count.toString()} />}
               {doc.last_retry_at && <MetaItem label="Last retry" value={new Date(doc.last_retry_at).toLocaleString()} />}
               <MetaItem label="Status" value={doc.processing_status} />
@@ -340,7 +345,7 @@ function DocumentRow({
               </div>
             )}
 
-            <DocumentUsability doc={doc} />
+            <DocumentUsability doc={doc} chunkStats={chunkStats} />
           </div>
         </CollapsibleContent>
       </div>
