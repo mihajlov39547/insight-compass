@@ -325,8 +325,14 @@ function DocumentRow({
               {doc.word_count != null && <MetaItem label="Words" value={doc.word_count.toLocaleString()} />}
               {doc.char_count != null && <MetaItem label="Characters" value={doc.char_count.toLocaleString()} />}
               {doc.page_count != null && <MetaItem label="Pages" value={doc.page_count.toString()} />}
-              {chunkStats && chunkStats.chunkCount > 0 && <MetaItem label="Chunks" value={chunkStats.chunkCount.toString()} />}
-              {chunkStats && chunkStats.embeddedCount > 0 && <MetaItem label="Embeddings" value={`${chunkStats.embeddedCount}/${chunkStats.chunkCount}`} />}
+              {chunkStats && chunkStats.chunkCount > 0 && <MetaItem label="Chunks created" value={chunkStats.chunkCount.toString()} />}
+              {chunkStats && chunkStats.embeddedCount > 0 && <MetaItem label="Embeddings created" value={`${chunkStats.embeddedCount}/${chunkStats.chunkCount}`} />}
+              {chunkStats && chunkStats.chunkCount > 0 && (
+                <MetaItem label="Embedding coverage" value={`${Math.round((chunkStats.embeddedCount / chunkStats.chunkCount) * 100)}%`} />
+              )}
+              {chunkStats && chunkStats.embeddedCount === chunkStats.chunkCount && chunkStats.chunkCount > 0 && (
+                <MetaItem label="Semantic retrieval" value="Ready" />
+              )}
               {doc.retry_count > 0 && <MetaItem label="Retry attempts" value={doc.retry_count.toString()} />}
               {doc.last_retry_at && <MetaItem label="Last retry" value={new Date(doc.last_retry_at).toLocaleString()} />}
               <MetaItem label="Status" value={doc.processing_status} />
