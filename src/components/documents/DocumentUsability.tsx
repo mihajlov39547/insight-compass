@@ -38,6 +38,11 @@ function Row({ label, available, detail, hint }: { label: string; available: boo
 }
 
 export function DocumentUsability({ doc, chunkStats, questionStats }: Props) {
+  const toSafeInt = (value: unknown): number => {
+    const n = Number(value);
+    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+  };
+
   const isCompleted = doc.processing_status === 'completed';
   const hasChunks = (chunkStats?.chunkCount ?? 0) > 0;
   const hasEmbeddings = (chunkStats?.embeddedCount ?? 0) > 0;
@@ -47,9 +52,9 @@ export function DocumentUsability({ doc, chunkStats, questionStats }: Props) {
     ? Math.round((chunkStats!.embeddedCount / chunkStats!.chunkCount) * 100)
     : 0;
 
-  const questionCount = questionStats?.questionCount ?? 0;
-  const chunksWithQuestionsCount = questionStats?.chunksWithQuestionsCount ?? 0;
-  const embeddedQuestionCount = questionStats?.embeddedQuestionCount ?? 0;
+  const questionCount = toSafeInt(questionStats?.questionCount);
+  const chunksWithQuestionsCount = toSafeInt(questionStats?.chunksWithQuestionsCount);
+  const embeddedQuestionCount = toSafeInt(questionStats?.embeddedQuestionCount);
   const allQuestionsEmbedded = questionCount > 0 && embeddedQuestionCount === questionCount;
   const questionEmbeddingCoverage = questionCount > 0
     ? Math.round((embeddedQuestionCount / questionCount) * 100)

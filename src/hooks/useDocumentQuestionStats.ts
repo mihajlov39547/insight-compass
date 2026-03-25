@@ -16,6 +16,11 @@ export interface QuestionStats {
 export function useDocumentQuestionStats(documentIds: string[]) {
   const { user } = useAuth();
 
+  const toSafeCount = (value: unknown): number => {
+    const n = Number(value);
+    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+  };
+
   return useQuery({
     queryKey: ['document-question-stats', ...documentIds.sort()],
     queryFn: async () => {
@@ -43,9 +48,10 @@ export function useDocumentQuestionStats(documentIds: string[]) {
       for (const row of (data || [])) {
         statsMap.set(row.document_id, {
           documentId: row.document_id,
-          questionCount: Number(row.question_count),
-          embeddedQuestionCount: Number(row.embedded_question_count),
-          chunksWithQuestionsCount: Number(row.chunks_with_questions_count),
+          questionCount: toSafeCount(row.question_count),
+          embeddedQuestionCount: toSafeCount(row.embedded_question_count),
+          // Runtime-safe for environments where RPC schema may still return old shape
+          chunksWithQuestionsCount: toSafeCount((row as any).chunks_with_questions_count),
         });
       }
 
