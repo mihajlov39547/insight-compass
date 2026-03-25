@@ -6,7 +6,11 @@ import {
   Users, 
   Sparkles,
   BookOpen,
-  StickyNote
+  StickyNote,
+  Search,
+  GraduationCap,
+  MessageCircleQuestion,
+  FolderOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -151,16 +155,31 @@ export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScree
             </Card>
           </div>
         </div>
-        {/* Social Proof / Trust Section */}
-        <div className="text-center py-8 border-t border-border/50">
-          <p className="text-sm text-muted-foreground mb-4">
-            Trusted by teams at leading organizations
-          </p>
-          <div className="flex items-center justify-center gap-8 opacity-50">
-            <div className="h-8 w-24 bg-muted-foreground/20 rounded" />
-            <div className="h-8 w-20 bg-muted-foreground/20 rounded" />
-            <div className="h-8 w-28 bg-muted-foreground/20 rounded" />
-            <div className="h-8 w-24 bg-muted-foreground/20 rounded hidden sm:block" />
+        {/* Use Cases Section */}
+        <div className="py-8 border-t border-border/50">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+              What You Can Do with Insight Navigator
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Practical ways to get value from your documents and knowledge.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            {[
+              { icon: Search, title: 'Research & Analysis', description: 'Explore papers, reports, specifications, and long documents faster.' },
+              { icon: GraduationCap, title: 'Learning & Study', description: 'Turn dense material into clear explanations, summaries, and study notes.' },
+              { icon: MessageCircleQuestion, title: 'Document Q&A', description: 'Ask questions across your uploaded files and get grounded answers quickly.' },
+              { icon: FolderOpen, title: 'Knowledge Organization', description: 'Build reusable notebooks, notes, and source-backed knowledge bases.' },
+            ].map((uc, i) => (
+              <div key={i} className="text-center p-5 rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <uc.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground text-sm mb-1.5">{uc.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{uc.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
