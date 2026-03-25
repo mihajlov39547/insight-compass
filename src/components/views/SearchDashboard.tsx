@@ -72,11 +72,9 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
           supabase.from('messages').select('id, chat_id, content, role').ilike('content', pattern).limit(20),
         ]);
 
-        // Get project names for chats
         const chatProjectIds = new Set<string>();
         (chatsRes.data ?? []).forEach(c => chatProjectIds.add(c.project_id));
         
-        // Get chat info for message matches
         const messageChatIds = new Set<string>();
         (messagesRes.data ?? []).forEach(m => messageChatIds.add(m.chat_id));
         
@@ -123,7 +121,6 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
 
         const addedNbIds = new Set<string>();
         
-        // Get notebook names for message/note matches
         const nbIdsFromMsgs = new Set<string>();
         (nbMsgRes.data ?? []).forEach(m => nbIdsFromMsgs.add(m.notebook_id));
         (nbNotesRes.data ?? []).forEach(n => nbIdsFromMsgs.add(n.notebook_id));
@@ -155,6 +152,36 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
             matchSource: 'note', snippet: n.title || (n.content.length > 120 ? n.content.slice(0, 120) + '…' : n.content),
           });
         });
+      }
+
+      // Documents — hybrid retrieval
+      if (filter === 'all' || filter === 'documents') {
+        try {
+          const docResults = await hybridRetrieve({
+            query: trimmed,
+            scope: 'global',
+            maxResults: 10,
+          });
+
+          // Deduplicate by documentId for display
+          const seenDocs = new Set<string>();
+          for (const r of docResults) {
+            if (seenDocs.has(r.documentId)) continue;
+            seenDocs.add(r.documentId);
+            results.push({
+              type: 'document',
+              documentId: r.documentId,
+              fileName: r.fileName,
+              chunkText: r.chunkText.slice(0, 200),
+              matchType: r.matchType,
+              combinedScore: r.combinedScore,
+              summary: r.summary,
+              projectId: r.projectId,
+            });
+          }
+        } catch (e) {
+          console.warn('Document hybrid search failed:', e);
+        }
       }
 
       return results;
