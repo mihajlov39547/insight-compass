@@ -18,6 +18,8 @@ import { useDocuments, useDeleteDocument, useRetryProcessing, DbDocument } from 
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from './DocumentStatusBadge';
 import { DocumentUsability } from './DocumentUsability';
+import { AIReadyBadge } from './AIReadyBadge';
+import { useDocumentChunkStats } from '@/hooks/useDocumentChunkStats';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
