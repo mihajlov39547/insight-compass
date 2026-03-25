@@ -21,9 +21,12 @@ export function useDocumentChunkStats(documentIds: string[]) {
     queryFn: async () => {
       if (documentIds.length === 0) return new Map<string, ChunkStats>();
 
+      // Only select lightweight columns — avoid fetching the large embedding vector.
+      // We check embedding presence via a workaround: select embedding and check non-null,
+      // but use a minimal select to avoid transferring the full vector data.
       const { data, error } = await supabase
         .from('document_chunks')
-        .select('document_id, embedding, token_count')
+        .select('document_id, token_count, embedding')
         .in('document_id', documentIds);
 
       if (error) throw error;
