@@ -454,6 +454,7 @@ export function AppSidebar() {
 
   // ─── EXPANDED ──────────────────────────────────────────────────
   return (
+    <>
     <div className="w-full h-screen bg-sidebar flex flex-col border-r border-sidebar-border animate-slide-in-left">
       {/* Workspace Banner */}
       <div className="p-3 flex items-center justify-between border-b border-sidebar-border">
