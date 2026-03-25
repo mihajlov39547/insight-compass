@@ -843,7 +843,7 @@ export function AppSidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
+    </div>
       {sharedDialogs}
     </>
   );
