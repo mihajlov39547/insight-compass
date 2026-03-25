@@ -843,54 +843,8 @@ export function AppSidebar() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Notebook Dialog */}
-      <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); } }}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Create Notebook</DialogTitle>
-            <DialogDescription>Create a new notebook to organize your research and documents.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <Label htmlFor="create-nb-name">Notebook name <span className="text-destructive">*</span></Label>
-              <Input id="create-nb-name" value={createNbName} onChange={(e) => setCreateNbName(e.target.value)} placeholder="My Notebook" autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && createNbName.trim()) handleCreateNotebookSubmit(); }} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="create-nb-desc">Description</Label>
-              <Textarea id="create-nb-desc" value={createNbDescription} onChange={(e) => setCreateNbDescription(e.target.value)} placeholder="What is this notebook about?" rows={3} className="resize-none" />
-            </div>
-          </div>
-          <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); }}>Cancel</Button>
-            <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>Create Notebook</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Manage Notebook Dialog */}
-      <Dialog open={!!editNotebook} onOpenChange={(open) => !open && setEditNotebook(null)}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Manage Notebook</DialogTitle>
-            <DialogDescription>Update your notebook details.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <Label htmlFor="edit-nb-name-sidebar">Notebook name <span className="text-destructive">*</span></Label>
-              <Input id="edit-nb-name-sidebar" value={editNbName} onChange={(e) => setEditNbName(e.target.value)} placeholder="Notebook name" autoFocus />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-nb-desc-sidebar">Description</Label>
-              <Textarea id="edit-nb-desc-sidebar" value={editNbDescription} onChange={(e) => setEditNbDescription(e.target.value)} placeholder="Describe what this notebook is about..." rows={3} className="resize-none" />
-            </div>
-          </div>
-          <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditNotebook(null)}>Cancel</Button>
-            <Button onClick={handleManageNotebookSubmit} disabled={!editNbName.trim()}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      {sharedDialogs}
+    </>
   );
 }
 
