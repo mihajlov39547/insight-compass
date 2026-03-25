@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { DEFAULT_MODEL_ID } from '@/data/mockData';
+import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
@@ -41,43 +42,20 @@ interface UseNotebookAIChatOptions {
   notebookDescription?: string;
 }
 
-/** Retrieve notebook document context for grounding (only enabled docs) */
+/** Retrieve notebook document context using hybrid retrieval (only enabled docs) */
 async function retrieveNotebookDocContext(notebookId: string, userMessage: string) {
   try {
-    const { data: docs } = await (supabase.from('documents') as any)
-      .select('id, file_name, summary, processing_status, notebook_enabled')
-      .eq('notebook_id', notebookId)
-      .eq('processing_status', 'completed')
-      .eq('notebook_enabled', true)
-      .limit(20);
+    const results = await hybridRetrieve({
+      query: userMessage,
+      scope: 'notebook',
+      notebookId,
+      maxResults: 8,
+    });
 
-    if (!docs || docs.length === 0) return { sources: [], contextForAI: [] };
-
-    const docIds = docs.map((d: any) => d.id);
-    const { data: analyses } = await supabase
-      .from('document_analysis')
-      .select('document_id, extracted_text, normalized_search_text')
-      .in('document_id', docIds);
-
-    const analysisMap = new Map<string, any>();
-    if (analyses) {
-      for (const a of analyses) analysisMap.set(a.document_id, a);
-    }
-
-    const sources: any[] = [];
-    const contextForAI: any[] = [];
-
-    for (const doc of docs) {
-      const analysis = analysisMap.get(doc.id);
-      let excerpt = '';
-      if (analysis?.extracted_text) excerpt = analysis.extracted_text.slice(0, 2000);
-      else if (analysis?.normalized_search_text) excerpt = analysis.normalized_search_text.slice(0, 2000);
-
-      sources.push({ id: doc.id, title: doc.file_name, snippet: (doc.summary || '').slice(0, 200), relevance: 0.5 });
-      contextForAI.push({ id: doc.id, fileName: doc.file_name, summary: doc.summary || undefined, excerpt: excerpt || undefined });
-    }
-
-    return { sources, contextForAI };
+    return {
+      sources: toSources(results),
+      contextForAI: toDocumentContext(results),
+    };
   } catch {
     return { sources: [], contextForAI: [] };
   }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, FolderOpen, MessageSquare, BookOpenCheck, StickyNote, Filter, X } from 'lucide-react';
+import { Search, FolderOpen, MessageSquare, BookOpenCheck, StickyNote, FileText, Filter, X, Sparkles, Type } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,9 @@ import { useNotebooks } from '@/hooks/useNotebooks';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { hybridRetrieve, type HybridResult } from '@/hooks/useHybridRetrieval';
 
-type SearchFilter = 'all' | 'projects' | 'notebooks';
+type SearchFilter = 'all' | 'projects' | 'notebooks' | 'documents';
 
 interface ProjectResult {
   type: 'project';
@@ -39,7 +40,18 @@ interface NotebookResult {
   snippet?: string;
 }
 
-type SearchResult = ProjectResult | ChatResult | NotebookResult;
+interface DocumentResult {
+  type: 'document';
+  documentId: string;
+  fileName: string;
+  chunkText: string;
+  matchType: 'semantic' | 'keyword' | 'hybrid';
+  combinedScore: number;
+  summary: string | null;
+  projectId: string | null;
+}
+
+type SearchResult = ProjectResult | ChatResult | NotebookResult | DocumentResult;
 
 function useSearchDashboard(query: string, filter: SearchFilter) {
   const { user } = useAuth();
@@ -60,11 +72,9 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
           supabase.from('messages').select('id, chat_id, content, role').ilike('content', pattern).limit(20),
         ]);
 
-        // Get project names for chats
         const chatProjectIds = new Set<string>();
         (chatsRes.data ?? []).forEach(c => chatProjectIds.add(c.project_id));
         
-        // Get chat info for message matches
         const messageChatIds = new Set<string>();
         (messagesRes.data ?? []).forEach(m => messageChatIds.add(m.chat_id));
         
@@ -111,7 +121,6 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
 
         const addedNbIds = new Set<string>();
         
-        // Get notebook names for message/note matches
         const nbIdsFromMsgs = new Set<string>();
         (nbMsgRes.data ?? []).forEach(m => nbIdsFromMsgs.add(m.notebook_id));
         (nbNotesRes.data ?? []).forEach(n => nbIdsFromMsgs.add(n.notebook_id));
@@ -145,6 +154,36 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
         });
       }
 
+      // Documents — hybrid retrieval
+      if (filter === 'all' || filter === 'documents') {
+        try {
+          const docResults = await hybridRetrieve({
+            query: trimmed,
+            scope: 'global',
+            maxResults: 10,
+          });
+
+          // Deduplicate by documentId for display
+          const seenDocs = new Set<string>();
+          for (const r of docResults) {
+            if (seenDocs.has(r.documentId)) continue;
+            seenDocs.add(r.documentId);
+            results.push({
+              type: 'document',
+              documentId: r.documentId,
+              fileName: r.fileName,
+              chunkText: r.chunkText.slice(0, 200),
+              matchType: r.matchType,
+              combinedScore: r.combinedScore,
+              summary: r.summary,
+              projectId: r.projectId,
+            });
+          }
+        } catch (e) {
+          console.warn('Document hybrid search failed:', e);
+        }
+      }
+
       return results;
     },
     enabled: !!user && trimmed.length >= 2,
@@ -165,13 +204,15 @@ export function SearchDashboard() {
     const projects = results.filter((r): r is ProjectResult => r.type === 'project');
     const chats = results.filter((r): r is ChatResult => r.type === 'chat');
     const notebooks = results.filter((r): r is NotebookResult => r.type === 'notebook');
-    return { projects, chats, notebooks };
+    const documents = results.filter((r): r is DocumentResult => r.type === 'document');
+    return { projects, chats, notebooks, documents };
   }, [results]);
 
   const filters: { key: SearchFilter; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'projects', label: 'Projects' },
     { key: 'notebooks', label: 'Notebooks' },
+    { key: 'documents', label: 'Documents' },
   ];
 
   const handleProjectClick = (id: string) => {
@@ -325,6 +366,47 @@ export function SearchDashboard() {
                             {n.matchSource === 'message' ? 'chat match' : 'note match'}
                           </Badge>
                         )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Documents */}
+              {grouped.documents.length > 0 && (filter === 'all' || filter === 'documents') && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Documents</h3>
+                  <div className="space-y-1">
+                    {grouped.documents.map(d => (
+                      <button
+                        key={d.documentId}
+                        className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors"
+                        onClick={() => {
+                          if (d.projectId) {
+                            setSelectedProjectId(d.projectId);
+                            setSelectedChatId(null);
+                            setSelectedNotebookId(null);
+                            setActiveView('default');
+                          }
+                        }}
+                      >
+                        <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">{d.fileName}</p>
+                          {d.summary && <p className="text-xs text-muted-foreground truncate mt-0.5">{d.summary}</p>}
+                          {d.chunkText && <p className="text-xs text-muted-foreground/70 line-clamp-2 mt-1">{d.chunkText}</p>}
+                        </div>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
+                          {d.matchType === 'hybrid' ? (
+                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />hybrid</span>
+                          ) : d.matchType === 'semantic' ? (
+                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />semantic</span>
+                          ) : (
+                            <span className="flex items-center gap-0.5"><Type className="h-2.5 w-2.5" />keyword</span>
+                          )}
+                        </Badge>
                       </button>
                     ))}
                   </div>
