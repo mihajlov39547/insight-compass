@@ -201,8 +201,16 @@ export function SearchDashboard() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search projects, notebooks…"
-            className="pl-10 h-11 text-base"
+            className="pl-10 pr-9 h-11 text-base"
           />
+          {searchQuery && (
+            <button
+              onClick={() => { setSearchQuery(''); inputRef.current?.focus(); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2 mt-3">
           {filters.map(f => (
