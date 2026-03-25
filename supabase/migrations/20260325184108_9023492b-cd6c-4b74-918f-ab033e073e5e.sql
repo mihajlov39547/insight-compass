@@ -1,0 +1,1 @@
+UPDATE public.documents SET processing_status = 'uploaded', processing_error = NULL WHERE processing_status = 'completed';
