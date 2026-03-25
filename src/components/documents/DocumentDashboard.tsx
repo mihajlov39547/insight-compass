@@ -87,6 +87,10 @@ export function DocumentDashboard({ scope }: DocumentDashboardProps) {
     });
   };
 
+  // Chunk stats
+  const documentIds = documents.map(d => d.id);
+  const { data: chunkStatsMap } = useDocumentChunkStats(documentIds);
+
   // Stats
   const totalCount = documents.length;
   const searchableCount = documents.filter(d => d.processing_status === 'completed').length;
