@@ -369,6 +369,9 @@ export function SearchDashboard() {
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+
               {/* Documents */}
               {grouped.documents.length > 0 && (filter === 'all' || filter === 'documents') && (
                 <div>
