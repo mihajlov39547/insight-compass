@@ -1,10 +1,11 @@
 import React from 'react';
-import { User, Sparkles, FileText, Bot } from 'lucide-react';
+import { User, Sparkles, Bot } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Message, modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { MarkdownContent } from './MarkdownContent';
+import { SourceAttribution, SourceItem } from './SourceAttribution';
+import { useApp } from '@/contexts/AppContext';
 
 interface ChatMessageProps {
   message: Message;
@@ -13,9 +14,26 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, onRetry }: ChatMessageProps) {
   const isUser = message.role === 'user';
+  const { setActiveView, setSelectedProjectId } = useApp();
   const modelName = message.modelId 
     ? modelOptions.find(m => m.id === message.modelId)?.name ?? message.modelId.split('/').pop()
     : null;
+
+  const handleSourceClick = (source: SourceItem) => {
+    // Navigate to project documents view to show the document
+    setActiveView('project-documents');
+  };
+
+  // Map sources to SourceItem format
+  const sourceItems: SourceItem[] = (message.sources || []).map((s: any, i: number) => ({
+    id: s.id || `src-${i}`,
+    documentId: s.documentId || s.id || `src-${i}`,
+    title: s.title,
+    snippet: s.snippet || '',
+    relevance: s.relevance ?? 0,
+    page: s.page ?? null,
+    section: s.section ?? null,
+  }));
 
   return (
     <div className={cn(
@@ -44,23 +62,8 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
         </div>
 
         {/* Sources */}
-        {message.sources && message.sources.length > 0 && (
-          <div className="space-y-1.5 px-1">
-            <p className="text-xs font-medium text-muted-foreground">Sources</p>
-            <div className="flex flex-wrap gap-1.5">
-              {message.sources.map((source, idx) => (
-                <Badge 
-                  key={idx} 
-                  variant="secondary" 
-                  className="gap-1.5 py-1 px-2 text-xs font-normal cursor-pointer hover:bg-secondary/80"
-                >
-                  <FileText className="h-3 w-3" />
-                  <span className="truncate max-w-[150px]">{source.title}</span>
-                  <span className="text-accent font-medium">{Math.round(source.relevance * 100)}%</span>
-                </Badge>
-              ))}
-            </div>
-          </div>
+        {!isUser && sourceItems.length > 0 && (
+          <SourceAttribution sources={sourceItems} onSourceClick={handleSourceClick} />
         )}
 
         {/* Timestamp + AI indicator */}
@@ -82,4 +85,3 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
     </div>
   );
 }
-
