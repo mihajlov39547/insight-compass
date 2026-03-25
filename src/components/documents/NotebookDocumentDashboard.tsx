@@ -201,6 +201,7 @@ export function NotebookDocumentDashboard() {
               <DocumentRow
                 key={doc.id}
                 doc={doc}
+                chunkStats={chunkStatsMap?.get(doc.id)}
                 isExpanded={expandedId === doc.id}
                 onToggle={() => setExpandedId(expandedId === doc.id ? null : doc.id)}
                 onDelete={() => handleDelete(doc)}
