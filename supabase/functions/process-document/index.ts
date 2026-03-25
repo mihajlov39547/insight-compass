@@ -1016,15 +1016,15 @@ serve(async (req) => {
 
     let embeddingsGenerated = 0;
 
-    if (chunks.length > 0 && LOVABLE_API_KEY) {
-      // ── Generate Embeddings ──
+    if (chunks.length > 0) {
+      // ── Generate Embeddings (local hash-based) ──
       await supabase.from("documents").update({ processing_status: "generating_embeddings" }).eq("id", documentId);
 
       const chunkTexts = chunks.map(c => c.chunk_text);
-      const embeddings = await generateEmbeddings(chunkTexts, LOVABLE_API_KEY);
+      const embeddings = generateEmbeddingsLocal(chunkTexts);
       embeddingsGenerated = embeddings.filter(e => e !== null).length;
 
-      console.log(`[${documentId}] Generated ${embeddingsGenerated}/${chunks.length} embeddings`);
+      console.log(`[${documentId}] Generated ${embeddingsGenerated}/${chunks.length} embeddings (local)`);
 
       // ── Delete stale chunks for this document (reprocessing) ──
       await supabase.from("document_chunks").delete().eq("document_id", documentId);
@@ -1056,7 +1056,24 @@ serve(async (req) => {
           throw new Error(`Failed to store chunks: ${insertErr.message}`);
         }
       }
-    } else if (chunks.length === 0) {
+
+      // Verify embeddings were stored
+      if (embeddingsGenerated === 0) {
+        console.warn(`[${documentId}] No embeddings generated — marking as failed`);
+        await supabase.from("documents").update({
+          processing_status: "failed",
+          processing_error: "Chunking succeeded but embedding generation failed for all chunks",
+        }).eq("id", documentId);
+
+        return new Response(JSON.stringify({
+          status: "failed",
+          documentId,
+          reason: "embedding_generation_failed",
+          chunks_generated: chunks.length,
+          embeddings_generated: 0,
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    } else {
       console.log(`[${documentId}] No chunks generated (text too short or empty)`);
     }
 
@@ -1064,6 +1081,8 @@ serve(async (req) => {
       processing_status: "completed",
       processing_error: null,
     }).eq("id", documentId);
+
+    console.log(`[${documentId}] ✓ Completed — chunks=${chunks.length}, embeddings=${embeddingsGenerated}, retrieval_ready=${embeddingsGenerated > 0 && embeddingsGenerated === chunks.length}`);
 
     return new Response(JSON.stringify({
       status: "completed",
