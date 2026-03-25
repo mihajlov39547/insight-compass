@@ -139,15 +139,18 @@ export function DocumentsDialog() {
                   {documents.map(doc => {
                     const Icon = fileIcons[doc.file_type] || FileIcon;
                     const color = fileColors[doc.file_type] || 'text-muted-foreground';
+                    const cs = chunkStatsMap?.get(doc.id);
+                    const isAIReady = doc.processing_status === 'completed' && (cs?.embeddedCount ?? 0) > 0 && cs?.embeddedCount === cs?.chunkCount;
                     return (
                       <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card">
                         <div className={cn('p-1.5 rounded bg-muted', color)}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-medium text-foreground truncate" title={doc.file_name}>{truncateFileName(doc.file_name)}</p>
                             <ProcessingBadge status={doc.processing_status} />
+                            <AIReadyBadge isReady={isAIReady} />
                           </div>
                           <p className="text-xs text-muted-foreground">
                             {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)}
