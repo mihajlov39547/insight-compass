@@ -246,11 +246,11 @@ interface SemanticHit {
 }
 
 async function runSemanticSearch(
-  adminClient: any, userClient: any, query: string, apiKey: string,
+  adminClient: any, userClient: any, query: string,
   scope: string, projectId?: string, notebookId?: string, chatId?: string
 ): Promise<SemanticHit[]> {
   try {
-    const embedding = await generateQueryEmbedding(query, apiKey);
+    const embedding = generateQueryEmbedding(query);
     if (!embedding) return [];
 
     const rpcParams: any = {
