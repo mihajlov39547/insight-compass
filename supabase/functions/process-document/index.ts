@@ -1077,6 +1077,151 @@ serve(async (req) => {
       console.log(`[${documentId}] No chunks generated (text too short or empty)`);
     }
 
+    // ── Generate Chunk Questions ──
+    // For each chunk, generate up to 3 grounded questions using AI,
+    // then embed them with the same local hash function for vector consistency.
+    let questionsGenerated = 0;
+    let questionsEmbedded = 0;
+
+    if (chunks.length > 0 && LOVABLE_API_KEY) {
+      await supabase.from("documents").update({ processing_status: "generating_chunk_questions" }).eq("id", documentId);
+
+      // Fetch inserted chunk IDs so we can link questions
+      const { data: insertedChunks, error: chunkFetchErr } = await supabase
+        .from("document_chunks")
+        .select("id, chunk_index")
+        .eq("document_id", documentId)
+        .order("chunk_index", { ascending: true });
+
+      if (chunkFetchErr) {
+        console.warn(`[${documentId}] Could not fetch chunk IDs for question generation:`, chunkFetchErr);
+      } else if (insertedChunks && insertedChunks.length > 0) {
+        // Build a map from chunk_index → chunk row id
+        const chunkIdMap = new Map<number, string>();
+        for (const row of insertedChunks) {
+          chunkIdMap.set(row.chunk_index, row.id);
+        }
+
+        // Delete any stale questions (reprocessing scenario)
+        await supabase.from("document_chunk_questions").delete().eq("document_id", documentId);
+
+        // Process chunks in batches of 5 to avoid overwhelming the AI gateway
+        const QUESTION_BATCH_SIZE = 5;
+        const allQuestionRows: any[] = [];
+
+        for (let batchStart = 0; batchStart < chunks.length; batchStart += QUESTION_BATCH_SIZE) {
+          const batchChunks = chunks.slice(batchStart, batchStart + QUESTION_BATCH_SIZE);
+
+          const batchPromises = batchChunks.map(async (chunk) => {
+            const chunkDbId = chunkIdMap.get(chunk.chunk_index);
+            if (!chunkDbId) return [];
+
+            try {
+              const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: "google/gemini-2.5-flash-lite",
+                  messages: [
+                    {
+                      role: "system",
+                      content: `You generate short questions that can be answered ONLY from the given text passage. Rules:
+- Generate exactly 1 to 3 questions.
+- Each question must be answerable from this passage alone.
+- Do not generate speculative, cross-reference, or opinion questions.
+- Keep questions concise (under 20 words each).
+- Return ONLY a JSON array of strings, e.g. ["Question 1?", "Question 2?"]
+- No markdown, no explanation, no numbering outside the array.`,
+                    },
+                    {
+                      role: "user",
+                      content: `Generate grounded questions for this passage:\n\n${chunk.chunk_text.slice(0, 3000)}`,
+                    },
+                  ],
+                }),
+              });
+
+              if (!aiResp.ok) {
+                console.warn(`[${documentId}] Question generation failed for chunk ${chunk.chunk_index}: HTTP ${aiResp.status}`);
+                return [];
+              }
+
+              const aiData = await aiResp.json();
+              const raw = aiData.choices?.[0]?.message?.content || "";
+
+              // Parse JSON array from response (tolerant of markdown fences)
+              const jsonMatch = raw.match(/\[[\s\S]*\]/);
+              if (!jsonMatch) {
+                console.warn(`[${documentId}] No JSON array found in AI response for chunk ${chunk.chunk_index}`);
+                return [];
+              }
+
+              let questions: string[];
+              try {
+                questions = JSON.parse(jsonMatch[0]);
+              } catch {
+                console.warn(`[${documentId}] Failed to parse question JSON for chunk ${chunk.chunk_index}`);
+                return [];
+              }
+
+              if (!Array.isArray(questions)) return [];
+
+              // Take at most 3, filter blanks
+              const valid = questions
+                .filter((q): q is string => typeof q === "string" && q.trim().length > 0)
+                .slice(0, 3);
+
+              return valid.map((qText, idx) => {
+                const embedding = localEmbedding(qText);
+                return {
+                  chunk_id: chunkDbId,
+                  document_id: documentId,
+                  user_id: doc.user_id,
+                  project_id: doc.project_id || null,
+                  chat_id: doc.chat_id || null,
+                  notebook_id: doc.notebook_id || null,
+                  question_text: qText.trim(),
+                  position: idx + 1,
+                  embedding: JSON.stringify(embedding),
+                  generation_model: "google/gemini-2.5-flash-lite",
+                  embedding_version: "local-hash-v1",
+                  is_grounded: true,
+                };
+              });
+            } catch (e) {
+              console.warn(`[${documentId}] Question generation error for chunk ${chunk.chunk_index}:`, e);
+              return [];
+            }
+          });
+
+          const batchResults = await Promise.all(batchPromises);
+          for (const rows of batchResults) {
+            allQuestionRows.push(...rows);
+          }
+        }
+
+        questionsGenerated = allQuestionRows.length;
+        questionsEmbedded = allQuestionRows.filter(r => r.embedding !== null).length;
+
+        // Insert question rows in batches
+        if (allQuestionRows.length > 0) {
+          for (let i = 0; i < allQuestionRows.length; i += 50) {
+            const batch = allQuestionRows.slice(i, i + 50);
+            const { error: qInsertErr } = await supabase.from("document_chunk_questions").insert(batch);
+            if (qInsertErr) {
+              console.error(`[${documentId}] Question insert batch ${i} error:`, qInsertErr);
+              // Non-fatal: document remains usable without questions
+            }
+          }
+        }
+
+        console.log(`[${documentId}] Question generation: ${questionsGenerated} questions from ${chunks.length} chunks, ${questionsEmbedded} embedded`);
+      }
+    }
+
     await supabase.from("documents").update({
       processing_status: "completed",
       processing_error: null,
