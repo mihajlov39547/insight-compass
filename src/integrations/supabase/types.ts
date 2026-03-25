@@ -663,6 +663,7 @@ export type Database = {
       get_document_question_stats: {
         Args: { doc_ids: string[] }
         Returns: {
+          chunks_with_questions_count: number
           document_id: string
           embedded_question_count: number
           question_count: number

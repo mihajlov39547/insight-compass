@@ -20,6 +20,7 @@ import { DocumentStatusBadge } from './DocumentStatusBadge';
 import { DocumentUsability } from './DocumentUsability';
 import { AIReadyBadge } from './AIReadyBadge';
 import { useDocumentChunkStats } from '@/hooks/useDocumentChunkStats';
+import { useDocumentQuestionStats } from '@/hooks/useDocumentQuestionStats';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
@@ -90,6 +91,7 @@ export function DocumentDashboard({ scope }: DocumentDashboardProps) {
   // Chunk stats
   const documentIds = documents.map(d => d.id);
   const { data: chunkStatsMap } = useDocumentChunkStats(documentIds);
+  const { data: questionStatsMap } = useDocumentQuestionStats(documentIds);
 
   // Stats
   const totalCount = documents.length;
@@ -207,6 +209,7 @@ export function DocumentDashboard({ scope }: DocumentDashboardProps) {
                 key={doc.id}
                 doc={doc}
                 chunkStats={chunkStatsMap?.get(doc.id)}
+                questionStats={questionStatsMap?.get(doc.id)}
                 isExpanded={expandedId === doc.id}
                 onToggle={() => setExpandedId(expandedId === doc.id ? null : doc.id)}
                 onDelete={() => handleDelete(doc)}
@@ -264,10 +267,11 @@ function EmptyState({ scope, hasDocuments, onUpload }: { scope: 'project' | 'cha
 }
 
 function DocumentRow({
-  doc, chunkStats, isExpanded, onToggle, onDelete, onRetry, isDeleting, isRetrying,
+  doc, chunkStats, questionStats, isExpanded, onToggle, onDelete, onRetry, isDeleting, isRetrying,
 }: {
   doc: DbDocument;
   chunkStats?: import('@/hooks/useDocumentChunkStats').ChunkStats;
+  questionStats?: import('@/hooks/useDocumentQuestionStats').QuestionStats;
   isExpanded: boolean;
   onToggle: () => void;
   onDelete: () => void;
@@ -351,7 +355,7 @@ function DocumentRow({
               </div>
             )}
 
-            <DocumentUsability doc={doc} chunkStats={chunkStats} />
+            <DocumentUsability doc={doc} chunkStats={chunkStats} questionStats={questionStats} />
           </div>
         </CollapsibleContent>
       </div>

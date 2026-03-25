@@ -2,11 +2,13 @@ import React from 'react';
 import { Check, X, Info } from 'lucide-react';
 import { DbDocument } from '@/hooks/useDocuments';
 import type { ChunkStats } from '@/hooks/useDocumentChunkStats';
+import type { QuestionStats } from '@/hooks/useDocumentQuestionStats';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Props {
   doc: DbDocument;
   chunkStats?: ChunkStats;
+  questionStats?: QuestionStats;
 }
 
 function Row({ label, available, detail, hint }: { label: string; available: boolean; detail?: string; hint?: string }) {
@@ -35,7 +37,7 @@ function Row({ label, available, detail, hint }: { label: string; available: boo
   );
 }
 
-export function DocumentUsability({ doc, chunkStats }: Props) {
+export function DocumentUsability({ doc, chunkStats, questionStats }: Props) {
   const isCompleted = doc.processing_status === 'completed';
   const hasChunks = (chunkStats?.chunkCount ?? 0) > 0;
   const hasEmbeddings = (chunkStats?.embeddedCount ?? 0) > 0;
@@ -44,6 +46,18 @@ export function DocumentUsability({ doc, chunkStats }: Props) {
   const embeddingCoverage = hasChunks
     ? Math.round((chunkStats!.embeddedCount / chunkStats!.chunkCount) * 100)
     : 0;
+
+  const questionCount = questionStats?.questionCount ?? 0;
+  const chunksWithQuestionsCount = questionStats?.chunksWithQuestionsCount ?? 0;
+  const embeddedQuestionCount = questionStats?.embeddedQuestionCount ?? 0;
+  const allQuestionsEmbedded = questionCount > 0 && embeddedQuestionCount === questionCount;
+  const questionEmbeddingCoverage = questionCount > 0
+    ? Math.round((embeddedQuestionCount / questionCount) * 100)
+    : 0;
+
+  const questionRetrievalStatus = questionCount === 0
+    ? 'Not ready'
+    : (allQuestionsEmbedded && semanticReady ? 'Ready' : 'Partial');
 
   return (
     <div className="space-y-3 pt-2 border-t border-border">
@@ -75,6 +89,41 @@ export function DocumentUsability({ doc, chunkStats }: Props) {
             Avg. chunk size: ~{Math.round(chunkStats!.avgTokenCount)} tokens
           </div>
         )}
+      </div>
+
+      {/* Question enrichment */}
+      <div className="space-y-1.5">
+        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Question enrichment</p>
+        <Row
+          label="Generated questions"
+          available={questionCount > 0}
+          detail={questionCount.toLocaleString()}
+          hint="Total generated question rows for this document"
+        />
+        <Row
+          label="Chunks with questions"
+          available={chunksWithQuestionsCount > 0}
+          detail={chunksWithQuestionsCount.toLocaleString()}
+          hint="Number of distinct chunks that have at least one generated question"
+        />
+        <Row
+          label="Question embeddings created"
+          available={embeddedQuestionCount > 0}
+          detail={questionCount > 0 ? `${embeddedQuestionCount}/${questionCount}` : '0/0'}
+          hint="Question rows with non-null embedding vectors"
+        />
+        <Row
+          label="Question embedding coverage"
+          available={questionCount > 0}
+          detail={`${questionEmbeddingCoverage}%`}
+          hint="Percentage of question rows that have embeddings"
+        />
+        <Row
+          label="Question retrieval"
+          available={questionRetrievalStatus === 'Ready'}
+          detail={questionRetrievalStatus}
+          hint="Ready: all questions embedded and chunk retrieval ready. Partial: some embeddings missing. Not ready: no questions."
+        />
       </div>
 
       {/* Search capabilities */}
