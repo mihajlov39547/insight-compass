@@ -48,13 +48,19 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
 
       qc.invalidateQueries({ queryKey: ['messages', chatId] });
 
-      // 2. Retrieve relevant documents for grounding
-      let sources: DocumentSource[] = [];
+      // 2. Hybrid document retrieval for grounding
+      let sources: { id: string; title: string; snippet: string; relevance: number }[] = [];
       let documentContext: any[] = [];
       if (projectId) {
-        const retrieval = await retrieveDocumentContext(projectId, chatId, content);
-        sources = retrieval.sources;
-        documentContext = retrieval.contextForAI;
+        const results = await hybridRetrieve({
+          query: content,
+          scope: 'project',
+          projectId,
+          chatId,
+          maxResults: 8,
+        });
+        sources = toSources(results);
+        documentContext = toDocumentContext(results);
       }
 
       // 3. Load recent chat history
