@@ -479,7 +479,7 @@ export function AppSidebar() {
         <button
           className={cn(
             "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
-            showSearch ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
+            activeView === 'search' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
           )}
           onClick={() => navigateTo('search')}
         >
