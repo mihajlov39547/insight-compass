@@ -582,6 +582,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_document_chunk_stats: {
+        Args: { doc_ids: string[] }
+        Returns: {
+          avg_token_count: number
+          chunk_count: number
+          document_id: string
+          embedded_count: number
+        }[]
+      }
       get_email_by_username: {
         Args: { lookup_username: string }
         Returns: string
