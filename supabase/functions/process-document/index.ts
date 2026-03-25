@@ -665,8 +665,121 @@ function categorizeFile(fileType: string): string {
 }
 
 const ACTIVE_STATES = new Set([
-  "extracting_metadata", "extracting_content", "detecting_language", "summarizing", "indexing"
+  "extracting_metadata", "extracting_content", "detecting_language", "summarizing", "indexing",
+  "chunking", "generating_embeddings",
 ]);
+
+// ─── Chunking ──────────────────────────────────────────────────────────
+
+const CHUNK_SIZE = 1000;   // target chars per chunk
+const CHUNK_OVERLAP = 200; // overlap chars between consecutive chunks
+const MIN_CHUNK_LENGTH = 50; // skip near-empty chunks
+
+function chunkText(text: string): { chunk_text: string; chunk_index: number }[] {
+  if (!text || text.trim().length < MIN_CHUNK_LENGTH) return [];
+
+  // Split into paragraphs first
+  const paragraphs = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+  const chunks: { chunk_text: string; chunk_index: number }[] = [];
+  let currentChunk = "";
+  let chunkIndex = 0;
+
+  for (const para of paragraphs) {
+    // If adding this paragraph would exceed chunk size, flush current chunk
+    if (currentChunk.length > 0 && currentChunk.length + para.length + 1 > CHUNK_SIZE) {
+      if (currentChunk.trim().length >= MIN_CHUNK_LENGTH) {
+        chunks.push({ chunk_text: currentChunk.trim(), chunk_index: chunkIndex++ });
+      }
+      // Start next chunk with overlap from the tail of the current chunk
+      const overlapText = currentChunk.slice(-CHUNK_OVERLAP).trim();
+      currentChunk = overlapText ? overlapText + "\n\n" + para : para;
+    } else {
+      currentChunk = currentChunk ? currentChunk + "\n\n" + para : para;
+    }
+
+    // If a single paragraph exceeds chunk size, split it by sentences/length
+    while (currentChunk.length > CHUNK_SIZE * 1.5) {
+      const splitAt = findSplitPoint(currentChunk, CHUNK_SIZE);
+      const piece = currentChunk.slice(0, splitAt).trim();
+      if (piece.length >= MIN_CHUNK_LENGTH) {
+        chunks.push({ chunk_text: piece, chunk_index: chunkIndex++ });
+      }
+      const overlapStart = Math.max(0, splitAt - CHUNK_OVERLAP);
+      currentChunk = currentChunk.slice(overlapStart).trim();
+    }
+  }
+
+  // Flush remaining
+  if (currentChunk.trim().length >= MIN_CHUNK_LENGTH) {
+    chunks.push({ chunk_text: currentChunk.trim(), chunk_index: chunkIndex++ });
+  }
+
+  return chunks;
+}
+
+function findSplitPoint(text: string, target: number): number {
+  // Try to split at sentence boundary near the target
+  const region = text.slice(Math.max(0, target - 200), Math.min(text.length, target + 200));
+  const sentenceEnd = region.search(/[.!?]\s/);
+  if (sentenceEnd !== -1) {
+    return Math.max(0, target - 200) + sentenceEnd + 2;
+  }
+  // Fallback: split at word boundary
+  const lastSpace = text.lastIndexOf(' ', target);
+  return lastSpace > target * 0.5 ? lastSpace : target;
+}
+
+function estimateTokenCount(text: string): number {
+  // Rough estimate: ~4 chars per token for English, ~3 for other scripts
+  return Math.ceil(text.length / 3.5);
+}
+
+// ─── Embeddings ────────────────────────────────────────────────────────
+
+const EMBEDDING_BATCH_SIZE = 20; // chunks per API call
+
+async function generateEmbeddings(
+  texts: string[],
+  apiKey: string,
+): Promise<(number[] | null)[]> {
+  const results: (number[] | null)[] = new Array(texts.length).fill(null);
+
+  for (let i = 0; i < texts.length; i += EMBEDDING_BATCH_SIZE) {
+    const batch = texts.slice(i, i + EMBEDDING_BATCH_SIZE);
+    try {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          input: batch,
+          model: "openai/text-embedding-3-small",
+        }),
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error(`Embeddings API error (batch ${i}): ${resp.status} ${errText}`);
+        continue;
+      }
+
+      const data = await resp.json();
+      if (data.data && Array.isArray(data.data)) {
+        for (const item of data.data) {
+          if (item.embedding && typeof item.index === "number") {
+            results[i + item.index] = item.embedding;
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`Embeddings batch ${i} failed:`, e);
+    }
+  }
+
+  return results;
+}
 
 // ─── Main Handler ──────────────────────────────────────────────────────
 
@@ -875,6 +988,58 @@ serve(async (req) => {
       indexed_at: new Date().toISOString(),
     }, { onConflict: "document_id" });
 
+    // ── Chunking ──
+    await supabase.from("documents").update({ processing_status: "chunking" }).eq("id", documentId);
+
+    const chunks = chunkText(effectiveText);
+    console.log(`[${documentId}] Chunked into ${chunks.length} chunks`);
+
+    let embeddingsGenerated = 0;
+
+    if (chunks.length > 0 && LOVABLE_API_KEY) {
+      // ── Generate Embeddings ──
+      await supabase.from("documents").update({ processing_status: "generating_embeddings" }).eq("id", documentId);
+
+      const chunkTexts = chunks.map(c => c.chunk_text);
+      const embeddings = await generateEmbeddings(chunkTexts, LOVABLE_API_KEY);
+      embeddingsGenerated = embeddings.filter(e => e !== null).length;
+
+      console.log(`[${documentId}] Generated ${embeddingsGenerated}/${chunks.length} embeddings`);
+
+      // ── Delete stale chunks for this document (reprocessing) ──
+      await supabase.from("document_chunks").delete().eq("document_id", documentId);
+
+      // ── Insert chunks ──
+      const chunkRows = chunks.map((c, idx) => ({
+        document_id: documentId,
+        user_id: doc.user_id,
+        project_id: doc.project_id || null,
+        chat_id: doc.chat_id || null,
+        notebook_id: doc.notebook_id || null,
+        chunk_index: c.chunk_index,
+        chunk_text: c.chunk_text,
+        embedding: embeddings[idx] ? JSON.stringify(embeddings[idx]) : null,
+        token_count: estimateTokenCount(c.chunk_text),
+        language: langResult.language,
+        metadata_json: {
+          extraction_method: extraction.method,
+          quality_score: extraction.quality.score,
+        },
+      }));
+
+      // Insert in batches of 50 to avoid payload limits
+      for (let i = 0; i < chunkRows.length; i += 50) {
+        const batch = chunkRows.slice(i, i + 50);
+        const { error: insertErr } = await supabase.from("document_chunks").insert(batch);
+        if (insertErr) {
+          console.error(`[${documentId}] Chunk insert batch ${i} error:`, insertErr);
+          throw new Error(`Failed to store chunks: ${insertErr.message}`);
+        }
+      }
+    } else if (chunks.length === 0) {
+      console.log(`[${documentId}] No chunks generated (text too short or empty)`);
+    }
+
     await supabase.from("documents").update({
       processing_status: "completed",
       processing_error: null,
@@ -892,6 +1057,8 @@ serve(async (req) => {
       extraction_encoding: extraction.encoding || null,
       quality_score: extraction.quality.score,
       structural_noise_filtered: cleanedText.length < extraction.text.length,
+      chunks_generated: chunks.length,
+      embeddings_generated: embeddingsGenerated,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("process-document error:", e);

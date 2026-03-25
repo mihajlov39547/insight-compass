@@ -9,6 +9,8 @@ const STAGE_LABELS: Record<string, string> = {
   detecting_language: 'Detecting language',
   summarizing: 'Generating summary',
   indexing: 'Creating search index',
+  chunking: 'Chunking text',
+  generating_embeddings: 'Generating embeddings',
 };
 
 export function DocumentStatusBadge({ status }: { status: string }) {
