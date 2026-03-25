@@ -105,6 +105,75 @@ export type Database = {
           },
         ]
       }
+      document_chunk_questions: {
+        Row: {
+          chat_id: string | null
+          chunk_id: string
+          created_at: string
+          document_id: string
+          embedding: string | null
+          embedding_version: string | null
+          generation_model: string | null
+          id: string
+          is_grounded: boolean
+          notebook_id: string | null
+          position: number
+          project_id: string | null
+          question_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_id?: string | null
+          chunk_id: string
+          created_at?: string
+          document_id: string
+          embedding?: string | null
+          embedding_version?: string | null
+          generation_model?: string | null
+          id?: string
+          is_grounded?: boolean
+          notebook_id?: string | null
+          position: number
+          project_id?: string | null
+          question_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string | null
+          chunk_id?: string
+          created_at?: string
+          document_id?: string
+          embedding?: string | null
+          embedding_version?: string | null
+          generation_model?: string | null
+          id?: string
+          is_grounded?: boolean
+          notebook_id?: string | null
+          position?: number
+          project_id?: string | null
+          question_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_chunk_questions_chunk_id_fkey"
+            columns: ["chunk_id"]
+            isOneToOne: false
+            referencedRelation: "document_chunks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_chunk_questions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_chunks: {
         Row: {
           chat_id: string | null
@@ -589,6 +658,14 @@ export type Database = {
           chunk_count: number
           document_id: string
           embedded_count: number
+        }[]
+      }
+      get_document_question_stats: {
+        Args: { doc_ids: string[] }
+        Returns: {
+          document_id: string
+          embedded_question_count: number
+          question_count: number
         }[]
       }
       get_email_by_username: {
