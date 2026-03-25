@@ -1227,7 +1227,7 @@ serve(async (req) => {
       processing_error: null,
     }).eq("id", documentId);
 
-    console.log(`[${documentId}] ✓ Completed — chunks=${chunks.length}, embeddings=${embeddingsGenerated}, retrieval_ready=${embeddingsGenerated > 0 && embeddingsGenerated === chunks.length}`);
+    console.log(`[${documentId}] ✓ Completed — chunks=${chunks.length}, embeddings=${embeddingsGenerated}, questions=${questionsGenerated}, questions_embedded=${questionsEmbedded}, retrieval_ready=${embeddingsGenerated > 0 && embeddingsGenerated === chunks.length}`);
 
     return new Response(JSON.stringify({
       status: "completed",
@@ -1243,6 +1243,8 @@ serve(async (req) => {
       structural_noise_filtered: cleanedText.length < extraction.text.length,
       chunks_generated: chunks.length,
       embeddings_generated: embeddingsGenerated,
+      questions_generated: questionsGenerated,
+      questions_embedded: questionsEmbedded,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("process-document error:", e);
