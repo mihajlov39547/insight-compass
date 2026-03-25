@@ -75,6 +75,9 @@ export function NotebookDocumentDashboard() {
     });
   };
 
+  const documentIds = documents.map(d => d.id);
+  const { data: chunkStatsMap } = useDocumentChunkStats(documentIds);
+
   const totalCount = documents.length;
   const searchableCount = documents.filter(d => d.processing_status === 'completed').length;
   const processingCount = documents.filter(d => !['completed', 'failed'].includes(d.processing_status)).length;
