@@ -6,7 +6,11 @@ import {
   Users, 
   Sparkles,
   BookOpen,
-  StickyNote
+  StickyNote,
+  Search,
+  GraduationCap,
+  MessageCircleQuestion,
+  FolderOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
