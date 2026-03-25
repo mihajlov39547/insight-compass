@@ -204,13 +204,15 @@ export function SearchDashboard() {
     const projects = results.filter((r): r is ProjectResult => r.type === 'project');
     const chats = results.filter((r): r is ChatResult => r.type === 'chat');
     const notebooks = results.filter((r): r is NotebookResult => r.type === 'notebook');
-    return { projects, chats, notebooks };
+    const documents = results.filter((r): r is DocumentResult => r.type === 'document');
+    return { projects, chats, notebooks, documents };
   }, [results]);
 
   const filters: { key: SearchFilter; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'projects', label: 'Projects' },
     { key: 'notebooks', label: 'Notebooks' },
+    { key: 'documents', label: 'Documents' },
   ];
 
   const handleProjectClick = (id: string) => {
