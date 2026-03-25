@@ -988,6 +988,58 @@ serve(async (req) => {
       indexed_at: new Date().toISOString(),
     }, { onConflict: "document_id" });
 
+    // ── Chunking ──
+    await supabase.from("documents").update({ processing_status: "chunking" }).eq("id", documentId);
+
+    const chunks = chunkText(effectiveText);
+    console.log(`[${documentId}] Chunked into ${chunks.length} chunks`);
+
+    let embeddingsGenerated = 0;
+
+    if (chunks.length > 0 && LOVABLE_API_KEY) {
+      // ── Generate Embeddings ──
+      await supabase.from("documents").update({ processing_status: "generating_embeddings" }).eq("id", documentId);
+
+      const chunkTexts = chunks.map(c => c.chunk_text);
+      const embeddings = await generateEmbeddings(chunkTexts, LOVABLE_API_KEY);
+      embeddingsGenerated = embeddings.filter(e => e !== null).length;
+
+      console.log(`[${documentId}] Generated ${embeddingsGenerated}/${chunks.length} embeddings`);
+
+      // ── Delete stale chunks for this document (reprocessing) ──
+      await supabase.from("document_chunks").delete().eq("document_id", documentId);
+
+      // ── Insert chunks ──
+      const chunkRows = chunks.map((c, idx) => ({
+        document_id: documentId,
+        user_id: doc.user_id,
+        project_id: doc.project_id || null,
+        chat_id: doc.chat_id || null,
+        notebook_id: doc.notebook_id || null,
+        chunk_index: c.chunk_index,
+        chunk_text: c.chunk_text,
+        embedding: embeddings[idx] ? JSON.stringify(embeddings[idx]) : null,
+        token_count: estimateTokenCount(c.chunk_text),
+        language: langResult.language,
+        metadata_json: {
+          extraction_method: extraction.method,
+          quality_score: extraction.quality.score,
+        },
+      }));
+
+      // Insert in batches of 50 to avoid payload limits
+      for (let i = 0; i < chunkRows.length; i += 50) {
+        const batch = chunkRows.slice(i, i + 50);
+        const { error: insertErr } = await supabase.from("document_chunks").insert(batch);
+        if (insertErr) {
+          console.error(`[${documentId}] Chunk insert batch ${i} error:`, insertErr);
+          throw new Error(`Failed to store chunks: ${insertErr.message}`);
+        }
+      }
+    } else if (chunks.length === 0) {
+      console.log(`[${documentId}] No chunks generated (text too short or empty)`);
+    }
+
     await supabase.from("documents").update({
       processing_status: "completed",
       processing_error: null,
@@ -1005,6 +1057,8 @@ serve(async (req) => {
       extraction_encoding: extraction.encoding || null,
       quality_score: extraction.quality.score,
       structural_noise_filtered: cleanedText.length < extraction.text.length,
+      chunks_generated: chunks.length,
+      embeddings_generated: embeddingsGenerated,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("process-document error:", e);
