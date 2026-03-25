@@ -53,7 +53,6 @@ export function DocumentUsability({ doc, chunkStats, questionStats }: Props) {
     : 0;
 
   const questionCount = toSafeInt(questionStats?.questionCount);
-  const chunksWithQuestionsCount = toSafeInt(questionStats?.chunksWithQuestionsCount);
   const embeddedQuestionCount = toSafeInt(questionStats?.embeddedQuestionCount);
   const allQuestionsEmbedded = questionCount > 0 && embeddedQuestionCount === questionCount;
   const questionEmbeddingCoverage = questionCount > 0
@@ -104,12 +103,6 @@ export function DocumentUsability({ doc, chunkStats, questionStats }: Props) {
           available={questionCount > 0}
           detail={questionCount.toLocaleString()}
           hint="Total generated question rows for this document"
-        />
-        <Row
-          label="Chunks with questions"
-          available={chunksWithQuestionsCount > 0}
-          detail={chunksWithQuestionsCount.toLocaleString()}
-          hint="Number of distinct chunks that have at least one generated question"
         />
         <Row
           label="Question embeddings created"

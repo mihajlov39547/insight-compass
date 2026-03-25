@@ -1078,7 +1078,7 @@ serve(async (req) => {
     }
 
     // ── Generate Chunk Questions ──
-    // For each chunk, generate up to 3 grounded questions using AI,
+    // For each chunk, generate up to 2 grounded questions using AI,
     // then embed them with the same local hash function for vector consistency.
     let questionsGenerated = 0;
     let questionsEmbedded = 0;
@@ -1130,6 +1130,7 @@ serve(async (req) => {
                       role: "system",
                       content: `You generate short questions that can be answered ONLY from the given text passage. Rules:
 - Generate exactly 1 to 3 questions.
+- Generate exactly 1 to 2 questions.
 - Each question must be answerable from this passage alone.
 - Do not generate speculative, cross-reference, or opinion questions.
 - Keep questions concise (under 20 words each).
@@ -1169,10 +1170,10 @@ serve(async (req) => {
 
               if (!Array.isArray(questions)) return [];
 
-              // Take at most 3, filter blanks
+              // Take at most 2, filter blanks
               const valid = questions
                 .filter((q): q is string => typeof q === "string" && q.trim().length > 0)
-                .slice(0, 3);
+                .slice(0, 2);
 
               return valid.map((qText, idx) => {
                 const embedding = localEmbedding(qText);
