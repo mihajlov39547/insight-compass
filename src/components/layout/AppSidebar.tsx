@@ -78,16 +78,12 @@ export function AppSidebar() {
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [notebooksListOpen, setNotebooksListOpen] = useState(true);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSearchResults, setShowSearchResults] = useState(false);
   const [projectsSectionOpen, setProjectsSectionOpen] = useState(true);
   const [notebooksSectionOpen, setNotebooksSectionOpen] = useState(true);
   const [alphaSort, setAlphaSort] = useState<'none' | 'asc' | 'desc'>('none');
   const [dateSort, setDateSort] = useState<'updated' | 'newest' | 'oldest'>('updated');
   const [nbAlphaSort, setNbAlphaSort] = useState<'none' | 'asc' | 'desc'>('none');
   const [nbDateSort, setNbDateSort] = useState<'updated' | 'newest' | 'oldest'>('updated');
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editNbName, setEditNbName] = useState('');
