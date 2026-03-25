@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ChevronLeft, ChevronRight, Plus, Search, MessageSquare, FolderOpen,
   MoreHorizontal, Bell, ChevronDown, ChevronUp,
