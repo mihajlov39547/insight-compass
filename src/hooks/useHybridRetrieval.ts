@@ -79,21 +79,28 @@ export function toDocumentContext(results: HybridResult[]) {
   }));
 }
 
-/** Convert hybrid results to source badges for UI display */
+/** Convert hybrid results to source items for UI display */
 export function toSources(results: HybridResult[]) {
-  const seen = new Set<string>();
-  const sources: { id: string; title: string; snippet: string; relevance: number }[] = [];
+  const sources: { id: string; title: string; snippet: string; relevance: number; page?: number | null; section?: string | null; documentId: string }[] = [];
 
   for (const r of results) {
-    if (seen.has(r.documentId)) continue;
-    seen.add(r.documentId);
     sources.push({
-      id: r.documentId,
+      id: `${r.documentId}-${r.chunkIndex}`,
+      documentId: r.documentId,
       title: r.fileName,
-      snippet: (r.chunkText || r.summary || '').slice(0, 200),
+      snippet: (r.chunkText || r.summary || '').slice(0, 250),
       relevance: r.combinedScore,
+      page: r.page,
+      section: r.section,
     });
   }
 
-  return sources;
+  // Deduplicate: keep top 2 chunks per document, max 8 total
+  const perDoc = new Map<string, number>();
+  return sources.filter(s => {
+    const count = perDoc.get(s.documentId) ?? 0;
+    if (count >= 2) return false;
+    perDoc.set(s.documentId, count + 1);
+    return true;
+  }).slice(0, 8);
 }

@@ -5,6 +5,7 @@ import {
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
   FileUp, Share2
 } from 'lucide-react';
+import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
 import { NoteFormatToolbar } from '@/components/notebooks/NoteFormatToolbar';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -682,18 +683,18 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy }: {
         </div>
 
         {/* Sources */}
-        {message.sources && message.sources.length > 0 && (
-          <div className="space-y-1 px-1">
-            <p className="text-xs font-medium text-muted-foreground">Sources</p>
-            <div className="flex flex-wrap gap-1">
-              {message.sources.map((s: any, i: number) => (
-                <Badge key={i} variant="secondary" className="gap-1 py-0.5 px-2 text-xs font-normal">
-                  <FileText className="h-3 w-3" />
-                  <span className="truncate max-w-[120px]">{s.title}</span>
-                </Badge>
-              ))}
-            </div>
-          </div>
+        {!isUser && message.sources && message.sources.length > 0 && (
+          <SourceAttribution
+            sources={(message.sources || []).map((s: any, i: number) => ({
+              id: s.id || `src-${i}`,
+              documentId: s.documentId || s.id || `src-${i}`,
+              title: s.title,
+              snippet: s.snippet || '',
+              relevance: s.relevance ?? 0,
+              page: s.page ?? null,
+              section: s.section ?? null,
+            }))}
+          />
         )}
 
         {/* Meta + actions */}
