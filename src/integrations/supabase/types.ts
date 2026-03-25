@@ -105,6 +105,92 @@ export type Database = {
           },
         ]
       }
+      document_chunks: {
+        Row: {
+          chat_id: string | null
+          chunk_index: number
+          chunk_text: string
+          created_at: string
+          document_id: string
+          embedding: string | null
+          id: string
+          language: string | null
+          metadata_json: Json | null
+          notebook_id: string | null
+          page: number | null
+          project_id: string | null
+          section: string | null
+          token_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_id?: string | null
+          chunk_index: number
+          chunk_text: string
+          created_at?: string
+          document_id: string
+          embedding?: string | null
+          id?: string
+          language?: string | null
+          metadata_json?: Json | null
+          notebook_id?: string | null
+          page?: number | null
+          project_id?: string | null
+          section?: string | null
+          token_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string | null
+          chunk_index?: number
+          chunk_text?: string
+          created_at?: string
+          document_id?: string
+          embedding?: string | null
+          id?: string
+          language?: string | null
+          metadata_json?: Json | null
+          notebook_id?: string | null
+          page?: number | null
+          project_id?: string | null
+          section?: string | null
+          token_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_chunks_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_chunks_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_chunks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           char_count: number | null
