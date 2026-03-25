@@ -414,8 +414,6 @@ export function SearchDashboard() {
               )}
             </div>
           )}
-            </div>
-          )}
         </div>
       </ScrollArea>
     </div>
