@@ -505,6 +505,7 @@ async function mergeResults(
   _projectId?: string,
   _notebookId?: string,
   _chatId?: string,
+  weights: RetrievalWeights = DEFAULT_WEIGHTS,
 ): Promise<HybridResult[]> {
   const candidates = new Map<string, ChunkCandidate>();
 
