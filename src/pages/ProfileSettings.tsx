@@ -286,19 +286,6 @@ export default function ProfileSettings() {
     }
   };
 
-  const handleSaveSettings = async (partial: Partial<UserSettings>) => {
-    if (!authUser) return;
-    const newSettings = { ...settings, ...partial };
-    setSettings(newSettings);
-    setIsSavingSettings(true);
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({ user_id: authUser.id, ...partial }, { onConflict: 'user_id' });
-    setIsSavingSettings(false);
-    if (error) {
-      toast.error('Failed to save settings');
-    }
-  };
 
   const handleDeleteAccount = async () => {
     if (!authUser) return;
