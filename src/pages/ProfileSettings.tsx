@@ -5,17 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,12 +24,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface UserSettings {
-  chat_suggestions: boolean;
-  generation_sound: string;
-  auto_accept_invitations: boolean;
-  agent_action_notifications: boolean;
-}
 
 interface SavedProfileState {
   fullName: string;
@@ -149,14 +136,6 @@ export default function ProfileSettings() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [savedProfile, setSavedProfile] = useState<SavedProfileState>(emptySavedProfile);
 
-  // Settings state
-  const [settings, setSettings] = useState<UserSettings>({
-    chat_suggestions: true,
-    generation_sound: 'never',
-    auto_accept_invitations: false,
-    agent_action_notifications: true,
-  });
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
 
   const displayEmail = profile?.email || authUser?.email || '';
@@ -215,26 +194,6 @@ export default function ProfileSettings() {
     applyProfileState(nextState);
   }, [applyProfileState, authUser, loadProfile, profile]);
 
-  // Load settings
-  useEffect(() => {
-    if (!authUser) return;
-    const loadSettings = async () => {
-      const { data } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .maybeSingle();
-      if (data) {
-        setSettings({
-          chat_suggestions: data.chat_suggestions,
-          generation_sound: data.generation_sound,
-          auto_accept_invitations: data.auto_accept_invitations,
-          agent_action_notifications: data.agent_action_notifications,
-        });
-      }
-    };
-    loadSettings();
-  }, [authUser]);
 
   const handleCancelProfile = () => {
     applyProfileState(savedProfile);
@@ -315,19 +274,6 @@ export default function ProfileSettings() {
     }
   };
 
-  const handleSaveSettings = async (partial: Partial<UserSettings>) => {
-    if (!authUser) return;
-    const newSettings = { ...settings, ...partial };
-    setSettings(newSettings);
-    setIsSavingSettings(true);
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({ user_id: authUser.id, ...partial }, { onConflict: 'user_id' });
-    setIsSavingSettings(false);
-    if (error) {
-      toast.error('Failed to save settings');
-    }
-  };
 
   const handleDeleteAccount = async () => {
     if (!authUser) return;
@@ -495,49 +441,6 @@ export default function ProfileSettings() {
             {/* Subscription */}
             <SubscriptionSection plan={profile?.plan || 'free'} />
 
-            <Separator />
-
-            {/* Toggles */}
-            <section className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
-              <SettingRow
-                label="Chat suggestions"
-                description="Show AI-generated follow-up suggestions in chat"
-                checked={settings.chat_suggestions}
-                onChange={v => handleSaveSettings({ chat_suggestions: v })}
-              />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-foreground">Generation complete sound</p>
-                  <p className="text-xs text-muted-foreground">Play a sound when generation finishes</p>
-                </div>
-                <Select
-                  value={settings.generation_sound}
-                  onValueChange={v => handleSaveSettings({ generation_sound: v })}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="first">First generation</SelectItem>
-                    <SelectItem value="always">Always</SelectItem>
-                    <SelectItem value="never">Never</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <SettingRow
-                label="Auto-accept invitations"
-                description="Automatically join workspaces when invited"
-                checked={settings.auto_accept_invitations}
-                onChange={v => handleSaveSettings({ auto_accept_invitations: v })}
-              />
-              <SettingRow
-                label="Agent action notifications"
-                description="Get notified when agent actions complete"
-                checked={settings.agent_action_notifications}
-                onChange={v => handleSaveSettings({ agent_action_notifications: v })}
-              />
-            </section>
 
             <Separator />
 
@@ -613,22 +516,6 @@ export default function ProfileSettings() {
   );
 }
 
-function SettingRow({ label, description, checked, onChange }: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-foreground">{label}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
-  );
-}
 
 const planMeta: Record<string, { name: string; description: string; icon: React.ElementType; price: string }> = {
   free: { name: 'Free', description: 'Perfect for getting started', icon: Sparkles, price: '$0 / forever' },

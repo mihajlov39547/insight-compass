@@ -15,6 +15,9 @@ export interface GeneralSettings {
   retrieval_chunk_weight: number;
   retrieval_question_weight: number;
   retrieval_keyword_weight: number;
+  chat_suggestions: boolean;
+  generation_sound: string;
+  agent_action_notifications: boolean;
 }
 
 const DEFAULTS: GeneralSettings = {
@@ -30,6 +33,9 @@ const DEFAULTS: GeneralSettings = {
   retrieval_chunk_weight: 0.50,
   retrieval_question_weight: 0.30,
   retrieval_keyword_weight: 0.20,
+  chat_suggestions: true,
+  generation_sound: 'never',
+  agent_action_notifications: true,
 };
 
 export function useUserSettings() {
@@ -40,7 +46,7 @@ export function useUserSettings() {
       if (!user) return DEFAULTS;
       const { data, error } = await supabase
         .from('user_settings')
-        .select('response_length, retrieval_depth, cite_sources, auto_summarize, preferred_model, show_suggested_prompts, enable_answer_formatting, layout_preference, language_preference, retrieval_chunk_weight, retrieval_question_weight, retrieval_keyword_weight')
+        .select('response_length, retrieval_depth, cite_sources, auto_summarize, preferred_model, show_suggested_prompts, enable_answer_formatting, layout_preference, language_preference, retrieval_chunk_weight, retrieval_question_weight, retrieval_keyword_weight, chat_suggestions, generation_sound, agent_action_notifications')
         .eq('user_id', user.id)
         .maybeSingle();
       if (error || !data) return DEFAULTS;
@@ -57,6 +63,9 @@ export function useUserSettings() {
         retrieval_chunk_weight: (data as any).retrieval_chunk_weight ?? DEFAULTS.retrieval_chunk_weight,
         retrieval_question_weight: (data as any).retrieval_question_weight ?? DEFAULTS.retrieval_question_weight,
         retrieval_keyword_weight: (data as any).retrieval_keyword_weight ?? DEFAULTS.retrieval_keyword_weight,
+        chat_suggestions: (data as any).chat_suggestions ?? DEFAULTS.chat_suggestions,
+        generation_sound: (data as any).generation_sound ?? DEFAULTS.generation_sound,
+        agent_action_notifications: (data as any).agent_action_notifications ?? DEFAULTS.agent_action_notifications,
       } as GeneralSettings;
     },
     enabled: !!user,
