@@ -155,11 +155,6 @@ export function SettingsDialog() {
               optionLabels={{ en: 'English', 'sr-lat': 'Serbian (Latin)' }}
               onChange={v => update('language_preference', v)}
             />
-            <SettingToggle
-              label="Show Suggested Prompts"
-              checked={local.show_suggested_prompts}
-              onChange={v => update('show_suggested_prompts', v)}
-            />
             <SettingSelect
               label="Layout"
               value={local.layout_preference}
