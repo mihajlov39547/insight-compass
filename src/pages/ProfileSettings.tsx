@@ -523,22 +523,6 @@ export default function ProfileSettings() {
   );
 }
 
-function SettingRow({ label, description, checked, onChange }: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-foreground">{label}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
-  );
-}
 
 const planMeta: Record<string, { name: string; description: string; icon: React.ElementType; price: string }> = {
   free: { name: 'Free', description: 'Perfect for getting started', icon: Sparkles, price: '$0 / forever' },
