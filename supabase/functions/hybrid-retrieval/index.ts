@@ -97,6 +97,54 @@ function generateQueryEmbedding(query: string): number[] | null {
   }
 }
 
+// ─── Retrieval weight configuration ────────────────────────────────
+
+interface RetrievalWeights {
+  chunkWeight: number;
+  questionWeight: number;
+  keywordWeight: number;
+}
+
+const DEFAULT_WEIGHTS: RetrievalWeights = {
+  chunkWeight: 0.50,
+  questionWeight: 0.30,
+  keywordWeight: 0.20,
+};
+
+function validateWeights(raw: { chunk?: number; question?: number; keyword?: number }): RetrievalWeights {
+  const c = Number(raw.chunk);
+  const q = Number(raw.question);
+  const k = Number(raw.keyword);
+
+  if (!Number.isFinite(c) || !Number.isFinite(q) || !Number.isFinite(k)) return DEFAULT_WEIGHTS;
+  if (c < 0 || q < 0 || k < 0) return DEFAULT_WEIGHTS;
+
+  const sum = c + q + k;
+  if (Math.abs(sum - 1.0) > 0.01) return DEFAULT_WEIGHTS;
+
+  return { chunkWeight: c, questionWeight: q, keywordWeight: k };
+}
+
+async function loadRetrievalWeights(adminClient: any, userId: string): Promise<RetrievalWeights> {
+  try {
+    const { data, error } = await adminClient
+      .from("user_settings")
+      .select("retrieval_chunk_weight, retrieval_question_weight, retrieval_keyword_weight")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error || !data) return DEFAULT_WEIGHTS;
+
+    return validateWeights({
+      chunk: data.retrieval_chunk_weight,
+      question: data.retrieval_question_weight,
+      keyword: data.retrieval_keyword_weight,
+    });
+  } catch {
+    return DEFAULT_WEIGHTS;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
