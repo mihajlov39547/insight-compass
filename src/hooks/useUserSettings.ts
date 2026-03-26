@@ -54,6 +54,9 @@ export function useUserSettings() {
         enable_answer_formatting: (data as any).enable_answer_formatting ?? DEFAULTS.enable_answer_formatting,
         layout_preference: (data as any).layout_preference ?? DEFAULTS.layout_preference,
         language_preference: (data as any).language_preference ?? DEFAULTS.language_preference,
+        retrieval_chunk_weight: (data as any).retrieval_chunk_weight ?? DEFAULTS.retrieval_chunk_weight,
+        retrieval_question_weight: (data as any).retrieval_question_weight ?? DEFAULTS.retrieval_question_weight,
+        retrieval_keyword_weight: (data as any).retrieval_keyword_weight ?? DEFAULTS.retrieval_keyword_weight,
       } as GeneralSettings;
     },
     enabled: !!user,
