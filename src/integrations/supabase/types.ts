@@ -601,7 +601,10 @@ export type Database = {
           layout_preference: string
           preferred_model: string
           response_length: string
+          retrieval_chunk_weight: number
           retrieval_depth: string
+          retrieval_keyword_weight: number
+          retrieval_question_weight: number
           show_suggested_prompts: boolean
           updated_at: string
           user_id: string
@@ -620,7 +623,10 @@ export type Database = {
           layout_preference?: string
           preferred_model?: string
           response_length?: string
+          retrieval_chunk_weight?: number
           retrieval_depth?: string
+          retrieval_keyword_weight?: number
+          retrieval_question_weight?: number
           show_suggested_prompts?: boolean
           updated_at?: string
           user_id: string
@@ -639,7 +645,10 @@ export type Database = {
           layout_preference?: string
           preferred_model?: string
           response_length?: string
+          retrieval_chunk_weight?: number
           retrieval_depth?: string
+          retrieval_keyword_weight?: number
+          retrieval_question_weight?: number
           show_suggested_prompts?: boolean
           updated_at?: string
           user_id?: string
