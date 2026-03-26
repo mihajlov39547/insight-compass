@@ -63,6 +63,9 @@ export function useUserSettings() {
         retrieval_chunk_weight: (data as any).retrieval_chunk_weight ?? DEFAULTS.retrieval_chunk_weight,
         retrieval_question_weight: (data as any).retrieval_question_weight ?? DEFAULTS.retrieval_question_weight,
         retrieval_keyword_weight: (data as any).retrieval_keyword_weight ?? DEFAULTS.retrieval_keyword_weight,
+        chat_suggestions: (data as any).chat_suggestions ?? DEFAULTS.chat_suggestions,
+        generation_sound: (data as any).generation_sound ?? DEFAULTS.generation_sound,
+        agent_action_notifications: (data as any).agent_action_notifications ?? DEFAULTS.agent_action_notifications,
       } as GeneralSettings;
     },
     enabled: !!user,
