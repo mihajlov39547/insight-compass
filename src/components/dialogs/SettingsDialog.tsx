@@ -21,6 +21,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/useUserSettings';
 import { modelOptions } from '@/data/mockData';
 import { toast } from 'sonner';
+import { RetrievalWeightsSection } from '@/components/settings/RetrievalWeightsSection';
 
 export function SettingsDialog() {
   const { showSettings, setShowSettings } = useApp();
@@ -95,6 +96,21 @@ export function SettingsDialog() {
               description="Rich markdown rendering for AI answers"
               checked={local.enable_answer_formatting}
               onChange={v => update('enable_answer_formatting', v)}
+            />
+            <RetrievalWeightsSection
+              values={{
+                retrieval_chunk_weight: local.retrieval_chunk_weight,
+                retrieval_question_weight: local.retrieval_question_weight,
+                retrieval_keyword_weight: local.retrieval_keyword_weight,
+              }}
+              onChange={({ retrieval_chunk_weight, retrieval_question_weight, retrieval_keyword_weight }) => {
+                setLocal(prev => prev ? {
+                  ...prev,
+                  retrieval_chunk_weight,
+                  retrieval_question_weight,
+                  retrieval_keyword_weight,
+                } : prev);
+              }}
             />
           </section>
 
