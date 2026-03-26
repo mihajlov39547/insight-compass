@@ -31,11 +31,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface UserSettings {
-  chat_suggestions: boolean;
-  generation_sound: string;
-  agent_action_notifications: boolean;
-}
 
 interface SavedProfileState {
   fullName: string;
