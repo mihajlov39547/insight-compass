@@ -206,25 +206,6 @@ export default function ProfileSettings() {
     applyProfileState(nextState);
   }, [applyProfileState, authUser, loadProfile, profile]);
 
-  // Load settings
-  useEffect(() => {
-    if (!authUser) return;
-    const loadSettings = async () => {
-      const { data } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .maybeSingle();
-      if (data) {
-        setSettings({
-          chat_suggestions: data.chat_suggestions,
-          generation_sound: data.generation_sound,
-          agent_action_notifications: data.agent_action_notifications,
-        });
-      }
-    };
-    loadSettings();
-  }, [authUser]);
 
   const handleCancelProfile = () => {
     applyProfileState(savedProfile);
