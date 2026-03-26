@@ -12,6 +12,9 @@ export interface GeneralSettings {
   enable_answer_formatting: boolean;
   layout_preference: string;
   language_preference: string;
+  retrieval_chunk_weight: number;
+  retrieval_question_weight: number;
+  retrieval_keyword_weight: number;
 }
 
 const DEFAULTS: GeneralSettings = {
@@ -24,6 +27,9 @@ const DEFAULTS: GeneralSettings = {
   enable_answer_formatting: true,
   layout_preference: 'comfortable',
   language_preference: 'en',
+  retrieval_chunk_weight: 0.50,
+  retrieval_question_weight: 0.30,
+  retrieval_keyword_weight: 0.20,
 };
 
 export function useUserSettings() {
