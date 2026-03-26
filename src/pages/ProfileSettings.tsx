@@ -152,7 +152,6 @@ export default function ProfileSettings() {
   const [settings, setSettings] = useState<UserSettings>({
     chat_suggestions: true,
     generation_sound: 'never',
-    auto_accept_invitations: false,
     agent_action_notifications: true,
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
