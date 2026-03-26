@@ -226,7 +226,6 @@ export default function ProfileSettings() {
         setSettings({
           chat_suggestions: data.chat_suggestions,
           generation_sound: data.generation_sound,
-          auto_accept_invitations: data.auto_accept_invitations,
           agent_action_notifications: data.agent_action_notifications,
         });
       }
