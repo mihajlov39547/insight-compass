@@ -15,6 +15,9 @@ export interface GeneralSettings {
   retrieval_chunk_weight: number;
   retrieval_question_weight: number;
   retrieval_keyword_weight: number;
+  chat_suggestions: boolean;
+  generation_sound: string;
+  agent_action_notifications: boolean;
 }
 
 const DEFAULTS: GeneralSettings = {
@@ -30,6 +33,9 @@ const DEFAULTS: GeneralSettings = {
   retrieval_chunk_weight: 0.50,
   retrieval_question_weight: 0.30,
   retrieval_keyword_weight: 0.20,
+  chat_suggestions: true,
+  generation_sound: 'never',
+  agent_action_notifications: true,
 };
 
 export function useUserSettings() {
