@@ -46,7 +46,7 @@ export function useUserSettings() {
       if (!user) return DEFAULTS;
       const { data, error } = await supabase
         .from('user_settings')
-        .select('response_length, retrieval_depth, cite_sources, auto_summarize, preferred_model, show_suggested_prompts, enable_answer_formatting, layout_preference, language_preference, retrieval_chunk_weight, retrieval_question_weight, retrieval_keyword_weight')
+        .select('response_length, retrieval_depth, cite_sources, auto_summarize, preferred_model, show_suggested_prompts, enable_answer_formatting, layout_preference, language_preference, retrieval_chunk_weight, retrieval_question_weight, retrieval_keyword_weight, chat_suggestions, generation_sound, agent_action_notifications')
         .eq('user_id', user.id)
         .maybeSingle();
       if (error || !data) return DEFAULTS;
