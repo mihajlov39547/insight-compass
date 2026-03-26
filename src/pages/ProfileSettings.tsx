@@ -148,13 +148,6 @@ export default function ProfileSettings() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [savedProfile, setSavedProfile] = useState<SavedProfileState>(emptySavedProfile);
 
-  // Settings state
-  const [settings, setSettings] = useState<UserSettings>({
-    chat_suggestions: true,
-    generation_sound: 'never',
-    agent_action_notifications: true,
-  });
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
 
   const displayEmail = profile?.email || authUser?.email || '';
