@@ -45,7 +45,7 @@ interface DocumentResult {
   documentId: string;
   fileName: string;
   chunkText: string;
-  matchType: 'semantic' | 'keyword' | 'hybrid';
+  matchType: 'semantic' | 'keyword' | 'hybrid' | 'chunk' | 'question';
   combinedScore: number;
   summary: string | null;
   projectId: string | null;

@@ -102,7 +102,7 @@ async function extractDocxEntry(zipBytes: Uint8Array, targetPath: string): Promi
             }
           })();
           
-          await writer.write(new Uint8Array(compressedData.buffer));
+          await writer.write(new Uint8Array(compressedData.buffer as ArrayBuffer));
           await writer.close();
           await readAll;
           
