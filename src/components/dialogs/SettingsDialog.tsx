@@ -21,6 +21,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/useUserSettings';
 import { modelOptions } from '@/data/mockData';
 import { toast } from 'sonner';
+import { RetrievalWeightsSection } from '@/components/settings/RetrievalWeightsSection';
 
 export function SettingsDialog() {
   const { showSettings, setShowSettings } = useApp();
