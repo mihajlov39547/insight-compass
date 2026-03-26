@@ -34,7 +34,6 @@ import { toast } from 'sonner';
 interface UserSettings {
   chat_suggestions: boolean;
   generation_sound: string;
-  auto_accept_invitations: boolean;
   agent_action_notifications: boolean;
 }
 
