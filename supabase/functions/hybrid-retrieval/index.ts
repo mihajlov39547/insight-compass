@@ -625,9 +625,9 @@ async function mergeResults(
     const keywordScore = normKeyword(c.keywordRaw);
 
     const combinedScore =
-      0.50 * chunkScore +
-      0.30 * questionScore +
-      0.20 * keywordScore;
+      weights.chunkWeight * chunkScore +
+      weights.questionWeight * questionScore +
+      weights.keywordWeight * keywordScore;
 
     const hasChunk = c.chunkSimilarityRaw > 0;
     const hasQuestion = c.questionSimilarityRaw > 0;
