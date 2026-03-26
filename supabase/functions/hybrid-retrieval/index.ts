@@ -134,11 +134,14 @@ serve(async (req) => {
 
     const embedding = generateQueryEmbedding(query);
 
+    // Fetch user-configured retrieval weights in parallel with search
+    const weightsPromise = loadRetrievalWeights(adminClient, user.id);
     const keywordPromise = runKeywordSearch(adminClient, user.id, query, scope, projectId, notebookId);
     const chunkSemanticPromise = runChunkSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
     const questionSemanticPromise = runQuestionSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
 
-    const [keywordResults, chunkSemanticResults, questionSemanticResults] = await Promise.all([
+    const [weights, keywordResults, chunkSemanticResults, questionSemanticResults] = await Promise.all([
+      weightsPromise,
       keywordPromise,
       chunkSemanticPromise,
       questionSemanticPromise,
@@ -155,6 +158,7 @@ serve(async (req) => {
       projectId,
       notebookId,
       chatId,
+      weights,
     );
 
     return new Response(JSON.stringify({ results: combined }), {
