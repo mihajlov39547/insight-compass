@@ -492,49 +492,6 @@ export default function ProfileSettings() {
             {/* Subscription */}
             <SubscriptionSection plan={profile?.plan || 'free'} />
 
-            <Separator />
-
-            {/* Toggles */}
-            <section className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
-              <SettingRow
-                label="Chat suggestions"
-                description="Show AI-generated follow-up suggestions in chat"
-                checked={settings.chat_suggestions}
-                onChange={v => handleSaveSettings({ chat_suggestions: v })}
-              />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-foreground">Generation complete sound</p>
-                  <p className="text-xs text-muted-foreground">Play a sound when generation finishes</p>
-                </div>
-                <Select
-                  value={settings.generation_sound}
-                  onValueChange={v => handleSaveSettings({ generation_sound: v })}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="first">First generation</SelectItem>
-                    <SelectItem value="always">Always</SelectItem>
-                    <SelectItem value="never">Never</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <SettingRow
-                label="Auto-accept invitations"
-                description="Automatically join workspaces when invited"
-                checked={settings.auto_accept_invitations}
-                onChange={v => handleSaveSettings({ auto_accept_invitations: v })}
-              />
-              <SettingRow
-                label="Agent action notifications"
-                description="Get notified when agent actions complete"
-                checked={settings.agent_action_notifications}
-                onChange={v => handleSaveSettings({ agent_action_notifications: v })}
-              />
-            </section>
 
             <Separator />
 

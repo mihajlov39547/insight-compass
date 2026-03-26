@@ -112,6 +112,34 @@ export function SettingsDialog() {
                 } : prev);
               }}
             />
+            <SettingToggle
+              label="Chat suggestions"
+              description="Show AI-generated follow-up suggestions in chat"
+              checked={local.chat_suggestions}
+              onChange={v => update('chat_suggestions', v)}
+            />
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Generation complete sound</Label>
+                <p className="text-xs text-muted-foreground">Play a sound when generation finishes</p>
+              </div>
+              <Select value={local.generation_sound} onValueChange={v => update('generation_sound', v)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="first">First generation</SelectItem>
+                  <SelectItem value="always">Always</SelectItem>
+                  <SelectItem value="never">Never</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <SettingToggle
+              label="Agent action notifications"
+              description="Get notified when agent actions complete"
+              checked={local.agent_action_notifications}
+              onChange={v => update('agent_action_notifications', v)}
+            />
           </section>
 
           <Separator />
