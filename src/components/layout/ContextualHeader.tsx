@@ -85,7 +85,14 @@ export function ContextualHeader() {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <FolderOpen className="h-5 w-5 text-accent" />
-            <h2 className="text-lg font-semibold text-foreground">{selectedProject.name}</h2>
+            <InlineRenameTitle
+              value={selectedProject.name}
+              onSave={async (name) => {
+                await updateProject.mutateAsync({ id: selectedProject.id, name });
+                toast.success('Project renamed');
+              }}
+              className="text-lg font-semibold text-foreground"
+            />
           </div>
           <p className="text-sm text-muted-foreground max-w-2xl">{selectedProject.description}</p>
         </div>
