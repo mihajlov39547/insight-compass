@@ -395,6 +395,18 @@ export function NotebooksLanding() {
                 className="resize-none"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-nb-lang">Language</Label>
+              <Select value={editLanguage} onValueChange={(val: string) => setEditLanguage(val)}>
+                <SelectTrigger id="edit-nb-lang">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
             <Button variant="outline" onClick={() => setEditNotebook(null)}>Cancel</Button>
