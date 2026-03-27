@@ -53,7 +53,14 @@ export function ContextualHeader() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-accent" />
-            <h2 className="font-medium text-foreground">{selectedChat.name}</h2>
+            <InlineRenameTitle
+              value={selectedChat.name}
+              onSave={async (name) => {
+                await updateChat.mutateAsync({ id: selectedChat.id, name });
+                toast.success('Chat renamed');
+              }}
+              className="font-medium text-foreground text-base"
+            />
           </div>
         </div>
         <div className="flex items-center gap-2">
