@@ -88,6 +88,8 @@ export function AppSidebar() {
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editNbName, setEditNbName] = useState('');
   const [editNbDescription, setEditNbDescription] = useState('');
+  const [editNbLanguage, setEditNbLanguage] = useState<string>('en');
+  const [isImprovingNbDesc, setIsImprovingNbDesc] = useState(false);
   const updateNotebook = useUpdateNotebook();
 
   useEffect(() => {
