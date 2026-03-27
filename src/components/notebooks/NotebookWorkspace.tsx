@@ -6,6 +6,7 @@ import {
   FileUp, Share2
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
+import { InlineRenameTitle } from '@/components/shared/InlineRenameTitle';
 import { NoteFormatToolbar } from '@/components/notebooks/NoteFormatToolbar';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,7 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useApp } from '@/contexts/AppContext';
-import { useNotebooks } from '@/hooks/useNotebooks';
+import { useNotebooks, useUpdateNotebook } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDeleteNotebookNote, DbNotebookNote } from '@/hooks/useNotebookNotes';
 import { useNotebookMessages, useNotebookAIChat } from '@/hooks/useNotebookChat';
@@ -29,13 +30,14 @@ import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge'
 import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
+import { supabase } from '@/integrations/supabase/client';
 
 export function NotebookWorkspace() {
   const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare } = useApp();
   const queryClient = useQueryClient();
   const { data: notebooks = [] } = useNotebooks();
+  const updateNotebook = useUpdateNotebook();
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
   const { data: documents = [] } = useNotebookDocuments(selectedNotebookId ?? undefined);
   const { data: notes = [] } = useNotebookNotes(selectedNotebookId ?? undefined);
@@ -319,7 +321,15 @@ export function NotebookWorkspace() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold text-foreground truncate">{notebook.name}</h1>
+          <InlineRenameTitle
+            value={notebook.name}
+            onSave={async (name) => {
+              await updateNotebook.mutateAsync({ id: notebook.id, name });
+              toast.success('Notebook renamed');
+            }}
+            as="h1"
+            className="text-lg font-semibold text-foreground"
+          />
           {notebook.description && (
             <p className="text-xs text-muted-foreground truncate">{notebook.description}</p>
           )}

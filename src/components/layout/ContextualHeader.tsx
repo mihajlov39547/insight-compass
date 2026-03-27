@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { InlineRenameTitle } from '@/components/shared/InlineRenameTitle';
 import { useApp } from '@/contexts/AppContext';
-import { useProjects } from '@/hooks/useProjects';
-import { useChats, useCreateChat } from '@/hooks/useChats';
+import { useProjects, useUpdateProject } from '@/hooks/useProjects';
+import { useChats, useCreateChat, useUpdateChat } from '@/hooks/useChats';
 import { useDocuments } from '@/hooks/useDocuments';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export function ContextualHeader() {
   const { selectedProjectId, selectedChatId, setSelectedChatId, setShowSettings, setShowDocuments, setDocumentScope, setActiveView, setShowShare } = useApp();
@@ -19,6 +21,8 @@ export function ContextualHeader() {
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: documents = [] } = useDocuments(selectedProjectId ?? undefined, undefined);
   const createChat = useCreateChat();
+  const updateProject = useUpdateProject();
+  const updateChat = useUpdateChat();
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
   const selectedChat = chats.find(c => c.id === selectedChatId);
@@ -49,7 +53,14 @@ export function ContextualHeader() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-accent" />
-            <h2 className="font-medium text-foreground">{selectedChat.name}</h2>
+            <InlineRenameTitle
+              value={selectedChat.name}
+              onSave={async (name) => {
+                await updateChat.mutateAsync({ id: selectedChat.id, name });
+                toast.success('Chat renamed');
+              }}
+              className="font-medium text-foreground text-base"
+            />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -74,7 +85,14 @@ export function ContextualHeader() {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <FolderOpen className="h-5 w-5 text-accent" />
-            <h2 className="text-lg font-semibold text-foreground">{selectedProject.name}</h2>
+            <InlineRenameTitle
+              value={selectedProject.name}
+              onSave={async (name) => {
+                await updateProject.mutateAsync({ id: selectedProject.id, name });
+                toast.success('Project renamed');
+              }}
+              className="text-lg font-semibold text-foreground"
+            />
           </div>
           <p className="text-sm text-muted-foreground max-w-2xl">{selectedProject.description}</p>
         </div>
