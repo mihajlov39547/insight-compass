@@ -97,6 +97,7 @@ export function NotebooksLanding() {
   const [showCreate, setShowCreate] = useState(false);
   const [createName, setCreateName] = useState('');
   const [createDescription, setCreateDescription] = useState('');
+  const [createLanguage, setCreateLanguage] = useState<'en' | 'sr-lat'>('en');
 
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editName, setEditName] = useState('');
@@ -125,12 +126,13 @@ export function NotebooksLanding() {
 
   const handleCreate = () => {
     if (!createName.trim()) return;
-    createNotebook.mutate({ name: createName.trim(), description: createDescription.trim() }, {
+    createNotebook.mutate({ name: createName.trim(), description: createDescription.trim(), language: createLanguage }, {
       onSuccess: () => {
         toast.success('Notebook created');
         setShowCreate(false);
         setCreateName('');
         setCreateDescription('');
+        setCreateLanguage('en');
       },
     });
   };
@@ -306,6 +308,18 @@ export function NotebooksLanding() {
                 className="resize-none"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="create-nb-lang">Language</Label>
+              <Select value={createLanguage} onValueChange={(val: 'en' | 'sr-lat') => setCreateLanguage(val)}>
+                <SelectTrigger id="create-nb-lang">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
@@ -394,6 +408,7 @@ export function NotebooksLanding() {
                 rows={3}
                 className="resize-none"
               />
+              <p className="text-xs text-muted-foreground">This helps the AI understand the notebook context and provide better answers.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-nb-lang">Language</Label>

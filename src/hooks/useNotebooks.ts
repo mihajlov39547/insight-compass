@@ -38,10 +38,22 @@ export function useCreateNotebook() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ name, description, icon, color }: { name: string; description: string; icon?: string; color?: string }) => {
+    mutationFn: async ({
+      name,
+      description,
+      language,
+      icon,
+      color,
+    }: {
+      name: string;
+      description: string;
+      language: 'en' | 'sr-lat';
+      icon?: string;
+      color?: string;
+    }) => {
       const { data, error } = await supabase
         .from('notebooks' as any)
-        .insert({ user_id: user!.id, name, description, icon: icon || null, color: color || null })
+        .insert({ user_id: user!.id, name, description, language, icon: icon || null, color: color || null })
         .select()
         .single();
       if (error) throw error;

@@ -67,6 +67,7 @@ export function AppSidebar() {
   const [showCreateNotebook, setShowCreateNotebook] = useState(false);
   const [createNbName, setCreateNbName] = useState('');
   const [createNbDescription, setCreateNbDescription] = useState('');
+  const [createNbLanguage, setCreateNbLanguage] = useState<'en' | 'sr-lat'>('en');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
@@ -259,12 +260,12 @@ export function AppSidebar() {
 
   const handleCreateNotebookSubmit = () => {
     if (!createNbName.trim()) return;
-    createNotebook.mutate({ name: createNbName.trim(), description: createNbDescription.trim() }, {
+    createNotebook.mutate({ name: createNbName.trim(), description: createNbDescription.trim(), language: createNbLanguage }, {
       onSuccess: (nb) => {
         setSelectedProjectId(null); setSelectedChatId(null);
         setSelectedNotebookId(nb.id); setActiveView('notebook-workspace');
         toast.success('Notebook created');
-        setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription('');
+        setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage('en');
       }
     });
   };
@@ -309,7 +310,7 @@ export function AppSidebar() {
   const sharedDialogs = (
     <>
       {/* Create Notebook Dialog */}
-      <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); } }}>
+      <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage('en'); } }}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>Create Notebook</DialogTitle>
@@ -324,9 +325,21 @@ export function AppSidebar() {
               <Label htmlFor="create-nb-desc">Description</Label>
               <Textarea id="create-nb-desc" value={createNbDescription} onChange={(e) => setCreateNbDescription(e.target.value)} placeholder="What is this notebook about?" rows={3} className="resize-none" />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="create-nb-lang">Language</Label>
+              <Select value={createNbLanguage} onValueChange={(val: 'en' | 'sr-lat') => setCreateNbLanguage(val)}>
+                <SelectTrigger id="create-nb-lang">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage('en'); }}>Cancel</Button>
             <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>Create Notebook</Button>
           </DialogFooter>
         </DialogContent>
@@ -399,6 +412,7 @@ export function AppSidebar() {
                 </Button>
               </div>
               <Textarea id="edit-nb-desc-sidebar" value={editNbDescription} onChange={(e) => setEditNbDescription(e.target.value)} placeholder="Describe what this notebook is about..." rows={3} className="resize-none" />
+              <p className="text-xs text-muted-foreground">This helps the AI understand the notebook context and provide better answers.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-nb-lang-sidebar">Language</Label>
