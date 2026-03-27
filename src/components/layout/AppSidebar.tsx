@@ -345,8 +345,72 @@ export function AppSidebar() {
               <Input id="edit-nb-name-sidebar" value={editNbName} onChange={(e) => setEditNbName(e.target.value)} placeholder="Notebook name" autoFocus />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-desc-sidebar">Description</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-nb-desc-sidebar">Description</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-accent"
+                  onClick={async () => {
+                    if (!editNotebook || isImprovingNbDesc) return;
+                    setIsImprovingNbDesc(true);
+                    try {
+                      const { data: nbDocs } = await supabase
+                        .from('documents' as any)
+                        .select('file_name, summary')
+                        .eq('notebook_id', editNotebook.id)
+                        .eq('processing_status', 'completed')
+                        .limit(15);
+
+                      const resp = await fetch(
+                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-description`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                          },
+                          body: JSON.stringify({
+                            projectName: editNbName,
+                            currentDescription: editNbDescription,
+                            documents: (nbDocs || []).map((d: any) => ({ fileName: d.file_name, summary: d.summary })),
+                          }),
+                        }
+                      );
+
+                      const data = await resp.json();
+                      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+                      if (data.description) {
+                        setEditNbDescription(data.description);
+                        toast.success('Description improved');
+                      }
+                    } catch (err: any) {
+                      console.error('Improve description error:', err);
+                      toast.error(err.message || 'Failed to improve description');
+                    } finally {
+                      setIsImprovingNbDesc(false);
+                    }
+                  }}
+                  disabled={isImprovingNbDesc}
+                >
+                  {isImprovingNbDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  {isImprovingNbDesc ? 'Improving…' : 'Improve with AI'}
+                </Button>
+              </div>
               <Textarea id="edit-nb-desc-sidebar" value={editNbDescription} onChange={(e) => setEditNbDescription(e.target.value)} placeholder="Describe what this notebook is about..." rows={3} className="resize-none" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-nb-lang-sidebar">Language</Label>
+              <Select value={editNbLanguage} onValueChange={(val: string) => setEditNbLanguage(val)}>
+                <SelectTrigger id="edit-nb-lang-sidebar">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
