@@ -37,6 +37,7 @@ export function NotebookWorkspace() {
   const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare } = useApp();
   const queryClient = useQueryClient();
   const { data: notebooks = [] } = useNotebooks();
+  const updateNotebook = useUpdateNotebook();
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
   const { data: documents = [] } = useNotebookDocuments(selectedNotebookId ?? undefined);
   const { data: notes = [] } = useNotebookNotes(selectedNotebookId ?? undefined);
