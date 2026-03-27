@@ -139,6 +139,7 @@ export function NotebooksLanding() {
     setEditNotebook(nb);
     setEditName(nb.name);
     setEditDescription(nb.description || '');
+    setEditLanguage(nb.language || 'en');
   };
 
   const handleManageSubmit = () => {
