@@ -270,12 +270,12 @@ export function AppSidebar() {
   };
 
   const handleManageNotebook = (nb: DbNotebook) => {
-    setEditNotebook(nb); setEditNbName(nb.name); setEditNbDescription(nb.description || '');
+    setEditNotebook(nb); setEditNbName(nb.name); setEditNbDescription(nb.description || ''); setEditNbLanguage(nb.language || 'en');
   };
 
   const handleManageNotebookSubmit = () => {
     if (!editNotebook || !editNbName.trim()) return;
-    updateNotebook.mutate({ id: editNotebook.id, name: editNbName.trim(), description: editNbDescription.trim() }, {
+    updateNotebook.mutate({ id: editNotebook.id, name: editNbName.trim(), description: editNbDescription.trim(), language: editNbLanguage }, {
       onSuccess: () => { toast.success('Notebook updated'); setEditNotebook(null); },
     });
   };
