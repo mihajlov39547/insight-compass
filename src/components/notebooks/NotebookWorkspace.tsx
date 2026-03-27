@@ -321,7 +321,15 @@ export function NotebookWorkspace() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold text-foreground truncate">{notebook.name}</h1>
+          <InlineRenameTitle
+            value={notebook.name}
+            onSave={async (name) => {
+              await updateNotebook.mutateAsync({ id: notebook.id, name });
+              toast.success('Notebook renamed');
+            }}
+            as="h1"
+            className="text-lg font-semibold text-foreground"
+          />
           {notebook.description && (
             <p className="text-xs text-muted-foreground truncate">{notebook.description}</p>
           )}
