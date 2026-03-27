@@ -444,6 +444,7 @@ export type Database = {
           icon: string | null
           id: string
           is_archived: boolean
+          language: string
           name: string
           updated_at: string
           user_id: string
@@ -455,6 +456,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_archived?: boolean
+          language?: string
           name: string
           updated_at?: string
           user_id: string
@@ -466,6 +468,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_archived?: boolean
+          language?: string
           name?: string
           updated_at?: string
           user_id?: string
