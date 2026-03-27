@@ -21,6 +21,8 @@ export function ContextualHeader() {
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: documents = [] } = useDocuments(selectedProjectId ?? undefined, undefined);
   const createChat = useCreateChat();
+  const updateProject = useUpdateProject();
+  const updateChat = useUpdateChat();
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
   const selectedChat = chats.find(c => c.id === selectedChatId);
