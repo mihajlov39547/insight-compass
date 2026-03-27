@@ -30,6 +30,7 @@ import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge'
 import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { supabase } from '@/integrations/supabase/client';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 
