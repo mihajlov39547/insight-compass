@@ -9,6 +9,7 @@ export interface DbNotebook {
   description: string;
   icon: string | null;
   color: string | null;
+  language: string;
   is_archived: boolean;
   created_at: string;
   updated_at: string;

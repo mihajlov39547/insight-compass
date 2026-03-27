@@ -20,6 +20,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const ICONS = [
   Atom, FlaskConical, Microscope, Scale, Landmark, Scroll,
@@ -94,6 +101,7 @@ export function NotebooksLanding() {
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editLanguage, setEditLanguage] = useState<string>('en');
   const [improvingDescription, setImprovingDescription] = useState(false);
 
   // Get document counts per notebook
@@ -131,11 +139,12 @@ export function NotebooksLanding() {
     setEditNotebook(nb);
     setEditName(nb.name);
     setEditDescription(nb.description || '');
+    setEditLanguage(nb.language || 'en');
   };
 
   const handleManageSubmit = () => {
     if (!editNotebook || !editName.trim()) return;
-    updateNotebook.mutate({ id: editNotebook.id, name: editName.trim(), description: editDescription.trim() }, {
+    updateNotebook.mutate({ id: editNotebook.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
       onSuccess: () => {
         toast.success('Notebook updated');
         setEditNotebook(null);
@@ -336,15 +345,15 @@ export function NotebooksLanding() {
                     if (!editNotebook) return;
                     setImprovingDescription(true);
                     try {
-                      // Gather notebook documents for context
                       const { data: nbDocs } = await supabase
                         .from('documents' as any)
                         .select('file_name, summary')
                         .eq('notebook_id', editNotebook.id)
+                        .eq('processing_status', 'completed')
                         .limit(15);
 
                       const resp = await fetch(
-                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-notebook`,
+                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-description`,
                         {
                           method: 'POST',
                           headers: {
@@ -352,29 +361,29 @@ export function NotebooksLanding() {
                             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
                           },
                           body: JSON.stringify({
-                            notebookName: editName,
+                            projectName: editName,
                             currentDescription: editDescription,
                             documents: (nbDocs || []).map((d: any) => ({ fileName: d.file_name, summary: d.summary })),
-                            mode: 'description',
                           }),
                         }
                       );
 
-                      if (resp.ok) {
-                        const result = await resp.json();
-                        if (result.description) setEditDescription(result.description);
-                      } else {
-                        toast.error('Failed to improve description');
+                      const data = await resp.json();
+                      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+                      if (data.description) {
+                        setEditDescription(data.description);
+                        toast.success('Description improved');
                       }
-                    } catch {
-                      toast.error('Failed to improve description');
+                    } catch (err: any) {
+                      console.error('Improve description error:', err);
+                      toast.error(err.message || 'Failed to improve description');
                     } finally {
                       setImprovingDescription(false);
                     }
                   }}
                 >
                   {improvingDescription ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  Improve with AI
+                  {improvingDescription ? 'Improving…' : 'Improve with AI'}
                 </Button>
               </div>
               <Textarea
@@ -385,6 +394,18 @@ export function NotebooksLanding() {
                 rows={3}
                 className="resize-none"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-nb-lang">Language</Label>
+              <Select value={editLanguage} onValueChange={(val: string) => setEditLanguage(val)}>
+                <SelectTrigger id="edit-nb-lang">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
