@@ -101,6 +101,7 @@ export function NotebooksLanding() {
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editLanguage, setEditLanguage] = useState<string>('en');
   const [improvingDescription, setImprovingDescription] = useState(false);
 
   // Get document counts per notebook
