@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { InlineRenameTitle } from '@/components/shared/InlineRenameTitle';
 import { useApp } from '@/contexts/AppContext';
-import { useProjects } from '@/hooks/useProjects';
-import { useChats, useCreateChat } from '@/hooks/useChats';
+import { useProjects, useUpdateProject } from '@/hooks/useProjects';
+import { useChats, useCreateChat, useUpdateChat } from '@/hooks/useChats';
 import { useDocuments } from '@/hooks/useDocuments';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export function ContextualHeader() {
   const { selectedProjectId, selectedChatId, setSelectedChatId, setShowSettings, setShowDocuments, setDocumentScope, setActiveView, setShowShare } = useApp();
