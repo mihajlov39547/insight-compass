@@ -345,15 +345,15 @@ export function NotebooksLanding() {
                     if (!editNotebook) return;
                     setImprovingDescription(true);
                     try {
-                      // Gather notebook documents for context
                       const { data: nbDocs } = await supabase
                         .from('documents' as any)
                         .select('file_name, summary')
                         .eq('notebook_id', editNotebook.id)
+                        .eq('processing_status', 'completed')
                         .limit(15);
 
                       const resp = await fetch(
-                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-notebook`,
+                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-description`,
                         {
                           method: 'POST',
                           headers: {
@@ -361,22 +361,22 @@ export function NotebooksLanding() {
                             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
                           },
                           body: JSON.stringify({
-                            notebookName: editName,
+                            projectName: editName,
                             currentDescription: editDescription,
                             documents: (nbDocs || []).map((d: any) => ({ fileName: d.file_name, summary: d.summary })),
-                            mode: 'description',
                           }),
                         }
                       );
 
-                      if (resp.ok) {
-                        const result = await resp.json();
-                        if (result.description) setEditDescription(result.description);
-                      } else {
-                        toast.error('Failed to improve description');
+                      const data = await resp.json();
+                      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+                      if (data.description) {
+                        setEditDescription(data.description);
+                        toast.success('Description improved');
                       }
-                    } catch {
-                      toast.error('Failed to improve description');
+                    } catch (err: any) {
+                      console.error('Improve description error:', err);
+                      toast.error(err.message || 'Failed to improve description');
                     } finally {
                       setImprovingDescription(false);
                     }
