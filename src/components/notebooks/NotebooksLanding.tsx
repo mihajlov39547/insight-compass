@@ -144,7 +144,7 @@ export function NotebooksLanding() {
 
   const handleManageSubmit = () => {
     if (!editNotebook || !editName.trim()) return;
-    updateNotebook.mutate({ id: editNotebook.id, name: editName.trim(), description: editDescription.trim() }, {
+    updateNotebook.mutate({ id: editNotebook.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
       onSuccess: () => {
         toast.success('Notebook updated');
         setEditNotebook(null);
