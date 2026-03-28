@@ -66,17 +66,18 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         documentContext = toDocumentContext(results);
       }
 
-      // 3. Load recent chat history
+      // 3. Load recent chat history (trimmed by retrieval depth)
+      const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
       const { data: history } = await supabase
         .from('messages')
         .select('role, content')
         .eq('chat_id', chatId)
-        .order('created_at', { ascending: true })
-        .limit(50);
+        .order('created_at', { ascending: true });
 
-      const contextMessages = (history ?? [])
-        .filter((m: any) => m.role === 'user' || m.role === 'assistant')
-        .map((m: any) => ({ role: m.role, content: m.content }));
+      const contextMessages = trimChatHistory(
+        (history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
+        retrievalDepth
+      );
 
       // 4. Call AI edge function with document context
       const resp = await fetch(CHAT_URL, {

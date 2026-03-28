@@ -147,16 +147,17 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       // 3. Retrieve notebook doc context (Stage 2)
       const { sources, contextForAI } = await retrieveNotebookDocContext(notebookId, content);
 
-      // 4. Load history
+      // 4. Load history (trimmed by retrieval depth)
+      const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
       const { data: history } = await (supabase.from('notebook_messages' as any) as any)
         .select('role, content')
         .eq('notebook_id', notebookId)
-        .order('created_at', { ascending: true })
-        .limit(50);
+        .order('created_at', { ascending: true });
 
-      const contextMessages = (history ?? [])
-        .filter((m: any) => m.role === 'user' || m.role === 'assistant')
-        .map((m: any) => ({ role: m.role, content: m.content }));
+      const contextMessages = trimChatHistory(
+        (history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
+        retrievalDepth
+      );
 
       // Build extra instruction for partially aligned questions
       const partialWarning = scopeAlignment === 'partially_aligned'
