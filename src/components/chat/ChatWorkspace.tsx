@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useMemo } from 'react';
-import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
+import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
 import { useCreateChat, useChats } from '@/hooks/useChats';
@@ -17,7 +16,9 @@ export function ChatWorkspace() {
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
   const createChat = useCreateChat();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesViewportRef = useRef<HTMLDivElement>(null);
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
@@ -42,11 +43,21 @@ export function ChatWorkspace() {
     return assistantMsgs.length > 0 ? assistantMsgs[assistantMsgs.length - 1].content : undefined;
   }, [messages]);
 
+  const handleMessagesScroll = () => {
+    const el = messagesViewportRef.current;
+    if (!el) return;
+
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setIsNearBottom(distanceFromBottom < 120);
+    setShowScrollTop(el.scrollTop > 240);
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, streamingContent]);
+    const el = messagesViewportRef.current;
+    if (!el || !isNearBottom) return;
+
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [messages, streamingContent, isNearBottom]);
 
   if (!selectedProjectId || !selectedProject) {
     return <ProjectsLanding />;
@@ -85,8 +96,9 @@ export function ChatWorkspace() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <ScrollArea className="flex-1 p-4">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <div className="relative flex-1 min-h-0">
+        <div ref={messagesViewportRef} onScroll={handleMessagesScroll} className="h-full overflow-y-auto p-4">
+          <div className="max-w-3xl mx-auto space-y-6">
           {messagesLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto" />
@@ -159,9 +171,21 @@ export function ChatWorkspace() {
             </div>
           )}
 
-          <div ref={scrollRef} />
+            <div className="h-0.5" />
+          </div>
         </div>
-      </ScrollArea>
+
+        {showScrollTop && (
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute bottom-4 right-4 h-9 w-9 rounded-full shadow-md"
+            onClick={() => messagesViewportRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
+            <ArrowUp className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
       <ChatInput onSend={handleSend} isGenerating={isGenerating} previousUserMessage={previousUserMessage} previousAssistantMessage={previousAssistantMessage} />
     </div>
   );

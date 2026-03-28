@@ -44,10 +44,10 @@ function MainContent() {
   if (activeView === 'search') return <SearchDashboard />;
 
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-col">
       <ContextualHeader />
       <ChatWorkspace />
-    </>
+    </div>
   );
 }
 
@@ -106,7 +106,9 @@ function AppContent() {
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0">
             <MainHeader />
-            <MainContent />
+            <div className="flex-1 min-h-0">
+              <MainContent />
+            </div>
           </div>
         </>
       ) : (
@@ -118,7 +120,9 @@ function AppContent() {
           <ResizablePanel defaultSize={80}>
             <div className="flex-1 flex flex-col min-w-0 h-full">
               <MainHeader />
-              <MainContent />
+              <div className="flex-1 min-h-0">
+                <MainContent />
+              </div>
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

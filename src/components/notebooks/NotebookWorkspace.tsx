@@ -3,7 +3,7 @@ import {
   Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
   Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
-  FileUp
+  FileUp, ArrowUp
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -60,8 +60,10 @@ export function NotebookWorkspace() {
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [addingToSources, setAddingToSources] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const chatViewportRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isChatNearBottom, setIsChatNearBottom] = useState(true);
+  const [showChatScrollTop, setShowChatScrollTop] = useState(false);
 
   const hasSources = documents.length > 0;
   const enabledDocs = documents.filter((d: any) => d.notebook_enabled !== false);
@@ -76,9 +78,21 @@ export function NotebookWorkspace() {
     return assistantMsgs.length > 0 ? assistantMsgs[assistantMsgs.length - 1].content : undefined;
   }, [messages]);
 
+  const handleChatScroll = () => {
+    const el = chatViewportRef.current;
+    if (!el) return;
+
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setIsChatNearBottom(distanceFromBottom < 120);
+    setShowChatScrollTop(el.scrollTop > 240);
+  };
+
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingContent]);
+    const el = chatViewportRef.current;
+    if (!el || !isChatNearBottom) return;
+
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [messages, streamingContent, isChatNearBottom]);
 
   const handleToggleSource = async (doc: DbDocument) => {
     const currentEnabled = (doc as any).notebook_enabled !== false;
@@ -309,7 +323,7 @@ export function NotebookWorkspace() {
   if (!notebook) return null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
       <WorkspaceContextHeader
         title={(
@@ -329,7 +343,7 @@ export function NotebookWorkspace() {
       />
 
       {/* 3-column layout */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
+      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         {/* LEFT — Sources */}
         <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
           <div className="flex flex-col h-full border-r border-border">
@@ -396,7 +410,7 @@ export function NotebookWorkspace() {
 
         {/* CENTER — Chat */}
         <ResizablePanel defaultSize={50} minSize={30}>
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full min-h-0">
             {!hasSources ? (
               /* Empty state: no sources */
               <div className="flex-1 flex items-center justify-center px-6">
@@ -416,8 +430,9 @@ export function NotebookWorkspace() {
             ) : (
               <>
                 {/* Chat messages */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="max-w-2xl mx-auto space-y-4">
+                <div className="relative flex-1 min-h-0">
+                  <div ref={chatViewportRef} onScroll={handleChatScroll} className="h-full overflow-y-auto p-4">
+                    <div className="max-w-2xl mx-auto space-y-4">
                     {messagesLoading ? (
                       <div className="text-center py-12">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto" />
@@ -481,9 +496,21 @@ export function NotebookWorkspace() {
                         <Button variant="ghost" size="sm" className="text-xs" onClick={clearError}>Dismiss</Button>
                       </div>
                     )}
-                    <div ref={scrollRef} />
+                      <div className="h-0.5" />
+                    </div>
                   </div>
-                </ScrollArea>
+
+                  {showChatScrollTop && (
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute bottom-4 right-4 h-9 w-9 rounded-full shadow-md"
+                      onClick={() => chatViewportRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
 
                 {/* Chat input — shared component */}
                 <ChatInput
