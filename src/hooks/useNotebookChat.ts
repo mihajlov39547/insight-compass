@@ -88,7 +88,60 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       });
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
 
-      // 2. Retrieve notebook doc context
+      // 2. Run notebook scope check (Stage 1 — fast classification)
+      let scopeAlignment = 'aligned';
+      let scopeReason = '';
+      try {
+        // Gather short source summaries if available
+        const { data: nbDocsForScope } = await (supabase.from('documents') as any)
+          .select('file_name, summary')
+          .eq('notebook_id', notebookId)
+          .eq('notebook_enabled', true)
+          .limit(10);
+        const sourceSummaries = (nbDocsForScope || [])
+          .map((d: any) => d.file_name + (d.summary ? `: ${d.summary.slice(0, 80)}` : ''))
+          .filter(Boolean);
+
+        const scopeResp = await fetch(SCOPE_CHECK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            notebookTitle: notebookName || '',
+            notebookDescription: notebookDescription || '',
+            sourceSummaries,
+            userQuestion: content,
+          }),
+        });
+        if (scopeResp.ok) {
+          const scopeData = await scopeResp.json();
+          scopeAlignment = scopeData.alignment || 'aligned';
+          scopeReason = scopeData.reason || '';
+        }
+      } catch (err) {
+        console.error('Scope check failed, defaulting to aligned:', err);
+      }
+
+      // If not aligned, return a notebook-scoped refusal
+      if (scopeAlignment === 'not_aligned') {
+        const topicHint = notebookName || notebookDescription || 'this notebook\'s topic';
+        const refusalContent = `I can only answer questions grounded in this notebook's topic and sources. This notebook is about **${topicHint}**, so please ask a related question.${scopeReason ? `\n\n_Reason: ${scopeReason}_` : ''}`;
+
+        await (supabase.from('notebook_messages' as any) as any).insert({
+          notebook_id: notebookId,
+          user_id: user.id,
+          role: 'assistant',
+          content: refusalContent,
+          model_id: resolvedModel,
+          sources: [],
+        });
+        qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
+        return;
+      }
+
+      // 3. Retrieve notebook doc context (Stage 2)
       const { sources, contextForAI } = await retrieveNotebookDocContext(notebookId, content);
 
       // 3. Load history
