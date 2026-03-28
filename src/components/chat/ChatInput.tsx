@@ -20,7 +20,7 @@ interface ChatInputProps {
   footerLeft?: React.ReactNode;
 }
 
-export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage }: ChatInputProps) {
+export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage, variant = 'project', footerLeft }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
