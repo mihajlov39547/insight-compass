@@ -19,6 +19,7 @@ interface UseAIChatOptions {
 
 export function useAIChat({ chatId, chatName, projectId, projectDescription }: UseAIChatOptions) {
   const { user } = useAuth();
+  const { data: userSettings } = useUserSettings();
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
