@@ -28,7 +28,7 @@ import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
 import { useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge';
-import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
+import { modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
