@@ -6,6 +6,7 @@ import {
   FileUp, Share2
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
+import { ChatInput } from '@/components/chat/ChatInput';
 import { InlineRenameTitle } from '@/components/shared/InlineRenameTitle';
 import { NoteFormatToolbar } from '@/components/notebooks/NoteFormatToolbar';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
