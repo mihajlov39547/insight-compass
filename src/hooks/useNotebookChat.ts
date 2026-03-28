@@ -144,7 +144,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       // 3. Retrieve notebook doc context (Stage 2)
       const { sources, contextForAI } = await retrieveNotebookDocContext(notebookId, content);
 
-      // 3. Load history
+      // 4. Load history
       const { data: history } = await (supabase.from('notebook_messages' as any) as any)
         .select('role, content')
         .eq('notebook_id', notebookId)
@@ -155,7 +155,13 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         .filter((m: any) => m.role === 'user' || m.role === 'assistant')
         .map((m: any) => ({ role: m.role, content: m.content }));
 
-      // 4. Call AI
+      // Build extra instruction for partially aligned questions
+      const partialWarning = scopeAlignment === 'partially_aligned'
+        ? '\n\nIMPORTANT: The user\'s question is only partially related to this notebook\'s topic. Answer ONLY using this notebook\'s sources. Do not use general knowledge. Start your response with a brief note that you\'re answering strictly from the notebook\'s sources.'
+        : '';
+
+      // 5. Call AI
+      const projectDesc = (notebookDescription || `Notebook: ${notebookName || 'Untitled'}`) + partialWarning;
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -164,7 +170,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         },
         body: JSON.stringify({
           messages: contextMessages,
-          projectDescription: notebookDescription || `Notebook: ${notebookName || 'Untitled'}`,
+          projectDescription: projectDesc,
           model: resolvedModel,
           documentContext: contextForAI,
           notebookScope: true,
