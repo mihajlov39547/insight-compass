@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles, ArrowUp } from 'lucide-react';
+import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles, ArrowUp, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
 import { useCreateChat, useChats } from '@/hooks/useChats';
@@ -10,9 +10,10 @@ import { useProjects } from '@/hooks/useProjects';
 import { useAIChat } from '@/hooks/useAIChat';
 import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ProjectChatGrid } from '@/components/dashboard/ProjectChatGrid';
 
 export function ChatWorkspace() {
-  const { selectedProjectId, selectedChatId, setSelectedChatId } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
   const createChat = useCreateChat();
@@ -64,6 +65,42 @@ export function ChatWorkspace() {
   }
 
   if (!selectedChatId) {
+    if (chats.length > 0) {
+      return (
+        <div className="flex-1 min-h-0 overflow-y-auto p-4">
+          <div className="max-w-6xl mx-auto animate-fade-in">
+            <div className="flex items-center justify-end gap-2 mb-4">
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowShare(true)}>
+                <Share2 className="h-4 w-4" /> Share
+              </Button>
+            </div>
+
+            <div className="text-center space-y-6 max-w-3xl mx-auto mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                <FeatureCard icon={<FileText className="h-5 w-5" />} title="Document Analysis" description="Query across all your uploaded documents" />
+                <FeatureCard icon={<Zap className="h-5 w-5" />} title="Instant Answers" description="Get accurate responses with source citations" />
+                <FeatureCard icon={<Shield className="h-5 w-5" />} title="Secure & Private" description="Your data stays within your workspace" />
+              </div>
+              <Button
+                className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+                onClick={() => {
+                  createChat.mutate(
+                    { projectId: selectedProjectId!, name: 'New Chat', language: selectedProject!.language },
+                    { onSuccess: (chat) => setSelectedChatId(chat.id) }
+                  );
+                }}
+                disabled={createChat.isPending}
+              >
+                <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? 'Creating...' : 'Create New Chat'}
+              </Button>
+            </div>
+
+            <ProjectChatGrid chats={chats} />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex-1 flex items-center justify-center bg-muted/30">
         <div className="text-center space-y-6 max-w-lg px-4 animate-fade-in">
