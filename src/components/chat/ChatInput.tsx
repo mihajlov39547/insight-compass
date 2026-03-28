@@ -14,6 +14,10 @@ interface ChatInputProps {
   isGenerating?: boolean;
   previousUserMessage?: string;
   previousAssistantMessage?: string;
+  /** 'project' shows attach + settings; 'notebook' hides them */
+  variant?: 'project' | 'notebook';
+  /** Optional footer left content (e.g. source count) */
+  footerLeft?: React.ReactNode;
 }
 
 export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage }: ChatInputProps) {
