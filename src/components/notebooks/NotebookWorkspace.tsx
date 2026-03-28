@@ -35,7 +35,7 @@ import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { supabase } from '@/integrations/supabase/client';
 
 export function NotebookWorkspace() {
-  const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare } = useApp();
+  const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare, setShowSettings } = useApp();
   const queryClient = useQueryClient();
   const { data: notebooks = [] } = useNotebooks();
   const updateNotebook = useUpdateNotebook();
