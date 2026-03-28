@@ -76,7 +76,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     }
   };
 
-  if (!selectedChatId) return null;
+  if (variant === 'project' && !selectedChatId) return null;
 
   return (
     <div className="border-t border-border bg-card p-4">
