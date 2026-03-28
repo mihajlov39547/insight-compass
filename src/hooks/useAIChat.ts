@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { DEFAULT_MODEL_ID } from '@/data/mockData';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
+import { trimChatHistory } from '@/lib/chatHistoryConfig';
+import { useUserSettings } from '@/hooks/useUserSettings';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`;
@@ -17,6 +19,7 @@ interface UseAIChatOptions {
 
 export function useAIChat({ chatId, chatName, projectId, projectDescription }: UseAIChatOptions) {
   const { user } = useAuth();
+  const { data: userSettings } = useUserSettings();
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
@@ -63,17 +66,18 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         documentContext = toDocumentContext(results);
       }
 
-      // 3. Load recent chat history
+      // 3. Load recent chat history (trimmed by retrieval depth)
+      const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
       const { data: history } = await supabase
         .from('messages')
         .select('role, content')
         .eq('chat_id', chatId)
-        .order('created_at', { ascending: true })
-        .limit(50);
+        .order('created_at', { ascending: true });
 
-      const contextMessages = (history ?? [])
-        .filter((m: any) => m.role === 'user' || m.role === 'assistant')
-        .map((m: any) => ({ role: m.role, content: m.content }));
+      const contextMessages = trimChatHistory(
+        (history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
+        retrievalDepth
+      );
 
       // 4. Call AI edge function with document context
       const resp = await fetch(CHAT_URL, {

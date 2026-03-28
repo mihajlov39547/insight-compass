@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { DEFAULT_MODEL_ID } from '@/data/mockData';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
+import { trimChatHistory } from '@/lib/chatHistoryConfig';
+import { useUserSettings } from '@/hooks/useUserSettings';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const SCOPE_CHECK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notebook-scope-check`;
@@ -64,6 +66,7 @@ async function retrieveNotebookDocContext(notebookId: string, userMessage: strin
 
 export function useNotebookAIChat({ notebookId, notebookName, notebookDescription }: UseNotebookAIChatOptions) {
   const { user } = useAuth();
+  const { data: userSettings } = useUserSettings();
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
@@ -144,16 +147,17 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       // 3. Retrieve notebook doc context (Stage 2)
       const { sources, contextForAI } = await retrieveNotebookDocContext(notebookId, content);
 
-      // 4. Load history
+      // 4. Load history (trimmed by retrieval depth)
+      const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
       const { data: history } = await (supabase.from('notebook_messages' as any) as any)
         .select('role, content')
         .eq('notebook_id', notebookId)
-        .order('created_at', { ascending: true })
-        .limit(50);
+        .order('created_at', { ascending: true });
 
-      const contextMessages = (history ?? [])
-        .filter((m: any) => m.role === 'user' || m.role === 'assistant')
-        .map((m: any) => ({ role: m.role, content: m.content }));
+      const contextMessages = trimChatHistory(
+        (history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
+        retrievalDepth
+      );
 
       // Build extra instruction for partially aligned questions
       const partialWarning = scopeAlignment === 'partially_aligned'
