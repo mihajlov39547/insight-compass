@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ArrowLeft, Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
-  Trash2, Sparkles, Send, ChevronDown, Copy, BookmarkPlus, StickyNote,
+  Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
   FileUp, Share2, Settings
 } from 'lucide-react';
