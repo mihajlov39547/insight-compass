@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { DEFAULT_MODEL_ID } from '@/data/mockData';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
+import { trimChatHistory } from '@/lib/chatHistoryConfig';
+import { useUserSettings } from '@/hooks/useUserSettings';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`;
