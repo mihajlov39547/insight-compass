@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Paperclip, Send, Settings2, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
+import { Paperclip, Send, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
