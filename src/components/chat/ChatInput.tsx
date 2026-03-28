@@ -31,7 +31,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && selectedChatId && !isGenerating) {
+    if (message.trim() && !isGenerating) {
       onSend(message.trim(), selectedModel);
       setMessage('');
     }
