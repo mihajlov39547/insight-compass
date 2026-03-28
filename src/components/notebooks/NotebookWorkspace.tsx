@@ -496,56 +496,21 @@ export function NotebookWorkspace() {
                   </div>
                 </ScrollArea>
 
-                {/* Chat input */}
-                <div className="border-t border-border bg-card p-4">
-                  <form onSubmit={handleSendChat}>
-                    <div className="relative rounded-xl border border-border focus-within:border-accent focus-within:shadow-lg focus-within:shadow-accent/10 transition-all">
-                      <Textarea
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendChat(); } }}
-                        placeholder={isGenerating ? 'Waiting for response…' : 'Ask a question about your sources…'}
-                        className="min-h-[56px] max-h-[200px] resize-none border-0 bg-transparent pr-28 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        rows={1}
-                        disabled={isGenerating}
-                      />
-                      <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                        <DropdownMenu>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuTrigger asChild>
-                                <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1">
-                                  <span className="max-w-[80px] truncate">{currentModel.name}</span>
-                                  <ChevronDown className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent side="top"><p className="font-medium">{currentModel.name}</p></TooltipContent>
-                          </Tooltip>
-                          <DropdownMenuContent align="end" className="w-48">
-                            {modelOptions.map((model) => (
-                              <DropdownMenuItem key={model.id} onClick={() => setSelectedModel(model.id)} className={cn("text-sm", selectedModel === model.id && "bg-accent/10 text-accent font-medium")}>
-                                {model.name}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <div className="h-4 w-px bg-border" />
-                        <Button type="submit" size="icon" disabled={!chatInput.trim() || isGenerating} className={cn("h-8 w-8 rounded-lg transition-all", chatInput.trim() && !isGenerating ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-2 px-1">
-                      <span className="text-xs text-muted-foreground">
-                        {enabledDocs.length} source{enabledDocs.length !== 1 ? 's' : ''} enabled
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {isGenerating ? 'AI is generating…' : <><kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> to send</>}
-                      </span>
-                    </div>
-                  </form>
-                </div>
+                {/* Chat input — shared component */}
+                <ChatInput
+                  onSend={(content, modelId) => {
+                    sendMessage(content, modelId);
+                  }}
+                  isGenerating={isGenerating}
+                  previousUserMessage={previousUserMessage}
+                  previousAssistantMessage={previousAssistantMessage}
+                  variant="notebook"
+                  footerLeft={
+                    <span className="text-xs text-muted-foreground">
+                      {enabledDocs.length} source{enabledDocs.length !== 1 ? 's' : ''} enabled
+                    </span>
+                  }
+                />
               </>
             )}
           </div>
