@@ -6,6 +6,7 @@ import { DEFAULT_MODEL_ID } from '@/data/mockData';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+const SCOPE_CHECK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notebook-scope-check`;
 
 export interface DbNotebookMessage {
   id: string;
@@ -87,10 +88,63 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       });
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
 
-      // 2. Retrieve notebook doc context
+      // 2. Run notebook scope check (Stage 1 — fast classification)
+      let scopeAlignment = 'aligned';
+      let scopeReason = '';
+      try {
+        // Gather short source summaries if available
+        const { data: nbDocsForScope } = await (supabase.from('documents') as any)
+          .select('file_name, summary')
+          .eq('notebook_id', notebookId)
+          .eq('notebook_enabled', true)
+          .limit(10);
+        const sourceSummaries = (nbDocsForScope || [])
+          .map((d: any) => d.file_name + (d.summary ? `: ${d.summary.slice(0, 80)}` : ''))
+          .filter(Boolean);
+
+        const scopeResp = await fetch(SCOPE_CHECK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            notebookTitle: notebookName || '',
+            notebookDescription: notebookDescription || '',
+            sourceSummaries,
+            userQuestion: content,
+          }),
+        });
+        if (scopeResp.ok) {
+          const scopeData = await scopeResp.json();
+          scopeAlignment = scopeData.alignment || 'aligned';
+          scopeReason = scopeData.reason || '';
+        }
+      } catch (err) {
+        console.error('Scope check failed, defaulting to aligned:', err);
+      }
+
+      // If not aligned, return a notebook-scoped refusal
+      if (scopeAlignment === 'not_aligned') {
+        const topicHint = notebookName || notebookDescription || 'this notebook\'s topic';
+        const refusalContent = `I can only answer questions grounded in this notebook's topic and sources. This notebook is about **${topicHint}**, so please ask a related question.${scopeReason ? `\n\n_Reason: ${scopeReason}_` : ''}`;
+
+        await (supabase.from('notebook_messages' as any) as any).insert({
+          notebook_id: notebookId,
+          user_id: user.id,
+          role: 'assistant',
+          content: refusalContent,
+          model_id: resolvedModel,
+          sources: [],
+        });
+        qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
+        return;
+      }
+
+      // 3. Retrieve notebook doc context (Stage 2)
       const { sources, contextForAI } = await retrieveNotebookDocContext(notebookId, content);
 
-      // 3. Load history
+      // 4. Load history
       const { data: history } = await (supabase.from('notebook_messages' as any) as any)
         .select('role, content')
         .eq('notebook_id', notebookId)
@@ -101,7 +155,13 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         .filter((m: any) => m.role === 'user' || m.role === 'assistant')
         .map((m: any) => ({ role: m.role, content: m.content }));
 
-      // 4. Call AI
+      // Build extra instruction for partially aligned questions
+      const partialWarning = scopeAlignment === 'partially_aligned'
+        ? '\n\nIMPORTANT: The user\'s question is only partially related to this notebook\'s topic. Answer ONLY using this notebook\'s sources. Do not use general knowledge. Start your response with a brief note that you\'re answering strictly from the notebook\'s sources.'
+        : '';
+
+      // 5. Call AI
+      const projectDesc = (notebookDescription || `Notebook: ${notebookName || 'Untitled'}`) + partialWarning;
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -110,7 +170,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         },
         body: JSON.stringify({
           messages: contextMessages,
-          projectDescription: notebookDescription || `Notebook: ${notebookName || 'Untitled'}`,
+          projectDescription: projectDesc,
           model: resolvedModel,
           documentContext: contextForAI,
           notebookScope: true,
