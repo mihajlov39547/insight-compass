@@ -11,6 +11,7 @@ import { useAIChat } from '@/hooks/useAIChat';
 import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ProjectChatGrid } from '@/components/dashboard/ProjectChatGrid';
+import type { ChatSendPayload } from './ChatInput';
 
 export function ChatWorkspace() {
   const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare } = useApp();
@@ -126,9 +127,9 @@ export function ChatWorkspace() {
     );
   }
 
-  const handleSend = (content: string, modelId?: string) => {
+  const handleSend = (payload: ChatSendPayload, modelId?: string) => {
     clearError();
-    sendMessage(content, modelId);
+    sendMessage(payload.text, modelId, payload.options);
   };
 
   return (

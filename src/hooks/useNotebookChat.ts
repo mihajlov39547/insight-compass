@@ -45,6 +45,10 @@ interface UseNotebookAIChatOptions {
   notebookDescription?: string;
 }
 
+interface MessageOptions {
+  useWebSearch: boolean;
+}
+
 /** Retrieve notebook document context using hybrid retrieval (only enabled docs) */
 async function retrieveNotebookDocContext(notebookId: string, userMessage: string) {
   try {
@@ -72,7 +76,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const sendMessage = useCallback(async (content: string, modelId?: string) => {
+  const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions) => {
     if (!user || !notebookId || isGenerating) return;
     const resolvedModel = modelId || DEFAULT_MODEL_ID;
     setError(null);
@@ -178,6 +182,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           model: resolvedModel,
           documentContext: contextForAI,
           notebookScope: true,
+          messageOptions: options ?? { useWebSearch: false },
         }),
       });
 

@@ -17,6 +17,10 @@ interface UseAIChatOptions {
   projectDescription?: string;
 }
 
+interface MessageOptions {
+  useWebSearch: boolean;
+}
+
 export function useAIChat({ chatId, chatName, projectId, projectDescription }: UseAIChatOptions) {
   const { user } = useAuth();
   const { data: userSettings } = useUserSettings();
@@ -24,9 +28,9 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [failedPrompt, setFailedPrompt] = useState<{ content: string; modelId: string } | null>(null);
+  const [failedPrompt, setFailedPrompt] = useState<{ content: string; modelId: string; options?: MessageOptions } | null>(null);
 
-  const sendMessage = useCallback(async (content: string, modelId?: string) => {
+  const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions) => {
     if (!user || !chatId || isGenerating) return;
 
     const resolvedModel = modelId || DEFAULT_MODEL_ID;
@@ -91,6 +95,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
           projectDescription: projectDescription ?? '',
           model: resolvedModel,
           documentContext,
+          messageOptions: options ?? { useWebSearch: false },
         }),
       });
 
@@ -189,7 +194,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
     } catch (err: any) {
       console.error('AI chat error:', err);
       setError(err.message || 'Failed to get AI response. Please try again.');
-      setFailedPrompt({ content, modelId: resolvedModel });
+      setFailedPrompt({ content, modelId: resolvedModel, options });
     } finally {
       setIsGenerating(false);
       setStreamingContent(null);
@@ -198,7 +203,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
 
   const retry = useCallback(() => {
     if (failedPrompt) {
-      sendMessage(failedPrompt.content, failedPrompt.modelId);
+      sendMessage(failedPrompt.content, failedPrompt.modelId, failedPrompt.options);
     }
   }, [failedPrompt, sendMessage]);
 

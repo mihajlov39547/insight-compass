@@ -514,8 +514,8 @@ export function NotebookWorkspace() {
 
                 {/* Chat input — shared component */}
                 <ChatInput
-                  onSend={(content, modelId) => {
-                    sendMessage(content, modelId);
+                  onSend={(payload, modelId) => {
+                    sendMessage(payload.text, modelId, payload.options);
                   }}
                   isGenerating={isGenerating}
                   previousUserMessage={previousUserMessage}
