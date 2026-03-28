@@ -24,15 +24,35 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
     setActiveView('project-documents');
   };
 
+  const extractSourceEntries = (raw: any): any[] => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'object') {
+      if (Array.isArray(raw.combinedSources)) return raw.combinedSources;
+      const documentSources = Array.isArray(raw.documentSources) ? raw.documentSources : [];
+      const webSources = Array.isArray(raw.webSources) ? raw.webSources : [];
+      return [...documentSources, ...webSources];
+    }
+    return [];
+  };
+
   // Map sources to SourceItem format
-  const sourceItems: SourceItem[] = (message.sources || []).map((s: any, i: number) => ({
+  const sourceItems: SourceItem[] = extractSourceEntries(message.sources).map((s: any, i: number) => ({
     id: s.id || `src-${i}`,
+    type: s.type === 'web' || (!!s.url && !s.documentId) ? 'web' : 'document',
     documentId: s.documentId || s.id || `src-${i}`,
-    title: s.title,
-    snippet: s.snippet || '',
-    relevance: s.relevance ?? 0,
+    title: s.title || s.fileName || s.url || `Source ${i + 1}`,
+    snippet: s.snippet || s.content || s.excerpt || s.summary || '',
+    relevance: typeof s.relevance === 'number' ? s.relevance : (typeof s.score === 'number' ? Math.max(0, Math.min(1, s.score)) : 0),
     page: s.page ?? null,
     section: s.section ?? null,
+    url: s.url,
+    favicon: s.favicon ?? null,
+    score: s.score,
+    chunkId: s.chunkId,
+    chunkIndex: s.chunkIndex,
+    matchType: s.matchType,
+    matchedQuestionText: s.matchedQuestionText ?? null,
   }));
 
   return (

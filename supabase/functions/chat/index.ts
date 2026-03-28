@@ -28,13 +28,22 @@ interface DocumentContext {
   excerpt?: string;
 }
 
+interface WebContextItem {
+  id?: string;
+  title?: string;
+  url?: string;
+  content?: string;
+  score?: number;
+  favicon?: string | null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, projectDescription, model, documentContext, notebookScope } = await req.json();
+    const { messages, projectDescription, model, documentContext, notebookScope, webContext } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -92,9 +101,38 @@ You are working within a notebook. Currently, there are NO enabled sources avail
 If the user asks about available sources or documents, tell them no sources are currently enabled in this notebook.`;
     }
 
+    // Build optional web grounding section (project chat only)
+    let webGrounding = "";
+    if (!notebookScope) {
+      const web = (webContext ?? []) as WebContextItem[];
+      if (web.length > 0) {
+        const webSections = web.map((item, i) => {
+          const title = item.title || `Web result ${i + 1}`;
+          const url = item.url || "";
+          const content = item.content || "";
+          const score = typeof item.score === "number" ? `\nRelevance score: ${item.score}` : "";
+          return `[Web ${i + 1}: ${title}]\nURL: ${url}${score}\nSnippet: ${content}`;
+        }).join("\n\n");
+
+        webGrounding = `
+
+You also have supplemental web retrieval results for this query. Treat these as secondary support after workspace documents.
+
+--- BEGIN WEB RESULTS (${web.length} total) ---
+${webSections}
+--- END WEB RESULTS ---
+
+Web usage rules:
+- Prefer workspace documents when they contain relevant information
+- Use web results as supplemental or current information
+- Cite only from provided web results (title/URL) when used
+- Do not invent web sources, URLs, or facts outside provided snippets`;
+      }
+    }
+
     const systemPrompt = `You are a helpful workspace assistant for a document and knowledge management application. Your role is to help users explore project information, answer questions clearly, and support research and notebook-style workflows.
 
-${projectDescription ? `The user is working in a project described as: "${projectDescription}".` : ""}${documentGrounding}
+${projectDescription ? `The user is working in a project described as: "${projectDescription}".` : ""}${documentGrounding}${webGrounding}
 
 Guidelines:
 - Be clear, accurate, and concise
@@ -102,7 +140,8 @@ Guidelines:
 - Keep responses conversational and well-structured without over-formatting
 - Prefer short paragraphs over dense walls of text
 - When you don't know something, say so honestly
-- Help users think through problems and explore ideas`;
+- Help users think through problems and explore ideas
+- Ground claims only in the provided sources and avoid unsupported assertions`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

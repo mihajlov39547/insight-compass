@@ -8,7 +8,7 @@ export interface DbMessage {
   user_id: string;
   role: 'user' | 'assistant';
   content: string;
-  sources: any[];
+  sources: any;
   model_id: string | null;
   created_at: string;
 }

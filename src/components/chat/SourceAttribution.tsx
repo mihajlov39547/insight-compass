@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { FileText, ChevronDown, ChevronRight, ExternalLink, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -9,6 +9,7 @@ export interface SourceItem {
   title: string;
   snippet: string;
   relevance: number;
+  type?: 'document' | 'web';
   page?: number | null;
   section?: string | null;
   documentId?: string;
@@ -16,6 +17,9 @@ export interface SourceItem {
   chunkIndex?: number;
   matchType?: 'semantic' | 'keyword' | 'hybrid' | 'chunk' | 'question';
   matchedQuestionText?: string | null;
+  url?: string;
+  favicon?: string | null;
+  score?: number;
 }
 
 interface SourceAttributionProps {
@@ -31,7 +35,7 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
   // Group by document
   const grouped = new Map<string, SourceItem[]>();
   for (const s of sources) {
-    const key = s.documentId || s.id;
+    const key = s.type === 'web' ? (s.url || s.id) : (s.documentId || s.id);
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(s);
   }
@@ -42,8 +46,18 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
       <div className="space-y-1">
         {Array.from(grouped.entries()).map(([docId, items]) => {
           const primary = items[0];
+          const sourceType = primary.type ?? 'document';
+          const isWeb = sourceType === 'web';
           const isExpanded = expandedId === docId;
           const hasSnippet = items.some(i => i.snippet && i.snippet.trim().length > 0);
+          const displayTitle = primary.title || (isWeb ? 'Web result' : 'Document source');
+          const domain = primary.url ? (() => {
+            try {
+              return new URL(primary.url).hostname.replace(/^www\./, '');
+            } catch {
+              return null;
+            }
+          })() : null;
 
           return (
             <Collapsible key={docId} open={isExpanded} onOpenChange={(open) => setExpandedId(open ? docId : null)}>
@@ -61,12 +75,32 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
                       "flex-1 flex items-center gap-2 py-1.5 pr-2 text-left transition-colors hover:bg-muted/60",
                       !hasSnippet && "pl-2 rounded-l-lg"
                     )}
-                    onClick={() => onSourceClick?.(primary)}
+                    onClick={() => {
+                      if (isWeb && primary.url) {
+                        window.open(primary.url, '_blank', 'noopener,noreferrer');
+                        return;
+                      }
+                      onSourceClick?.(primary);
+                    }}
                   >
-                    <FileText className="h-3.5 w-3.5 text-accent shrink-0" />
+                    {isWeb ? (
+                      primary.favicon ? (
+                        <img src={primary.favicon} alt="" className="h-3.5 w-3.5 rounded-sm shrink-0" />
+                      ) : (
+                        <Globe className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+                      )
+                    ) : (
+                      <FileText className="h-3.5 w-3.5 text-accent shrink-0" />
+                    )}
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-normal shrink-0">
+                      {isWeb ? 'Web' : 'Document'}
+                    </Badge>
                     <span className="text-xs font-medium text-foreground truncate max-w-[180px]">
-                      {primary.title}
+                      {displayTitle}
                     </span>
+                    {isWeb && domain && (
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{domain}</span>
+                    )}
                     {primary.page && (
                       <span className="text-[10px] text-muted-foreground">p.{primary.page}</span>
                     )}
@@ -76,7 +110,7 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
                     <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 h-4 font-normal">
                       {Math.round(primary.relevance * 100)}%
                     </Badge>
-                    {onSourceClick && (
+                    {(isWeb || onSourceClick) && (
                       <ExternalLink className="h-3 w-3 text-muted-foreground/50 shrink-0" />
                     )}
                   </button>
@@ -92,7 +126,7 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
                           )}
                           <span className="italic">"{item.snippet.slice(0, 200)}{item.snippet.length > 200 ? '…' : ''}"</span>
                         </div>
-                        {item.matchType && (
+                        {item.matchType && !isWeb && (
                           <div className="flex items-center gap-2 text-[10px] text-foreground/60">
                             <span className="font-medium">Match:</span>
                             <Badge variant="outline" className="text-[9px] px-1 py-0 h-3 font-normal capitalize">
@@ -100,12 +134,17 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
                             </Badge>
                           </div>
                         )}
-                        {item.matchedQuestionText && (
+                        {item.matchedQuestionText && !isWeb && (
                           <div className="border-l-2 border-accent/30 pl-2 py-0.5 space-y-0.5">
                             <div className="text-[10px] font-medium text-foreground/70">Matched question:</div>
                             <div className="text-[10px] italic text-foreground/60 max-h-[40px] overflow-hidden">
                               "{item.matchedQuestionText.slice(0, 120)}{item.matchedQuestionText.length > 120 ? '…' : ''}"
                             </div>
+                          </div>
+                        )}
+                        {isWeb && item.url && (
+                          <div className="text-[10px] text-foreground/60 truncate">
+                            {item.url}
                           </div>
                         )}
                       </div>

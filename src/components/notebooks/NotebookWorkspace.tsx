@@ -678,12 +678,16 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy }: {
           <SourceAttribution
             sources={(message.sources || []).map((s: any, i: number) => ({
               id: s.id || `src-${i}`,
+              type: s.type === 'web' ? 'web' : 'document',
               documentId: s.documentId || s.id || `src-${i}`,
               title: s.title,
               snippet: s.snippet || '',
               relevance: s.relevance ?? 0,
               page: s.page ?? null,
               section: s.section ?? null,
+              url: s.url,
+              favicon: s.favicon ?? null,
+              score: s.score,
             }))}
           />
         )}
