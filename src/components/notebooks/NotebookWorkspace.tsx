@@ -85,13 +85,7 @@ export function NotebookWorkspace() {
     setActiveView('notebooks');
   };
 
-  const handleSendChat = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (chatInput.trim() && !isGenerating) {
-      sendMessage(chatInput.trim(), selectedModel);
-      setChatInput('');
-    }
-  };
+
 
   const handleToggleSource = async (doc: DbDocument) => {
     const currentEnabled = (doc as any).notebook_enabled !== false;
