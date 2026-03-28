@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Paperclip, Send, Settings2, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
+import { Paperclip, Send, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -14,9 +14,13 @@ interface ChatInputProps {
   isGenerating?: boolean;
   previousUserMessage?: string;
   previousAssistantMessage?: string;
+  /** 'project' shows attach + settings; 'notebook' hides them */
+  variant?: 'project' | 'notebook';
+  /** Optional footer left content (e.g. source count) */
+  footerLeft?: React.ReactNode;
 }
 
-export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage }: ChatInputProps) {
+export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage, variant = 'project', footerLeft }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
@@ -27,7 +31,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && selectedChatId && !isGenerating) {
+    if (message.trim() && !isGenerating) {
       onSend(message.trim(), selectedModel);
       setMessage('');
     }
@@ -72,7 +76,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     }
   };
 
-  if (!selectedChatId) return null;
+  if (variant === 'project' && !selectedChatId) return null;
 
   return (
     <div className="border-t border-border bg-card p-4">
@@ -147,23 +151,23 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <div className="h-4 w-px bg-border" />
-            <Tooltip><TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setDocumentScope('chat'); setShowDocuments(true); }}>
-                <Paperclip className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger><TooltipContent>Attach files</TooltipContent></Tooltip>
-            <Tooltip><TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowSettings(true)}>
-                <Settings2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger><TooltipContent>Prompt settings</TooltipContent></Tooltip>
+            {variant === 'project' && (
+              <>
+                <div className="h-4 w-px bg-border" />
+                <Tooltip><TooltipTrigger asChild>
+                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setDocumentScope('chat'); setShowDocuments(true); }}>
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger><TooltipContent>Attach files</TooltipContent></Tooltip>
+              </>
+            )}
             <Button type="submit" size="icon" disabled={!message.trim() || isGenerating} className={cn("h-8 w-8 rounded-lg transition-all", message.trim() && !isGenerating ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
         </div>
-        <div className="flex items-center justify-end mt-2 px-1">
+        <div className="flex items-center justify-between mt-2 px-1">
+          {footerLeft ?? <span />}
           <span className="text-xs text-muted-foreground">
             {isGenerating ? 'AI is generating a response...' : <>Press <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> to send</>}
           </span>

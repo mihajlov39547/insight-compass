@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ArrowLeft, Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
-  Trash2, Sparkles, Send, ChevronDown, Copy, BookmarkPlus, StickyNote,
+  Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
-  FileUp, Share2
+  FileUp, Share2, Settings
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
+import { ChatInput } from '@/components/chat/ChatInput';
 import { InlineRenameTitle } from '@/components/shared/InlineRenameTitle';
 import { NoteFormatToolbar } from '@/components/notebooks/NoteFormatToolbar';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
@@ -16,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useApp } from '@/contexts/AppContext';
 import { useNotebooks, useUpdateNotebook } from '@/hooks/useNotebooks';
@@ -27,14 +28,14 @@ import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
 import { useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge';
-import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
+import { modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { supabase } from '@/integrations/supabase/client';
 
 export function NotebookWorkspace() {
-  const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare } = useApp();
+  const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare, setShowSettings } = useApp();
   const queryClient = useQueryClient();
   const { data: notebooks = [] } = useNotebooks();
   const updateNotebook = useUpdateNotebook();
@@ -54,8 +55,6 @@ export function NotebookWorkspace() {
   });
 
   const [showUpload, setShowUpload] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<DbNotebookNote | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -63,10 +62,19 @@ export function NotebookWorkspace() {
   const [addingToSources, setAddingToSources] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
   const hasSources = documents.length > 0;
   const enabledDocs = documents.filter((d: any) => d.notebook_enabled !== false);
+
+  const previousUserMessage = useMemo(() => {
+    const userMsgs = messages.filter(m => m.role === 'user');
+    return userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content : undefined;
+  }, [messages]);
+
+  const previousAssistantMessage = useMemo(() => {
+    const assistantMsgs = messages.filter(m => m.role === 'assistant');
+    return assistantMsgs.length > 0 ? assistantMsgs[assistantMsgs.length - 1].content : undefined;
+  }, [messages]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -77,13 +85,7 @@ export function NotebookWorkspace() {
     setActiveView('notebooks');
   };
 
-  const handleSendChat = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (chatInput.trim() && !isGenerating) {
-      sendMessage(chatInput.trim(), selectedModel);
-      setChatInput('');
-    }
-  };
+
 
   const handleToggleSource = async (doc: DbDocument) => {
     const currentEnabled = (doc as any).notebook_enabled !== false;
@@ -334,6 +336,11 @@ export function NotebookWorkspace() {
             <p className="text-xs text-muted-foreground truncate">{notebook.description}</p>
           )}
         </div>
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowSettings(true)}>
+            <Settings className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent>Settings</TooltipContent></Tooltip>
         <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setShowShare(true)}>
           <Share2 className="h-4 w-4" /> Share
         </Button>
@@ -496,56 +503,21 @@ export function NotebookWorkspace() {
                   </div>
                 </ScrollArea>
 
-                {/* Chat input */}
-                <div className="border-t border-border bg-card p-4">
-                  <form onSubmit={handleSendChat}>
-                    <div className="relative rounded-xl border border-border focus-within:border-accent focus-within:shadow-lg focus-within:shadow-accent/10 transition-all">
-                      <Textarea
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendChat(); } }}
-                        placeholder={isGenerating ? 'Waiting for response…' : 'Ask a question about your sources…'}
-                        className="min-h-[56px] max-h-[200px] resize-none border-0 bg-transparent pr-28 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        rows={1}
-                        disabled={isGenerating}
-                      />
-                      <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                        <DropdownMenu>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuTrigger asChild>
-                                <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1">
-                                  <span className="max-w-[80px] truncate">{currentModel.name}</span>
-                                  <ChevronDown className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent side="top"><p className="font-medium">{currentModel.name}</p></TooltipContent>
-                          </Tooltip>
-                          <DropdownMenuContent align="end" className="w-48">
-                            {modelOptions.map((model) => (
-                              <DropdownMenuItem key={model.id} onClick={() => setSelectedModel(model.id)} className={cn("text-sm", selectedModel === model.id && "bg-accent/10 text-accent font-medium")}>
-                                {model.name}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <div className="h-4 w-px bg-border" />
-                        <Button type="submit" size="icon" disabled={!chatInput.trim() || isGenerating} className={cn("h-8 w-8 rounded-lg transition-all", chatInput.trim() && !isGenerating ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-2 px-1">
-                      <span className="text-xs text-muted-foreground">
-                        {enabledDocs.length} source{enabledDocs.length !== 1 ? 's' : ''} enabled
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {isGenerating ? 'AI is generating…' : <><kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> to send</>}
-                      </span>
-                    </div>
-                  </form>
-                </div>
+                {/* Chat input — shared component */}
+                <ChatInput
+                  onSend={(content, modelId) => {
+                    sendMessage(content, modelId);
+                  }}
+                  isGenerating={isGenerating}
+                  previousUserMessage={previousUserMessage}
+                  previousAssistantMessage={previousAssistantMessage}
+                  variant="notebook"
+                  footerLeft={
+                    <span className="text-xs text-muted-foreground">
+                      {enabledDocs.length} source{enabledDocs.length !== 1 ? 's' : ''} enabled
+                    </span>
+                  }
+                />
               </>
             )}
           </div>
