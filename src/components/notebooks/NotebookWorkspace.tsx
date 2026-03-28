@@ -69,6 +69,16 @@ export function NotebookWorkspace() {
   const hasSources = documents.length > 0;
   const enabledDocs = documents.filter((d: any) => d.notebook_enabled !== false);
 
+  const previousUserMessage = useMemo(() => {
+    const userMsgs = messages.filter(m => m.role === 'user');
+    return userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content : undefined;
+  }, [messages]);
+
+  const previousAssistantMessage = useMemo(() => {
+    const assistantMsgs = messages.filter(m => m.role === 'assistant');
+    return assistantMsgs.length > 0 ? assistantMsgs[assistantMsgs.length - 1].content : undefined;
+  }, [messages]);
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
