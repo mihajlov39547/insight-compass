@@ -66,6 +66,7 @@ async function retrieveNotebookDocContext(notebookId: string, userMessage: strin
 
 export function useNotebookAIChat({ notebookId, notebookName, notebookDescription }: UseNotebookAIChatOptions) {
   const { user } = useAuth();
+  const { data: userSettings } = useUserSettings();
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
