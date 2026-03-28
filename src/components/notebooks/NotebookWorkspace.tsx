@@ -55,8 +55,6 @@ export function NotebookWorkspace() {
   });
 
   const [showUpload, setShowUpload] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<DbNotebookNote | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -64,7 +62,6 @@ export function NotebookWorkspace() {
   const [addingToSources, setAddingToSources] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
   const hasSources = documents.length > 0;
   const enabledDocs = documents.filter((d: any) => d.notebook_enabled !== false);
