@@ -345,6 +345,11 @@ export function NotebookWorkspace() {
             <p className="text-xs text-muted-foreground truncate">{notebook.description}</p>
           )}
         </div>
+        <Tooltip><TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowSettings(true)}>
+            <Settings className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger><TooltipContent>Settings</TooltipContent></Tooltip>
         <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setShowShare(true)}>
           <Share2 className="h-4 w-4" /> Share
         </Button>
