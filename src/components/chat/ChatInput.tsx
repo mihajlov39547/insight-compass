@@ -151,23 +151,23 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <div className="h-4 w-px bg-border" />
-            <Tooltip><TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setDocumentScope('chat'); setShowDocuments(true); }}>
-                <Paperclip className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger><TooltipContent>Attach files</TooltipContent></Tooltip>
-            <Tooltip><TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowSettings(true)}>
-                <Settings2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger><TooltipContent>Prompt settings</TooltipContent></Tooltip>
+            {variant === 'project' && (
+              <>
+                <div className="h-4 w-px bg-border" />
+                <Tooltip><TooltipTrigger asChild>
+                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setDocumentScope('chat'); setShowDocuments(true); }}>
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger><TooltipContent>Attach files</TooltipContent></Tooltip>
+              </>
+            )}
             <Button type="submit" size="icon" disabled={!message.trim() || isGenerating} className={cn("h-8 w-8 rounded-lg transition-all", message.trim() && !isGenerating ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
         </div>
-        <div className="flex items-center justify-end mt-2 px-1">
+        <div className="flex items-center justify-between mt-2 px-1">
+          {footerLeft ?? <span />}
           <span className="text-xs text-muted-foreground">
             {isGenerating ? 'AI is generating a response...' : <>Press <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> to send</>}
           </span>
