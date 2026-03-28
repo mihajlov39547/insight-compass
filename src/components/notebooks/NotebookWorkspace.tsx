@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  ArrowLeft, Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
+  Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
   Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
-  FileUp, Share2, Settings
+  FileUp
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useApp } from '@/contexts/AppContext';
@@ -35,7 +35,7 @@ import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { supabase } from '@/integrations/supabase/client';
 
 export function NotebookWorkspace() {
-  const { selectedNotebookId, setSelectedNotebookId, setActiveView, setShowShare, setShowSettings } = useApp();
+  const { selectedNotebookId, setShowShare } = useApp();
   const queryClient = useQueryClient();
   const { data: notebooks = [] } = useNotebooks();
   const updateNotebook = useUpdateNotebook();
@@ -79,13 +79,6 @@ export function NotebookWorkspace() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
-
-  const handleBack = () => {
-    setSelectedNotebookId(null);
-    setActiveView('notebooks');
-  };
-
-
 
   const handleToggleSource = async (doc: DbDocument) => {
     const currentEnabled = (doc as any).notebook_enabled !== false;
@@ -318,11 +311,8 @@ export function NotebookWorkspace() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1 min-w-0">
+      <WorkspaceContextHeader
+        title={(
           <InlineRenameTitle
             value={notebook.name}
             onSave={async (name) => {
@@ -332,19 +322,11 @@ export function NotebookWorkspace() {
             as="h1"
             className="text-lg font-semibold text-foreground"
           />
-          {notebook.description && (
-            <p className="text-xs text-muted-foreground truncate">{notebook.description}</p>
-          )}
-        </div>
-        <Tooltip><TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShowSettings(true)}>
-            <Settings className="h-4 w-4" />
-          </Button>
-        </TooltipTrigger><TooltipContent>Settings</TooltipContent></Tooltip>
-        <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setShowShare(true)}>
-          <Share2 className="h-4 w-4" /> Share
-        </Button>
-      </div>
+        )}
+        subtitle={notebook.description}
+        showShare
+        onShare={() => setShowShare(true)}
+      />
 
       {/* 3-column layout */}
       <ResizablePanelGroup direction="horizontal" className="flex-1">
