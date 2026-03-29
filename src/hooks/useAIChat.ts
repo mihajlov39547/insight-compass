@@ -44,6 +44,7 @@ interface UnifiedSource {
 interface AssistantSourceMetadata {
   documentSources: UnifiedSource[];
   webSearchResponse: WebSearchResponse | null;
+  webSearchResponseId?: string | null;
   webSources: UnifiedSource[];
   combinedSources: UnifiedSource[];
 }
