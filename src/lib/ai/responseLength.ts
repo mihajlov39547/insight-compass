@@ -9,18 +9,18 @@ export interface ResponseLengthConfig {
 const RESPONSE_LENGTH_CONFIG: Record<ResponseLengthStrategy, Omit<ResponseLengthConfig, 'strategy'>> = {
   concise: {
     instruction:
-      'Baseline response length: concise. Lead with the direct answer first. Keep explanation minimal, avoid unnecessary background, and prefer one short paragraph (or compact bullets only when useful). If the user explicitly asks for more detail or a longer format, follow the user request.',
-    maxOutputTokens: 350,
+      'Use one short paragraph with a direct answer first. Target roughly 2–4 sentences. Do not add extra background unless essential for correctness. If the user explicitly asks for more detail, follow the user request.',
+    maxOutputTokens: 180,
   },
   standard: {
     instruction:
-      'Baseline response length: standard. Provide a direct answer plus a short explanation with moderate detail, typically around 2–3 short paragraphs. If the user explicitly asks for shorter or longer output, follow the user request.',
-    maxOutputTokens: 800,
+      'Use 2–3 short paragraphs. Provide a direct answer plus brief context/explanation with moderate detail. If the user explicitly asks for shorter or longer output, follow the user request.',
+    maxOutputTokens: 520,
   },
   detailed: {
     instruction:
-      'Baseline response length: detailed. Provide a comprehensive response with reasoning, nuance, caveats, and implementation detail when relevant, using structure where helpful. If the user explicitly asks for a shorter answer, follow the user request.',
-    maxOutputTokens: 1400,
+      'Use multiple short paragraphs (4+ when appropriate). Include reasoning, nuance, caveats, and implementation detail when relevant. Expand key points with practical specifics. If the user explicitly asks for a shorter answer, follow the user request.',
+    maxOutputTokens: 1200,
   },
 };
 

@@ -6,7 +6,7 @@ import { DEFAULT_MODEL_ID } from '@/data/mockData';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
 import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { normalizeResponseLength } from '@/lib/ai/responseLength';
+import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const SCOPE_CHECK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notebook-scope-check`;
@@ -74,6 +74,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
   const { data: userSettings } = useUserSettings();
   const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
   const responseLength = normalizeResponseLength(userSettings?.response_length);
+  const responseLengthConfig = getResponseLengthConfig(responseLength);
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
@@ -82,6 +83,12 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions) => {
     if (!user || !notebookId || isGenerating) return;
     const resolvedModel = modelId || DEFAULT_MODEL_ID;
+    console.debug('[chat:length] client', {
+      flow: 'notebook',
+      responseLength,
+      strategy: responseLengthConfig.strategy,
+      maxOutputTokens: responseLengthConfig.maxOutputTokens,
+    });
     setError(null);
     setIsGenerating(true);
     setStreamingContent('');
@@ -295,7 +302,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       setIsGenerating(false);
       setStreamingContent(null);
     }
-  }, [user, notebookId, notebookName, notebookDescription, isGenerating, qc, retrievalDepth, responseLength]);
+  }, [user, notebookId, notebookName, notebookDescription, isGenerating, qc, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
   const clearError = useCallback(() => setError(null), []);
 

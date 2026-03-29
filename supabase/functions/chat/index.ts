@@ -52,23 +52,23 @@ function getResponseLengthConfig(value: unknown): { strategy: ResponseLengthStra
     return {
       strategy,
       instruction:
-        "Baseline response length: concise. Lead with the direct answer first, keep explanation minimal, and avoid unnecessary background. Prefer one short paragraph or compact bullets only when useful. If the user explicitly asks for more detail, follow the user request.",
-      maxOutputTokens: 350,
+        "Use one short paragraph with a direct answer first. Target roughly 2–4 sentences. Do not add extra background unless essential for correctness. If the user explicitly asks for more detail, follow the user request.",
+      maxOutputTokens: 180,
     };
   }
   if (strategy === "detailed") {
     return {
       strategy,
       instruction:
-        "Baseline response length: detailed. Provide a comprehensive response with reasoning, nuance, caveats, and implementation detail when relevant. Use structure when useful. If the user explicitly asks for a shorter answer, follow the user request.",
-      maxOutputTokens: 1400,
+        "Use multiple short paragraphs (4+ when appropriate). Include reasoning, nuance, caveats, and implementation detail when relevant. Expand key points with practical specifics. If the user explicitly asks for a shorter answer, follow the user request.",
+      maxOutputTokens: 1200,
     };
   }
   return {
     strategy,
     instruction:
-      "Baseline response length: standard. Provide a direct answer plus short explanation with moderate detail, typically around 2–3 short paragraphs. If the user explicitly asks for shorter or longer output, follow the user request.",
-    maxOutputTokens: 800,
+      "Use 2–3 short paragraphs. Provide a direct answer plus brief context/explanation with moderate detail. If the user explicitly asks for shorter or longer output, follow the user request.",
+    maxOutputTokens: 520,
   };
 }
 
@@ -87,6 +87,12 @@ serve(async (req) => {
 
     const resolvedModel = (model && VALID_MODELS.has(model)) ? model : DEFAULT_MODEL;
     const responseLengthConfig = getResponseLengthConfig(responseLength);
+    console.log("[chat:length] resolved", {
+      incoming: responseLength ?? null,
+      strategy: responseLengthConfig.strategy,
+      maxOutputTokens: responseLengthConfig.maxOutputTokens,
+      model: resolvedModel,
+    });
 
     // Build document grounding section
     let documentGrounding = "";
@@ -178,7 +184,15 @@ Guidelines:
 - When you don't know something, say so honestly
 - Help users think through problems and explore ideas
 - Ground claims only in the provided sources and avoid unsupported assertions
+
+Final answer-shaping instruction (baseline, not an absolute lock):
 - ${responseLengthConfig.instruction}`;
+
+    const hasLengthInstruction = systemPrompt.includes(responseLengthConfig.instruction);
+    console.log("[chat:length] prompt", {
+      strategy: responseLengthConfig.strategy,
+      hasLengthInstruction,
+    });
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -195,10 +209,16 @@ Guidelines:
             ...messages,
           ],
           max_tokens: responseLengthConfig.maxOutputTokens,
+          max_completion_tokens: responseLengthConfig.maxOutputTokens,
           stream: true,
         }),
       }
     );
+    console.log("[chat:length] provider-call", {
+      strategy: responseLengthConfig.strategy,
+      maxOutputTokens: responseLengthConfig.maxOutputTokens,
+      usedField: "max_tokens,max_completion_tokens",
+    });
 
     if (!response.ok) {
       if (response.status === 429) {

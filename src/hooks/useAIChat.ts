@@ -8,7 +8,7 @@ import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/services/web-search';
 import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
-import { normalizeResponseLength } from '@/lib/ai/responseLength';
+import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`;
@@ -83,6 +83,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
   const { data: userSettings } = useUserSettings();
   const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
   const responseLength = normalizeResponseLength(userSettings?.response_length);
+  const responseLengthConfig = getResponseLengthConfig(responseLength);
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
@@ -93,6 +94,12 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
     if (!user || !chatId || isGenerating) return;
 
     const resolvedModel = modelId || DEFAULT_MODEL_ID;
+    console.debug('[chat:length] client', {
+      flow: 'project',
+      responseLength,
+      strategy: responseLengthConfig.strategy,
+      maxOutputTokens: responseLengthConfig.maxOutputTokens,
+    });
     setError(null);
     setFailedPrompt(null);
     setIsGenerating(true);
@@ -347,7 +354,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       setIsGenerating(false);
       setStreamingContent(null);
     }
-  }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, retrievalDepth, responseLength]);
+  }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
   const retry = useCallback(() => {
     if (failedPrompt) {
