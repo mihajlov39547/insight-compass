@@ -7,6 +7,7 @@ import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridR
 import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/services/web-search';
+import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`;
