@@ -37,13 +37,48 @@ interface WebContextItem {
   favicon?: string | null;
 }
 
+type ResponseLengthStrategy = "concise" | "standard" | "detailed";
+
+function normalizeResponseLength(value: unknown): ResponseLengthStrategy {
+  const normalized = typeof value === "string" ? value.trim().toLowerCase() : "standard";
+  if (normalized === "concise") return "concise";
+  if (normalized === "detailed") return "detailed";
+  return "standard";
+}
+
+function getResponseLengthConfig(value: unknown): { strategy: ResponseLengthStrategy; instruction: string; maxOutputTokens: number } {
+  const strategy = normalizeResponseLength(value);
+  if (strategy === "concise") {
+    return {
+      strategy,
+      instruction:
+        "Baseline response length: concise. Lead with the direct answer first, keep explanation minimal, and avoid unnecessary background. Prefer one short paragraph or compact bullets only when useful. If the user explicitly asks for more detail, follow the user request.",
+      maxOutputTokens: 350,
+    };
+  }
+  if (strategy === "detailed") {
+    return {
+      strategy,
+      instruction:
+        "Baseline response length: detailed. Provide a comprehensive response with reasoning, nuance, caveats, and implementation detail when relevant. Use structure when useful. If the user explicitly asks for a shorter answer, follow the user request.",
+      maxOutputTokens: 1400,
+    };
+  }
+  return {
+    strategy,
+    instruction:
+      "Baseline response length: standard. Provide a direct answer plus short explanation with moderate detail, typically around 2–3 short paragraphs. If the user explicitly asks for shorter or longer output, follow the user request.",
+    maxOutputTokens: 800,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, projectDescription, model, documentContext, notebookScope, webContext } = await req.json();
+    const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -51,6 +86,7 @@ serve(async (req) => {
     }
 
     const resolvedModel = (model && VALID_MODELS.has(model)) ? model : DEFAULT_MODEL;
+    const responseLengthConfig = getResponseLengthConfig(responseLength);
 
     // Build document grounding section
     let documentGrounding = "";
@@ -141,7 +177,8 @@ Guidelines:
 - Prefer short paragraphs over dense walls of text
 - When you don't know something, say so honestly
 - Help users think through problems and explore ideas
-- Ground claims only in the provided sources and avoid unsupported assertions`;
+- Ground claims only in the provided sources and avoid unsupported assertions
+- ${responseLengthConfig.instruction}`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -157,6 +194,7 @@ Guidelines:
             { role: "system", content: systemPrompt },
             ...messages,
           ],
+          max_tokens: responseLengthConfig.maxOutputTokens,
           stream: true,
         }),
       }
