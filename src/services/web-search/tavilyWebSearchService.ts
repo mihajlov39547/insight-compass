@@ -16,6 +16,10 @@ interface TavilyEdgeResponse {
   results?: TavilyEdgeResult[];
   responseTime?: number;
   requestId?: string | null;
+  answer?: string | null;
+  followUpQuestions?: string[] | null;
+  images?: unknown[];
+  rawResponse?: Record<string, unknown>;
 }
 
 export class TavilyWebSearchService implements IWebSearchService {
