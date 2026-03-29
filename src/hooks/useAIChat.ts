@@ -161,6 +161,20 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
             } as any,
           })
           .eq('id', insertedUserMessage.id);
+
+        // Persist web search response to dedicated table
+        if (savedWebSearchResponse) {
+          const rawProvider = savedWebSearchResponse.rawProviderResponse ?? savedWebSearchResponse as unknown as Record<string, unknown>;
+          persistWebSearchResponse({
+            userId: user.id,
+            projectId: projectId ?? null,
+            chatId,
+            messageId: insertedUserMessage.id,
+            query: content,
+            normalizedResponse: savedWebSearchResponse,
+            rawResponse: rawProvider,
+          }).catch((err) => console.warn('Web search persistence failed:', err));
+        }
       }
 
       const documentSources = toSources(docResults).map((s) => ({ ...s, type: 'document' as const }));
