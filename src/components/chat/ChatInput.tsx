@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,7 +45,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
 
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
-  const getTextareaHeights = () => {
+  const getTextareaHeights = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return { minHeight: 36, maxHeight: 120 };
 
@@ -58,9 +58,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       minHeight: lineHeight + padding + border,
       maxHeight: lineHeight * MAX_TEXTAREA_ROWS + padding + border,
     };
-  };
+  }, []);
 
-  const canFitValueWithinMaxRows = (nextValue: string) => {
+  const canFitValueWithinMaxRows = useCallback((nextValue: string) => {
     const el = textareaRef.current;
     if (!el) return true;
 
@@ -70,9 +70,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     const fits = el.scrollHeight <= maxHeight + 1;
     el.value = previousDomValue;
     return fits;
-  };
+  }, [getTextareaHeights]);
 
-  const resizeTextarea = () => {
+  const resizeTextarea = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
 
@@ -83,11 +83,11 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     const nextHeight = Math.min(Math.max(el.scrollHeight, minHeight), maxHeight);
     el.style.height = `${nextHeight}px`;
     el.style.overflowY = 'hidden';
-  };
+  }, [getTextareaHeights]);
 
   useEffect(() => {
     resizeTextarea();
-  }, [message]);
+  }, [message, resizeTextarea]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

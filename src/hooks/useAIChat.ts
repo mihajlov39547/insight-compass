@@ -80,6 +80,7 @@ function toWebSources(results: WebSearchResult[]): UnifiedSource[] {
 export function useAIChat({ chatId, chatName, projectId, projectDescription }: UseAIChatOptions) {
   const { user } = useAuth();
   const { data: userSettings } = useUserSettings();
+  const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
@@ -215,7 +216,6 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       };
 
       // 3. Load recent chat history (trimmed by retrieval depth)
-      const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
       const { data: history } = await supabase
         .from('messages')
         .select('role, content')
@@ -344,7 +344,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       setIsGenerating(false);
       setStreamingContent(null);
     }
-  }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription]);
+  }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, retrievalDepth]);
 
   const retry = useCallback(() => {
     if (failedPrompt) {

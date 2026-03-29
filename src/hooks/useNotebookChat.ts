@@ -71,6 +71,7 @@ async function retrieveNotebookDocContext(notebookId: string, userMessage: strin
 export function useNotebookAIChat({ notebookId, notebookName, notebookDescription }: UseNotebookAIChatOptions) {
   const { user } = useAuth();
   const { data: userSettings } = useUserSettings();
+  const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
   const qc = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
@@ -152,7 +153,6 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       const { sources, contextForAI } = await retrieveNotebookDocContext(notebookId, content);
 
       // 4. Load history (trimmed by retrieval depth)
-      const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
       const { data: history } = await (supabase.from('notebook_messages' as any) as any)
         .select('role, content')
         .eq('notebook_id', notebookId)
@@ -292,7 +292,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       setIsGenerating(false);
       setStreamingContent(null);
     }
-  }, [user, notebookId, notebookName, notebookDescription, isGenerating, qc]);
+  }, [user, notebookId, notebookName, notebookDescription, isGenerating, qc, retrievalDepth]);
 
   const clearError = useCallback(() => setError(null), []);
 
