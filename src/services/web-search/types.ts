@@ -14,4 +14,5 @@ export interface WebSearchResponse {
   results: WebSearchResult[];
   responseTime?: number;
   requestId?: string;
+  rawProviderResponse?: Record<string, unknown>;
 }

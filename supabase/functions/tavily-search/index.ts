@@ -123,6 +123,10 @@ serve(async (req) => {
         results,
         responseTime: typeof data?.response_time === "number" ? data.response_time : 0,
         requestId: typeof data?.request_id === "string" ? data.request_id : null,
+        answer: typeof data?.answer === "string" ? data.answer : null,
+        followUpQuestions: Array.isArray(data?.follow_up_questions) ? data.follow_up_questions : null,
+        images: Array.isArray(data?.images) ? data.images : [],
+        rawResponse: data ?? {},
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -7,6 +7,7 @@ import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridR
 import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/services/web-search';
+import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`;
@@ -160,6 +161,20 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
             } as any,
           })
           .eq('id', insertedUserMessage.id);
+
+        // Persist web search response to dedicated table
+        if (savedWebSearchResponse) {
+          const rawProvider = savedWebSearchResponse.rawProviderResponse ?? savedWebSearchResponse as unknown as Record<string, unknown>;
+          persistWebSearchResponse({
+            userId: user.id,
+            projectId: projectId ?? null,
+            chatId,
+            messageId: insertedUserMessage.id,
+            query: content,
+            normalizedResponse: savedWebSearchResponse,
+            rawResponse: rawProvider,
+          }).catch((err) => console.warn('Web search persistence failed:', err));
+        }
       }
 
       const documentSources = toSources(docResults).map((s) => ({ ...s, type: 'document' as const }));

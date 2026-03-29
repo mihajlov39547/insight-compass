@@ -658,6 +658,75 @@ export type Database = {
         }
         Relationships: []
       }
+      web_search_responses: {
+        Row: {
+          chat_id: string | null
+          created_at: string
+          error_message: string | null
+          follow_up_questions: Json | null
+          id: string
+          images: Json
+          message_id: string | null
+          metadata: Json
+          normalized_response: Json
+          project_id: string | null
+          provider: string
+          provider_answer: string | null
+          provider_request_id: string | null
+          provider_response_time: number | null
+          query: string
+          raw_response: Json
+          results: Json
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          chat_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          follow_up_questions?: Json | null
+          id?: string
+          images?: Json
+          message_id?: string | null
+          metadata?: Json
+          normalized_response: Json
+          project_id?: string | null
+          provider: string
+          provider_answer?: string | null
+          provider_request_id?: string | null
+          provider_response_time?: number | null
+          query: string
+          raw_response: Json
+          results?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          chat_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          follow_up_questions?: Json | null
+          id?: string
+          images?: Json
+          message_id?: string | null
+          metadata?: Json
+          normalized_response?: Json
+          project_id?: string | null
+          provider?: string
+          provider_answer?: string | null
+          provider_request_id?: string | null
+          provider_response_time?: number | null
+          query?: string
+          raw_response?: Json
+          results?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
