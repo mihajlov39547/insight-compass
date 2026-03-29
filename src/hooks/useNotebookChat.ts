@@ -7,6 +7,7 @@ import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridR
 import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
+import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const SCOPE_CHECK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notebook-scope-check`;
@@ -48,6 +49,11 @@ interface UseNotebookAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
+}
+
+interface NotebookSourceMetadata {
+  items: any[];
+  responseLength: ResponseLengthStrategy;
 }
 
 /** Retrieve notebook document context using hybrid retrieval (only enabled docs) */
@@ -152,7 +158,10 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           role: 'assistant',
           content: refusalContent,
           model_id: resolvedModel,
-          sources: [],
+          sources: {
+            items: [],
+            responseLength,
+          } as NotebookSourceMetadata,
         });
         qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
         return;
@@ -237,7 +246,10 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         role: 'assistant',
         content: fullContent,
         model_id: resolvedModel,
-        sources: sources.length > 0 ? sources : [],
+        sources: {
+          items: sources.length > 0 ? sources : [],
+          responseLength,
+        } as NotebookSourceMetadata,
       });
 
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });

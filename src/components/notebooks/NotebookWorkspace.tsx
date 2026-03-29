@@ -654,12 +654,24 @@ export function NotebookWorkspace() {
 
 /* --- Notebook Chat Message --- */
 function NotebookChatMessage({ message, onSaveToNote, onCopy }: {
-  message: { id: string; role: string; content: string; sources?: any[] | null; created_at: string; model_id?: string | null };
+  message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
 }) {
   const isUser = message.role === 'user';
   const modelName = message.model_id ? modelOptions.find(m => m.id === message.model_id)?.name ?? message.model_id.split('/').pop() : null;
+
+  const rawSources = message.sources;
+  const sourceItems = Array.isArray(rawSources)
+    ? rawSources
+    : (rawSources && Array.isArray((rawSources as any).items) ? (rawSources as any).items : []);
+  const responseLengthLabel = (() => {
+    const value = typeof (rawSources as any)?.responseLength === 'string' ? (rawSources as any).responseLength.toLowerCase() : '';
+    if (value === 'concise') return 'Concise';
+    if (value === 'detailed') return 'Detailed';
+    if (value === 'standard') return 'Standard';
+    return null;
+  })();
 
   return (
     <div className={cn("flex gap-3 animate-fade-in", isUser ? "flex-row-reverse" : "flex-row")}>
@@ -674,9 +686,9 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy }: {
         </div>
 
         {/* Sources */}
-        {!isUser && message.sources && message.sources.length > 0 && (
+        {!isUser && sourceItems.length > 0 && (
           <SourceAttribution
-            sources={(message.sources || []).map((s: any, i: number) => ({
+            sources={sourceItems.map((s: any, i: number) => ({
               id: s.id || `src-${i}`,
               type: s.type === 'web' ? 'web' : 'document',
               documentId: s.documentId || s.id || `src-${i}`,
@@ -702,6 +714,11 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy }: {
               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
                 <Bot className="h-2.5 w-2.5" /> AI{modelName ? ` · ${modelName}` : ''}
               </span>
+              {responseLengthLabel && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
+                  {responseLengthLabel}
+                </span>
+              )}
               <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] gap-1 text-muted-foreground hover:text-foreground" onClick={() => onSaveToNote(message.content)}>
                 <BookmarkPlus className="h-3 w-3" /> Save to note
               </Button>

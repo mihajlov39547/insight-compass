@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Sparkles, Bot } from 'lucide-react';
+import { User, Sparkles, Bot, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Message, modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ interface ChatMessageProps {
 export function ChatMessage({ message, onRetry }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const { setActiveView, setSelectedProjectId } = useApp();
+  const [copied, setCopied] = React.useState(false);
   const modelName = message.modelId 
     ? modelOptions.find(m => m.id === message.modelId)?.name ?? message.modelId.split('/').pop()
     : null;
@@ -34,6 +35,27 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
       return [...documentSources, ...webSources];
     }
     return [];
+  };
+
+  const getResponseLengthLabel = (raw: any): string | null => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const value = typeof raw.responseLength === 'string' ? raw.responseLength.toLowerCase() : '';
+    if (value === 'concise') return 'Concise';
+    if (value === 'detailed') return 'Detailed';
+    if (value === 'standard') return 'Standard';
+    return null;
+  };
+
+  const responseLengthLabel = getResponseLengthLabel(message.sources);
+
+  const handleCopyMarkdown = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
   };
 
   // Map sources to SourceItem format
@@ -95,10 +117,25 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
           {!isUser && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
-              <Bot className="h-2.5 w-2.5" />
-              AI-generated{modelName ? ` · ${modelName}` : ''}
-            </span>
+            <>
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
+                <Bot className="h-2.5 w-2.5" />
+                AI-generated{modelName ? ` · ${modelName}` : ''}
+              </span>
+              {responseLengthLabel && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
+                  {responseLengthLabel}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleCopyMarkdown}
+                className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded hover:text-foreground transition-colors"
+              >
+                {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            </>
           )}
         </div>
       </div>

@@ -9,6 +9,7 @@ import { useUserSettings } from '@/hooks/useUserSettings';
 import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/services/web-search';
 import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
+import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`;
@@ -48,6 +49,7 @@ interface AssistantSourceMetadata {
   webSearchResponseId?: string | null;
   webSources: UnifiedSource[];
   combinedSources: UnifiedSource[];
+  responseLength: ResponseLengthStrategy;
 }
 
 function toWebContext(results: WebSearchResult[]) {
@@ -222,6 +224,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         webSearchResponseId,
         webSources: webSources.length > 0 ? webSources : fallbackWebSources,
         combinedSources: persistedSources,
+        responseLength,
       };
 
       // 3. Load recent chat history (trimmed by retrieval depth)

@@ -26,7 +26,7 @@ export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  sources?: { title: string; snippet: string; relevance: number }[];
+  sources?: any;
   timestamp: string;
   modelId?: string;
 }
