@@ -44,6 +44,7 @@ interface UnifiedSource {
 interface AssistantSourceMetadata {
   documentSources: UnifiedSource[];
   webSearchResponse: WebSearchResponse | null;
+  webSearchResponseId?: string | null;
   webSources: UnifiedSource[];
   combinedSources: UnifiedSource[];
 }
@@ -152,20 +153,12 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         : null;
       resolvedWebSearchResponse = savedWebSearchResponse;
 
-      if (options?.useWebSearch && insertedUserMessage?.id) {
-        await supabase
-          .from('messages')
-          .update({
-            sources: {
-              webSearchResponse: savedWebSearchResponse,
-            } as any,
-          })
-          .eq('id', insertedUserMessage.id);
-
-        // Persist web search response to dedicated table
-        if (savedWebSearchResponse) {
-          const rawProvider = savedWebSearchResponse.rawProviderResponse ?? savedWebSearchResponse as unknown as Record<string, unknown>;
-          persistWebSearchResponse({
+      // Persist web search response to dedicated table and capture ID
+      let webSearchResponseId: string | null = null;
+      if (options?.useWebSearch && savedWebSearchResponse && insertedUserMessage?.id) {
+        const rawProvider = savedWebSearchResponse.rawProviderResponse ?? savedWebSearchResponse as unknown as Record<string, unknown>;
+        try {
+          const persisted = await persistWebSearchResponse({
             userId: user.id,
             projectId: projectId ?? null,
             chatId,
@@ -173,7 +166,13 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
             query: content,
             normalizedResponse: savedWebSearchResponse,
             rawResponse: rawProvider,
-          }).catch((err) => console.warn('Web search persistence failed:', err));
+          });
+          if (persisted) {
+            webSearchResponseId = persisted.id;
+            console.log('[web-search] persisted row id:', persisted.id);
+          }
+        } catch (err) {
+          console.warn('Web search persistence failed:', err);
         }
       }
 
@@ -210,6 +209,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       const assistantSourceMetadata: AssistantSourceMetadata = {
         documentSources: documentSources.length > 0 ? documentSources : fallbackDocSources,
         webSearchResponse: savedWebSearchResponse,
+        webSearchResponseId,
         webSources: webSources.length > 0 ? webSources : fallbackWebSources,
         combinedSources: persistedSources,
       };
