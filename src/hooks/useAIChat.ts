@@ -209,6 +209,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       const assistantSourceMetadata: AssistantSourceMetadata = {
         documentSources: documentSources.length > 0 ? documentSources : fallbackDocSources,
         webSearchResponse: savedWebSearchResponse,
+        webSearchResponseId,
         webSources: webSources.length > 0 ? webSources : fallbackWebSources,
         combinedSources: persistedSources,
       };
