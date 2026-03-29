@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppProvider } from '@/contexts/AppContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { ContextualHeader } from '@/components/layout/ContextualHeader';
@@ -24,7 +24,7 @@ import { RecentsLanding } from '@/components/views/RecentsLanding';
 import { SharedLanding } from '@/components/views/SharedLanding';
 import { SearchDashboard } from '@/components/views/SearchDashboard';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useCreateProject } from '@/hooks/useProjects';
 
 function MainContent() {

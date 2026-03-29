@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { DEFAULT_MODEL_ID } from '@/data/mockData';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
 import { trimChatHistory } from '@/lib/chatHistoryConfig';

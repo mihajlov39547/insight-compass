@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useNotebooks, useUpdateNotebook } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDeleteNotebookNote, DbNotebookNote } from '@/hooks/useNotebookNotes';

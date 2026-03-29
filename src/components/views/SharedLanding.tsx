@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useSharedItems, SharedItem } from '@/hooks/useSharedItems';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { formatDistanceToNow } from 'date-fns';
 
 function SharedItemCard({ item }: { item: SharedItem }) {

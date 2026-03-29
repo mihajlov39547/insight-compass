@@ -3,7 +3,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { InlineRenameTitle } from '@/components/shared/InlineRenameTitle';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useProjects, useUpdateProject } from '@/hooks/useProjects';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 import { toast } from 'sonner';

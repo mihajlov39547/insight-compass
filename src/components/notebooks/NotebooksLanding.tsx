@@ -7,8 +7,8 @@ import {
   BarChart3, GraduationCap, Camera, BookOpenCheck
 } from 'lucide-react';
 import { useNotebooks, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, useCreateNotebook, DbNotebook } from '@/hooks/useNotebooks';
-import { useAuth } from '@/contexts/AuthContext';
-import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/useAuth';
+import { useApp } from '@/contexts/useApp';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';

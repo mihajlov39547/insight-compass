@@ -3,7 +3,7 @@ import { FolderOpen, MessageSquare, FileText, X, Loader2, AlertCircle, Search } 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useWorkspaceSearch } from '@/hooks/useWorkspaceSearch';
 import { useProjects } from '@/hooks/useProjects';
 

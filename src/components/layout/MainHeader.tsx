@@ -19,8 +19,8 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useApp } from '@/contexts/AppContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useApp } from '@/contexts/useApp';
+import { useAuth } from '@/contexts/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 

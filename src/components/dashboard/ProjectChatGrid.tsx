@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { MessageSquare, FileText, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { DbChat, useDeleteChat, useUpdateChat } from '@/hooks/useChats';
 import { useChatPreviews } from '@/hooks/useChatPreviews';
 import { formatDistanceToNow } from 'date-fns';

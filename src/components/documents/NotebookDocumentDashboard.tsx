@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useDeleteDocument, useRetryProcessing, DbDocument } from '@/hooks/useDocuments';

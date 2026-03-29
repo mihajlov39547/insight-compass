@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { useRecentChats } from '@/hooks/useRecentChats';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { Clock, BookOpenCheck, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 

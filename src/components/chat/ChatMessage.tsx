@@ -5,7 +5,7 @@ import { Message, modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { MarkdownContent } from './MarkdownContent';
 import { SourceAttribution, SourceItem } from './SourceAttribution';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 
 interface ChatMessageProps {
   message: Message;

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
 import { useCreateChat, useChats } from '@/hooks/useChats';
 import { ChatInput } from './ChatInput';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useMessages } from '@/hooks/useMessages';
 import { useProjects } from '@/hooks/useProjects';
 import { useAIChat } from '@/hooks/useAIChat';

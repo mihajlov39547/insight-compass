@@ -1,8 +1,8 @@
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { FolderOpen, BookOpenCheck, MessageSquare, FileText, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useUploadDocuments, isFileAllowed } from '@/hooks/useDocuments';
 import { toast } from '@/hooks/use-toast';
 

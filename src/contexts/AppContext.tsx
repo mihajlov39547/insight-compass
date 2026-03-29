@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { useState, ReactNode, useCallback } from 'react';
 import {
   Plan,
   currentUser,
@@ -9,10 +9,11 @@ import {
 } from '@/data/mockData';
 import { DbProject } from '@/hooks/useProjects';
 import { DbChat } from '@/hooks/useChats';
+import { AppContext } from '@/contexts/app-context';
 
 export type ActiveView = 'default' | 'home' | 'projects' | 'project-documents' | 'chat-documents' | 'notebooks' | 'notebook-documents' | 'notebook-workspace' | 'resources' | 'starred' | 'recents' | 'shared' | 'search';
 
-interface AppContextType {
+export interface AppContextType {
   // User
   user: User;
   setUserPlan: (plan: Plan) => void;
@@ -69,8 +70,6 @@ interface AppContextType {
   showNotifications: boolean;
   setShowNotifications: (show: boolean) => void;
 }
-
-const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(currentUser);
@@ -154,10 +153,3 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useApp() {
-  const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
-  return context;
-}

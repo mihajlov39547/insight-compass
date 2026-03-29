@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/useUserSettings';
 import { modelOptions } from '@/data/mockData';
 import { toast } from 'sonner';

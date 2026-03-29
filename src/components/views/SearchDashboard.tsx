@@ -3,8 +3,8 @@ import { Search, FolderOpen, MessageSquare, BookOpenCheck, StickyNote, FileText,
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { useApp } from '@/contexts/AppContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useApp } from '@/contexts/useApp';
+import { useAuth } from '@/contexts/useAuth';
 import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { supabase } from '@/integrations/supabase/client';
