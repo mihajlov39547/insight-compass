@@ -17,3 +17,5 @@ export async function searchWeb(query: string) {
 
 export type { WebSearchProvider, WebSearchResponse, WebSearchResult } from './types';
 export type { IWebSearchService } from './provider';
+export { persistWebSearchResponse } from './persistWebSearch';
+export type { PersistWebSearchParams, PersistedWebSearch } from './persistWebSearch';
