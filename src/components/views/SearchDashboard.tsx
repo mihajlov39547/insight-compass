@@ -78,13 +78,13 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
         const messageChatIds = new Set<string>();
         (messagesRes.data ?? []).forEach(m => messageChatIds.add(m.chat_id));
         
-        let chatInfoMap = new Map<string, { name: string; project_id: string }>();
+        const chatInfoMap = new Map<string, { name: string; project_id: string }>();
         if (messageChatIds.size > 0) {
           const { data: chatInfos } = await supabase.from('chats').select('id, name, project_id').in('id', [...messageChatIds]);
           (chatInfos ?? []).forEach(c => { chatInfoMap.set(c.id, { name: c.name, project_id: c.project_id }); chatProjectIds.add(c.project_id); });
         }
 
-        let projectNameMap = new Map<string, string>();
+        const projectNameMap = new Map<string, string>();
         if (chatProjectIds.size > 0) {
           const { data: pNames } = await supabase.from('projects').select('id, name').in('id', [...chatProjectIds]);
           (pNames ?? []).forEach(p => projectNameMap.set(p.id, p.name));
@@ -125,7 +125,7 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
         (nbMsgRes.data ?? []).forEach(m => nbIdsFromMsgs.add(m.notebook_id));
         (nbNotesRes.data ?? []).forEach(n => nbIdsFromMsgs.add(n.notebook_id));
         
-        let nbNameMap = new Map<string, { name: string; description: string }>();
+        const nbNameMap = new Map<string, { name: string; description: string }>();
         if (nbIdsFromMsgs.size > 0) {
           const { data: nbInfos } = await supabase.from('notebooks').select('id, name, description').in('id', [...nbIdsFromMsgs]);
           (nbInfos ?? []).forEach(n => nbNameMap.set(n.id, { name: n.name, description: n.description }));

@@ -166,7 +166,11 @@ export function AppSidebar() {
 
   const toggleProject = (projectId: string) => {
     const next = new Set(expandedProjects);
-    next.has(projectId) ? next.delete(projectId) : next.add(projectId);
+    if (next.has(projectId)) {
+      next.delete(projectId);
+    } else {
+      next.add(projectId);
+    }
     setExpandedProjects(next);
   };
 
@@ -603,7 +607,7 @@ export function AppSidebar() {
                   </Button>
                 </TooltipTrigger><TooltipContent side="top" className="text-xs">{dateLabel}</TooltipContent></Tooltip>
                 <Tooltip><TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={(e) => { e.stopPropagation(); expandedProjects.size === projects.length ? collapseAll() : expandAll(); }}>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={(e) => { e.stopPropagation(); if (expandedProjects.size === projects.length) { collapseAll(); } else { expandAll(); } }}>
                     {expandedProjects.size === projects.length ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
                   </Button>
                 </TooltipTrigger><TooltipContent side="top" className="text-xs">{expandedProjects.size === projects.length ? 'Collapse all' : 'Expand all'}</TooltipContent></Tooltip>
