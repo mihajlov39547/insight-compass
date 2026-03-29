@@ -49,6 +49,7 @@ export class TavilyWebSearchService implements IWebSearchService {
       results,
       responseTime: typeof safeData.responseTime === 'number' ? safeData.responseTime : undefined,
       requestId: typeof safeData.requestId === 'string' ? safeData.requestId : undefined,
+      rawProviderResponse: safeData.rawResponse ?? safeData as unknown as Record<string, unknown>,
     };
   }
 }
