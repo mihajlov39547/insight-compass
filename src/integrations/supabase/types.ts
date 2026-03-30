@@ -14,6 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_runs: {
+        Row: {
+          activity_id: string
+          activity_key: string
+          activity_name: string
+          attempt_count: number
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          error_details: Json | null
+          error_message: string | null
+          execution_priority: number
+          finished_at: string | null
+          handler_key: string
+          id: string
+          input_payload: Json | null
+          is_optional: boolean
+          is_terminal: boolean
+          lease_expires_at: string | null
+          max_attempts: number
+          metadata: Json
+          next_retry_at: string | null
+          output_payload: Json | null
+          queue_msg_id: number | null
+          retry_backoff_multiplier: number
+          retry_backoff_seconds: number
+          scheduled_at: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["activity_run_status"]
+          updated_at: string
+          workflow_run_id: string
+        }
+        Insert: {
+          activity_id: string
+          activity_key: string
+          activity_name: string
+          attempt_count?: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          error_details?: Json | null
+          error_message?: string | null
+          execution_priority?: number
+          finished_at?: string | null
+          handler_key: string
+          id?: string
+          input_payload?: Json | null
+          is_optional?: boolean
+          is_terminal?: boolean
+          lease_expires_at?: string | null
+          max_attempts?: number
+          metadata?: Json
+          next_retry_at?: string | null
+          output_payload?: Json | null
+          queue_msg_id?: number | null
+          retry_backoff_multiplier?: number
+          retry_backoff_seconds?: number
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["activity_run_status"]
+          updated_at?: string
+          workflow_run_id: string
+        }
+        Update: {
+          activity_id?: string
+          activity_key?: string
+          activity_name?: string
+          attempt_count?: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          error_details?: Json | null
+          error_message?: string | null
+          execution_priority?: number
+          finished_at?: string | null
+          handler_key?: string
+          id?: string
+          input_payload?: Json | null
+          is_optional?: boolean
+          is_terminal?: boolean
+          lease_expires_at?: string | null
+          max_attempts?: number
+          metadata?: Json
+          next_retry_at?: string | null
+          output_payload?: Json | null
+          queue_msg_id?: number | null
+          retry_backoff_multiplier?: number
+          retry_backoff_seconds?: number
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["activity_run_status"]
+          updated_at?: string
+          workflow_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_runs_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_runs_workflow_run_id_fkey"
+            columns: ["workflow_run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chats: {
         Row: {
           created_at: string
@@ -559,6 +670,72 @@ export type Database = {
         }
         Relationships: []
       }
+      queue_dispatches: {
+        Row: {
+          activity_run_id: string
+          claimed_at: string | null
+          completed_at: string | null
+          created_at: string
+          dead_lettered_at: string | null
+          enqueued_at: string
+          error_message: string | null
+          id: string
+          idempotency_key: string | null
+          metadata: Json
+          pgmq_msg_id: number | null
+          queue_name: string
+          status: string
+          workflow_run_id: string
+        }
+        Insert: {
+          activity_run_id: string
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          dead_lettered_at?: string | null
+          enqueued_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string | null
+          metadata?: Json
+          pgmq_msg_id?: number | null
+          queue_name: string
+          status?: string
+          workflow_run_id: string
+        }
+        Update: {
+          activity_run_id?: string
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          dead_lettered_at?: string | null
+          enqueued_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string | null
+          metadata?: Json
+          pgmq_msg_id?: number | null
+          queue_name?: string
+          status?: string
+          workflow_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_dispatches_activity_run_id_fkey"
+            columns: ["activity_run_id"]
+            isOneToOne: false
+            referencedRelation: "activity_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_dispatches_workflow_run_id_fkey"
+            columns: ["workflow_run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shares: {
         Row: {
           created_at: string
@@ -727,11 +904,387 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_activities: {
+        Row: {
+          concurrency_key: string | null
+          created_at: string
+          description: string
+          execution_priority: number
+          handler_key: string
+          id: string
+          is_entry: boolean
+          is_optional: boolean
+          is_terminal: boolean
+          key: string
+          metadata: Json
+          name: string
+          retry_backoff_multiplier: number
+          retry_backoff_seconds: number
+          retry_max_attempts: number
+          timeout_seconds: number | null
+          version_id: string
+          writes_output: boolean
+        }
+        Insert: {
+          concurrency_key?: string | null
+          created_at?: string
+          description?: string
+          execution_priority?: number
+          handler_key: string
+          id?: string
+          is_entry?: boolean
+          is_optional?: boolean
+          is_terminal?: boolean
+          key: string
+          metadata?: Json
+          name: string
+          retry_backoff_multiplier?: number
+          retry_backoff_seconds?: number
+          retry_max_attempts?: number
+          timeout_seconds?: number | null
+          version_id: string
+          writes_output?: boolean
+        }
+        Update: {
+          concurrency_key?: string | null
+          created_at?: string
+          description?: string
+          execution_priority?: number
+          handler_key?: string
+          id?: string
+          is_entry?: boolean
+          is_optional?: boolean
+          is_terminal?: boolean
+          key?: string
+          metadata?: Json
+          name?: string
+          retry_backoff_multiplier?: number
+          retry_backoff_seconds?: number
+          retry_max_attempts?: number
+          timeout_seconds?: number | null
+          version_id?: string
+          writes_output?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_activities_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_context_snapshots: {
+        Row: {
+          activity_run_id: string | null
+          created_at: string
+          id: string
+          reason: string
+          snapshot_context: Json
+          workflow_run_id: string
+        }
+        Insert: {
+          activity_run_id?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          snapshot_context: Json
+          workflow_run_id: string
+        }
+        Update: {
+          activity_run_id?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          snapshot_context?: Json
+          workflow_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_context_snapshots_activity_run_id_fkey"
+            columns: ["activity_run_id"]
+            isOneToOne: false
+            referencedRelation: "activity_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_context_snapshots_workflow_run_id_fkey"
+            columns: ["workflow_run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_definition_versions: {
+        Row: {
+          created_at: string
+          default_context: Json
+          description: string
+          id: string
+          is_current: boolean
+          metadata: Json
+          version: number
+          workflow_definition_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_context?: Json
+          description?: string
+          id?: string
+          is_current?: boolean
+          metadata?: Json
+          version?: number
+          workflow_definition_id: string
+        }
+        Update: {
+          created_at?: string
+          default_context?: Json
+          description?: string
+          id?: string
+          is_current?: boolean
+          metadata?: Json
+          version?: number
+          workflow_definition_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_definition_versions_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_definitions: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          key: string
+          metadata: Json
+          name: string
+          status: Database["public"]["Enums"]["workflow_definition_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          key: string
+          metadata?: Json
+          name: string
+          status?: Database["public"]["Enums"]["workflow_definition_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          key?: string
+          metadata?: Json
+          name?: string
+          status?: Database["public"]["Enums"]["workflow_definition_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      workflow_edges: {
+        Row: {
+          condition_expr: Json | null
+          created_at: string
+          from_activity_id: string
+          id: string
+          join_policy: Database["public"]["Enums"]["edge_join_policy"]
+          metadata: Json
+          to_activity_id: string
+          version_id: string
+        }
+        Insert: {
+          condition_expr?: Json | null
+          created_at?: string
+          from_activity_id: string
+          id?: string
+          join_policy?: Database["public"]["Enums"]["edge_join_policy"]
+          metadata?: Json
+          to_activity_id: string
+          version_id: string
+        }
+        Update: {
+          condition_expr?: Json | null
+          created_at?: string
+          from_activity_id?: string
+          id?: string
+          join_policy?: Database["public"]["Enums"]["edge_join_policy"]
+          metadata?: Json
+          to_activity_id?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_edges_from_activity_id_fkey"
+            columns: ["from_activity_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_edges_to_activity_id_fkey"
+            columns: ["to_activity_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_edges_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_events: {
+        Row: {
+          activity_run_id: string | null
+          actor: string | null
+          created_at: string
+          details: Json
+          event_type: Database["public"]["Enums"]["workflow_event_type"]
+          id: string
+          workflow_run_id: string
+        }
+        Insert: {
+          activity_run_id?: string | null
+          actor?: string | null
+          created_at?: string
+          details?: Json
+          event_type: Database["public"]["Enums"]["workflow_event_type"]
+          id?: string
+          workflow_run_id: string
+        }
+        Update: {
+          activity_run_id?: string | null
+          actor?: string | null
+          created_at?: string
+          details?: Json
+          event_type?: Database["public"]["Enums"]["workflow_event_type"]
+          id?: string
+          workflow_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_events_activity_run_id_fkey"
+            columns: ["activity_run_id"]
+            isOneToOne: false
+            referencedRelation: "activity_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_events_workflow_run_id_fkey"
+            columns: ["workflow_run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_runs: {
+        Row: {
+          completed_at: string | null
+          context: Json
+          created_at: string
+          failure_reason: string | null
+          id: string
+          idempotency_key: string | null
+          input_payload: Json
+          last_heartbeat_at: string | null
+          metadata: Json
+          output_payload: Json | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["workflow_run_status"]
+          timeout_seconds: number | null
+          trigger_entity_id: string | null
+          trigger_entity_type: string | null
+          updated_at: string
+          user_id: string | null
+          version_id: string
+          workflow_definition_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          context?: Json
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          idempotency_key?: string | null
+          input_payload?: Json
+          last_heartbeat_at?: string | null
+          metadata?: Json
+          output_payload?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          timeout_seconds?: number | null
+          trigger_entity_id?: string | null
+          trigger_entity_type?: string | null
+          updated_at?: string
+          user_id?: string | null
+          version_id: string
+          workflow_definition_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          context?: Json
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          idempotency_key?: string | null
+          input_payload?: Json
+          last_heartbeat_at?: string | null
+          metadata?: Json
+          output_payload?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          timeout_seconds?: number | null
+          trigger_entity_id?: string | null
+          trigger_entity_type?: string | null
+          updated_at?: string
+          user_id?: string | null
+          version_id?: string
+          workflow_definition_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_runs_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_runs_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      claim_next_activity: {
+        Args: {
+          p_handler_keys?: string[]
+          p_lease_seconds?: number
+          p_worker_id: string
+        }
+        Returns: string
+      }
       get_document_chunk_stats: {
         Args: { doc_ids: string[] }
         Returns: {
@@ -752,6 +1305,10 @@ export type Database = {
       get_email_by_username: {
         Args: { lookup_username: string }
         Returns: string
+      }
+      is_activity_runnable: {
+        Args: { p_activity_id: string; p_workflow_run_id: string }
+        Returns: boolean
       }
       search_document_chunks: {
         Args: {
@@ -794,7 +1351,44 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      activity_run_status:
+        | "pending"
+        | "queued"
+        | "claimed"
+        | "running"
+        | "completed"
+        | "failed"
+        | "skipped"
+        | "cancelled"
+        | "waiting_retry"
+      edge_join_policy: "all" | "any"
+      workflow_definition_status: "draft" | "active" | "inactive" | "archived"
+      workflow_event_type:
+        | "workflow_created"
+        | "workflow_started"
+        | "workflow_completed"
+        | "workflow_failed"
+        | "workflow_cancelled"
+        | "workflow_timed_out"
+        | "workflow_context_updated"
+        | "activity_scheduled"
+        | "activity_queued"
+        | "activity_claimed"
+        | "activity_started"
+        | "activity_completed"
+        | "activity_failed"
+        | "activity_retrying"
+        | "activity_skipped"
+        | "activity_cancelled"
+        | "activity_output_written"
+        | "activity_heartbeat"
+      workflow_run_status:
+        | "pending"
+        | "running"
+        | "completed"
+        | "failed"
+        | "cancelled"
+        | "timed_out"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -921,6 +1515,48 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      activity_run_status: [
+        "pending",
+        "queued",
+        "claimed",
+        "running",
+        "completed",
+        "failed",
+        "skipped",
+        "cancelled",
+        "waiting_retry",
+      ],
+      edge_join_policy: ["all", "any"],
+      workflow_definition_status: ["draft", "active", "inactive", "archived"],
+      workflow_event_type: [
+        "workflow_created",
+        "workflow_started",
+        "workflow_completed",
+        "workflow_failed",
+        "workflow_cancelled",
+        "workflow_timed_out",
+        "workflow_context_updated",
+        "activity_scheduled",
+        "activity_queued",
+        "activity_claimed",
+        "activity_started",
+        "activity_completed",
+        "activity_failed",
+        "activity_retrying",
+        "activity_skipped",
+        "activity_cancelled",
+        "activity_output_written",
+        "activity_heartbeat",
+      ],
+      workflow_run_status: [
+        "pending",
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+        "timed_out",
+      ],
+    },
   },
 } as const
