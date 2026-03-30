@@ -844,17 +844,22 @@ async function runValidation(supabase: SupabaseClient): Promise<void> {
 
 // Export for use as module or run directly
 if (typeof require !== "undefined" && require.main === module) {
-  const { createClient } = require("@supabase/supabase-js");
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  void (async () => {
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseKey) {
-    console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+      process.exit(1);
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    await runValidation(supabase as unknown as SupabaseClient);
+  })().catch((error) => {
+    console.error("Validation runner failed:", error);
     process.exit(1);
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
-  runValidation(supabase);
+  });
 }
 
 export { runValidation, validateScenarioA, validateScenarioB, validateScenarioC };
