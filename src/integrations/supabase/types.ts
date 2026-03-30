@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_attempts: {
+        Row: {
+          activity_run_id: string
+          attempt_number: number
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          duration_ms: number | null
+          error_details: Json | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          input_payload: Json | null
+          lease_expires_at: string | null
+          output_payload: Json | null
+          started_at: string | null
+          workflow_run_id: string
+        }
+        Insert: {
+          activity_run_id: string
+          attempt_number: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          input_payload?: Json | null
+          lease_expires_at?: string | null
+          output_payload?: Json | null
+          started_at?: string | null
+          workflow_run_id: string
+        }
+        Update: {
+          activity_run_id?: string
+          attempt_number?: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          input_payload?: Json | null
+          lease_expires_at?: string | null
+          output_payload?: Json | null
+          started_at?: string | null
+          workflow_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_attempts_activity_run"
+            columns: ["activity_run_id"]
+            isOneToOne: false
+            referencedRelation: "activity_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_attempts_workflow_run"
+            columns: ["workflow_run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_runs: {
         Row: {
           activity_id: string
@@ -44,6 +113,7 @@ export type Database = {
           started_at: string | null
           status: Database["public"]["Enums"]["activity_run_status"]
           updated_at: string
+          version_id: string
           workflow_run_id: string
         }
         Insert: {
@@ -75,6 +145,7 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["activity_run_status"]
           updated_at?: string
+          version_id: string
           workflow_run_id: string
         }
         Update: {
@@ -106,15 +177,16 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["activity_run_status"]
           updated_at?: string
+          version_id?: string
           workflow_run_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "activity_runs_activity_id_fkey"
-            columns: ["activity_id"]
+            foreignKeyName: "activity_runs_version_activity_fkey"
+            columns: ["version_id", "activity_id"]
             isOneToOne: false
             referencedRelation: "workflow_activities"
-            referencedColumns: ["id"]
+            referencedColumns: ["version_id", "id"]
           },
           {
             foreignKeyName: "activity_runs_workflow_run_id_fkey"
@@ -1124,18 +1196,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "workflow_edges_from_activity_id_fkey"
-            columns: ["from_activity_id"]
+            foreignKeyName: "workflow_edges_from_version_activity_fkey"
+            columns: ["version_id", "from_activity_id"]
             isOneToOne: false
             referencedRelation: "workflow_activities"
-            referencedColumns: ["id"]
+            referencedColumns: ["version_id", "id"]
           },
           {
-            foreignKeyName: "workflow_edges_to_activity_id_fkey"
-            columns: ["to_activity_id"]
+            foreignKeyName: "workflow_edges_to_version_activity_fkey"
+            columns: ["version_id", "to_activity_id"]
             isOneToOne: false
             referencedRelation: "workflow_activities"
-            referencedColumns: ["id"]
+            referencedColumns: ["version_id", "id"]
           },
           {
             foreignKeyName: "workflow_edges_version_id_fkey"
@@ -1257,11 +1329,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "workflow_runs_version_id_fkey"
-            columns: ["version_id"]
+            foreignKeyName: "workflow_runs_def_version_fkey"
+            columns: ["workflow_definition_id", "version_id"]
             isOneToOne: false
             referencedRelation: "workflow_definition_versions"
-            referencedColumns: ["id"]
+            referencedColumns: ["workflow_definition_id", "id"]
           },
           {
             foreignKeyName: "workflow_runs_workflow_definition_id_fkey"
@@ -1309,6 +1381,14 @@ export type Database = {
       is_activity_runnable: {
         Args: { p_activity_id: string; p_workflow_run_id: string }
         Returns: boolean
+      }
+      schedule_downstream_activities: {
+        Args: {
+          p_actor?: string
+          p_completed_activity_id: string
+          p_workflow_run_id: string
+        }
+        Returns: string[]
       }
       search_document_chunks: {
         Args: {
