@@ -7,30 +7,11 @@
  * process-document path. It is intended for development, testing, and shadow
  * validation only.
  *
- * Usage:
- *   POST /functions/v1/workflow-shadow-start
- *   Body: {
- *     "definition_key": "document_processing_v1",
- *     "document_id": "uuid",
- *     "user_id": "uuid",          // optional, resolved from auth token if omitted
- *     "idempotency_key": "string", // optional
- *     "shadow_reason": "string"    // optional, for audit trail
- *   }
- *
- * Safety:
- *   - This function is explicitly shadow/dev-only
- *   - It writes a shadow_start marker into workflow metadata
- *   - It does NOT modify documents table or production processing status
- *   - Production uploads continue using process-document exclusively
+ * Delegates to workflow-start via HTTP to avoid cross-function import issues.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import {
-  ServiceError,
-  startWorkflowRunMaterialization,
-} from "../workflow-start/materialization-service.ts";
-import type { StartWorkflowRunRequest } from "../workflow-start/contracts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -147,7 +128,8 @@ serve(async (req) => {
       }
     }
 
-    const request: StartWorkflowRunRequest = {
+    // Delegate to workflow-start via HTTP
+    const workflowStartPayload = {
       definition_key: definitionKey,
       input_payload: inputPayload,
       user_id: userId,
@@ -157,22 +139,30 @@ serve(async (req) => {
       create_initial_context_snapshot: true,
     };
 
-    const result = await startWorkflowRunMaterialization(
-      serviceClient,
-      request,
-      userId
-    );
+    const startResponse = await fetch(`${supabaseUrl}/functions/v1/workflow-start`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify(workflowStartPayload),
+    });
 
-    return jsonResponse({
-      ...result,
-      shadow_mode: true,
-      message: `Shadow workflow run created. ${result.message}`,
-    }, 200);
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return jsonResponse({ error: error.message, shadow_mode: true }, error.status);
+    const startResult = await startResponse.json();
+
+    if (!startResponse.ok) {
+      return jsonResponse({
+        error: startResult.error || "workflow-start returned an error",
+        shadow_mode: true,
+      }, startResponse.status);
     }
 
+    return jsonResponse({
+      ...startResult,
+      shadow_mode: true,
+      message: `Shadow workflow run created. ${startResult.message || ""}`,
+    }, 200);
+  } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("workflow-shadow-start error:", message);
     return jsonResponse({ error: message, shadow_mode: true }, 500);
