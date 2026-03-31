@@ -2,6 +2,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { extractText as extractPdfText } from "https://esm.sh/unpdf@0.12.1";
+import {
+  extractText as sharedExtractText,
+  filterStructuralNoise as sharedFilterStructuralNoise,
+  detectScript as sharedDetectScript,
+  detectLanguage as sharedDetectLanguage,
+  countStats as sharedCountStats,
+  normalizeForSearch as sharedNormalizeForSearch,
+  computeStructuralNoiseRatio as sharedComputeStructuralNoiseRatio,
+  categorizeFile as sharedCategorizeFile,
+} from "../_shared/document-processing/text-extraction.ts";
+import {
+  chunkText as sharedChunkText,
+  estimateTokenCount as sharedEstimateTokenCount,
+} from "../_shared/document-processing/chunking.ts";
+import {
+  generateEmbeddingsLocal as sharedGenerateEmbeddingsLocal,
+  localEmbedding as sharedLocalEmbedding,
+} from "../_shared/document-processing/embeddings.ts";
+import { generateDocumentSummary } from "../_shared/document-processing/summarization.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -866,14 +885,14 @@ serve(async (req) => {
 
     // Extract content
     await supabase.from("documents").update({ processing_status: "extracting_content" }).eq("id", documentId);
-    const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
+    const extraction = await sharedExtractText(bytes, doc.mime_type, doc.file_name);
 
     // Filter structural noise from extracted text
-    const cleanedText = filterStructuralNoise(extraction.text);
+    const cleanedText = sharedFilterStructuralNoise(extraction.text);
     const effectiveText = cleanedText.length > 50 ? cleanedText : extraction.text;
-    const stats = countStats(effectiveText);
-    const scriptInfo = detectScript(effectiveText);
-    const noiseRatio = computeStructuralNoiseRatio(extraction.text);
+    const stats = sharedCountStats(effectiveText);
+    const scriptInfo = sharedDetectScript(effectiveText);
+    const noiseRatio = sharedComputeStructuralNoiseRatio(extraction.text);
 
     console.log(`[${documentId}] Extraction: method=${extraction.method}, encoding=${extraction.encoding || "n/a"}, quality_score=${extraction.quality.score}, readable=${extraction.quality.readable}, words=${extraction.quality.wordCount}, readableCharRatio=${extraction.quality.readableCharRatio}, structuralNoiseRatio=${Math.round(noiseRatio * 100)}%, script=${scriptInfo.primary}, cleanedTextLen=${cleanedText.length}, rawTextLen=${extraction.text.length}`);
 
@@ -901,7 +920,7 @@ serve(async (req) => {
           pdf_syntax_ratio: extraction.quality.pdfSyntaxRatio,
           structural_noise_ratio: noiseRatio,
           quality_reason: extraction.quality.reason,
-          file_category: categorizeFile(doc.file_type),
+          file_category: sharedCategorizeFile(doc.file_type),
           detected_script: scriptInfo.primary,
           script_ratios: { latin: scriptInfo.latinRatio, cyrillic: scriptInfo.cyrillicRatio },
         },
@@ -924,7 +943,7 @@ serve(async (req) => {
       char_count: stats.char_count,
     }).eq("id", documentId);
 
-    const langResult = detectLanguage(effectiveText);
+    const langResult = sharedDetectLanguage(effectiveText);
 
     console.log(`[${documentId}] Language: ${langResult.language}, script=${langResult.script}, confidence=${langResult.confidence}`);
 
@@ -934,39 +953,15 @@ serve(async (req) => {
     }).eq("id", documentId);
 
     // Generate summary — use cleaned text, not raw
-    let summary = "";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (LOVABLE_API_KEY && effectiveText.trim().length > 50) {
-      try {
-        const textForSummary = effectiveText.slice(0, 8000);
-        const langHint = langResult.language === "sr"
-          ? `The document is in Serbian (${langResult.script} script). Produce the summary in Serbian.`
-          : langResult.language !== "en"
-            ? `The document is in ${langResult.language}. Produce the summary in that language.`
-            : "";
-
-        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash-lite",
-            messages: [
-              { role: "system", content: `You are a document summarizer. Produce a concise summary of 2-5 sentences based on the actual content of the document. Be factual, neutral, and informative. No markdown. Focus on the main topics, arguments, or information in the document body. Ignore any structural metadata, XML fragments, or file container information. ${langHint}` },
-              { role: "user", content: `Summarize this document titled "${doc.file_name}":\n\n${textForSummary}` },
-            ],
-          }),
-        });
-        if (aiResp.ok) {
-          const aiData = await aiResp.json();
-          summary = aiData.choices?.[0]?.message?.content || "";
-        }
-      } catch (e) {
-        console.warn("Summary generation failed:", e);
-      }
-    }
+    const summaryResult = await generateDocumentSummary(
+      doc.file_name,
+      effectiveText,
+      langResult.language,
+      langResult.script,
+      LOVABLE_API_KEY
+    );
+    const summary = summaryResult.summary || "";
 
     // Indexing
     await supabase.from("documents").update({
@@ -974,7 +969,7 @@ serve(async (req) => {
       summary: summary || null,
     }).eq("id", documentId);
 
-    const searchText = normalizeForSearch(effectiveText, doc.file_name, summary);
+    const searchText = sharedNormalizeForSearch(effectiveText, doc.file_name, summary);
 
     await supabase.from("document_analysis").upsert({
       document_id: documentId,
@@ -990,7 +985,7 @@ serve(async (req) => {
         detected_language: langResult.language,
         detected_script: langResult.script,
         language_confidence: langResult.confidence,
-        file_category: categorizeFile(doc.file_type),
+        file_category: sharedCategorizeFile(doc.file_type),
         extraction_method: extraction.method,
         extraction_encoding: extraction.encoding || null,
         quality_score: extraction.quality.score,
@@ -1012,7 +1007,7 @@ serve(async (req) => {
     // ── Chunking ──
     await supabase.from("documents").update({ processing_status: "chunking" }).eq("id", documentId);
 
-    const chunks = chunkText(effectiveText);
+    const chunks = sharedChunkText(effectiveText);
     console.log(`[${documentId}] Chunked into ${chunks.length} chunks`);
 
     let embeddingsGenerated = 0;
@@ -1022,7 +1017,7 @@ serve(async (req) => {
       await supabase.from("documents").update({ processing_status: "generating_embeddings" }).eq("id", documentId);
 
       const chunkTexts = chunks.map(c => c.chunk_text);
-      const embeddings = generateEmbeddingsLocal(chunkTexts);
+      const embeddings = sharedGenerateEmbeddingsLocal(chunkTexts);
       embeddingsGenerated = embeddings.filter(e => e !== null).length;
 
       console.log(`[${documentId}] Generated ${embeddingsGenerated}/${chunks.length} embeddings (local)`);
@@ -1040,7 +1035,7 @@ serve(async (req) => {
         chunk_index: c.chunk_index,
         chunk_text: c.chunk_text,
         embedding: embeddings[idx] ? JSON.stringify(embeddings[idx]) : null,
-        token_count: estimateTokenCount(c.chunk_text),
+        token_count: sharedEstimateTokenCount(c.chunk_text),
         language: langResult.language,
         metadata_json: {
           extraction_method: extraction.method,
@@ -1177,7 +1172,7 @@ serve(async (req) => {
                 .slice(0, 2);
 
               return valid.map((qText, idx) => {
-                const embedding = localEmbedding(qText);
+                const embedding = sharedLocalEmbedding(qText);
                 return {
                   chunk_id: chunkDbId,
                   document_id: documentId,

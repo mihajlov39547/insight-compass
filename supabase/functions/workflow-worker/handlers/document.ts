@@ -1,173 +1,311 @@
+// @ts-nocheck
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import type { HandlerExecutionInput } from "../contracts.ts";
 import type { HandlerOutput } from "../handler-interface.ts";
+import {
+  DocumentStageError,
+  prepareRunStage,
+  loadSourceStage,
+  extractTextStage,
+  assessQualityStage,
+  detectLanguageAndStatsStage,
+  generateSummaryStage,
+  buildSearchIndexStage,
+  chunkTextStage,
+  generateChunkEmbeddingsStage,
+  generateChunkQuestionsStage,
+  finalizeDocumentStage,
+} from "../../_shared/document-processing/stages.ts";
 
-/**
- * Document-oriented placeholder handlers.
- * These are stubs for Phase 4; later phases will implement real document processing.
- * Each returns deterministic, realistic output shapes so workflows can be tested end-to-end.
- */
+function toObject(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
 
-export async function documentLoad(
-  input: HandlerExecutionInput
-): Promise<HandlerOutput> {
-  // Placeholder: load document from activity input reference
-  // In production, would fetch from storage or service
-  let documentId = "doc_stub_001";
-  if (
-    typeof input.activity_input_payload === "object" &&
-    input.activity_input_payload !== null &&
-    !Array.isArray(input.activity_input_payload)
-  ) {
-    const payload = input.activity_input_payload as Record<string, unknown>;
-    const id =
-      payload.document_id || payload.document_key;
-    if (typeof id === "string") {
-      documentId = id;
-    }
+function resolveDocumentId(input: HandlerExecutionInput): string | null {
+  const payload = toObject(input.activity_input_payload);
+  const fromPayload = payload.document_id ?? payload.documentId ?? payload.id;
+  if (typeof fromPayload === "string" && fromPayload.trim()) {
+    return fromPayload;
+  }
+
+  const fromContext = toObject(input.workflow_context).document_id;
+  if (typeof fromContext === "string" && fromContext.trim()) {
+    return fromContext;
+  }
+
+  return null;
+}
+
+function createServiceRoleClient() {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !serviceKey) {
+    throw new DocumentStageError(
+      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+      {
+        code: "MISSING_SUPABASE_ENV",
+        classification: "terminal",
+      }
+    );
+  }
+
+  return createClient(supabaseUrl, serviceKey);
+}
+
+function normalizeFailure(error: unknown, fallbackCode: string) {
+  if (error instanceof DocumentStageError) {
+    return {
+      classification: error.classification,
+      message: error.message,
+      code: error.code,
+      details: error.details ?? null,
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      classification: "retryable",
+      message: error.message,
+      code: fallbackCode,
+      details: null,
+    };
   }
 
   return {
-    ok: true,
-    output_payload: {
-      handler: "document.load",
-      executed_at: new Date().toISOString(),
-      document_id: documentId,
-      document_metadata: {
-        size_bytes: 50000,
-        mime_type: "application/pdf",
-        loaded_at: new Date().toISOString(),
+    classification: "retryable",
+    message: "Unknown document stage error",
+    code: fallbackCode,
+    details: null,
+  };
+}
+
+async function runStage(
+  input: HandlerExecutionInput,
+  stageKey: string,
+  fallbackCode: string,
+  runner: (supabase: ReturnType<typeof createServiceRoleClient>, documentId: string) => Promise<Record<string, unknown>>,
+  options: { optionalNonFatal?: boolean } = {}
+): Promise<HandlerOutput> {
+  const documentId = resolveDocumentId(input);
+  if (!documentId) {
+    return {
+      ok: false,
+      error: {
+        classification: "terminal",
+        message: "activity_input_payload.document_id is required",
+        code: "MISSING_DOCUMENT_ID",
+        details: {
+          activity_key: input.activity_key,
+          handler_key: input.handler_key,
+        },
       },
-      status: "ready_for_extraction",
-    },
-  };
-}
-
-export async function documentExtractText(
-  input: HandlerExecutionInput
-): Promise<HandlerOutput> {
-  // Placeholder: extract text from document
-  // In production, would use OCR/PDF libs or backend services
-  let extractedText =
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
-
-  if (
-    typeof input.activity_input_payload === "object" &&
-    input.activity_input_payload !== null &&
-    !Array.isArray(input.activity_input_payload)
-  ) {
-    const payload = input.activity_input_payload as Record<string, unknown>;
-    const text = payload.text;
-    if (typeof text === "string") {
-      extractedText = text;
-    }
+    };
   }
 
-  const textLength = String(extractedText).length;
-
-  return {
-    ok: true,
-    output_payload: {
-      handler: "document.extract_text",
-      executed_at: new Date().toISOString(),
-      extracted_text: String(extractedText).slice(0, 5000),
-      character_count: textLength,
-      word_count: String(extractedText).split(/\s+/).length,
-      language: "en",
-      confidence: 0.95,
-      status: "ready_for_chunking",
-    },
-  };
-}
-
-export async function documentChunk(
-  input: HandlerExecutionInput
-): Promise<HandlerOutput> {
-  // Placeholder: chunk extracted text
-  // In production, would split intelligently by semantic boundaries
-  let text =
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-
-  if (
-    typeof input.activity_input_payload === "object" &&
-    input.activity_input_payload !== null &&
-    !Array.isArray(input.activity_input_payload)
-  ) {
-    const payload = input.activity_input_payload as Record<string, unknown>;
-    const extractedText = payload.extracted_text;
-    if (typeof extractedText === "string") {
-      text = extractedText;
-    }
-  }
-
-  const chunkSize = 1000;
-  const chunks = [];
-  for (let i = 0; i < text.length; i += chunkSize) {
-    chunks.push({
-      chunk_index: Math.floor(i / chunkSize),
-      text: text.slice(i, i + chunkSize),
-      start_offset: i,
-      end_offset: Math.min(i + chunkSize, text.length),
-    });
-  }
-
-  return {
-    ok: true,
-    output_payload: {
-      handler: "document.chunk",
-      executed_at: new Date().toISOString(),
-      chunk_count: chunks.length,
-      chunks: chunks.length <= 10 ? chunks : chunks.slice(0, 10),
-      chunks_truncated: chunks.length > 10,
-      total_chunks: chunks.length,
-      status: "ready_for_summarization",
-    },
-  };
-}
-
-export async function documentSummarize(
-  input: HandlerExecutionInput
-): Promise<HandlerOutput> {
-  // Placeholder: summarize document or chunks
-  // In production, would call LLM or summarization service
-  return {
-    ok: true,
-    output_payload: {
-      handler: "document.summarize",
-      executed_at: new Date().toISOString(),
-      summary:
-        "This document discusses key concepts related to Lorem ipsum and dolor sit amet. The main themes include consectetur adipiscing and eiusmod tempor.",
-      summary_length: 180,
-      confidence: 0.88,
-      key_topics: ["lorem", "ipsum", "dolor", "consectetur"],
-      estimated_reading_time_minutes: 5,
-      status: "ready_for_finalization",
-    },
-  };
-}
-
-export async function documentFinalize(
-  input: HandlerExecutionInput
-): Promise<HandlerOutput> {
-  // Placeholder: finalize document processing pipeline
-  // In production, would write results to storage, trigger downstream jobs, etc.
-  return {
-    ok: true,
-    output_payload: {
-      handler: "document.finalize",
-      executed_at: new Date().toISOString(),
-      pipeline_status: "completed",
-      document_processing_summary: {
-        extraction_status: "success",
-        chunking_status: "success",
-        summarization_status: "success",
+  try {
+    const supabase = createServiceRoleClient();
+    const result = await runner(supabase, documentId);
+    return {
+      ok: true,
+      output_payload: {
+        handler: stageKey,
+        executed_at: new Date().toISOString(),
+        document_id: documentId,
+        ...toObject(result),
       },
-      output_artifacts: {
-        chunks_stored: true,
-        summary_stored: true,
-        metadata_persisted: true,
-      },
-      processing_completed_at: new Date().toISOString(),
-      downstream_notification: "pending",
-    },
-  };
+    };
+  } catch (error) {
+    const normalized = normalizeFailure(error, fallbackCode);
+
+    if (options.optionalNonFatal) {
+      return {
+        ok: true,
+        output_payload: {
+          handler: stageKey,
+          executed_at: new Date().toISOString(),
+          document_id: documentId,
+          warning: normalized.message,
+          warning_code: normalized.code,
+          warning_details: normalized.details,
+          optional_non_fatal: true,
+        },
+      };
+    }
+
+    return {
+      ok: false,
+      error: normalized,
+    };
+  }
+}
+
+// Phase B durable-workflow handlers
+
+export async function documentPrepareRun(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.prepare_run",
+    "DOCUMENT_PREPARE_RUN_FAILED",
+    (supabase, documentId) => prepareRunStage(supabase, documentId)
+  );
+}
+
+export async function documentLoadSource(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.load_source",
+    "DOCUMENT_LOAD_SOURCE_FAILED",
+    (supabase, documentId) => loadSourceStage(supabase, documentId)
+  );
+}
+
+export async function documentExtractTextActivity(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.extract_text",
+    "DOCUMENT_EXTRACT_TEXT_FAILED",
+    (supabase, documentId) => extractTextStage(supabase, documentId)
+  );
+}
+
+export async function documentAssessQuality(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.assess_quality",
+    "DOCUMENT_ASSESS_QUALITY_FAILED",
+    (supabase, documentId) => assessQualityStage(supabase, documentId)
+  );
+}
+
+export async function documentDetectLanguageAndStats(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.detect_language_and_stats",
+    "DOCUMENT_DETECT_LANGUAGE_STATS_FAILED",
+    (supabase, documentId) => detectLanguageAndStatsStage(supabase, documentId)
+  );
+}
+
+export async function documentGenerateSummary(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.generate_summary",
+    "DOCUMENT_GENERATE_SUMMARY_FAILED",
+    (supabase, documentId) =>
+      generateSummaryStage(
+        supabase,
+        documentId,
+        Deno.env.get("LOVABLE_API_KEY")
+      )
+  );
+}
+
+export async function documentBuildSearchIndex(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.build_search_index",
+    "DOCUMENT_BUILD_SEARCH_INDEX_FAILED",
+    (supabase, documentId) => buildSearchIndexStage(supabase, documentId)
+  );
+}
+
+export async function documentChunkText(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.chunk_text",
+    "DOCUMENT_CHUNK_TEXT_FAILED",
+    (supabase, documentId) => chunkTextStage(supabase, documentId)
+  );
+}
+
+export async function documentGenerateChunkEmbeddings(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.generate_chunk_embeddings",
+    "DOCUMENT_GENERATE_CHUNK_EMBEDDINGS_FAILED",
+    (supabase, documentId) => generateChunkEmbeddingsStage(supabase, documentId)
+  );
+}
+
+export async function documentGenerateChunkQuestions(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.generate_chunk_questions",
+    "DOCUMENT_GENERATE_CHUNK_QUESTIONS_FAILED",
+    (supabase, documentId) =>
+      generateChunkQuestionsStage(
+        supabase,
+        documentId,
+        Deno.env.get("LOVABLE_API_KEY")
+      ),
+    { optionalNonFatal: true }
+  );
+}
+
+export async function documentFinalizeDocument(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  const payload = toObject(input.activity_input_payload);
+  const requestedFinalStatus =
+    typeof payload.final_status === "string" ? payload.final_status : undefined;
+  const requestedError =
+    typeof payload.processing_error === "string" ? payload.processing_error : null;
+
+  return runStage(
+    input,
+    "document.finalize_document",
+    "DOCUMENT_FINALIZE_FAILED",
+    (supabase, documentId) =>
+      finalizeDocumentStage(
+        supabase,
+        documentId,
+        requestedFinalStatus,
+        requestedError
+      )
+  );
+}
+
+// Backward-compatible aliases for existing placeholder keys
+
+export async function documentLoad(input: HandlerExecutionInput): Promise<HandlerOutput> {
+  return documentLoadSource(input);
+}
+
+export async function documentExtractText(input: HandlerExecutionInput): Promise<HandlerOutput> {
+  return documentExtractTextActivity(input);
+}
+
+export async function documentChunk(input: HandlerExecutionInput): Promise<HandlerOutput> {
+  return documentChunkText(input);
+}
+
+export async function documentSummarize(input: HandlerExecutionInput): Promise<HandlerOutput> {
+  return documentGenerateSummary(input);
+}
+
+export async function documentFinalize(input: HandlerExecutionInput): Promise<HandlerOutput> {
+  return documentFinalizeDocument(input);
 }

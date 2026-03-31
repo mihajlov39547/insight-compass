@@ -14,8 +14,18 @@ import {
   debugFailNTimesThenSucceed,
 } from "./handlers/debug.ts";
 import {
+  documentPrepareRun,
+  documentLoadSource,
+  documentExtractTextActivity,
+  documentAssessQuality,
+  documentDetectLanguageAndStats,
+  documentGenerateSummary,
+  documentBuildSearchIndex,
+  documentChunkText,
+  documentGenerateChunkEmbeddings,
+  documentGenerateChunkQuestions,
+  documentFinalizeDocument,
   documentLoad,
-  documentExtractText,
   documentChunk,
   documentSummarize,
   documentFinalize,
@@ -154,34 +164,116 @@ export function initializeBuiltInHandlers(): void {
   });
 
   registerHandler({
-    key: "document.load",
+    key: "document.prepare_run",
     category: "document",
     timeout_seconds: 10,
-    description: "Document load placeholder; resolves document reference",
-    handler: documentLoad,
+    description:
+      "Initializes document processing run state and retry tracking",
+    handler: documentPrepareRun,
+  });
+
+  registerHandler({
+    key: "document.load_source",
+    category: "document",
+    timeout_seconds: 20,
+    description: "Loads source file from storage and validates availability",
+    handler: documentLoadSource,
   });
 
   registerHandler({
     key: "document.extract_text",
     category: "document",
+    timeout_seconds: 90,
+    description: "Extracts text and stores extraction diagnostics",
+    handler: documentExtractTextActivity,
+  });
+
+  registerHandler({
+    key: "document.assess_quality",
+    category: "document",
+    timeout_seconds: 20,
+    description: "Applies extraction readability quality gate",
+    handler: documentAssessQuality,
+  });
+
+  registerHandler({
+    key: "document.detect_language_and_stats",
+    category: "document",
     timeout_seconds: 30,
-    description: "Document text extraction placeholder",
-    handler: documentExtractText,
+    description: "Detects language/script and persists word/character counts",
+    handler: documentDetectLanguageAndStats,
+  });
+
+  registerHandler({
+    key: "document.generate_summary",
+    category: "document",
+    timeout_seconds: 45,
+    description: "Generates and persists document summary with soft-failure semantics",
+    handler: documentGenerateSummary,
+  });
+
+  registerHandler({
+    key: "document.build_search_index",
+    category: "document",
+    timeout_seconds: 30,
+    description: "Persists normalized search text and indexing metadata",
+    handler: documentBuildSearchIndex,
+  });
+
+  registerHandler({
+    key: "document.chunk_text",
+    category: "document",
+    timeout_seconds: 30,
+    description: "Creates document chunks and token metadata",
+    handler: documentChunkText,
+  });
+
+  registerHandler({
+    key: "document.generate_chunk_embeddings",
+    category: "document",
+    timeout_seconds: 60,
+    description: "Generates and persists local chunk embeddings",
+    handler: documentGenerateChunkEmbeddings,
+  });
+
+  registerHandler({
+    key: "document.generate_chunk_questions",
+    category: "document",
+    timeout_seconds: 120,
+    description: "Generates grounded chunk questions (optional/non-fatal enrichment)",
+    handler: documentGenerateChunkQuestions,
+  });
+
+  registerHandler({
+    key: "document.finalize_document",
+    category: "document",
+    timeout_seconds: 15,
+    description: "Applies final document status for workflow-driven processing",
+    handler: documentFinalizeDocument,
+  });
+
+  // Legacy aliases retained for compatibility with older definitions/tests.
+  registerHandler({
+    key: "document.load",
+    category: "document",
+    timeout_seconds: 20,
+    description: "Legacy alias of document.load_source",
+    handler: documentLoad,
   });
 
   registerHandler({
     key: "document.chunk",
     category: "document",
-    timeout_seconds: 20,
-    description: "Document chunking placeholder",
+    timeout_seconds: 30,
+    description: "Legacy alias of document.chunk_text",
     handler: documentChunk,
   });
 
   registerHandler({
     key: "document.summarize",
     category: "document",
-    timeout_seconds: 30,
-    description: "Document summarization placeholder",
+    timeout_seconds: 45,
+    description: "Legacy alias of document.generate_summary",
     handler: documentSummarize,
   });
 
@@ -189,7 +281,7 @@ export function initializeBuiltInHandlers(): void {
     key: "document.finalize",
     category: "document",
     timeout_seconds: 15,
-    description: "Document pipeline finalization placeholder",
+    description: "Legacy alias of document.finalize_document",
     handler: documentFinalize,
   });
 
