@@ -86,6 +86,7 @@ export interface HandlerFailure {
     code?: string;
     details?: JsonValue;
   };
+  context_patch?: JsonObject;
 }
 
 export type HandlerResult = HandlerSuccess | HandlerFailure;

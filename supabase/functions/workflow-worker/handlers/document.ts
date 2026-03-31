@@ -82,12 +82,28 @@ function normalizeFailure(error: unknown, fallbackCode: string) {
   };
 }
 
+function toContextPatch(
+  value: Record<string, unknown> | undefined
+): Record<string, unknown> | undefined {
+  if (!value) return undefined;
+  const patch = toObject(value);
+  return Object.keys(patch).length > 0 ? patch : undefined;
+}
+
 async function runStage(
   input: HandlerExecutionInput,
   stageKey: string,
   fallbackCode: string,
   runner: (supabase: ReturnType<typeof createServiceRoleClient>, documentId: string) => Promise<Record<string, unknown>>,
-  options: { optionalNonFatal?: boolean } = {}
+  options: {
+    optionalNonFatal?: boolean;
+    buildContextPatch?: (result: Record<string, unknown>) => Record<string, unknown> | undefined;
+    buildWarningContextPatch?: (warning: {
+      message: string;
+      code: string;
+      details: unknown;
+    }) => Record<string, unknown> | undefined;
+  } = {}
 ): Promise<HandlerOutput> {
   const documentId = resolveDocumentId(input);
   if (!documentId) {
@@ -116,6 +132,7 @@ async function runStage(
         document_id: documentId,
         ...toObject(result),
       },
+      context_patch: toContextPatch(options.buildContextPatch?.(toObject(result))),
     };
   } catch (error) {
     const normalized = normalizeFailure(error, fallbackCode);
@@ -132,6 +149,13 @@ async function runStage(
           warning_details: normalized.details,
           optional_non_fatal: true,
         },
+        context_patch: toContextPatch(
+          options.buildWarningContextPatch?.({
+            message: normalized.message,
+            code: normalized.code,
+            details: normalized.details,
+          })
+        ),
       };
     }
 
@@ -173,7 +197,17 @@ export async function documentExtractTextActivity(
     input,
     "document.extract_text",
     "DOCUMENT_EXTRACT_TEXT_FAILED",
-    (supabase, documentId) => extractTextStage(supabase, documentId)
+    (supabase, documentId) => extractTextStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        extraction_method: result.extraction_method ?? null,
+        extraction_encoding: result.extraction_encoding ?? null,
+        structural_noise_filtered: result.structural_noise_filtered ?? null,
+        script_primary: result.script_primary ?? null,
+        text_quality_score: result.quality_score ?? null,
+        text_quality_reason: result.quality_reason ?? null,
+      }),
+    }
   );
 }
 
@@ -184,7 +218,14 @@ export async function documentAssessQuality(
     input,
     "document.assess_quality",
     "DOCUMENT_ASSESS_QUALITY_FAILED",
-    (supabase, documentId) => assessQualityStage(supabase, documentId)
+    (supabase, documentId) => assessQualityStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        readable: result.readable ?? null,
+        text_quality_score: result.quality_score ?? null,
+        text_quality_reason: result.quality_reason ?? null,
+      }),
+    }
   );
 }
 
@@ -195,7 +236,16 @@ export async function documentDetectLanguageAndStats(
     input,
     "document.detect_language_and_stats",
     "DOCUMENT_DETECT_LANGUAGE_STATS_FAILED",
-    (supabase, documentId) => detectLanguageAndStatsStage(supabase, documentId)
+    (supabase, documentId) => detectLanguageAndStatsStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        detected_language: result.detected_language ?? null,
+        detected_script: result.detected_script ?? null,
+        language_confidence: result.language_confidence ?? null,
+        word_count: result.word_count ?? null,
+        char_count: result.char_count ?? null,
+      }),
+    }
   );
 }
 
@@ -211,7 +261,14 @@ export async function documentGenerateSummary(
         supabase,
         documentId,
         Deno.env.get("LOVABLE_API_KEY")
-      )
+      ),
+    {
+      buildContextPatch: (result) => ({
+        summary_present: result.summary_present ?? null,
+        summary_length: result.summary_length ?? null,
+        summary_warning: result.summary_warning ?? null,
+      }),
+    }
   );
 }
 
@@ -233,7 +290,13 @@ export async function documentChunkText(
     input,
     "document.chunk_text",
     "DOCUMENT_CHUNK_TEXT_FAILED",
-    (supabase, documentId) => chunkTextStage(supabase, documentId)
+    (supabase, documentId) => chunkTextStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        chunk_count: result.chunk_count ?? null,
+        avg_chunk_size_estimate: result.avg_chunk_size_estimate ?? null,
+      }),
+    }
   );
 }
 
@@ -244,7 +307,18 @@ export async function documentGenerateChunkEmbeddings(
     input,
     "document.generate_chunk_embeddings",
     "DOCUMENT_GENERATE_CHUNK_EMBEDDINGS_FAILED",
-    (supabase, documentId) => generateChunkEmbeddingsStage(supabase, documentId)
+    (supabase, documentId) => generateChunkEmbeddingsStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        embeddings_generated: result.embedded_count ?? null,
+        embeddings_expected: result.chunk_count ?? null,
+        semantic_ready_candidate:
+          typeof result.chunk_count === "number" &&
+          typeof result.embedded_count === "number"
+            ? result.chunk_count > 0 && result.chunk_count === result.embedded_count
+            : null,
+      }),
+    }
   );
 }
 
@@ -261,7 +335,20 @@ export async function documentGenerateChunkQuestions(
         documentId,
         Deno.env.get("LOVABLE_API_KEY")
       ),
-    { optionalNonFatal: true }
+    {
+      optionalNonFatal: true,
+      buildContextPatch: (result) => ({
+        questions_generated: result.question_count ?? null,
+        questions_embedded: result.embedded_question_count ?? null,
+        question_generation_warning: result.warning ?? null,
+      }),
+      buildWarningContextPatch: (warning) => ({
+        questions_generated: 0,
+        questions_embedded: 0,
+        question_generation_warning: warning.message,
+        question_generation_warning_code: warning.code,
+      }),
+    }
   );
 }
 
@@ -284,7 +371,13 @@ export async function documentFinalizeDocument(
         documentId,
         requestedFinalStatus,
         requestedError
-      )
+      ),
+    {
+      buildContextPatch: (result) => ({
+        final_document_status: result.final_status ?? null,
+        finalized_at: result.finalized_at ?? null,
+      }),
+    }
   );
 }
 

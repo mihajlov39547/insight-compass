@@ -29,6 +29,7 @@ export interface HandlerErrorResult {
     code?: string;
     details?: JsonValue;
   };
+  context_patch?: JsonObject;
   metadata?: {
     duration_ms?: number;
   };

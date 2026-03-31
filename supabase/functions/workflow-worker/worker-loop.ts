@@ -12,6 +12,7 @@ import {
   failActivityRun,
   failWorkflowForRequiredActivity,
   finalizeWorkflowIfComplete,
+  applyWorkflowContextPatch,
 } from "./orchestration-helpers.ts";
 import { normalizeFailureError } from "./retry-policy.ts";
 import type {
@@ -162,6 +163,28 @@ export async function runWorkerLoop(
           result.output_payload
         );
 
+        // Merge lightweight context patch (if provided) after handler acceptance.
+        if (result.context_patch) {
+          try {
+            const patchSummary = await applyWorkflowContextPatch(
+              supabase,
+              context.workflow_run.id,
+              claimedActivityId,
+              result.context_patch,
+              "worker"
+            );
+            if (debug) {
+              console.log(
+                `Context patch merge (success path): applied=${patchSummary.applied}, reason=${patchSummary.reason ?? "n/a"}, keys=${patchSummary.patch_keys.join(",")}`
+              );
+            }
+          } catch (patchError) {
+            console.warn(
+              `Context patch merge failed on success path for activity ${claimedActivityId}: ${patchError instanceof Error ? patchError.message : String(patchError)}`
+            );
+          }
+        }
+
         // Schedule downstream activities
         const { data: scheduledIds, error: scheduleError } = await supabase.rpc(
           "schedule_downstream_activities",
@@ -222,6 +245,28 @@ export async function runWorkerLoop(
           failureDetails,
           nowIso
         );
+
+        // Merge lightweight failure-side context patch if handler supplies one.
+        if (result.context_patch) {
+          try {
+            const patchSummary = await applyWorkflowContextPatch(
+              supabase,
+              context.workflow_run.id,
+              claimedActivityId,
+              result.context_patch,
+              "worker"
+            );
+            if (debug) {
+              console.log(
+                `Context patch merge (failure path): applied=${patchSummary.applied}, reason=${patchSummary.reason ?? "n/a"}, keys=${patchSummary.patch_keys.join(",")}`
+              );
+            }
+          } catch (patchError) {
+            console.warn(
+              `Context patch merge failed on failure path for activity ${claimedActivityId}: ${patchError instanceof Error ? patchError.message : String(patchError)}`
+            );
+          }
+        }
 
         if (willRetry) {
           response.retried_count += 1;

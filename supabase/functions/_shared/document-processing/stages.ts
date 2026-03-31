@@ -262,6 +262,8 @@ export async function extractTextStage(
     document_id: documentId,
     extraction_method: extraction.method,
     extraction_encoding: extraction.encoding || null,
+    structural_noise_filtered: cleanedText.length < extraction.text.length,
+    script_primary: scriptInfo.primary,
     quality_score: extraction.quality.score,
     quality_reason: extraction.quality.reason,
     readable: extraction.quality.readable,
@@ -555,6 +557,13 @@ export async function chunkTextStage(
   }
 
   const chunks = chunkText(String(analysis.extracted_text));
+  const avgChunkSizeEstimate =
+    chunks.length > 0
+      ? Math.round(
+          chunks.reduce((acc, c) => acc + estimateTokenCount(c.chunk_text), 0) /
+            chunks.length
+        )
+      : 0;
 
   await supabase.from("document_chunks").delete().eq("document_id", documentId);
 
@@ -592,6 +601,7 @@ export async function chunkTextStage(
   return {
     document_id: documentId,
     chunk_count: chunks.length,
+    avg_chunk_size_estimate: avgChunkSizeEstimate,
   };
 }
 
@@ -856,6 +866,7 @@ export async function finalizeDocumentStage(
     return {
       document_id: documentId,
       final_status: "failed",
+      finalized_at: new Date().toISOString(),
     };
   }
 
@@ -877,5 +888,6 @@ export async function finalizeDocumentStage(
   return {
     document_id: documentId,
     final_status: "completed",
+    finalized_at: new Date().toISOString(),
   };
 }
