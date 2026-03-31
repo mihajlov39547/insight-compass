@@ -12,13 +12,13 @@ Feature flag:
 - VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED=true
 
 Behavior:
-1. Flag unset/false: upload/retry triggers process-document directly.
-2. Flag true: upload/retry attempts workflow-start for definition document_processing_v1.
+1. Flag unset/false: upload/retry attempts workflow-start for definition document_processing_v1.
+2. Flag true: upload/retry triggers process-document directly.
 3. If workflow-start fails: immediate fallback to process-document.
 
 Rollback:
-- Set VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED=false (or unset) and redeploy frontend.
-- Upload and retry return to legacy process-document trigger path.
+- Set VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED=true and redeploy frontend.
+- Upload and retry return to legacy process-document trigger path immediately.
 
 ## Upload Trigger Behavior
 

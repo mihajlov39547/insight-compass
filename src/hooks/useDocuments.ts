@@ -36,9 +36,9 @@ const ACTIVE_WORKFLOW_STATES = new Set(['pending', 'running']);
 
 function isWorkflowCutoverEnabled(): boolean {
   // Requested Phase F control semantics:
-  // - default/unset => no cutover
-  // - VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED=true => cutover enabled
-  return String(import.meta.env.VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED || '').toLowerCase() === 'true';
+  // - default/unset => cutover enabled
+  // - VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED=true => cutover disabled
+  return String(import.meta.env.VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED || '').toLowerCase() !== 'true';
 }
 
 function getSupabaseFunctionHeaders(): HeadersInit {
