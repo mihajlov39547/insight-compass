@@ -35,7 +35,10 @@ const PROCESSING_STATES = new Set([
 const ACTIVE_WORKFLOW_STATES = new Set(['pending', 'running']);
 
 function isWorkflowCutoverEnabled(): boolean {
-  return String(import.meta.env.VITE_DOCUMENT_WORKFLOW_CUTOVER_ENABLED || '').toLowerCase() === 'true';
+  // Requested Phase F control semantics:
+  // - default/unset => no cutover
+  // - VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED=true => cutover enabled
+  return String(import.meta.env.VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED || '').toLowerCase() === 'true';
 }
 
 function getSupabaseFunctionHeaders(): HeadersInit {
