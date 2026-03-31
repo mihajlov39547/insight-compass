@@ -30,6 +30,19 @@ import {
   documentSummarize,
   documentFinalize,
 } from "./handlers/document.ts";
+import {
+  shadowPrepareRun,
+  shadowLoadSource,
+  shadowExtractText,
+  shadowAssessQuality,
+  shadowDetectLanguageAndStats,
+  shadowGenerateSummary,
+  shadowBuildSearchIndex,
+  shadowChunkText,
+  shadowGenerateChunkEmbeddings,
+  shadowGenerateChunkQuestions,
+  shadowFinalizeDocument,
+} from "./handlers/shadow-document.ts";
 
 /**
  * Global handler registry, keyed by handler_key.
