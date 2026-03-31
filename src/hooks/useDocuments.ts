@@ -28,7 +28,114 @@ export interface DbDocument {
 const PROCESSING_STATES = new Set([
   'uploaded', 'extracting_metadata', 'extracting_content',
   'detecting_language', 'summarizing', 'indexing',
+  'chunking', 'generating_embeddings', 'generating_chunk_questions',
+  'pending', 'queued', 'claimed', 'running', 'waiting_retry',
 ]);
+
+const ACTIVE_WORKFLOW_STATES = new Set(['pending', 'running']);
+
+function isWorkflowCutoverEnabled(): boolean {
+  return String(import.meta.env.VITE_DOCUMENT_WORKFLOW_CUTOVER_ENABLED || '').toLowerCase() === 'true';
+}
+
+function getSupabaseFunctionHeaders(): HeadersInit {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+  };
+}
+
+async function triggerProcessDocument(documentId: string): Promise<void> {
+  const resp = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
+    {
+      method: 'POST',
+      headers: getSupabaseFunctionHeaders(),
+      body: JSON.stringify({ documentId }),
+    }
+  );
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Processing failed' }));
+    throw new Error(err.error || 'Processing failed');
+  }
+}
+
+async function startDocumentWorkflowOrFallback(doc: DbDocument, mode: 'upload' | 'retry'): Promise<{
+  path: 'workflow' | 'workflow_existing' | 'fallback_process_document';
+  workflowRunId?: string;
+}> {
+  const fallbackToProcessDocument = async (): Promise<{
+    path: 'fallback_process_document';
+  }> => {
+    await triggerProcessDocument(doc.id);
+    return { path: 'fallback_process_document' };
+  };
+
+  if (!isWorkflowCutoverEnabled()) {
+    return fallbackToProcessDocument();
+  }
+
+  if (doc.processing_status === 'completed') {
+    return { path: 'workflow_existing' };
+  }
+
+  // Avoid duplicate active runs for the same document during cutover.
+  const { data: existingRuns, error: existingRunError } = await supabase
+    .from('workflow_runs' as any)
+    .select('id, status')
+    .eq('trigger_entity_type', 'document')
+    .eq('trigger_entity_id', doc.id)
+    .in('status', Array.from(ACTIVE_WORKFLOW_STATES))
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const existingRunRows = Array.isArray(existingRuns) ? (existingRuns as Array<{ id?: string }>) : [];
+
+  if (!existingRunError && existingRunRows.length > 0) {
+    return {
+      path: 'workflow_existing',
+      workflowRunId: existingRunRows[0].id,
+    };
+  }
+
+  const requestPayload = {
+    definition_key: 'document_processing_v1',
+    input_payload: {
+      document_id: doc.id,
+      source: mode === 'upload' ? 'upload_cutover' : 'retry_cutover',
+      source_document_id: doc.id,
+      source_storage_path: doc.storage_path,
+      cutover_mode: true,
+      initiated_at: new Date().toISOString(),
+    },
+    user_id: doc.user_id,
+    trigger_entity_type: 'document',
+    trigger_entity_id: doc.id,
+    idempotency_key: mode === 'upload' ? `upload-workflow-${doc.id}` : null,
+    create_initial_context_snapshot: true,
+  };
+
+  const workflowResp = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-start`,
+    {
+      method: 'POST',
+      headers: getSupabaseFunctionHeaders(),
+      body: JSON.stringify(requestPayload),
+    }
+  );
+
+  if (workflowResp.ok) {
+    const workflowData = await workflowResp.json().catch(() => ({}));
+    return {
+      path: 'workflow',
+      workflowRunId: workflowData?.workflow_run_id,
+    };
+  }
+
+  // Safer MVP: immediate rollback fallback to monolithic path on workflow start failure.
+  return fallbackToProcessDocument();
+}
 
 export function useDocuments(projectId?: string, chatId?: string | null) {
   const { user } = useAuth();
@@ -160,19 +267,12 @@ export function useUploadDocuments() {
         throw new Error(errors.join('\n'));
       }
 
-      // Fire-and-forget: trigger processing for each uploaded doc
+      // Trigger processing for each uploaded document.
+      // Phase F cutover: workflow-start primary (when enabled), process-document fallback.
       for (const doc of results) {
-        fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({ documentId: doc.id }),
-          }
-        ).catch(() => { /* processing failure is tracked server-side */ });
+        startDocumentWorkflowOrFallback(doc, 'upload').catch(() => {
+          /* processing failure is tracked server-side */
+        });
       }
 
       return { uploaded: results, errors };
@@ -193,22 +293,11 @@ export function useRetryProcessing() {
 
   const mutation = useMutation({
     mutationFn: async (doc: DbDocument) => {
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ documentId: doc.id }),
-        }
-      );
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: 'Processing failed' }));
-        throw new Error(err.error || 'Processing failed');
-      }
-      return resp.json();
+      const trigger = await startDocumentWorkflowOrFallback(doc, 'retry');
+      return {
+        status: 'accepted',
+        ...trigger,
+      };
     },
     onSuccess: (_, doc) => {
       queryClient.invalidateQueries({ queryKey: ['documents', doc.project_id] });
