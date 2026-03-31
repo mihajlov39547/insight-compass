@@ -96,7 +96,9 @@ async function resolveAuthenticatedUserId(
   } = await userClient.auth.getUser();
 
   if (error || !user) {
-    throw new ServiceError("Unauthorized", 401);
+    // Return null instead of throwing — allows server-to-server calls
+    // (e.g. service role key) where user_id is provided in the request body.
+    return null;
   }
 
   return user.id;
