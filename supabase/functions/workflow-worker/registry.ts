@@ -57,7 +57,10 @@ export function getHandlerDefinition(key: string): HandlerDefinition | undefined
  * Dispatch handler execution by key, using the base execution wrapper.
  * Unknown keys produce a normalized terminal error.
  */
-
+export async function dispatchHandler(
+  handlerKey: string,
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
   const definition = registry.get(handlerKey);
 
   if (!definition) {
