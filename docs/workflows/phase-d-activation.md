@@ -14,7 +14,7 @@ Activate pg_cron-driven background workflow execution for the durable workflow e
 
 Two cron jobs are configured for background workflow processing:
 
-### workflow-worker-shadow (every 2 minutes)
+### workflow-worker (every 2 minutes)
 
 | Field | Value |
 |-------|-------|
@@ -22,7 +22,7 @@ Two cron jobs are configured for background workflow processing:
 | Target | `workflow-worker` Edge Function |
 | Payload | `{"max_activities_to_process": 3, "lease_seconds": 300, "debug": true}` |
 
-### workflow-maintenance-shadow (every 5 minutes)
+### workflow-maintenance (every 5 minutes)
 
 | Field | Value |
 |-------|-------|
@@ -33,8 +33,8 @@ Two cron jobs are configured for background workflow processing:
 ## Disabling Cron Schedules
 
 ```sql
-SELECT cron.unschedule('workflow-worker-shadow');
-SELECT cron.unschedule('workflow-maintenance-shadow');
+SELECT cron.unschedule('workflow-worker');
+SELECT cron.unschedule('workflow-maintenance');
 ```
 
 ## Production Safety

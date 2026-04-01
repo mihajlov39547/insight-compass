@@ -64,6 +64,25 @@ async function triggerProcessDocument(documentId: string): Promise<void> {
   }
 }
 
+async function markDocumentTriggerFailed(documentId: string, message: string): Promise<void> {
+  const safeMessage = message.slice(0, 500);
+  const { error } = await supabase
+    .from('documents' as any)
+    .update({
+      processing_status: 'failed',
+      processing_error: `Document trigger failed: ${safeMessage}`,
+    })
+    .eq('id', documentId)
+    .neq('processing_status', 'completed');
+
+  if (error) {
+    console.warn('[doc-trigger] failed to persist trigger failure state', {
+      document_id: documentId,
+      error: error.message,
+    });
+  }
+}
+
 async function startDocumentWorkflowOrFallback(doc: DbDocument, mode: 'upload' | 'retry'): Promise<{
   path: 'workflow' | 'workflow_existing' | 'fallback_process_document';
   workflowRunId?: string;
@@ -76,6 +95,11 @@ async function startDocumentWorkflowOrFallback(doc: DbDocument, mode: 'upload' |
   };
 
   if (!isWorkflowCutoverEnabled()) {
+    console.info('[doc-trigger] legacy path selected (cutover disabled)', {
+      document_id: doc.id,
+      mode,
+      flag: 'VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED=true',
+    });
     return fallbackToProcessDocument();
   }
 
@@ -96,6 +120,11 @@ async function startDocumentWorkflowOrFallback(doc: DbDocument, mode: 'upload' |
   const existingRunRows = Array.isArray(existingRuns) ? (existingRuns as Array<{ id?: string }>) : [];
 
   if (!existingRunError && existingRunRows.length > 0) {
+    console.info('[doc-trigger] workflow path reused existing active run', {
+      document_id: doc.id,
+      mode,
+      workflow_run_id: existingRunRows[0].id,
+    });
     return {
       path: 'workflow_existing',
       workflowRunId: existingRunRows[0].id,
@@ -130,11 +159,26 @@ async function startDocumentWorkflowOrFallback(doc: DbDocument, mode: 'upload' |
 
   if (workflowResp.ok) {
     const workflowData = await workflowResp.json().catch(() => ({}));
+    console.info('[doc-trigger] workflow path started', {
+      document_id: doc.id,
+      mode,
+      workflow_run_id: workflowData?.workflow_run_id,
+    });
     return {
       path: 'workflow',
       workflowRunId: workflowData?.workflow_run_id,
     };
   }
+
+  const workflowErr = await workflowResp
+    .json()
+    .catch(() => ({ error: `workflow-start failed with status ${workflowResp.status}` }));
+  console.warn('[doc-trigger] workflow path failed, attempting fallback', {
+    document_id: doc.id,
+    mode,
+    status: workflowResp.status,
+    error: workflowErr?.error || 'unknown_workflow_start_error',
+  });
 
   // Safer MVP: immediate rollback fallback to monolithic path on workflow start failure.
   return fallbackToProcessDocument();
@@ -273,8 +317,14 @@ export function useUploadDocuments() {
       // Trigger processing for each uploaded document.
       // Phase F cutover: workflow-start primary (when enabled), process-document fallback.
       for (const doc of results) {
-        startDocumentWorkflowOrFallback(doc, 'upload').catch(() => {
-          /* processing failure is tracked server-side */
+        startDocumentWorkflowOrFallback(doc, 'upload').catch(async (err) => {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error('[doc-trigger] upload trigger failed on both workflow and fallback paths', {
+            document_id: doc.id,
+            mode: 'upload',
+            error: message,
+          });
+          await markDocumentTriggerFailed(doc.id, message);
         });
       }
 
