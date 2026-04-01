@@ -57,45 +57,6 @@ export function getHandlerDefinition(key: string): HandlerDefinition | undefined
  * Dispatch handler execution by key, using the base execution wrapper.
  * Unknown keys produce a normalized terminal error.
  */
-/**
- * Shadow handler routing map.
- * When shadow_mode is true in workflow context, document handlers are
- * rerouted to read-only shadow variants that do NOT write production data.
- */
-const SHADOW_HANDLER_MAP: Record<string, (input: HandlerExecutionInput) => Promise<HandlerOutput>> = {
-  "document.prepare_run": shadowPrepareRun,
-  "document.load_source": shadowLoadSource,
-  "document.load": shadowLoadSource,
-  "document.extract_text": shadowExtractText,
-  "document.assess_quality": shadowAssessQuality,
-  "document.detect_language_and_stats": shadowDetectLanguageAndStats,
-  "document.generate_summary": shadowGenerateSummary,
-  "document.build_search_index": shadowBuildSearchIndex,
-  "document.chunk_text": shadowChunkText,
-  "document.chunk": shadowChunkText,
-  "document.generate_chunk_embeddings": shadowGenerateChunkEmbeddings,
-  "document.generate_chunk_questions": shadowGenerateChunkQuestions,
-  "document.finalize_document": shadowFinalizeDocument,
-  "document.finalize": shadowFinalizeDocument,
-  "document.summarize": shadowGenerateSummary,
-};
-
-export async function dispatchHandler(
-  handlerKey: string,
-  input: HandlerExecutionInput
-): Promise<HandlerOutput> {
-  // Phase E: If workflow is in shadow_mode, route document handlers to
-  // read-only shadow variants that capture production state snapshots
-  // without writing to production tables.
-  const isShadowMode =
-    typeof input.workflow_context === "object" &&
-    input.workflow_context !== null &&
-    (input.workflow_context as any).shadow_mode === true;
-
-  if (isShadowMode && SHADOW_HANDLER_MAP[handlerKey]) {
-    const shadowHandler = SHADOW_HANDLER_MAP[handlerKey];
-    return executeHandlerSafely(shadowHandler, input, 30);
-  }
 
   const definition = registry.get(handlerKey);
 
