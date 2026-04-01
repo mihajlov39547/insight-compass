@@ -1226,37 +1226,6 @@ serve(async (req) => {
 
     console.log(`[${documentId}] ✓ Completed — chunks=${chunks.length}, embeddings=${embeddingsGenerated}, questions=${questionsGenerated}, questions_embedded=${questionsEmbedded}, retrieval_ready=${embeddingsGenerated > 0 && embeddingsGenerated === chunks.length}`);
 
-    // ── Phase E: Shadow workflow trigger (feature-flagged, fire-and-forget) ──
-    try {
-      const shadowEnabled = Deno.env.get("SHADOW_MODE_ENABLED") === "true";
-      if (shadowEnabled) {
-        const shadowUserIds = (Deno.env.get("SHADOW_MODE_USER_IDS") || "").split(",").map(s => s.trim()).filter(Boolean);
-        const shadowProjectIds = (Deno.env.get("SHADOW_MODE_PROJECT_IDS") || "").split(",").map(s => s.trim()).filter(Boolean);
-
-        const userMatch = shadowUserIds.length === 0 || shadowUserIds.includes(doc.user_id);
-        const projectMatch = shadowProjectIds.length === 0 || shadowProjectIds.includes(doc.project_id || "");
-
-        if (userMatch && projectMatch) {
-          console.log(`[${documentId}] Shadow mode: triggering shadow workflow for comparison`);
-          fetch(`${supabaseUrl}/functions/v1/workflow-shadow-start`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${serviceKey}`,
-            },
-            body: JSON.stringify({
-              definition_key: "document_processing_v1",
-              document_id: documentId,
-              user_id: doc.user_id,
-              idempotency_key: `shadow-upload-${documentId}`,
-              shadow_reason: "upload_shadow_validation",
-            }),
-          }).catch(err => console.warn(`[${documentId}] Shadow workflow trigger failed:`, err));
-        }
-      }
-    } catch (shadowErr) {
-      console.warn(`[${documentId}] Shadow trigger error (non-fatal):`, shadowErr);
-    }
 
     return new Response(JSON.stringify({
       status: "completed",
