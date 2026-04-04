@@ -6,6 +6,12 @@ import {
   DocumentStageError,
   prepareRunStage,
   loadSourceStage,
+  detectFileTypeStage,
+  inspectPdfTextLayerStage,
+  ocrPdfStage,
+  ocrImageStage,
+  persistAnalysisMetadataStage,
+  computeFileFingerprintStage,
   extractTextStage,
   assessQualityStage,
   detectLanguageAndStatsStage,
@@ -167,6 +173,8 @@ async function runStage(
 }
 
 // Phase B durable-workflow handlers
+// Note: Additional Phase extension handlers below are intentionally registered
+// but not yet wired into active workflow definitions.
 
 export async function documentPrepareRun(
   input: HandlerExecutionInput
@@ -206,6 +214,114 @@ export async function documentExtractTextActivity(
         script_primary: result.script_primary ?? null,
         text_quality_score: result.quality_score ?? null,
         text_quality_reason: result.quality_reason ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentDetectFileType(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.detect_file_type",
+    "DOCUMENT_DETECT_FILE_TYPE_FAILED",
+    (supabase, documentId) => detectFileTypeStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        normalized_file_category: result.normalized_file_category ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentInspectPdfTextLayer(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.inspect_pdf_text_layer",
+    "DOCUMENT_INSPECT_PDF_TEXT_LAYER_FAILED",
+    (supabase, documentId) => inspectPdfTextLayerStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        pdf_text_status: result.pdf_text_status ?? null,
+        page_count: result.page_count ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentOcrPdf(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.ocr_pdf",
+    "DOCUMENT_OCR_PDF_FAILED",
+    (supabase, documentId) => ocrPdfStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        ocr_pdf_status: result.ocr_status ?? null,
+        ocr_pdf_engine: result.ocr_engine ?? null,
+        ocr_pdf_warning: result.warning ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentOcrImage(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.ocr_image",
+    "DOCUMENT_OCR_IMAGE_FAILED",
+    (supabase, documentId) => ocrImageStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        ocr_image_status: result.ocr_status ?? null,
+        ocr_image_engine: result.ocr_engine ?? null,
+        ocr_image_warning: result.warning ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentPersistAnalysisMetadata(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  const payload = toObject(input.activity_input_payload);
+  const metadataPatch = toObject(payload.metadata_patch ?? payload.patch ?? {});
+
+  return runStage(
+    input,
+    "document.persist_analysis_metadata",
+    "DOCUMENT_PERSIST_ANALYSIS_METADATA_FAILED",
+    (supabase, documentId) =>
+      persistAnalysisMetadataStage(supabase, documentId, metadataPatch),
+    {
+      buildContextPatch: (result) => ({
+        metadata_keys_written_count: Array.isArray(result.metadata_keys_written)
+          ? result.metadata_keys_written.length
+          : null,
+        metadata_persisted_at: result.metadata_persisted_at ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentComputeFileFingerprint(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.compute_file_fingerprint",
+    "DOCUMENT_COMPUTE_FILE_FINGERPRINT_FAILED",
+    (supabase, documentId) => computeFileFingerprintStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        file_fingerprint_sha256: result.fingerprint_sha256 ?? null,
       }),
     }
   );

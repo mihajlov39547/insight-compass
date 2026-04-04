@@ -63,6 +63,207 @@ function mergeMetadata(
   };
 }
 
+function normalizeDocumentCategory(doc: any): string {
+  const fileType = String(doc?.file_type ?? "").toLowerCase();
+  const mime = String(doc?.mime_type ?? "").toLowerCase();
+
+  if (fileType) {
+    return categorizeFile(fileType);
+  }
+
+  if (mime === "application/pdf") return "pdf";
+  if (
+    mime === "application/msword" ||
+    mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    return "word";
+  }
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("text/")) return "text";
+  if (
+    mime.includes("spreadsheet") ||
+    mime.includes("excel") ||
+    mime.includes("csv")
+  ) {
+    return "spreadsheet";
+  }
+  return "other";
+}
+
+// Phase extension note:
+// The following stages are intentionally additive and not yet wired into
+// current active workflow definitions. They are available for future DAG updates.
+
+export async function detectFileTypeStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+
+  const normalizedCategory = normalizeDocumentCategory(doc);
+  const detectedFrom = doc.file_type ? "file_type" : "mime_or_extension";
+
+  return {
+    document_id: documentId,
+    normalized_file_category: normalizedCategory,
+    detected_from: detectedFrom,
+    file_type: doc.file_type ?? null,
+    mime_type: doc.mime_type ?? null,
+  };
+}
+
+export async function inspectPdfTextLayerStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+
+  const fileCategory = normalizeDocumentCategory(doc);
+  if (fileCategory !== "pdf") {
+    return {
+      document_id: documentId,
+      pdf_text_status: "NOT_PDF",
+      page_count: doc.page_count ?? null,
+      has_selectable_text: false,
+    };
+  }
+
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
+  const hasSelectableText = extraction.quality.readable && extraction.text.trim().length >= 50;
+  const pdfTextStatus = hasSelectableText ? "HAS_SELECTABLE_TEXT" : "LIKELY_SCANNED";
+
+  return {
+    document_id: documentId,
+    pdf_text_status: pdfTextStatus,
+    page_count: doc.page_count ?? null,
+    has_selectable_text: hasSelectableText,
+    inspection_method: extraction.method,
+    inspection_quality_score: extraction.quality.score,
+    inspection_quality_reason: extraction.quality.reason,
+  };
+}
+
+export async function ocrPdfStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const fileCategory = normalizeDocumentCategory(doc);
+
+  if (fileCategory !== "pdf") {
+    return {
+      document_id: documentId,
+      ocr_status: "NOT_REQUIRED",
+      ocr_engine: null,
+      extracted_text_length: 0,
+      warning: "document is not PDF",
+    };
+  }
+
+  // Deterministic placeholder: OCR integration is intentionally deferred.
+  return {
+    document_id: documentId,
+    ocr_status: "UNAVAILABLE",
+    ocr_engine: "deferred_phase_placeholder",
+    extracted_text_length: 0,
+    warning: "PDF OCR is not wired in durable workflow stage yet",
+  };
+}
+
+export async function ocrImageStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const fileCategory = normalizeDocumentCategory(doc);
+
+  if (fileCategory !== "image") {
+    return {
+      document_id: documentId,
+      ocr_status: "NOT_REQUIRED",
+      ocr_engine: null,
+      extracted_text_length: 0,
+      warning: "document is not image",
+    };
+  }
+
+  // Deterministic placeholder: OCR integration is intentionally deferred.
+  return {
+    document_id: documentId,
+    ocr_status: "UNAVAILABLE",
+    ocr_engine: "deferred_phase_placeholder",
+    extracted_text_length: 0,
+    warning: "Image OCR is not wired in durable workflow stage yet",
+  };
+}
+
+export async function persistAnalysisMetadataStage(
+  supabase: SupabaseClient,
+  documentId: string,
+  metadataPatchInput?: unknown
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const analysis = await loadDocumentAnalysisRow(supabase, documentId);
+
+  const metadataPatch = toObject(metadataPatchInput);
+  const persistedAt = new Date().toISOString();
+
+  const mergedMetadata = mergeMetadata(analysis?.metadata_json, {
+    ...metadataPatch,
+    metadata_persisted_at: persistedAt,
+    metadata_persisted_by: "document.persist_analysis_metadata",
+  });
+
+  const { error: upsertError } = await supabase
+    .from("document_analysis")
+    .upsert(
+      {
+        document_id: documentId,
+        user_id: doc.user_id,
+        extracted_text: analysis?.extracted_text ?? null,
+        normalized_search_text: analysis?.normalized_search_text ?? null,
+        metadata_json: mergedMetadata,
+        ocr_used: analysis?.ocr_used ?? false,
+        indexed_at: analysis?.indexed_at ?? null,
+      },
+      { onConflict: "document_id" }
+    );
+
+  if (upsertError) {
+    throw new DocumentStageError(`Failed to persist analysis metadata: ${upsertError.message}`, {
+      code: "PERSIST_ANALYSIS_METADATA_FAILED",
+      classification: "retryable",
+    });
+  }
+
+  return {
+    document_id: documentId,
+    metadata_keys_written: Object.keys(metadataPatch),
+    metadata_persisted_at: persistedAt,
+  };
+}
+
+export async function computeFileFingerprintStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const bytes = await downloadDocumentSource(supabase, doc);
+
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const hash = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return {
+    document_id: documentId,
+    fingerprint_sha256: hash,
+    byte_length: bytes.length,
+    fingerprint_algo: "sha256",
+  };
+}
+
 export async function loadDocumentRow(
   supabase: SupabaseClient,
   documentId: string

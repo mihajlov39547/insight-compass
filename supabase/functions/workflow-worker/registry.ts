@@ -16,6 +16,12 @@ import {
 import {
   documentPrepareRun,
   documentLoadSource,
+  documentDetectFileType,
+  documentInspectPdfTextLayer,
+  documentOcrPdf,
+  documentOcrImage,
+  documentPersistAnalysisMetadata,
+  documentComputeFileFingerprint,
   documentExtractTextActivity,
   documentAssessQuality,
   documentDetectLanguageAndStats,
@@ -186,6 +192,55 @@ export function initializeBuiltInHandlers(): void {
     timeout_seconds: 90,
     description: "Extracts text and stores extraction diagnostics",
     handler: documentExtractTextActivity,
+  });
+
+  // Additional additive handlers prepared for future workflow wiring.
+  registerHandler({
+    key: "document.detect_file_type",
+    category: "document",
+    timeout_seconds: 20,
+    description: "Detects normalized file category for orchestration decisions",
+    handler: documentDetectFileType,
+  });
+
+  registerHandler({
+    key: "document.inspect_pdf_text_layer",
+    category: "document",
+    timeout_seconds: 45,
+    description: "Inspects PDF for selectable text versus likely scanned",
+    handler: documentInspectPdfTextLayer,
+  });
+
+  registerHandler({
+    key: "document.ocr_pdf",
+    category: "document",
+    timeout_seconds: 120,
+    description: "OCR stage for scanned PDFs (currently deterministic placeholder)",
+    handler: documentOcrPdf,
+  });
+
+  registerHandler({
+    key: "document.ocr_image",
+    category: "document",
+    timeout_seconds: 90,
+    description: "OCR stage for images (currently deterministic placeholder)",
+    handler: documentOcrImage,
+  });
+
+  registerHandler({
+    key: "document.persist_analysis_metadata",
+    category: "document",
+    timeout_seconds: 30,
+    description: "Persists additive technical metadata patch into document_analysis",
+    handler: documentPersistAnalysisMetadata,
+  });
+
+  registerHandler({
+    key: "document.compute_file_fingerprint",
+    category: "document",
+    timeout_seconds: 45,
+    description: "Computes SHA-256 file fingerprint for diagnostics and future dedup",
+    handler: documentComputeFileFingerprint,
   });
 
   registerHandler({
