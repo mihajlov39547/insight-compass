@@ -305,6 +305,8 @@ export async function documentDetectFileType(
       buildContextPatch: (result) => ({
         normalized_file_category: result.normalized_file_category ?? null,
         detected_from: result.detected_from ?? null,
+        file_type: result.file_type ?? null,
+        mime_type: result.mime_type ?? null,
       }),
     }
   );

@@ -15,37 +15,49 @@ Document processing is workflow-driven.
 
 ## 2) Active Workflow Activities (Used Now)
 
-The current active document workflow uses a reliability-first staged DAG:
+The current active document workflow uses a reliability-first routed DAG.
+
+Common entry sequence:
 
 1. `document.prepare_run`
 2. `document.load_source`
 3. `document.compute_file_fingerprint`
 4. `document.detect_file_type`
 5. `document.persist_metadata.after_detect_type` (handler: `document.persist_analysis_metadata`)
-6. `document.inspect_pdf_text_layer`
-7. `document.persist_metadata.after_pdf_inspection` (handler: `document.persist_analysis_metadata`)
-8. `document.extract_pdf_text`
-9. `document.extract_docx_text`
-10. `document.extract_doc_text`
-11. `document.extract_spreadsheet_text`
-12. `document.extract_presentation_text`
-13. `document.extract_email_text`
-14. `document.extract_plain_text_like_content`
-15. `document.extract_image_metadata`
-16. `document.ocr_image`
-17. `document.extract_text_fallback` (handler: `document.extract_text`)
-18. `document.normalize_output` (handler: `document.normalize_technical_analysis_output`)
-19. `document.persist_metadata.after_normalize` (handler: `document.persist_analysis_metadata`)
-20. `document.assess_quality`
-21. `document.persist_metadata.after_quality` (handler: `document.persist_analysis_metadata`)
-22. `document.detect_language_and_stats`
-23. `document.persist_metadata.after_language_stats` (handler: `document.persist_analysis_metadata`)
-24. `document.generate_summary`
-25. `document.build_search_index`
-26. `document.chunk_text`
-27. `document.generate_chunk_embeddings`
-28. `document.generate_chunk_questions` (optional)
-29. `document.finalize_document`
+
+Conditional extraction routing:
+
+- PDF route:
+	- `document.inspect_pdf_text_layer`
+	- `document.persist_metadata.after_pdf_inspection`
+	- `document.extract_pdf_text` when text layer is usable
+	- fallback route when scanned/weak text (no mandatory OCR in default critical path)
+- DOCX route: `document.extract_docx_text`
+- DOC route: `document.extract_doc_text`
+- Spreadsheet route: `document.extract_spreadsheet_text`
+- Presentation route: `document.extract_presentation_text`
+- Email route: `document.extract_email_text`
+- Text-like route: `document.extract_plain_text_like_content`
+- Image route (parallel):
+	- `document.extract_image_metadata`
+	- `document.ocr_image`
+- Unknown route only: `document.extract_text_fallback`
+
+Common post-extraction sequence:
+
+1. `document.normalize_output` (handler: `document.normalize_technical_analysis_output`)
+2. `document.persist_metadata.after_normalize`
+3. `document.assess_quality`
+4. `document.persist_metadata.after_quality`
+5. `document.detect_language_and_stats`
+6. `document.persist_metadata.after_language_stats`
+
+Downstream fan-out/fan-in:
+
+- Branch A: `document.generate_summary` -> `document.build_search_index`
+- Branch B: `document.chunk_text` -> `document.generate_chunk_embeddings`
+- Optional branch: `document.chunk_text` -> `document.generate_chunk_questions`
+- Fan-in terminal: `document.finalize_document` (waits for index + embeddings branch)
 
 ## 3) Registered And Ready, But Not Wired Into Active Workflow
 
