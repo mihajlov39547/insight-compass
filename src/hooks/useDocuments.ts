@@ -34,36 +34,6 @@ const PROCESSING_STATES = new Set([
 
 const ACTIVE_WORKFLOW_STATES = new Set(['pending', 'running']);
 
-function isWorkflowCutoverEnabled(): boolean {
-  // Requested Phase F control semantics:
-  // - default/unset => cutover enabled
-  // - VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED=true => cutover disabled
-  return String(import.meta.env.VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED || '').toLowerCase() !== 'true';
-}
-
-function getSupabaseFunctionHeaders(): HeadersInit {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-  };
-}
-
-async function triggerProcessDocument(documentId: string): Promise<void> {
-  const resp = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
-    {
-      method: 'POST',
-      headers: getSupabaseFunctionHeaders(),
-      body: JSON.stringify({ documentId }),
-    }
-  );
-
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({ error: 'Processing failed' }));
-    throw new Error(err.error || 'Processing failed');
-  }
-}
-
 async function markDocumentTriggerFailed(documentId: string, message: string): Promise<void> {
   const safeMessage = message.slice(0, 500);
   const { error } = await supabase
@@ -83,31 +53,15 @@ async function markDocumentTriggerFailed(documentId: string, message: string): P
   }
 }
 
-async function startDocumentWorkflowOrFallback(doc: DbDocument, mode: 'upload' | 'retry'): Promise<{
-  path: 'workflow' | 'workflow_existing' | 'fallback_process_document';
+async function startDocumentWorkflow(doc: DbDocument, mode: 'upload' | 'retry'): Promise<{
+  path: 'workflow' | 'workflow_existing';
   workflowRunId?: string;
 }> {
-  const fallbackToProcessDocument = async (): Promise<{
-    path: 'fallback_process_document';
-  }> => {
-    await triggerProcessDocument(doc.id);
-    return { path: 'fallback_process_document' };
-  };
-
-  if (!isWorkflowCutoverEnabled()) {
-    console.info('[doc-trigger] legacy path selected (cutover disabled)', {
-      document_id: doc.id,
-      mode,
-      flag: 'VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED=true',
-    });
-    return fallbackToProcessDocument();
-  }
-
   if (doc.processing_status === 'completed') {
     return { path: 'workflow_existing' };
   }
 
-  // Avoid duplicate active runs for the same document during cutover.
+  // Avoid duplicate active runs for the same document.
   const { data: existingRuns, error: existingRunError } = await supabase
     .from('workflow_runs' as any)
     .select('id, status')
@@ -135,10 +89,9 @@ async function startDocumentWorkflowOrFallback(doc: DbDocument, mode: 'upload' |
     definition_key: 'document_processing_v1',
     input_payload: {
       document_id: doc.id,
-      source: mode === 'upload' ? 'upload_cutover' : 'retry_cutover',
+      source: mode === 'upload' ? 'upload' : 'retry',
       source_document_id: doc.id,
       source_storage_path: doc.storage_path,
-      cutover_mode: true,
       initiated_at: new Date().toISOString(),
     },
     user_id: doc.user_id,
@@ -152,36 +105,31 @@ async function startDocumentWorkflowOrFallback(doc: DbDocument, mode: 'upload' |
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-start`,
     {
       method: 'POST',
-      headers: getSupabaseFunctionHeaders(),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
       body: JSON.stringify(requestPayload),
     }
   );
 
-  if (workflowResp.ok) {
-    const workflowData = await workflowResp.json().catch(() => ({}));
-    console.info('[doc-trigger] workflow path started', {
-      document_id: doc.id,
-      mode,
-      workflow_run_id: workflowData?.workflow_run_id,
-    });
-    return {
-      path: 'workflow',
-      workflowRunId: workflowData?.workflow_run_id,
-    };
+  if (!workflowResp.ok) {
+    const workflowErr = await workflowResp
+      .json()
+      .catch(() => ({ error: `workflow-start failed with status ${workflowResp.status}` }));
+    throw new Error(workflowErr?.error || `workflow-start failed (${workflowResp.status})`);
   }
 
-  const workflowErr = await workflowResp
-    .json()
-    .catch(() => ({ error: `workflow-start failed with status ${workflowResp.status}` }));
-  console.warn('[doc-trigger] workflow path failed, attempting fallback', {
+  const workflowData = await workflowResp.json().catch(() => ({}));
+  console.info('[doc-trigger] workflow started', {
     document_id: doc.id,
     mode,
-    status: workflowResp.status,
-    error: workflowErr?.error || 'unknown_workflow_start_error',
+    workflow_run_id: workflowData?.workflow_run_id,
   });
-
-  // Safer MVP: immediate rollback fallback to monolithic path on workflow start failure.
-  return fallbackToProcessDocument();
+  return {
+    path: 'workflow',
+    workflowRunId: workflowData?.workflow_run_id,
+  };
 }
 
 export function useDocuments(projectId?: string, chatId?: string | null) {
@@ -208,7 +156,6 @@ export function useDocuments(projectId?: string, chatId?: string | null) {
       return (data || []) as unknown as DbDocument[];
     },
     enabled: !!user && !!projectId,
-    // Poll every 4s while any document is still processing
     refetchInterval: (query) => {
       const docs = query.state.data as DbDocument[] | undefined;
       if (docs?.some(d => PROCESSING_STATES.has(d.processing_status))) return 4000;
@@ -314,14 +261,12 @@ export function useUploadDocuments() {
         throw new Error(errors.join('\n'));
       }
 
-      // Trigger processing for each uploaded document.
-      // Phase F cutover: workflow-start primary (when enabled), process-document fallback.
+      // Start workflow processing for each uploaded document.
       for (const doc of results) {
-        startDocumentWorkflowOrFallback(doc, 'upload').catch(async (err) => {
+        startDocumentWorkflow(doc, 'upload').catch(async (err) => {
           const message = err instanceof Error ? err.message : String(err);
-          console.error('[doc-trigger] upload trigger failed on both workflow and fallback paths', {
+          console.error('[doc-trigger] upload workflow trigger failed', {
             document_id: doc.id,
-            mode: 'upload',
             error: message,
           });
           await markDocumentTriggerFailed(doc.id, message);
@@ -346,7 +291,7 @@ export function useRetryProcessing() {
 
   const mutation = useMutation({
     mutationFn: async (doc: DbDocument) => {
-      const trigger = await startDocumentWorkflowOrFallback(doc, 'retry');
+      const trigger = await startDocumentWorkflow(doc, 'retry');
       return {
         status: 'accepted',
         ...trigger,

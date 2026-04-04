@@ -1,10 +1,6 @@
 # Phase C: Workflow Context Patching (Document Workflow)
 
-Status: active design/implementation artifact for durable workflow migration.
-
-Scope of this phase:
-- Enable orchestrator-side context patch merge for lightweight orchestration metadata.
-- Keep domain tables as the only authoritative business persistence for document processing.
+Status: active.
 
 ## 1. What Workflow Context Is Used For
 
@@ -26,7 +22,6 @@ Large or business-authoritative payloads must not be stored in `workflow_runs.co
 - chunk arrays
 - embeddings
 - question lists
-- other large user-facing artifacts
 
 These remain in domain tables:
 - `documents`
@@ -43,10 +38,6 @@ Policy:
 2. Later completed activity patch wins on top-level key collisions.
 3. Merge occurs only after handler result is accepted by orchestrator.
 4. No deep merge semantics are relied on.
-
-Practical ordering rule:
-- Patches are applied in activity completion order as persisted by worker processing.
-- Under concurrency, optimistic retries are used; final persisted write order is accepted for lightweight metadata.
 
 ## 4. Safety and Size Boundaries
 
@@ -66,8 +57,6 @@ Authoritative business persistence is unchanged:
 - handlers continue writing business-visible data directly to domain tables at stage completion.
 - context patch values are non-authoritative orchestration metadata only.
 
-This keeps existing dashboard/usability compatibility and avoids context as a business dependency.
-
 ## 6. Document Activities Emitting Context Patch
 
 Selected document handlers emit lightweight context patches:
@@ -79,14 +68,3 @@ Selected document handlers emit lightweight context patches:
 6. `document.generate_chunk_embeddings`
 7. `document.generate_chunk_questions`
 8. `document.finalize_document`
-
-Handlers may omit context patch where no useful lightweight metadata exists.
-
-## 7. Non-Goals Preserved
-
-This phase does not:
-- switch uploads to workflow engine
-- switch production traffic off current `process-document`
-- activate `pg_cron` or `pgmq`
-- move business-critical persistence into workflow context
-- alter schema/migrations/RLS/helper SQL

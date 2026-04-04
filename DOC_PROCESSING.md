@@ -10,32 +10,26 @@ After a user selects files:
 
 1. Frontend uploads bytes to Supabase Storage bucket `insight-navigator`.
 2. Frontend inserts a row in `documents` with `processing_status: 'uploaded'`.
-3. Frontend calls edge function `/functions/v1/process-document`.
-4. Retry action calls the same edge function.
+3. Frontend starts a durable workflow run via `workflow-start` for definition `document_processing_v1`.
+4. Retry action starts/restarts the workflow path.
 
-### Post-processing pipeline (`process-document`)
+### Durable workflow document processing
 
-Implemented stages:
+Document processing is executed by the durable workflow engine as a DAG of activities:
 
-- `extracting_metadata`
-- `extracting_content`
-- `detecting_language`
-- `summarizing`
-- `indexing`
-- `chunking`
-- `generating_embeddings`
-- `completed`
+1. `document.prepare_run` — initialize processing, clear errors, increment retry count
+2. `document.load_source` — download file from storage
+3. `document.extract_text` — extract and clean text by file type (PDF, DOC, DOCX, XLS/XLSX, TXT/MD/CSV/RTF)
+4. `document.assess_quality` — quality gate for extracted text readability
+5. `document.detect_language_and_stats` — detect language, compute word/char counts
+6. `document.generate_summary` — AI summary generation (soft-required: degrades to null on failure)
+7. `document.build_search_index` — build normalized search text and index metadata
+8. `document.chunk_text` — split text into retrieval chunks
+9. `document.generate_chunk_embeddings` — compute local hash embeddings for chunks
+10. `document.generate_chunk_questions` — generate grounded per-chunk questions (optional/non-fatal)
+11. `document.finalize_document` — set terminal `completed` or `failed` status
 
-What happens in this pipeline:
-
-- Downloads file from storage.
-- Extracts text by file type (PDF, DOC, DOCX, XLS/XLSX, TXT/MD/CSV/RTF, fallback decode).
-- Runs quality checks and structural-noise filtering.
-- On low-quality extraction, marks document as `failed` and stores diagnostics in `document_analysis`.
-- On success:
-  - Stores extracted content in `document_analysis.extracted_text`.
-  - Stores normalized searchable text in `document_analysis.normalized_search_text`.
-  - Generates AI summary (when API key available) and writes to `documents.summary`.
+Each activity writes directly to domain tables (`documents`, `document_analysis`, `document_chunks`, `document_chunk_questions`), preserving incremental visibility during processing.
 
 ### Chunking and embeddings
 
@@ -80,15 +74,10 @@ Implemented:
 
 ## 2) Summary of implementation coverage
 
-Compared to the earlier plan, the major upgrades are already delivered:
-
-- ✅ Ingestion now includes chunking + embeddings.
+- ✅ Ingestion now includes chunking + embeddings via durable workflow.
 - ✅ DB supports vector storage and semantic retrieval RPC.
 - ✅ Chat grounding is hybrid (semantic + keyword), not keyword-only.
 - ✅ Readiness/health metrics are exposed via RPC and shown in UI.
-
-Still intentionally retained:
-
 - ✅ Full-text keyword search remains active and is still used for workspace search.
 
 ---
@@ -141,15 +130,3 @@ Priority is ordered by impact and effort.
 9. **Citation quality UX**
    - Show page/section anchors consistently when metadata exists.
    - Improve snippet rendering and duplicate-chunk suppression in sources.
-
----
-
-## 4) Suggested immediate action plan (practical)
-
-If doing only three things next, do these first:
-
-1. Backfill missing chunks/embeddings for existing corpus.
-2. Add retrieval observability + error alerts.
-3. Tune hybrid weighting using real query logs.
-
-These three steps usually yield the fastest improvement in grounded-answer quality and stability.

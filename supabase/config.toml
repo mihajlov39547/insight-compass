@@ -1,8 +1,5 @@
 project_id = "mdrxzwudhtmkyqcxwvcy"
 
-[functions.process-document]
-verify_jwt = false
-
 [functions.workflow-start]
 verify_jwt = false
 
