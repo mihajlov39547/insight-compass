@@ -80,6 +80,62 @@ function mergeMetadata(
   };
 }
 
+async function persistExtractionCheckpoint(
+  supabase: SupabaseClient,
+  doc: any,
+  options: {
+    stageKey: string;
+    extractorSelected: string;
+    extractorStatus: string;
+    extractedText?: string;
+    warning?: string | null;
+    ocrUsed?: boolean;
+    metadataPatch?: Record<string, unknown>;
+  }
+): Promise<void> {
+  const analysis = await loadDocumentAnalysisRow(supabase, doc.id);
+  const selectedText = typeof options.extractedText === "string"
+    ? options.extractedText
+    : String(analysis?.extracted_text ?? "");
+
+  const mergedMetadata = mergeMetadata(analysis?.metadata_json, {
+    file_type_category: normalizeDocumentCategory(doc),
+    extractor_selected: options.extractorSelected,
+    extractor_status: options.extractorStatus,
+    extracted_char_count: selectedText.length,
+    extraction_warnings: options.warning ?? null,
+    last_completed_stage: options.stageKey,
+    ...(options.metadataPatch ?? {}),
+  });
+
+  const { error: upsertError } = await supabase
+    .from("document_analysis")
+    .upsert(
+      {
+        document_id: doc.id,
+        user_id: doc.user_id,
+        extracted_text: selectedText.slice(0, 500000),
+        normalized_search_text: analysis?.normalized_search_text ?? null,
+        metadata_json: mergedMetadata,
+        ocr_used: options.ocrUsed ?? analysis?.ocr_used ?? false,
+        indexed_at: analysis?.indexed_at ?? null,
+      },
+      { onConflict: "document_id" }
+    );
+
+  if (upsertError) {
+    throw new DocumentStageError(`Failed to persist extraction checkpoint: ${upsertError.message}`, {
+      code: "EXTRACTION_CHECKPOINT_PERSIST_FAILED",
+      classification: "retryable",
+      details: {
+        document_id: doc.id,
+        stage_key: options.stageKey,
+        extractor_selected: options.extractorSelected,
+      },
+    });
+  }
+}
+
 function normalizeDocumentCategory(doc: any): string {
   const fileType = String(doc?.file_type ?? "").toLowerCase();
   const mime = String(doc?.mime_type ?? "").toLowerCase();
@@ -316,6 +372,20 @@ export async function ocrImageStage(
 
   const text = ocr.text.trim();
   if (!text) {
+    await persistExtractionCheckpoint(supabase, doc, {
+      stageKey: "document.ocr_image",
+      extractorSelected: "tesseract.js_image_ocr",
+      extractorStatus: "FAILED",
+      extractedText: "",
+      warning: ocr.warning ?? "Image OCR returned empty text",
+      ocrUsed: true,
+      metadataPatch: {
+        ocr_engine: ocr.engine,
+        ocr_confidence: ocr.confidence,
+        ocr_languages: ocr.languages ?? null,
+      },
+    });
+
     return {
       document_id: documentId,
       ocr_status: "FAILED",
@@ -328,6 +398,20 @@ export async function ocrImageStage(
       warning: ocr.warning ?? "Image OCR returned empty text",
     };
   }
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.ocr_image",
+    extractorSelected: "tesseract.js_image_ocr",
+    extractorStatus: "COMPLETED",
+    extractedText: text,
+    warning: ocr.warning ?? null,
+    ocrUsed: true,
+    metadataPatch: {
+      ocr_engine: ocr.engine,
+      ocr_confidence: ocr.confidence,
+      ocr_languages: ocr.languages ?? null,
+    },
+  });
 
   return {
     document_id: documentId,
@@ -360,10 +444,24 @@ export async function extractPdfTextStage(
 
   const bytes = await downloadDocumentSource(supabase, doc);
   const extraction = await extractPdfTextNonAi(bytes, doc.mime_type, doc.file_name);
+  const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.extract_pdf_text",
+    extractorSelected: extraction.method,
+    extractorStatus: status,
+    extractedText: extraction.text,
+    warning: extraction.text.trim() ? null : extraction.quality_reason,
+    metadataPatch: {
+      quality_score: extraction.quality_score,
+      quality_reason: extraction.quality_reason,
+      pdf_text_status: status === "EMPTY" ? "LIKELY_SCANNED" : "HAS_SELECTABLE_TEXT",
+    },
+  });
 
   return {
     document_id: documentId,
-    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extraction_status: status,
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
     method: extraction.method,
@@ -390,10 +488,23 @@ export async function extractDocxTextStage(
 
   const bytes = await downloadDocumentSource(supabase, doc);
   const extraction = await extractDocxTextNonAi(bytes, doc.mime_type, doc.file_name);
+  const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.extract_docx_text",
+    extractorSelected: extraction.method,
+    extractorStatus: status,
+    extractedText: extraction.text,
+    warning: extraction.text.trim() ? null : extraction.quality_reason,
+    metadataPatch: {
+      quality_score: extraction.quality_score,
+      quality_reason: extraction.quality_reason,
+    },
+  });
 
   return {
     document_id: documentId,
-    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extraction_status: status,
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
     method: extraction.method,
@@ -420,10 +531,23 @@ export async function extractDocTextStage(
 
   const bytes = await downloadDocumentSource(supabase, doc);
   const extraction = await extractDocTextNonAi(bytes, doc.mime_type, doc.file_name);
+  const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.extract_doc_text",
+    extractorSelected: extraction.method,
+    extractorStatus: status,
+    extractedText: extraction.text,
+    warning: extraction.text.trim() ? null : extraction.quality_reason,
+    metadataPatch: {
+      quality_score: extraction.quality_score,
+      quality_reason: extraction.quality_reason,
+    },
+  });
 
   return {
     document_id: documentId,
-    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extraction_status: status,
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
     method: extraction.method,
@@ -450,10 +574,24 @@ export async function extractSpreadsheetTextStage(
 
   const bytes = await downloadDocumentSource(supabase, doc);
   const extraction = await extractSpreadsheetTextNonAi(bytes, doc.file_name);
+  const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.extract_spreadsheet_text",
+    extractorSelected: extraction.method,
+    extractorStatus: status,
+    extractedText: extraction.text,
+    warning: extraction.warning ?? null,
+    metadataPatch: {
+      sheet_count: extraction.sheet_count,
+      row_count: extraction.row_count,
+      column_count_estimate: extraction.column_count_estimate,
+    },
+  });
 
   return {
     document_id: documentId,
-    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extraction_status: status,
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
     method: extraction.method,
@@ -482,10 +620,26 @@ export async function extractPresentationTextStage(
 
   const bytes = await downloadDocumentSource(supabase, doc);
   const extraction = await extractPresentationTextNonAi(bytes, doc.file_name);
+  const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.extract_presentation_text",
+    extractorSelected: extraction.method,
+    extractorStatus: extraction.support_status ?? status,
+    extractedText: extraction.text,
+    warning: extraction.warning ?? null,
+    metadataPatch: {
+      presentation_type: extraction.presentation_type ?? ext,
+      slide_count: extraction.slide_count,
+      notes_count: extraction.notes_count ?? null,
+      parser_warnings: extraction.parser_warnings ?? [],
+      support_status: extraction.support_status ?? "partial",
+    },
+  });
 
   return {
     document_id: documentId,
-    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extraction_status: status,
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
     presentation_type: extraction.presentation_type ?? ext,
@@ -519,10 +673,33 @@ export async function extractEmailTextStage(
 
   const bytes = await downloadDocumentSource(supabase, doc);
   const extraction = await extractEmailTextNonAi(bytes, doc.file_name, doc.mime_type);
+  const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.extract_email_text",
+    extractorSelected: extraction.method,
+    extractorStatus: extraction.support_status ?? status,
+    extractedText: extraction.text,
+    warning: Array.isArray(extraction.parser_warnings) && extraction.parser_warnings.length > 0
+      ? extraction.parser_warnings.join(" | ")
+      : null,
+    metadataPatch: {
+      support_status: extraction.support_status ?? "partial",
+      email_subject: extraction.subject,
+      email_from: extraction.from,
+      email_to: extraction.to ?? null,
+      email_cc: extraction.cc ?? null,
+      email_bcc: extraction.bcc ?? null,
+      email_sent_date: extraction.sent_date ?? extraction.date ?? null,
+      email_has_html: extraction.has_html ?? false,
+      attachment_count: extraction.attachment_count ?? 0,
+      parser_warnings: extraction.parser_warnings ?? [],
+    },
+  });
 
   return {
     document_id: documentId,
-    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extraction_status: status,
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
     support_status: extraction.support_status ?? "partial",
@@ -608,10 +785,23 @@ export async function extractPlainTextLikeContentStage(
   const doc = await loadDocumentRow(supabase, documentId);
   const bytes = await downloadDocumentSource(supabase, doc);
   const extraction = extractPlainTextLikeContent(bytes, doc.file_name);
+  const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.extract_plain_text_like_content",
+    extractorSelected: extraction.method,
+    extractorStatus: status,
+    extractedText: extraction.text,
+    warning: extraction.warning ?? null,
+    metadataPatch: {
+      word_count: extraction.word_count,
+      char_count: extraction.char_count,
+    },
+  });
 
   return {
     document_id: documentId,
-    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extraction_status: status,
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
     method: extraction.method,
@@ -637,6 +827,35 @@ export async function normalizeTechnicalAnalysisOutputStage(
     },
     doc.file_name
   );
+
+  const fileCategory = normalizeDocumentCategory(doc);
+  const normalizedText = String(normalized.normalized_extracted_text ?? "").trim();
+
+  if (!normalizedText && fileCategory !== "image") {
+    throw new DocumentStageError("Normalized extraction output is empty", {
+      code: "EXTRACTION_EMPTY_OUTPUT",
+      classification: "terminal",
+      details: {
+        document_id: documentId,
+        file_category: fileCategory,
+      },
+    });
+  }
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.normalize_technical_analysis_output",
+    extractorSelected: "normalized_output",
+    extractorStatus: normalizedText ? "COMPLETED" : "EMPTY_ALLOWED",
+    extractedText: normalizedText,
+    warning: typeof normalized.warning === "string" ? normalized.warning : null,
+    metadataPatch: {
+      normalized_text_length: normalized.normalized_text_length,
+      normalized_word_count: normalized.word_count,
+      normalized_char_count: normalized.char_count,
+      normalized_line_count: normalized.line_count,
+      last_completed_stage: "document.normalize_technical_analysis_output",
+    },
+  });
 
   return {
     document_id: documentId,
@@ -852,6 +1071,54 @@ export async function extractTextStage(
   documentId: string
 ): Promise<Record<string, unknown>> {
   const doc = await loadDocumentRow(supabase, documentId);
+  const fileCategory = normalizeDocumentCategory(doc);
+
+  const knownTypeExtensions = new Set([
+    "pdf",
+    "docx",
+    "doc",
+    "xls",
+    "xlsx",
+    "csv",
+    "ppt",
+    "pptx",
+    "eml",
+    "msg",
+    "txt",
+    "md",
+    "rtf",
+    "xml",
+    "json",
+    "log",
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "webp",
+  ]);
+
+  const ext = String(doc.file_type ?? "").toLowerCase();
+  const hasDedicatedPath =
+    knownTypeExtensions.has(ext) ||
+    ["pdf", "image", "spreadsheet"].includes(fileCategory);
+
+  if (hasDedicatedPath) {
+    return {
+      document_id: documentId,
+      extraction_method: "generic_fallback_skipped",
+      extraction_encoding: null,
+      structural_noise_filtered: null,
+      script_primary: null,
+      quality_score: null,
+      quality_reason: "known file type should use dedicated extractor activities",
+      readable: null,
+      raw_text_length: 0,
+      cleaned_text_length: 0,
+      line_count: 0,
+      fallback_used: false,
+    };
+  }
+
   const bytes = await downloadDocumentSource(supabase, doc);
 
   const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
@@ -904,6 +1171,15 @@ export async function extractTextStage(
       classification: "retryable",
     });
   }
+
+  await persistExtractionCheckpoint(supabase, doc, {
+    stageKey: "document.extract_text",
+    extractorSelected: extraction.method,
+    extractorStatus: extraction.quality.readable ? "COMPLETED" : "QUALITY_WARNING",
+    extractedText: effectiveText,
+    warning: extraction.quality.readable ? null : extraction.quality.reason,
+    metadataPatch,
+  });
 
   return {
     document_id: documentId,

@@ -39,6 +39,66 @@ function toObject(value: unknown): Record<string, unknown> {
     : {};
 }
 
+function deriveMetadataPatchFromContext(
+  activityKey: string,
+  workflowContext: unknown
+): Record<string, unknown> {
+  const ctx = toObject(workflowContext);
+  const warnings: string[] = [];
+
+  const warningCandidates = [
+    ctx.ocr_pdf_warning,
+    ctx.ocr_image_warning,
+    ctx.question_generation_warning,
+    ctx.summary_warning,
+    ctx.presentation_parser_warning,
+    ctx.email_parser_warning,
+  ];
+
+  for (const candidate of warningCandidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      warnings.push(candidate.trim());
+    }
+  }
+
+  return {
+    file_type_category: ctx.normalized_file_category ?? null,
+    pdf_text_status: ctx.pdf_text_status ?? null,
+    extractor_selected:
+      ctx.docx_extraction_method ??
+      ctx.doc_extraction_method ??
+      ctx.spreadsheet_extraction_method ??
+      ctx.presentation_extraction_method ??
+      ctx.email_extraction_method ??
+      ctx.plain_text_extraction_method ??
+      ctx.pdf_extraction_method ??
+      ctx.extraction_method ??
+      null,
+    extractor_status:
+      ctx.ocr_pdf_status ??
+      ctx.ocr_image_status ??
+      ctx.readable ??
+      null,
+    extracted_char_count:
+      ctx.normalized_text_length ??
+      ctx.pdf_extracted_text_length ??
+      ctx.docx_extracted_text_length ??
+      ctx.doc_extracted_text_length ??
+      null,
+    detected_language: ctx.detected_language ?? null,
+    detected_script: ctx.detected_script ?? null,
+    quality_score: ctx.text_quality_score ?? null,
+    quality_reason: ctx.text_quality_reason ?? null,
+    word_count: ctx.word_count ?? null,
+    char_count: ctx.char_count ?? null,
+    chunk_count: ctx.chunk_count ?? null,
+    embeddings_generated: ctx.embeddings_generated ?? null,
+    questions_generated: ctx.questions_generated ?? null,
+    extraction_warnings: warnings,
+    last_completed_stage: activityKey,
+  };
+}
+
 function resolveDocumentId(input: HandlerExecutionInput): string | null {
   const payload = toObject(input.activity_input_payload);
   const fromPayload = payload.document_id ?? payload.documentId ?? payload.id;
@@ -224,6 +284,10 @@ export async function documentExtractTextActivity(
         script_primary: result.script_primary ?? null,
         text_quality_score: result.quality_score ?? null,
         text_quality_reason: result.quality_reason ?? null,
+        extractor_selected: result.extraction_method ?? null,
+        extractor_status: result.readable === false ? "QUALITY_WARNING" : "COMPLETED",
+        extracted_char_count: result.cleaned_text_length ?? result.raw_text_length ?? null,
+        extraction_fallback_used: result.fallback_used ?? true,
       }),
     }
   );
@@ -240,6 +304,7 @@ export async function documentDetectFileType(
     {
       buildContextPatch: (result) => ({
         normalized_file_category: result.normalized_file_category ?? null,
+        detected_from: result.detected_from ?? null,
       }),
     }
   );
@@ -257,6 +322,9 @@ export async function documentInspectPdfTextLayer(
       buildContextPatch: (result) => ({
         pdf_text_status: result.pdf_text_status ?? null,
         page_count: result.page_count ?? null,
+        pages_with_text_count: result.pages_with_text_count ?? null,
+        pages_without_text_count: result.pages_without_text_count ?? null,
+        inspection_warning: result.inspection_warning ?? null,
       }),
     }
   );
@@ -274,6 +342,9 @@ export async function documentExtractPdfText(
       buildContextPatch: (result) => ({
         pdf_extraction_method: result.method ?? null,
         pdf_extracted_text_length: result.extracted_text_length ?? null,
+        extractor_selected: result.method ?? null,
+        extractor_status: result.extraction_status ?? null,
+        extracted_char_count: result.extracted_text_length ?? null,
       }),
     }
   );
@@ -291,6 +362,9 @@ export async function documentExtractDocxText(
       buildContextPatch: (result) => ({
         docx_extraction_method: result.method ?? null,
         docx_extracted_text_length: result.extracted_text_length ?? null,
+        extractor_selected: result.method ?? null,
+        extractor_status: result.extraction_status ?? null,
+        extracted_char_count: result.extracted_text_length ?? null,
       }),
     }
   );
@@ -308,6 +382,9 @@ export async function documentExtractDocText(
       buildContextPatch: (result) => ({
         doc_extraction_method: result.method ?? null,
         doc_extracted_text_length: result.extracted_text_length ?? null,
+        extractor_selected: result.method ?? null,
+        extractor_status: result.extraction_status ?? null,
+        extracted_char_count: result.extracted_text_length ?? null,
       }),
     }
   );
@@ -325,6 +402,9 @@ export async function documentExtractSpreadsheetText(
       buildContextPatch: (result) => ({
         spreadsheet_extraction_method: result.method ?? null,
         spreadsheet_sheet_count: result.sheet_count ?? null,
+        extractor_selected: result.method ?? null,
+        extractor_status: result.extraction_status ?? null,
+        extracted_char_count: result.extracted_text_length ?? null,
       }),
     }
   );
@@ -345,6 +425,9 @@ export async function documentExtractPresentationText(
         presentation_type: result.presentation_type ?? null,
         presentation_slide_count: result.slide_count ?? null,
         presentation_notes_count: result.notes_count ?? null,
+        extractor_selected: result.method ?? null,
+        extractor_status: result.support_status ?? result.extraction_status ?? null,
+        extracted_char_count: result.extracted_text_length ?? null,
         presentation_parser_warning: Array.isArray(result.parser_warnings) && result.parser_warnings.length > 0
           ? result.parser_warnings.join(" | ")
           : null,
@@ -366,6 +449,9 @@ export async function documentExtractEmailText(
         email_extraction_method: result.method ?? null,
         email_support_status: result.support_status ?? null,
         email_subject: result.email_subject ?? null,
+        extractor_selected: result.method ?? null,
+        extractor_status: result.support_status ?? result.extraction_status ?? null,
+        extracted_char_count: result.extracted_text_length ?? null,
         email_attachment_count: result.attachment_count ?? null,
         email_parser_warning: Array.isArray(result.parser_warnings) && result.parser_warnings.length > 0
           ? result.parser_warnings.join(" | ")
@@ -390,6 +476,9 @@ export async function documentOcrPdf(
         ocr_pdf_confidence: result.ocr_confidence ?? null,
         ocr_pdf_languages: result.ocr_languages ?? null,
         ocr_pdf_processed_pages: result.processed_page_count ?? null,
+        extractor_selected: result.ocr_engine ?? null,
+        extractor_status: result.ocr_status ?? null,
+        extracted_char_count: result.extracted_text_length ?? null,
         ocr_pdf_fallback_used: result.ocr_fallback_used ?? null,
         ocr_pdf_warning: result.warning ?? null,
       }),
@@ -411,6 +500,9 @@ export async function documentOcrImage(
         ocr_image_engine: result.ocr_engine ?? null,
         ocr_image_confidence: result.ocr_confidence ?? null,
         ocr_image_languages: result.ocr_languages ?? null,
+        extractor_selected: result.ocr_engine ?? null,
+        extractor_status: result.ocr_status ?? null,
+        extracted_char_count: result.extracted_text_length ?? null,
         ocr_image_warning: result.warning ?? null,
       }),
     }
@@ -464,6 +556,9 @@ export async function documentExtractPlainTextLikeContent(
       buildContextPatch: (result) => ({
         plain_text_extraction_method: result.method ?? null,
         plain_text_word_count: result.word_count ?? null,
+        extractor_selected: result.method ?? null,
+        extractor_status: result.extraction_status ?? null,
+        extracted_char_count: result.extracted_text_length ?? null,
       }),
     }
   );
@@ -493,7 +588,10 @@ export async function documentPersistAnalysisMetadata(
   input: HandlerExecutionInput
 ): Promise<HandlerOutput> {
   const payload = toObject(input.activity_input_payload);
-  const metadataPatch = toObject(payload.metadata_patch ?? payload.patch ?? {});
+  const metadataPatch = {
+    ...deriveMetadataPatchFromContext(input.activity_key, input.workflow_context),
+    ...toObject(payload.metadata_patch ?? payload.patch ?? {}),
+  };
 
   return runStage(
     input,

@@ -15,40 +15,44 @@ Document processing is workflow-driven.
 
 ## 2) Active Workflow Activities (Used Now)
 
-The current active document workflow uses these 11 activity keys:
+The current active document workflow uses a reliability-first staged DAG:
 
 1. `document.prepare_run`
 2. `document.load_source`
-3. `document.extract_text`
-4. `document.assess_quality`
-5. `document.detect_language_and_stats`
-6. `document.generate_summary`
-7. `document.build_search_index`
-8. `document.chunk_text`
-9. `document.generate_chunk_embeddings`
-10. `document.generate_chunk_questions`
-11. `document.finalize_document`
+3. `document.compute_file_fingerprint`
+4. `document.detect_file_type`
+5. `document.persist_metadata.after_detect_type` (handler: `document.persist_analysis_metadata`)
+6. `document.inspect_pdf_text_layer`
+7. `document.persist_metadata.after_pdf_inspection` (handler: `document.persist_analysis_metadata`)
+8. `document.extract_pdf_text`
+9. `document.extract_docx_text`
+10. `document.extract_doc_text`
+11. `document.extract_spreadsheet_text`
+12. `document.extract_presentation_text`
+13. `document.extract_email_text`
+14. `document.extract_plain_text_like_content`
+15. `document.extract_image_metadata`
+16. `document.ocr_image`
+17. `document.extract_text_fallback` (handler: `document.extract_text`)
+18. `document.normalize_output` (handler: `document.normalize_technical_analysis_output`)
+19. `document.persist_metadata.after_normalize` (handler: `document.persist_analysis_metadata`)
+20. `document.assess_quality`
+21. `document.persist_metadata.after_quality` (handler: `document.persist_analysis_metadata`)
+22. `document.detect_language_and_stats`
+23. `document.persist_metadata.after_language_stats` (handler: `document.persist_analysis_metadata`)
+24. `document.generate_summary`
+25. `document.build_search_index`
+26. `document.chunk_text`
+27. `document.generate_chunk_embeddings`
+28. `document.generate_chunk_questions` (optional)
+29. `document.finalize_document`
 
 ## 3) Registered And Ready, But Not Wired Into Active Workflow
 
 These handlers are implemented and registered, but intentionally not in the active DAG yet:
 
-1. `document.detect_file_type`
-2. `document.inspect_pdf_text_layer`
-3. `document.extract_pdf_text`
-4. `document.extract_docx_text`
-5. `document.extract_doc_text`
-6. `document.extract_spreadsheet_text`
-7. `document.ocr_image`
-8. `document.extract_image_metadata`
-9. `document.detect_scanned_document`
-10. `document.extract_plain_text_like_content`
-11. `document.normalize_technical_analysis_output`
-12. `document.persist_analysis_metadata`
-13. `document.compute_file_fingerprint`
-14. `document.ocr_pdf`
-15. `document.extract_presentation_text`
-16. `document.extract_email_text`
+1. `document.ocr_pdf`
+2. `document.detect_scanned_document`
 
 ## 4) Implemented But Partial / Deferred / Runtime-Constrained
 
@@ -116,10 +120,19 @@ These handlers are implemented and registered, but intentionally not in the acti
 5. Harden MSG parser compatibility across deployment targets.
 6. Add operational OCR observability (success rates, per-format diagnostics).
 
+## 7.1) Migration Note: Stuck `extracting_content`
+
+For existing documents stuck in `extracting_content` from older runs:
+
+1. Prefer normal retry action from the UI so a new run uses the current DAG.
+2. If a run is stale, allow maintenance recovery to reclaim/fail stale activities first, then retry.
+3. If manual intervention is required, set document status to `failed` with explicit reason and trigger retry, rather than leaving indefinite `extracting_content`.
+4. Confirm new run created for `document_processing_v1` current version and that `document.detect_file_type` checkpoint appears in metadata.
+
 ## 8) Compatibility and Safety
 
 - No schema changes.
-- No migration/RLS/helper SQL changes.
+- Migration updates workflow-definition data only (no RLS/helper SQL/schema changes).
 - No upload/cutover/retry routing changes in this consolidation.
 - This document replaces older phase-specific notes as the single maintained status file.
 
