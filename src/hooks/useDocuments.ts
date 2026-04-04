@@ -121,6 +121,23 @@ async function startDocumentWorkflow(doc: DbDocument, mode: 'upload' | 'retry'):
   }
 
   const workflowData = await workflowResp.json().catch(() => ({}));
+
+  // Best-effort immediate worker kick to reduce time-to-first-activity.
+  fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-worker`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({
+      max_activities_to_process: 5,
+      lease_seconds: 180,
+      debug: false,
+    }),
+  }).catch(() => {
+    // Ignore fire-and-forget kick errors; cron/normal worker invocation remains authoritative.
+  });
+
   console.info('[doc-trigger] workflow started', {
     document_id: doc.id,
     mode,
@@ -158,7 +175,7 @@ export function useDocuments(projectId?: string, chatId?: string | null) {
     enabled: !!user && !!projectId,
     refetchInterval: (query) => {
       const docs = query.state.data as DbDocument[] | undefined;
-      if (docs?.some(d => PROCESSING_STATES.has(d.processing_status))) return 4000;
+      if (docs?.some(d => PROCESSING_STATES.has(d.processing_status))) return 2000;
       return false;
     },
   });

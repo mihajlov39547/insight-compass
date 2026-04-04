@@ -25,7 +25,7 @@ const WORKER_ID = `worker-${new Date().getTime()}-${Math.random().toString(36).s
 
 export async function runWorkerLoop(
   supabase: SupabaseClient,
-  maxActivitiesToProcess: number = 1,
+  maxActivitiesToProcess?: number,
   leaseSeconds: number = 300,
   handlerKeys?: string[],
   debug: boolean = false
@@ -44,7 +44,12 @@ export async function runWorkerLoop(
     message: "Worker loop completed",
   };
 
-  const maxToProcess = Math.min(Math.max(maxActivitiesToProcess, 1), 5);
+  const defaultMax = Number(Deno.env.get("WORKER_DEFAULT_MAX_ACTIVITIES") || 5);
+  const hardCap = Number(Deno.env.get("WORKER_MAX_ACTIVITIES_CAP") || 30);
+  const requested = Number.isFinite(maxActivitiesToProcess as number)
+    ? Number(maxActivitiesToProcess)
+    : defaultMax;
+  const maxToProcess = Math.min(Math.max(Math.floor(requested), 1), Math.max(1, hardCap));
   const touchedWorkflows = new Set<string>();
 
   for (let i = 0; i < maxToProcess; i++) {

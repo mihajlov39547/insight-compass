@@ -1576,21 +1576,30 @@ export async function generateChunkEmbeddingsStage(
   const embeddings = generateEmbeddingsLocal(rows.map((r) => String(r.chunk_text ?? "")));
   let embeddedCount = 0;
 
-  for (let i = 0; i < rows.length; i++) {
-    const embedding = embeddings[i];
-    if (!embedding) continue;
+  const EMBEDDING_UPDATE_BATCH = 25;
+  for (let i = 0; i < rows.length; i += EMBEDDING_UPDATE_BATCH) {
+    const batchRows = rows.slice(i, i + EMBEDDING_UPDATE_BATCH);
 
-    const { error: updateErr } = await supabase
-      .from("document_chunks")
-      .update({ embedding: JSON.stringify(embedding) })
-      .eq("id", rows[i].id);
+    const batchResults = await Promise.all(
+      batchRows.map(async (row, offset) => {
+        const embedding = embeddings[i + offset];
+        if (!embedding) return false;
 
-    if (updateErr) {
-      console.warn(`Failed to persist embedding for chunk ${rows[i].id}: ${updateErr.message}`);
-      continue;
-    }
+        const { error: updateErr } = await supabase
+          .from("document_chunks")
+          .update({ embedding: JSON.stringify(embedding) })
+          .eq("id", row.id);
 
-    embeddedCount += 1;
+        if (updateErr) {
+          console.warn(`Failed to persist embedding for chunk ${row.id}: ${updateErr.message}`);
+          return false;
+        }
+
+        return true;
+      })
+    );
+
+    embeddedCount += batchResults.filter(Boolean).length;
   }
 
   if (rows.length > 0 && embeddedCount === 0) {
