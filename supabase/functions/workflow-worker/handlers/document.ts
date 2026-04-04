@@ -376,6 +376,9 @@ export async function documentOcrPdf(
       buildContextPatch: (result) => ({
         ocr_pdf_status: result.ocr_status ?? null,
         ocr_pdf_engine: result.ocr_engine ?? null,
+        ocr_pdf_confidence: result.ocr_confidence ?? null,
+        ocr_pdf_languages: result.ocr_languages ?? null,
+        ocr_pdf_processed_pages: result.processed_page_count ?? null,
         ocr_pdf_warning: result.warning ?? null,
       }),
     }
@@ -394,6 +397,8 @@ export async function documentOcrImage(
       buildContextPatch: (result) => ({
         ocr_image_status: result.ocr_status ?? null,
         ocr_image_engine: result.ocr_engine ?? null,
+        ocr_image_confidence: result.ocr_confidence ?? null,
+        ocr_image_languages: result.ocr_languages ?? null,
         ocr_image_warning: result.warning ?? null,
       }),
     }

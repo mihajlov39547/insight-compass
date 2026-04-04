@@ -273,7 +273,7 @@ export function initializeBuiltInHandlers(): void {
     key: "document.ocr_pdf",
     category: "document",
     timeout_seconds: 120,
-    description: "OCR stage for scanned PDFs using non-AI OCR service integration",
+    description: "OCR stage for scanned PDFs using Tesseract.js primary path with optional external fallback",
     handler: documentOcrPdf,
   });
 
@@ -281,7 +281,7 @@ export function initializeBuiltInHandlers(): void {
     key: "document.ocr_image",
     category: "document",
     timeout_seconds: 90,
-    description: "OCR stage for images using non-AI OCR service integration",
+    description: "OCR stage for images using Tesseract.js",
     handler: documentOcrImage,
   });
 

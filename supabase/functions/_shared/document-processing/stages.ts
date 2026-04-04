@@ -15,7 +15,8 @@ import { chunkText, estimateTokenCount } from "./chunking.ts";
 import { generateEmbeddingsLocal, localEmbedding } from "./embeddings.ts";
 import { generateDocumentSummary } from "./summarization.ts";
 import {
-  runImageOcrViaExternalService,
+  runImageOcrViaTesseract,
+  runPdfOcrViaTesseract,
   runPdfOcrViaExternalService,
 } from "./ocr.ts";
 import {
@@ -197,10 +198,36 @@ export async function ocrPdfStage(
   }
 
   const bytes = await downloadDocumentSource(supabase, doc);
+  const tesseractPdfOcr = await runPdfOcrViaTesseract(bytes, {
+    languages: Deno.env.get("DOCUMENT_OCR_LANGS"),
+    maxPages: Number(Deno.env.get("DOCUMENT_OCR_MAX_PDF_PAGES") || 8),
+    scale: Number(Deno.env.get("DOCUMENT_OCR_PDF_SCALE") || 1.8),
+  });
+
+  if (tesseractPdfOcr.text.trim().length > 0) {
+    return {
+      document_id: documentId,
+      pdf_text_status: pdfTextStatus,
+      ocr_status: "COMPLETED",
+      ocr_engine: tesseractPdfOcr.engine,
+      ocr_model: tesseractPdfOcr.model ?? null,
+      ocr_confidence: tesseractPdfOcr.confidence,
+      extracted_text: tesseractPdfOcr.text,
+      extracted_text_length: tesseractPdfOcr.text.length,
+      page_count: tesseractPdfOcr.page_count ?? inspection.page_count ?? null,
+      processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
+      ocr_languages: tesseractPdfOcr.languages ?? null,
+      warning: tesseractPdfOcr.warning ?? null,
+    };
+  }
+
+  const externalServiceUrl = Deno.env.get("PDF_OCR_SERVICE_URL") || Deno.env.get("NON_AI_OCR_SERVICE_URL");
+  const externalServiceToken = Deno.env.get("PDF_OCR_SERVICE_TOKEN") || Deno.env.get("NON_AI_OCR_SERVICE_TOKEN");
+
   const externalPdfOcr = await runPdfOcrViaExternalService(
     bytes,
-    Deno.env.get("PDF_OCR_SERVICE_URL") || Deno.env.get("NON_AI_OCR_SERVICE_URL"),
-    Deno.env.get("PDF_OCR_SERVICE_TOKEN") || Deno.env.get("NON_AI_OCR_SERVICE_TOKEN")
+    externalServiceUrl,
+    externalServiceToken
   );
 
   if (externalPdfOcr.text.trim().length > 0) {
@@ -214,7 +241,12 @@ export async function ocrPdfStage(
       extracted_text: externalPdfOcr.text,
       extracted_text_length: externalPdfOcr.text.length,
       page_count: inspection.page_count ?? null,
-      warning: externalPdfOcr.warning ?? null,
+      ocr_languages: tesseractPdfOcr.languages ?? null,
+      warning: [
+        "Used external OCR fallback after Tesseract path produced no text",
+        tesseractPdfOcr.warning,
+        externalPdfOcr.warning,
+      ].filter(Boolean).join(" | "),
     };
   }
 
@@ -229,9 +261,14 @@ export async function ocrPdfStage(
     extracted_text: "",
     extracted_text_length: 0,
     page_count: inspection.page_count ?? null,
+    processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
+    ocr_languages: tesseractPdfOcr.languages ?? null,
     warning:
-      externalPdfOcr.warning ??
-      "PDF OCR remains partially deferred in Edge runtime without external raster/OCR service",
+      [
+        tesseractPdfOcr.warning,
+        externalPdfOcr.warning,
+        "Scanned-PDF OCR requires successful PDF rasterization in Edge runtime or external fallback",
+      ].filter(Boolean).join(" | "),
   };
 }
 
@@ -253,11 +290,10 @@ export async function ocrImageStage(
   }
 
   const bytes = await downloadDocumentSource(supabase, doc);
-  const ocr = await runImageOcrViaExternalService(
+  const ocr = await runImageOcrViaTesseract(
     bytes,
     String(doc.mime_type ?? "image/png"),
-    Deno.env.get("IMAGE_OCR_SERVICE_URL") || Deno.env.get("NON_AI_OCR_SERVICE_URL"),
-    Deno.env.get("IMAGE_OCR_SERVICE_TOKEN") || Deno.env.get("NON_AI_OCR_SERVICE_TOKEN")
+    Deno.env.get("DOCUMENT_OCR_LANGS")
   );
 
   const text = ocr.text.trim();
@@ -268,6 +304,7 @@ export async function ocrImageStage(
       ocr_engine: ocr.engine,
       ocr_model: ocr.model ?? null,
       ocr_confidence: ocr.confidence,
+      ocr_languages: ocr.languages ?? null,
       extracted_text: "",
       extracted_text_length: 0,
       warning: ocr.warning ?? "Image OCR returned empty text",
@@ -280,6 +317,7 @@ export async function ocrImageStage(
     ocr_engine: ocr.engine,
     ocr_model: ocr.model ?? null,
     ocr_confidence: ocr.confidence,
+    ocr_languages: ocr.languages ?? null,
     extracted_text: text,
     extracted_text_length: text.length,
     warning: ocr.warning ?? null,

@@ -40,7 +40,7 @@ Current active document-processing workflow behavior remains unchanged.
 - document.extract_spreadsheet_text: implemented (CSV full, XLS/XLSX package-backed with fallback)
 - document.extract_presentation_text: partially real (PPTX implemented, legacy PPT deferred)
 - document.extract_email_text: partially real (EML implemented, MSG deferred)
-- document.ocr_image: partially real (non-AI OCR service integration required)
+- document.ocr_image: real (Tesseract.js primary OCR)
 - document.extract_image_metadata: implemented
 - document.persist_analysis_metadata: implemented
 - document.compute_file_fingerprint: implemented
@@ -54,10 +54,11 @@ PDF:
 - unpdf (already used in shared text extraction) for text-layer extraction and quality inspection.
 
 OCR:
-- Non-AI external OCR service integration via shared helper.
-- Supported env vars:
+- Tesseract.js (v5) integrated directly as primary OCR engine.
+- OCR language control via DOCUMENT_OCR_LANGS (default srp_latn+srp+eng).
+- PDF scanned OCR uses Tesseract primary path after PDF page rasterization attempt.
+- Optional external fallback for scanned PDFs remains available via:
   - NON_AI_OCR_SERVICE_URL / NON_AI_OCR_SERVICE_TOKEN
-  - IMAGE_OCR_SERVICE_URL / IMAGE_OCR_SERVICE_TOKEN
   - PDF_OCR_SERVICE_URL / PDF_OCR_SERVICE_TOKEN
 
 DOCX / DOC:
@@ -80,13 +81,13 @@ Email / text-like:
 
 ## Runtime constraints
 
-- Supabase Edge runtime does not currently provide a practical maintained local OCR stack (for example tesseract.js + language data + PDF rasterization) with low operational risk.
-- Scanned-PDF OCR in Edge needs rasterization plus OCR engine; this remains partial unless an external non-AI OCR service is configured.
+- Image OCR is practical and real via Tesseract.js in current runtime.
+- Scanned-PDF OCR remains partial in some environments due PDF page rasterization constraints (OffscreenCanvas/pdfjs runtime support).
+- When rasterization fails, scanned-PDF OCR may require external fallback service for completion.
 - Legacy binary formats (PPT, MSG) are not fully supported in-runtime without additional external parser services.
 
 Runtime constraints affecting scanned PDF OCR:
-- Supabase Edge runtime does not provide a practical, maintained, low-risk local PDF rasterization + OCR path today.
-- Rendering PDF pages to images inside Edge for OCR is the main blocker for full in-runtime scanned-PDF OCR.
+- Rendering PDF pages to images is the main blocker for universally reliable in-runtime scanned-PDF OCR.
 
 Wiring status reminder:
 - These OCR activities are still registered but not wired into active workflow definitions yet.
