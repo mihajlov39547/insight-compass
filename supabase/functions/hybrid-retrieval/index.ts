@@ -40,7 +40,7 @@ interface HybridResult {
   matchedQuestionText: string | null;
 }
 
-// ─── Local hash-based embedding (must match process-document) ──────────
+// ─── Local hash-based embedding (must match workflow document handlers) ──────────
 
 const EMBED_DIM = 1536;
 
