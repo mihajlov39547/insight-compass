@@ -189,16 +189,26 @@ export function NotebookWorkspace() {
               // Also clear old analysis
               await supabase.from('document_analysis').delete().eq('document_id', documentId);
 
-              // Trigger reprocessing
+              // Trigger reprocessing via workflow
               fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-start`,
                 {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
                   },
-                  body: JSON.stringify({ documentId }),
+                  body: JSON.stringify({
+                    definition_key: 'document_processing_v1',
+                    input_payload: {
+                      document_id: documentId,
+                      source: 'notebook_reprocess',
+                      source_document_id: documentId,
+                      initiated_at: new Date().toISOString(),
+                    },
+                    trigger_entity_type: 'document',
+                    trigger_entity_id: documentId,
+                  }),
                 }
               ).catch(() => {});
 
@@ -296,16 +306,26 @@ export function NotebookWorkspace() {
         toast.success('Note added to sources');
       }
 
-      // Trigger processing pipeline
+      // Trigger processing via workflow
       fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-start`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ documentId }),
+          body: JSON.stringify({
+            definition_key: 'document_processing_v1',
+            input_payload: {
+              document_id: documentId,
+              source: 'notebook_note_source',
+              source_document_id: documentId,
+              initiated_at: new Date().toISOString(),
+            },
+            trigger_entity_type: 'document',
+            trigger_entity_id: documentId,
+          }),
         }
       ).catch(() => { /* processing failure tracked server-side */ });
 

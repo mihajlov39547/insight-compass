@@ -1,6 +1,6 @@
 # Phase D - Background Workflow Execution Activation
 
-Status: active, additive, rollback-ready.
+Status: active.
 
 ## Goal
 
@@ -37,12 +37,12 @@ SELECT cron.unschedule('workflow-worker');
 SELECT cron.unschedule('workflow-maintenance');
 ```
 
-## Production Safety
+## Document Processing
 
-- Document processing path is controlled solely by `VITE_DOCUMENT_WORKFLOW_CUTOVER_DISABLED` (see Phase F docs)
-- When workflow cutover is enabled (default), uploads go through `workflow-start`
-- When disabled, uploads fall back to `process-document`
-- Cron schedules only process activities that have been explicitly created via workflow-start
+Document processing runs exclusively through the durable workflow engine:
+- Uploads trigger `workflow-start` for definition `document_processing_v1`
+- Cron-driven `workflow-worker` claims and executes document processing activities
+- `workflow-maintenance` handles stale recovery
 
 ## What Remains Deferred
 
