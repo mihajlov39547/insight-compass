@@ -32,12 +32,20 @@ const fileIcons: Record<string, any> = {
   pdf: FileText, docx: FileType, doc: FileType, txt: FileIcon,
   xlsx: FileSpreadsheet, xls: FileSpreadsheet, csv: FileSpreadsheet,
   md: FileText, rtf: FileType,
+  jpg: FileIcon, jpeg: FileIcon, png: FileIcon,
+  pptx: FileType,
+  eml: FileIcon, msg: FileIcon,
+  xml: FileType, json: FileType, log: FileIcon,
 };
 
 const fileColors: Record<string, string> = {
   pdf: 'text-red-500', docx: 'text-blue-500', doc: 'text-blue-500',
   txt: 'text-muted-foreground', xlsx: 'text-green-500', xls: 'text-green-500',
   csv: 'text-green-500', md: 'text-violet-500', rtf: 'text-orange-500',
+  jpg: 'text-amber-500', jpeg: 'text-amber-500', png: 'text-amber-500',
+  pptx: 'text-orange-500',
+  eml: 'text-sky-500', msg: 'text-sky-500',
+  xml: 'text-cyan-500', json: 'text-cyan-500', log: 'text-slate-500',
 };
 
 function formatFileSize(bytes: number): string {
@@ -161,13 +169,13 @@ export function UploadDocumentsDialog({
               id="file-upload-real"
               type="file"
               multiple
-              accept=".pdf,.doc,.docx,.txt,.rtf,.csv,.xls,.xlsx,.md"
+              accept=".pdf,.doc,.docx,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.pptx,.eml,.msg,.txt,.md,.rtf,.xml,.json,.log"
               onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ''; }}
               className="hidden"
             />
             <Upload className={cn('h-10 w-10 mx-auto mb-3', isDragging ? 'text-accent' : 'text-muted-foreground')} />
             <p className="text-sm font-medium text-foreground mb-1">Drop files here or click to browse</p>
-            <p className="text-xs text-muted-foreground">Supported: PDF, DOC, DOCX, TXT, RTF, CSV, XLS, XLSX, MD • Max 20 MB</p>
+            <p className="text-xs text-muted-foreground">Supported: PDF, DOC/DOCX, CSV/XLS/XLSX, JPG/JPEG/PNG, PPTX, EML/MSG, TXT/MD/RTF/XML/JSON/LOG • Max 20 MB</p>
           </div>
 
           {/* File list */}

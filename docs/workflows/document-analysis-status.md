@@ -35,7 +35,7 @@ Conditional extraction routing:
 - DOCX route: `document.extract_docx_text`
 - DOC route: `document.extract_doc_text`
 - Spreadsheet route: `document.extract_spreadsheet_text`
-- Presentation route: `document.extract_presentation_text`
+- Presentation route (safe path): `document.extract_presentation_text` for PPTX
 - Email route: `document.extract_email_text`
 - Text-like route: `document.extract_plain_text_like_content`
 - Image route (parallel):
@@ -162,6 +162,13 @@ For existing documents stuck in `extracting_content` from older runs:
 - Context is a compact orchestration snapshot only.
 - Large business payloads (full extracted text, chunks, embeddings) remain in domain tables.
 - Patch merge is shallow top-level merge; later patch wins on key collision.
+
+### Conditional DAG reachability semantics
+
+- Activity runs are materialized eagerly for all activities in a workflow version.
+- Conditional routing is enforced by edge condition evaluation against workflow context.
+- Runnable checks and downstream scheduling consider only context-matching reachable branch activities.
+- Finalization aggregates state over reachable activities so non-selected branch `pending` rows do not keep workflows running.
 
 ### Workflow finalization policy
 

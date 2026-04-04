@@ -1103,19 +1103,25 @@ export async function extractTextStage(
     ["pdf", "image", "spreadsheet"].includes(fileCategory);
 
   if (hasDedicatedPath) {
+    const fallbackReason = fileCategory === "pdf"
+      ? "pdf_requires_ocr_not_enabled"
+      : "known file type should use dedicated extractor activities";
+
     return {
       document_id: documentId,
-      extraction_method: "generic_fallback_skipped",
+      extraction_method: fileCategory === "pdf"
+        ? "pdf_scanned_requires_ocr"
+        : "generic_fallback_skipped",
       extraction_encoding: null,
       structural_noise_filtered: null,
       script_primary: null,
       quality_score: null,
-      quality_reason: "known file type should use dedicated extractor activities",
+      quality_reason: fallbackReason,
       readable: null,
       raw_text_length: 0,
       cleaned_text_length: 0,
       line_count: 0,
-      fallback_used: false,
+      fallback_used: true,
     };
   }
 

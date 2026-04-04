@@ -8,6 +8,7 @@ import { buildWorkflowFinalOutput } from "./final-output-builder.ts";
 
 interface ActivityRunForFinalization {
   id: string;
+  activity_id: string;
   activity_key: string;
   status: string;
   is_optional: boolean;
@@ -98,7 +99,7 @@ async function loadActivityRuns(
 ): Promise<ActivityRunForFinalization[]> {
   const { data, error } = await supabase
     .from("activity_runs")
-    .select("id, activity_key, status, is_optional, output_payload, error_message")
+    .select("id, activity_id, activity_key, status, is_optional, output_payload, error_message")
     .eq("workflow_run_id", workflowRunId);
 
   if (error || !data) {
@@ -108,6 +109,31 @@ async function loadActivityRuns(
   }
 
   return data as ActivityRunForFinalization[];
+}
+
+async function loadReachableActivityIds(
+  supabase: SupabaseClient,
+  workflowRunId: string
+): Promise<Set<string>> {
+  try {
+    const { data, error } = await supabase.rpc("workflow_reachable_activity_ids", {
+      p_workflow_run_id: workflowRunId,
+    });
+
+    if (error || !Array.isArray(data)) {
+      return new Set<string>();
+    }
+
+    const ids = new Set<string>();
+    for (const row of data as Array<Record<string, unknown>>) {
+      const id = typeof row.activity_id === "string" ? row.activity_id : null;
+      if (id) ids.add(id);
+    }
+
+    return ids;
+  } catch {
+    return new Set<string>();
+  }
 }
 
 function inferFailedReason(
@@ -151,7 +177,12 @@ export async function finalizeWorkflowRunState(
   }
 
   const activityRuns = await loadActivityRuns(supabase, workflowRunId);
-  const state = summarizeActivityState(activityRuns);
+  const reachableActivityIds = await loadReachableActivityIds(supabase, workflowRunId);
+  const relevantRuns = reachableActivityIds.size > 0
+    ? activityRuns.filter((row) => reachableActivityIds.has(row.activity_id))
+    : activityRuns;
+
+  const state = summarizeActivityState(relevantRuns);
 
   const shouldFail = state.requiredFailureCount > 0;
   const shouldComplete = !shouldFail && state.inProgressCount === 0;
@@ -173,7 +204,7 @@ export async function finalizeWorkflowRunState(
   }
 
   const finalStatus: "completed" | "failed" = shouldFail ? "failed" : "completed";
-  const finalOutput = buildWorkflowFinalOutput(workflowRunId, finalStatus, activityRuns);
+  const finalOutput = buildWorkflowFinalOutput(workflowRunId, finalStatus, relevantRuns);
   const nowIso = new Date().toISOString();
 
   const updatePayload: Record<string, unknown> = {

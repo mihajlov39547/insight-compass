@@ -183,7 +183,24 @@ export function useProjectDocumentCount(projectId?: string) {
 }
 
 const ALLOWED_EXTENSIONS = new Set([
-  'pdf', 'doc', 'docx', 'txt', 'rtf', 'csv', 'xls', 'xlsx', 'md',
+  'pdf',
+  'doc',
+  'docx',
+  'csv',
+  'xls',
+  'xlsx',
+  'jpg',
+  'jpeg',
+  'png',
+  'pptx',
+  'eml',
+  'msg',
+  'txt',
+  'md',
+  'rtf',
+  'xml',
+  'json',
+  'log',
 ]);
 
 const BLOCKED_EXTENSIONS = new Set([
