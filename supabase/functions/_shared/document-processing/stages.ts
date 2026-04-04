@@ -14,6 +14,10 @@ import {
 import { chunkText, estimateTokenCount } from "./chunking.ts";
 import { generateEmbeddingsLocal, localEmbedding } from "./embeddings.ts";
 import { generateDocumentSummary } from "./summarization.ts";
+import {
+  runImageOcrViaGateway,
+  runPdfOcrViaExternalService,
+} from "./ocr.ts";
 
 export const DOCUMENT_ACTIVE_STATES = new Set([
   "extracting_metadata",
@@ -161,13 +165,62 @@ export async function ocrPdfStage(
     };
   }
 
-  // Deterministic placeholder: OCR integration is intentionally deferred.
+  const inspection = await inspectPdfTextLayerStage(supabase, documentId);
+  const pdfTextStatus = String(inspection.pdf_text_status ?? "LIKELY_SCANNED");
+
+  if (pdfTextStatus === "HAS_SELECTABLE_TEXT") {
+    const bytes = await downloadDocumentSource(supabase, doc);
+    const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
+
+    return {
+      document_id: documentId,
+      pdf_text_status: pdfTextStatus,
+      ocr_status: "NOT_REQUIRED",
+      ocr_engine: "pdf_text_layer",
+      ocr_confidence: extraction.quality.score,
+      extracted_text: extraction.text,
+      extracted_text_length: extraction.text.length,
+      page_count: inspection.page_count ?? null,
+      warning: null,
+    };
+  }
+
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const externalPdfOcr = await runPdfOcrViaExternalService(
+    bytes,
+    Deno.env.get("PDF_OCR_SERVICE_URL"),
+    Deno.env.get("PDF_OCR_SERVICE_TOKEN")
+  );
+
+  if (externalPdfOcr.text.trim().length > 0) {
+    return {
+      document_id: documentId,
+      pdf_text_status: pdfTextStatus,
+      ocr_status: "COMPLETED",
+      ocr_engine: externalPdfOcr.engine,
+      ocr_model: externalPdfOcr.model ?? null,
+      ocr_confidence: externalPdfOcr.confidence,
+      extracted_text: externalPdfOcr.text,
+      extracted_text_length: externalPdfOcr.text.length,
+      page_count: inspection.page_count ?? null,
+      warning: externalPdfOcr.warning ?? null,
+    };
+  }
+
+  // Edge runtime cannot reliably rasterize PDF pages for local OCR; keep explicit partial-deferred output.
   return {
     document_id: documentId,
+    pdf_text_status: pdfTextStatus,
     ocr_status: "UNAVAILABLE",
-    ocr_engine: "deferred_phase_placeholder",
+    ocr_engine: externalPdfOcr.engine,
+    ocr_model: externalPdfOcr.model ?? null,
+    ocr_confidence: externalPdfOcr.confidence,
+    extracted_text: "",
     extracted_text_length: 0,
-    warning: "PDF OCR is not wired in durable workflow stage yet",
+    page_count: inspection.page_count ?? null,
+    warning:
+      externalPdfOcr.warning ??
+      "PDF OCR remains partially deferred in Edge runtime without external raster/OCR service",
   };
 }
 
@@ -188,13 +241,36 @@ export async function ocrImageStage(
     };
   }
 
-  // Deterministic placeholder: OCR integration is intentionally deferred.
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const ocr = await runImageOcrViaGateway(
+    bytes,
+    String(doc.mime_type ?? "image/png"),
+    Deno.env.get("LOVABLE_API_KEY")
+  );
+
+  const text = ocr.text.trim();
+  if (!text) {
+    return {
+      document_id: documentId,
+      ocr_status: "FAILED",
+      ocr_engine: ocr.engine,
+      ocr_model: ocr.model ?? null,
+      ocr_confidence: ocr.confidence,
+      extracted_text: "",
+      extracted_text_length: 0,
+      warning: ocr.warning ?? "Image OCR returned empty text",
+    };
+  }
+
   return {
     document_id: documentId,
-    ocr_status: "UNAVAILABLE",
-    ocr_engine: "deferred_phase_placeholder",
-    extracted_text_length: 0,
-    warning: "Image OCR is not wired in durable workflow stage yet",
+    ocr_status: "COMPLETED",
+    ocr_engine: ocr.engine,
+    ocr_model: ocr.model ?? null,
+    ocr_confidence: ocr.confidence,
+    extracted_text: text,
+    extracted_text_length: text.length,
+    warning: ocr.warning ?? null,
   };
 }
 
