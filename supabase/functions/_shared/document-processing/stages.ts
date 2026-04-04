@@ -15,9 +15,20 @@ import { chunkText, estimateTokenCount } from "./chunking.ts";
 import { generateEmbeddingsLocal, localEmbedding } from "./embeddings.ts";
 import { generateDocumentSummary } from "./summarization.ts";
 import {
-  runImageOcrViaGateway,
+  runImageOcrViaExternalService,
   runPdfOcrViaExternalService,
 } from "./ocr.ts";
+import {
+  extractPdfTextNonAi,
+  extractDocxTextNonAi,
+  extractDocTextNonAi,
+  extractSpreadsheetTextNonAi,
+  extractPresentationTextNonAi,
+  extractEmailTextNonAi,
+  extractPlainTextLikeContent,
+  normalizeTechnicalAnalysisOutput,
+} from "./non-ai-extraction.ts";
+import { extractImageMetadata } from "./image-metadata.ts";
 
 export const DOCUMENT_ACTIVE_STATES = new Set([
   "extracting_metadata",
@@ -188,8 +199,8 @@ export async function ocrPdfStage(
   const bytes = await downloadDocumentSource(supabase, doc);
   const externalPdfOcr = await runPdfOcrViaExternalService(
     bytes,
-    Deno.env.get("PDF_OCR_SERVICE_URL"),
-    Deno.env.get("PDF_OCR_SERVICE_TOKEN")
+    Deno.env.get("PDF_OCR_SERVICE_URL") || Deno.env.get("NON_AI_OCR_SERVICE_URL"),
+    Deno.env.get("PDF_OCR_SERVICE_TOKEN") || Deno.env.get("NON_AI_OCR_SERVICE_TOKEN")
   );
 
   if (externalPdfOcr.text.trim().length > 0) {
@@ -242,10 +253,11 @@ export async function ocrImageStage(
   }
 
   const bytes = await downloadDocumentSource(supabase, doc);
-  const ocr = await runImageOcrViaGateway(
+  const ocr = await runImageOcrViaExternalService(
     bytes,
     String(doc.mime_type ?? "image/png"),
-    Deno.env.get("LOVABLE_API_KEY")
+    Deno.env.get("IMAGE_OCR_SERVICE_URL") || Deno.env.get("NON_AI_OCR_SERVICE_URL"),
+    Deno.env.get("IMAGE_OCR_SERVICE_TOKEN") || Deno.env.get("NON_AI_OCR_SERVICE_TOKEN")
   );
 
   const text = ocr.text.trim();
@@ -271,6 +283,303 @@ export async function ocrImageStage(
     extracted_text: text,
     extracted_text_length: text.length,
     warning: ocr.warning ?? null,
+  };
+}
+
+export async function extractPdfTextStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const category = normalizeDocumentCategory(doc);
+  if (category !== "pdf") {
+    return {
+      document_id: documentId,
+      extraction_status: "NOT_PDF",
+      extracted_text: "",
+      extracted_text_length: 0,
+      method: null,
+    };
+  }
+
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const extraction = await extractPdfTextNonAi(bytes, doc.mime_type, doc.file_name);
+
+  return {
+    document_id: documentId,
+    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extracted_text: extraction.text,
+    extracted_text_length: extraction.text.length,
+    method: extraction.method,
+    quality_score: extraction.quality_score,
+    quality_reason: extraction.quality_reason,
+  };
+}
+
+export async function extractDocxTextStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const ext = String(doc.file_type ?? "").toLowerCase();
+  if (ext !== "docx") {
+    return {
+      document_id: documentId,
+      extraction_status: "NOT_DOCX",
+      extracted_text: "",
+      extracted_text_length: 0,
+      method: null,
+    };
+  }
+
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const extraction = await extractDocxTextNonAi(bytes, doc.mime_type, doc.file_name);
+
+  return {
+    document_id: documentId,
+    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extracted_text: extraction.text,
+    extracted_text_length: extraction.text.length,
+    method: extraction.method,
+    quality_score: extraction.quality_score,
+    quality_reason: extraction.quality_reason,
+  };
+}
+
+export async function extractDocTextStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const ext = String(doc.file_type ?? "").toLowerCase();
+  if (ext !== "doc") {
+    return {
+      document_id: documentId,
+      extraction_status: "NOT_DOC",
+      extracted_text: "",
+      extracted_text_length: 0,
+      method: null,
+    };
+  }
+
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const extraction = await extractDocTextNonAi(bytes, doc.mime_type, doc.file_name);
+
+  return {
+    document_id: documentId,
+    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extracted_text: extraction.text,
+    extracted_text_length: extraction.text.length,
+    method: extraction.method,
+    quality_score: extraction.quality_score,
+    quality_reason: extraction.quality_reason,
+  };
+}
+
+export async function extractSpreadsheetTextStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const ext = String(doc.file_type ?? "").toLowerCase();
+  if (!["xls", "xlsx", "csv"].includes(ext)) {
+    return {
+      document_id: documentId,
+      extraction_status: "NOT_SPREADSHEET",
+      extracted_text: "",
+      extracted_text_length: 0,
+      method: null,
+    };
+  }
+
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const extraction = await extractSpreadsheetTextNonAi(bytes, doc.file_name);
+
+  return {
+    document_id: documentId,
+    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extracted_text: extraction.text,
+    extracted_text_length: extraction.text.length,
+    method: extraction.method,
+    sheet_count: extraction.sheet_count,
+    row_count: extraction.row_count,
+    column_count_estimate: extraction.column_count_estimate,
+    warning: extraction.warning,
+  };
+}
+
+export async function extractPresentationTextStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const ext = String(doc.file_type ?? "").toLowerCase();
+  if (!["ppt", "pptx"].includes(ext)) {
+    return {
+      document_id: documentId,
+      extraction_status: "NOT_PRESENTATION",
+      extracted_text: "",
+      extracted_text_length: 0,
+      method: null,
+    };
+  }
+
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const extraction = await extractPresentationTextNonAi(bytes, doc.file_name);
+
+  return {
+    document_id: documentId,
+    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extracted_text: extraction.text,
+    extracted_text_length: extraction.text.length,
+    method: extraction.method,
+    slide_count: extraction.slide_count,
+    warning: extraction.warning,
+  };
+}
+
+export async function extractEmailTextStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const ext = String(doc.file_type ?? "").toLowerCase();
+  if (![
+    "eml",
+    "msg",
+  ].includes(ext)) {
+    return {
+      document_id: documentId,
+      extraction_status: "NOT_EMAIL",
+      extracted_text: "",
+      extracted_text_length: 0,
+      method: null,
+    };
+  }
+
+  if (ext === "msg") {
+    return {
+      document_id: documentId,
+      extraction_status: "UNSUPPORTED",
+      extracted_text: "",
+      extracted_text_length: 0,
+      method: "msg_not_supported",
+      warning: "MSG extraction is not yet supported in Edge runtime",
+    };
+  }
+
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const extraction = extractEmailTextNonAi(bytes);
+
+  return {
+    document_id: documentId,
+    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extracted_text: extraction.text,
+    extracted_text_length: extraction.text.length,
+    method: extraction.method,
+    email_subject: extraction.subject,
+    email_from: extraction.from,
+    email_date: extraction.date,
+  };
+}
+
+export async function extractImageMetadataStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const category = normalizeDocumentCategory(doc);
+  if (category !== "image") {
+    return {
+      document_id: documentId,
+      image_metadata_status: "NOT_IMAGE",
+      image_width: null,
+      image_height: null,
+      image_format: null,
+      warning: null,
+    };
+  }
+
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const metadata = extractImageMetadata(bytes);
+
+  return {
+    document_id: documentId,
+    image_metadata_status: metadata.width && metadata.height ? "COMPLETED" : "PARTIAL",
+    image_width: metadata.width,
+    image_height: metadata.height,
+    image_format: metadata.format,
+    warning: metadata.warning ?? null,
+  };
+}
+
+export async function detectScannedDocumentStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const category = normalizeDocumentCategory(doc);
+  if (category !== "pdf") {
+    return {
+      document_id: documentId,
+      scanned_document_status: "NOT_PDF",
+      likely_scanned: false,
+      pdf_text_status: "NOT_PDF",
+    };
+  }
+
+  const inspection = await inspectPdfTextLayerStage(supabase, documentId);
+  const pdfTextStatus = String(inspection.pdf_text_status ?? "LIKELY_SCANNED");
+
+  return {
+    document_id: documentId,
+    scanned_document_status: pdfTextStatus === "LIKELY_SCANNED" ? "LIKELY_SCANNED" : "HAS_SELECTABLE_TEXT",
+    likely_scanned: pdfTextStatus === "LIKELY_SCANNED",
+    pdf_text_status: pdfTextStatus,
+    inspection_method: inspection.inspection_method ?? null,
+  };
+}
+
+export async function extractPlainTextLikeContentStage(
+  supabase: SupabaseClient,
+  documentId: string
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const bytes = await downloadDocumentSource(supabase, doc);
+  const extraction = extractPlainTextLikeContent(bytes, doc.file_name);
+
+  return {
+    document_id: documentId,
+    extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
+    extracted_text: extraction.text,
+    extracted_text_length: extraction.text.length,
+    method: extraction.method,
+    word_count: extraction.word_count,
+    char_count: extraction.char_count,
+    warning: extraction.warning,
+  };
+}
+
+export async function normalizeTechnicalAnalysisOutputStage(
+  supabase: SupabaseClient,
+  documentId: string,
+  rawInput?: unknown
+): Promise<Record<string, unknown>> {
+  const doc = await loadDocumentRow(supabase, documentId);
+  const analysis = await loadDocumentAnalysisRow(supabase, documentId);
+
+  const normalized = normalizeTechnicalAnalysisOutput(
+    {
+      ...(toObject(rawInput)),
+      extracted_text: toObject(rawInput).extracted_text ?? analysis?.extracted_text ?? "",
+      warning: toObject(rawInput).warning ?? null,
+    },
+    doc.file_name
+  );
+
+  return {
+    document_id: documentId,
+    ...normalized,
   };
 }
 

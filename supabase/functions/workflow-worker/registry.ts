@@ -18,8 +18,18 @@ import {
   documentLoadSource,
   documentDetectFileType,
   documentInspectPdfTextLayer,
+  documentExtractPdfText,
+  documentExtractDocxText,
+  documentExtractDocText,
+  documentExtractSpreadsheetText,
+  documentExtractPresentationText,
+  documentExtractEmailText,
   documentOcrPdf,
   documentOcrImage,
+  documentExtractImageMetadata,
+  documentDetectScannedDocument,
+  documentExtractPlainTextLikeContent,
+  documentNormalizeTechnicalAnalysisOutput,
   documentPersistAnalysisMetadata,
   documentComputeFileFingerprint,
   documentExtractTextActivity,
@@ -212,10 +222,58 @@ export function initializeBuiltInHandlers(): void {
   });
 
   registerHandler({
+    key: "document.extract_pdf_text",
+    category: "document",
+    timeout_seconds: 90,
+    description: "Performs non-AI PDF text extraction",
+    handler: documentExtractPdfText,
+  });
+
+  registerHandler({
+    key: "document.extract_docx_text",
+    category: "document",
+    timeout_seconds: 60,
+    description: "Performs non-AI DOCX text extraction",
+    handler: documentExtractDocxText,
+  });
+
+  registerHandler({
+    key: "document.extract_doc_text",
+    category: "document",
+    timeout_seconds: 60,
+    description: "Performs non-AI legacy DOC text extraction",
+    handler: documentExtractDocText,
+  });
+
+  registerHandler({
+    key: "document.extract_spreadsheet_text",
+    category: "document",
+    timeout_seconds: 60,
+    description: "Extracts spreadsheet text/content for XLS/XLSX/CSV",
+    handler: documentExtractSpreadsheetText,
+  });
+
+  registerHandler({
+    key: "document.extract_presentation_text",
+    category: "document",
+    timeout_seconds: 60,
+    description: "Extracts presentation text for PPT/PPTX",
+    handler: documentExtractPresentationText,
+  });
+
+  registerHandler({
+    key: "document.extract_email_text",
+    category: "document",
+    timeout_seconds: 45,
+    description: "Extracts EML-style email headers/body text",
+    handler: documentExtractEmailText,
+  });
+
+  registerHandler({
     key: "document.ocr_pdf",
     category: "document",
     timeout_seconds: 120,
-    description: "OCR stage for scanned PDFs (currently deterministic placeholder)",
+    description: "OCR stage for scanned PDFs using non-AI OCR service integration",
     handler: documentOcrPdf,
   });
 
@@ -223,8 +281,40 @@ export function initializeBuiltInHandlers(): void {
     key: "document.ocr_image",
     category: "document",
     timeout_seconds: 90,
-    description: "OCR stage for images (currently deterministic placeholder)",
+    description: "OCR stage for images using non-AI OCR service integration",
     handler: documentOcrImage,
+  });
+
+  registerHandler({
+    key: "document.extract_image_metadata",
+    category: "document",
+    timeout_seconds: 20,
+    description: "Extracts image dimensions and format metadata",
+    handler: documentExtractImageMetadata,
+  });
+
+  registerHandler({
+    key: "document.detect_scanned_document",
+    category: "document",
+    timeout_seconds: 30,
+    description: "Detects likely scanned PDFs from text-layer inspection",
+    handler: documentDetectScannedDocument,
+  });
+
+  registerHandler({
+    key: "document.extract_plain_text_like_content",
+    category: "document",
+    timeout_seconds: 30,
+    description: "Extracts text from plain-text-like formats (txt/md/json/xml/csv)",
+    handler: documentExtractPlainTextLikeContent,
+  });
+
+  registerHandler({
+    key: "document.normalize_technical_analysis_output",
+    category: "document",
+    timeout_seconds: 30,
+    description: "Normalizes technical analysis output for downstream compatibility",
+    handler: documentNormalizeTechnicalAnalysisOutput,
   });
 
   registerHandler({

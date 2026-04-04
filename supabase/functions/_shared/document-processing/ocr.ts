@@ -26,58 +26,31 @@ function estimateConfidenceFromText(text: string): number | null {
   return Math.round(confidence * 100) / 100;
 }
 
-export async function runImageOcrViaGateway(
+export async function runImageOcrViaExternalService(
   imageBytes: Uint8Array,
   mimeType: string,
-  lovableApiKey?: string | null
+  serviceUrl?: string | null,
+  serviceToken?: string | null
 ): Promise<OcrResult> {
-  if (!lovableApiKey) {
+  if (!serviceUrl) {
     return {
       text: "",
       confidence: null,
-      engine: "ai_gateway",
-      model: "google/gemini-2.5-flash-lite",
-      warning: "LOVABLE_API_KEY is missing",
+      engine: "external_image_ocr",
+      warning: "IMAGE_OCR_SERVICE_URL or NON_AI_OCR_SERVICE_URL is not configured",
     };
   }
 
-  const safeMime = mimeType?.startsWith("image/") ? mimeType : "image/png";
-  const imageBase64 = bytesToBase64(imageBytes);
-  const imageDataUrl = `data:${safeMime};base64,${imageBase64}`;
-  const model = "google/gemini-2.5-flash-lite";
-
   try {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch(serviceUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${lovableApiKey}`,
         "Content-Type": "application/json",
+        ...(serviceToken ? { Authorization: `Bearer ${serviceToken}` } : {}),
       },
       body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an OCR extractor. Extract all readable text from the image exactly as seen. " +
-              "Return only plain text. No markdown. No explanations.",
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Extract all readable text from this image.",
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageDataUrl,
-                },
-              },
-            ],
-          },
-        ],
+        image_base64: bytesToBase64(imageBytes),
+        mime_type: mimeType,
       }),
     });
 
@@ -85,29 +58,30 @@ export async function runImageOcrViaGateway(
       return {
         text: "",
         confidence: null,
-        engine: "ai_gateway",
-        model,
-        warning: `OCR API request failed (${resp.status})`,
+        engine: "external_image_ocr",
+        warning: `External image OCR request failed (${resp.status})`,
       };
     }
 
     const data = await resp.json();
-    const text = String(data?.choices?.[0]?.message?.content || "").trim();
+    const text = String(data?.text || "").trim();
+    const confidence = typeof data?.confidence === "number"
+      ? data.confidence
+      : estimateConfidenceFromText(text);
 
     return {
       text,
-      confidence: estimateConfidenceFromText(text),
-      engine: "ai_gateway_multimodal",
-      model,
-      warning: text ? undefined : "OCR returned empty text",
+      confidence,
+      engine: String(data?.engine || "external_image_ocr"),
+      model: typeof data?.model === "string" ? data.model : undefined,
+      warning: text ? undefined : "External image OCR returned empty text",
     };
   } catch (error) {
     return {
       text: "",
       confidence: null,
-      engine: "ai_gateway",
-      model,
-      warning: error instanceof Error ? error.message : "OCR execution error",
+      engine: "external_image_ocr",
+      warning: error instanceof Error ? error.message : "External image OCR execution error",
     };
   }
 }

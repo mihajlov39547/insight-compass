@@ -8,8 +8,18 @@ import {
   loadSourceStage,
   detectFileTypeStage,
   inspectPdfTextLayerStage,
+  extractPdfTextStage,
+  extractDocxTextStage,
+  extractDocTextStage,
+  extractSpreadsheetTextStage,
+  extractPresentationTextStage,
+  extractEmailTextStage,
   ocrPdfStage,
   ocrImageStage,
+  extractImageMetadataStage,
+  detectScannedDocumentStage,
+  extractPlainTextLikeContentStage,
+  normalizeTechnicalAnalysisOutputStage,
   persistAnalysisMetadataStage,
   computeFileFingerprintStage,
   extractTextStage,
@@ -252,6 +262,108 @@ export async function documentInspectPdfTextLayer(
   );
 }
 
+export async function documentExtractPdfText(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.extract_pdf_text",
+    "DOCUMENT_EXTRACT_PDF_TEXT_FAILED",
+    (supabase, documentId) => extractPdfTextStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        pdf_extraction_method: result.method ?? null,
+        pdf_extracted_text_length: result.extracted_text_length ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentExtractDocxText(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.extract_docx_text",
+    "DOCUMENT_EXTRACT_DOCX_TEXT_FAILED",
+    (supabase, documentId) => extractDocxTextStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        docx_extraction_method: result.method ?? null,
+        docx_extracted_text_length: result.extracted_text_length ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentExtractDocText(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.extract_doc_text",
+    "DOCUMENT_EXTRACT_DOC_TEXT_FAILED",
+    (supabase, documentId) => extractDocTextStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        doc_extraction_method: result.method ?? null,
+        doc_extracted_text_length: result.extracted_text_length ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentExtractSpreadsheetText(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.extract_spreadsheet_text",
+    "DOCUMENT_EXTRACT_SPREADSHEET_TEXT_FAILED",
+    (supabase, documentId) => extractSpreadsheetTextStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        spreadsheet_extraction_method: result.method ?? null,
+        spreadsheet_sheet_count: result.sheet_count ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentExtractPresentationText(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.extract_presentation_text",
+    "DOCUMENT_EXTRACT_PRESENTATION_TEXT_FAILED",
+    (supabase, documentId) => extractPresentationTextStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        presentation_extraction_method: result.method ?? null,
+        presentation_slide_count: result.slide_count ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentExtractEmailText(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.extract_email_text",
+    "DOCUMENT_EXTRACT_EMAIL_TEXT_FAILED",
+    (supabase, documentId) => extractEmailTextStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        email_extraction_method: result.method ?? null,
+        email_subject: result.email_subject ?? null,
+      }),
+    }
+  );
+}
+
 export async function documentOcrPdf(
   input: HandlerExecutionInput
 ): Promise<HandlerOutput> {
@@ -283,6 +395,78 @@ export async function documentOcrImage(
         ocr_image_status: result.ocr_status ?? null,
         ocr_image_engine: result.ocr_engine ?? null,
         ocr_image_warning: result.warning ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentExtractImageMetadata(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.extract_image_metadata",
+    "DOCUMENT_EXTRACT_IMAGE_METADATA_FAILED",
+    (supabase, documentId) => extractImageMetadataStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        image_width: result.image_width ?? null,
+        image_height: result.image_height ?? null,
+        image_format: result.image_format ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentDetectScannedDocument(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.detect_scanned_document",
+    "DOCUMENT_DETECT_SCANNED_DOCUMENT_FAILED",
+    (supabase, documentId) => detectScannedDocumentStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        scanned_document_status: result.scanned_document_status ?? null,
+        likely_scanned: result.likely_scanned ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentExtractPlainTextLikeContent(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  return runStage(
+    input,
+    "document.extract_plain_text_like_content",
+    "DOCUMENT_EXTRACT_PLAIN_TEXT_LIKE_CONTENT_FAILED",
+    (supabase, documentId) => extractPlainTextLikeContentStage(supabase, documentId),
+    {
+      buildContextPatch: (result) => ({
+        plain_text_extraction_method: result.method ?? null,
+        plain_text_word_count: result.word_count ?? null,
+      }),
+    }
+  );
+}
+
+export async function documentNormalizeTechnicalAnalysisOutput(
+  input: HandlerExecutionInput
+): Promise<HandlerOutput> {
+  const payload = toObject(input.activity_input_payload);
+  const rawInput = toObject(payload.raw_input ?? payload.input ?? {});
+
+  return runStage(
+    input,
+    "document.normalize_technical_analysis_output",
+    "DOCUMENT_NORMALIZE_TECHNICAL_ANALYSIS_OUTPUT_FAILED",
+    (supabase, documentId) =>
+      normalizeTechnicalAnalysisOutputStage(supabase, documentId, rawInput),
+    {
+      buildContextPatch: (result) => ({
+        normalized_text_length: result.normalized_text_length ?? null,
       }),
     }
   );
