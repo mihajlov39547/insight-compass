@@ -2,6 +2,10 @@
 
 This document reflects the **current implementation** of upload processing, indexing, and retrieval.
 
+Workflow activity inventory (used now vs ready-but-unwired vs partial/deferred) is maintained in:
+
+- `docs/workflows/document-analysis-status.md`
+
 ## 1) What is implemented today
 
 ### Upload and trigger flow

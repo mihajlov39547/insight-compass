@@ -33,6 +33,14 @@ npm run dev
 npm run build
 ```
 
+## Documentation
+
+Primary project documentation is consolidated into:
+
+1. `README.md` - project overview and local development
+2. `DOC_PROCESSING.md` - current document ingestion, indexing, and retrieval behavior
+3. `docs/workflows/document-analysis-status.md` - workflow activity usage, readiness, partial/deferred items, and pending work
+
 ## Notes
 
 This project is intended to evolve into a document intelligence assistant for project-based workflows, including grounded answers, cross-file search, and file-aware chat.
