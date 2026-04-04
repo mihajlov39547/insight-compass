@@ -341,7 +341,13 @@ export async function documentExtractPresentationText(
     {
       buildContextPatch: (result) => ({
         presentation_extraction_method: result.method ?? null,
+        presentation_support_status: result.support_status ?? null,
+        presentation_type: result.presentation_type ?? null,
         presentation_slide_count: result.slide_count ?? null,
+        presentation_notes_count: result.notes_count ?? null,
+        presentation_parser_warning: Array.isArray(result.parser_warnings) && result.parser_warnings.length > 0
+          ? result.parser_warnings.join(" | ")
+          : null,
       }),
     }
   );
@@ -358,7 +364,12 @@ export async function documentExtractEmailText(
     {
       buildContextPatch: (result) => ({
         email_extraction_method: result.method ?? null,
+        email_support_status: result.support_status ?? null,
         email_subject: result.email_subject ?? null,
+        email_attachment_count: result.attachment_count ?? null,
+        email_parser_warning: Array.isArray(result.parser_warnings) && result.parser_warnings.length > 0
+          ? result.parser_warnings.join(" | ")
+          : null,
       }),
     }
   );
@@ -379,6 +390,7 @@ export async function documentOcrPdf(
         ocr_pdf_confidence: result.ocr_confidence ?? null,
         ocr_pdf_languages: result.ocr_languages ?? null,
         ocr_pdf_processed_pages: result.processed_page_count ?? null,
+        ocr_pdf_fallback_used: result.ocr_fallback_used ?? null,
         ocr_pdf_warning: result.warning ?? null,
       }),
     }

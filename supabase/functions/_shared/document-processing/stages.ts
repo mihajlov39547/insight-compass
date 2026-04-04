@@ -30,6 +30,7 @@ import {
   normalizeTechnicalAnalysisOutput,
 } from "./non-ai-extraction.ts";
 import { extractImageMetadata } from "./image-metadata.ts";
+import { inspectPdfTextLayerDetailed } from "./pdf-rasterization.ts";
 
 export const DOCUMENT_ACTIVE_STATES = new Set([
   "extracting_metadata",
@@ -145,18 +146,27 @@ export async function inspectPdfTextLayerStage(
   }
 
   const bytes = await downloadDocumentSource(supabase, doc);
+  const detailed = await inspectPdfTextLayerDetailed(bytes, {
+    minCharsPerPage: Number(Deno.env.get("DOCUMENT_PDF_TEXT_MIN_CHARS_PER_PAGE") || 20),
+    maxPages: Number(Deno.env.get("DOCUMENT_PDF_INSPECTION_MAX_PAGES") || 50),
+  });
+
   const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
-  const hasSelectableText = extraction.quality.readable && extraction.text.trim().length >= 50;
+  const extractionSuggestsText = extraction.quality.readable && extraction.text.trim().length >= 50;
+  const hasSelectableText = detailed.has_selectable_text || extractionSuggestsText;
   const pdfTextStatus = hasSelectableText ? "HAS_SELECTABLE_TEXT" : "LIKELY_SCANNED";
 
   return {
     document_id: documentId,
     pdf_text_status: pdfTextStatus,
-    page_count: doc.page_count ?? null,
+    page_count: detailed.page_count || doc.page_count || null,
     has_selectable_text: hasSelectableText,
     inspection_method: extraction.method,
     inspection_quality_score: extraction.quality.score,
     inspection_quality_reason: extraction.quality.reason,
+    pages_with_text_count: detailed.pages_with_text_count,
+    pages_without_text_count: detailed.pages_without_text_count,
+    inspection_warning: detailed.warning ?? null,
   };
 }
 
@@ -216,8 +226,11 @@ export async function ocrPdfStage(
       extracted_text_length: tesseractPdfOcr.text.length,
       page_count: tesseractPdfOcr.page_count ?? inspection.page_count ?? null,
       processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
+      processed_page_numbers: tesseractPdfOcr.processed_page_numbers ?? null,
       ocr_languages: tesseractPdfOcr.languages ?? null,
       warning: tesseractPdfOcr.warning ?? null,
+      ocr_primary_path: "tesseract.js",
+      ocr_fallback_used: false,
     };
   }
 
@@ -242,6 +255,8 @@ export async function ocrPdfStage(
       extracted_text_length: externalPdfOcr.text.length,
       page_count: inspection.page_count ?? null,
       ocr_languages: tesseractPdfOcr.languages ?? null,
+      ocr_primary_path: "tesseract.js",
+      ocr_fallback_used: true,
       warning: [
         "Used external OCR fallback after Tesseract path produced no text",
         tesseractPdfOcr.warning,
@@ -262,7 +277,10 @@ export async function ocrPdfStage(
     extracted_text_length: 0,
     page_count: inspection.page_count ?? null,
     processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
+    processed_page_numbers: tesseractPdfOcr.processed_page_numbers ?? null,
     ocr_languages: tesseractPdfOcr.languages ?? null,
+    ocr_primary_path: "tesseract.js",
+    ocr_fallback_used: false,
     warning:
       [
         tesseractPdfOcr.warning,
@@ -470,8 +488,12 @@ export async function extractPresentationTextStage(
     extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
+    presentation_type: extraction.presentation_type ?? ext,
+    support_status: extraction.support_status ?? "partial",
     method: extraction.method,
     slide_count: extraction.slide_count,
+    notes_count: extraction.notes_count ?? null,
+    parser_warnings: extraction.parser_warnings ?? [],
     warning: extraction.warning,
   };
 }
@@ -495,29 +517,30 @@ export async function extractEmailTextStage(
     };
   }
 
-  if (ext === "msg") {
-    return {
-      document_id: documentId,
-      extraction_status: "UNSUPPORTED",
-      extracted_text: "",
-      extracted_text_length: 0,
-      method: "msg_not_supported",
-      warning: "MSG extraction is not yet supported in Edge runtime",
-    };
-  }
-
   const bytes = await downloadDocumentSource(supabase, doc);
-  const extraction = extractEmailTextNonAi(bytes);
+  const extraction = await extractEmailTextNonAi(bytes, doc.file_name, doc.mime_type);
 
   return {
     document_id: documentId,
     extraction_status: extraction.text.trim() ? "COMPLETED" : "EMPTY",
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
+    support_status: extraction.support_status ?? "partial",
     method: extraction.method,
     email_subject: extraction.subject,
     email_from: extraction.from,
-    email_date: extraction.date,
+    email_to: extraction.to ?? null,
+    email_cc: extraction.cc ?? null,
+    email_bcc: extraction.bcc ?? null,
+    email_date: extraction.sent_date ?? extraction.date ?? null,
+    email_has_html: extraction.has_html ?? false,
+    email_body_html: extraction.body_html ?? null,
+    attachment_count: extraction.attachment_count ?? 0,
+    attachments: extraction.attachments ?? [],
+    parser_warnings: extraction.parser_warnings ?? [],
+    warning: Array.isArray(extraction.parser_warnings) && extraction.parser_warnings.length > 0
+      ? extraction.parser_warnings.join(" | ")
+      : null,
   };
 }
 

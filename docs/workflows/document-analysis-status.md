@@ -46,22 +46,27 @@ These handlers are implemented and registered, but intentionally not in the acti
 11. `document.normalize_technical_analysis_output`
 12. `document.persist_analysis_metadata`
 13. `document.compute_file_fingerprint`
+14. `document.ocr_pdf`
+15. `document.extract_presentation_text`
+16. `document.extract_email_text`
 
 ## 4) Implemented But Partial / Deferred / Runtime-Constrained
 
 1. `document.ocr_pdf`
-- Tesseract.js path is implemented.
+- Parser-first path implemented using PDF.js text-layer inspection.
 - If PDF has selectable text: OCR is `NOT_REQUIRED`.
-- For scanned PDFs, OCR depends on successful page rasterization in current runtime.
+- For scanned PDFs, OCR uses selective per-page Tesseract.js after PDF rasterization.
+- Reliability still depends on runtime rasterization/canvas support.
 - Optional external fallback may still be used when Tesseract path yields no text.
 
 2. `document.extract_presentation_text`
-- PPTX extraction implemented.
-- Legacy binary PPT extraction deferred.
+- PPTX extraction is strong parser-first (`slides + notes` via ZIP/XML parsing).
+- Legacy binary PPT remains partial/deferred unless a dedicated parser service is configured.
 
 3. `document.extract_email_text`
-- EML extraction implemented.
-- MSG extraction deferred.
+- EML extraction uses `mailparser` as primary parser with structured fallback parser.
+- MSG extraction uses `@kenjiuno/msgreader` parser path.
+- Runtime/package compatibility can still yield partial behavior in constrained deployments.
 
 ## 5) Non-AI Toolkit Coverage (Current)
 
@@ -73,27 +78,43 @@ These handlers are implemented and registered, but intentionally not in the acti
 - XLS/XLSX extraction (package-backed, with fallback)
 - Image metadata extraction (PNG/JPEG/GIF/WEBP)
 - Image OCR via Tesseract.js
+- PPTX extraction with slide and notes text
+- EML parsing with structured headers/body/attachments
+- MSG parser-based extraction path
 - Plain-text-like extraction (`txt`, `md`, `json`, `xml`, `csv`, `rtf`, `log`)
 
 ### Partial by runtime/format
 - Scanned-PDF OCR (rasterization/runtime dependent)
 - PPT (legacy binary)
-- MSG
+- MSG in environments where parser runtime compatibility is limited
+- No dedicated Node OCR/parser worker is introduced yet; service fallback remains optional
 
 ## 6) OCR Strategy (Current)
 
 - Primary OCR engine: `tesseract.js`.
 - OCR language configuration: `DOCUMENT_OCR_LANGS` (default currently aligned to `srp_latn+srp+eng`).
-- Scanned-PDF OCR requires rasterized page images; this is the main practical runtime sensitivity.
-- External OCR fallback remains optional for scanned-PDF cases where rasterization/OCR in runtime is insufficient.
+- Scanned-PDF OCR is parser-first and selective:
+	- inspect PDF text layer first
+	- OCR only pages with insufficient text
+- Scanned-PDF OCR requires rasterized page images; this remains the main practical runtime sensitivity.
+- External OCR fallback is secondary and only used when local OCR path yields no usable text.
+
+## 6.1) Selected Non-AI Packages/Tools
+
+- PDF inspection/rasterization: `pdfjs-dist`
+- OCR engine: `tesseract.js`
+- EML parsing: `mailparser`
+- MSG parsing: `@kenjiuno/msgreader`
+- PPTX parsing: ZIP/XML parser-first extraction (slides + notes)
 
 ## 7) Pending Work
 
 1. Decide whether to wire additional non-AI activities into active DAG.
 2. Improve scanned-PDF OCR reliability across runtime environments.
-3. Add first-class legacy PPT parser strategy or explicitly keep deferred.
-4. Add MSG parser strategy or explicitly keep deferred.
-5. Add operational OCR observability (success rates, per-format diagnostics).
+3. Decide whether to introduce a dedicated Node OCR/parser worker for scanned PDF and legacy binary formats.
+4. Add first-class legacy PPT parser strategy or explicitly keep deferred.
+5. Harden MSG parser compatibility across deployment targets.
+6. Add operational OCR observability (success rates, per-format diagnostics).
 
 ## 8) Compatibility and Safety
 

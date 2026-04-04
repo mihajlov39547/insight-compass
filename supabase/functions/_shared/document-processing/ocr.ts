@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import { rasterizePdfPagesForOcr } from "./pdf-rasterization.ts";
+import { inspectPdfTextLayerDetailed } from "./pdf-rasterization.ts";
 
 export interface OcrResult {
   text: string;
@@ -11,6 +12,8 @@ export interface OcrResult {
   languages?: string;
   page_count?: number | null;
   processed_page_count?: number;
+  processed_page_numbers?: number[];
+  pdf_text_status?: "HAS_SELECTABLE_TEXT" | "LIKELY_SCANNED";
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -178,11 +181,26 @@ export async function runPdfOcrViaTesseract(
     languages?: string | null;
     maxPages?: number;
     scale?: number;
+    minCharsPerPage?: number;
+    forceOcrAllPages?: boolean;
   }
 ): Promise<OcrResult> {
+  const languages = options?.languages || resolveTesseractLanguages();
+  const inspection = await inspectPdfTextLayerDetailed(pdfBytes, {
+    minCharsPerPage: options?.minCharsPerPage,
+    maxPages: options?.maxPages,
+  });
+
+  const pagesForOcr = options?.forceOcrAllPages
+    ? Array.from({ length: Math.max(inspection.page_count, 0) }, (_, i) => i + 1)
+    : (inspection.pages_without_text.length > 0
+      ? inspection.pages_without_text
+      : Array.from({ length: Math.max(inspection.page_count, 0) }, (_, i) => i + 1));
+
   const rasterized = await rasterizePdfPagesForOcr(pdfBytes, {
     maxPages: options?.maxPages,
     scale: options?.scale,
+    pageNumbers: pagesForOcr,
   });
 
   if (!rasterized.page_images.length) {
@@ -191,23 +209,35 @@ export async function runPdfOcrViaTesseract(
       confidence: null,
       engine: "tesseract.js",
       model: "tesseract.js@5",
-      languages: options?.languages || resolveTesseractLanguages(),
-      page_count: rasterized.page_count,
+      languages,
+      page_count: inspection.page_count || rasterized.page_count,
       processed_page_count: 0,
-      warning: rasterized.warning || "No rasterized PDF pages were available for Tesseract OCR",
+      processed_page_numbers: [],
+      pdf_text_status: inspection.pdf_text_status,
+      warning: [
+        inspection.warning,
+        rasterized.warning,
+        "No rasterized PDF pages were available for Tesseract OCR",
+      ].filter(Boolean).join(" | "),
     };
   }
 
   const result = await runTesseractImageBatch(
     rasterized.page_images,
-    options?.languages || resolveTesseractLanguages()
+    languages
   );
 
   return {
     ...result,
-    page_count: rasterized.page_count,
+    page_count: inspection.page_count || rasterized.page_count,
     processed_page_count: rasterized.rendered_page_count,
-    warning: [rasterized.warning, result.warning].filter(Boolean).join(" | ") || undefined,
+    processed_page_numbers: rasterized.rendered_page_numbers,
+    pdf_text_status: inspection.pdf_text_status,
+    warning: [
+      inspection.warning,
+      rasterized.warning,
+      result.warning,
+    ].filter(Boolean).join(" | ") || undefined,
   };
 }
 

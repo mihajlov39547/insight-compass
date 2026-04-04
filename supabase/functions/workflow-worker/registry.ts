@@ -257,7 +257,7 @@ export function initializeBuiltInHandlers(): void {
     key: "document.extract_presentation_text",
     category: "document",
     timeout_seconds: 60,
-    description: "Extracts presentation text for PPT/PPTX",
+    description: "Extracts presentation text for PPTX (slides+notes) with explicit PPT support status",
     handler: documentExtractPresentationText,
   });
 
@@ -265,7 +265,7 @@ export function initializeBuiltInHandlers(): void {
     key: "document.extract_email_text",
     category: "document",
     timeout_seconds: 45,
-    description: "Extracts EML-style email headers/body text",
+    description: "Extracts EML and MSG email fields with parser-normalized output",
     handler: documentExtractEmailText,
   });
 
@@ -273,7 +273,7 @@ export function initializeBuiltInHandlers(): void {
     key: "document.ocr_pdf",
     category: "document",
     timeout_seconds: 120,
-    description: "OCR stage for scanned PDFs using Tesseract.js primary path with optional external fallback",
+    description: "Parser-first PDF OCR: text-layer inspection, then selective Tesseract.js OCR with optional fallback",
     handler: documentOcrPdf,
   });
 
