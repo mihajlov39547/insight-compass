@@ -11,7 +11,10 @@ import type {
   ActivityInfo,
   ProcessingReadiness,
 } from '@/hooks/useDocumentProcessingStatus';
-import { getActivityLabel, getUserFacingStage } from '@/hooks/useDocumentProcessingStatus';
+import {
+  deriveDocumentStatusPresentation,
+  getActivityLabel,
+} from '@/hooks/useDocumentProcessingStatus';
 
 interface Props {
   status: DocumentProcessingStatus;
@@ -46,42 +49,41 @@ function StatusIcon({ status }: { status: string }) {
 }
 
 function OverallStatusBadge({ status }: { status: DocumentProcessingStatus }) {
-  const stage = getUserFacingStage(status);
+  const presentation = deriveDocumentStatusPresentation(status);
 
-  if (status.documentStatus === 'completed') {
+  if (presentation.primaryTone === 'ready') {
     return (
       <Badge className="bg-green-500/10 text-green-700 border-green-500/20 gap-1.5 text-xs">
-        <Check className="h-3 w-3" /> Completed
+        <Check className="h-3 w-3" /> {presentation.primaryLabel}
       </Badge>
     );
   }
 
-  if (status.documentStatus === 'failed') {
+  if (presentation.primaryTone === 'failed') {
     return (
       <Badge variant="destructive" className="gap-1.5 text-xs">
-        <X className="h-3 w-3" /> Failed
+        <X className="h-3 w-3" /> {presentation.primaryLabel}
       </Badge>
     );
   }
 
-  const isPartiallyReady = status.readiness.groundedChatReady || status.readiness.semanticSearchReady;
-
-  if (isPartiallyReady) {
+  if (presentation.primaryTone === 'partial') {
     return (
       <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20 gap-1.5 text-xs">
-        <Zap className="h-3 w-3" /> Partially ready — {stage}
+        <Zap className="h-3 w-3" /> {presentation.primaryLabel}
       </Badge>
     );
   }
 
   return (
     <Badge className="bg-amber-500/10 text-amber-700 border-amber-500/20 gap-1.5 text-xs">
-      <Loader2 className="h-3 w-3 animate-spin" /> {stage}
+      <Loader2 className="h-3 w-3 animate-spin" /> {presentation.primaryLabel}
     </Badge>
   );
 }
 
 function CurrentProcessingSection({ status }: { status: DocumentProcessingStatus }) {
+  const presentation = deriveDocumentStatusPresentation(status);
   const isTerminal = status.documentStatus === 'completed' || status.documentStatus === 'failed';
 
   return (
@@ -98,12 +100,18 @@ function CurrentProcessingSection({ status }: { status: DocumentProcessingStatus
       )}
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-        {status.runningActivities.length > 0 && (
+        {status.runningActivities.length > 0 && presentation.primaryTone === 'processing' && (
           <div className="col-span-2">
             <span className="text-muted-foreground">Running now: </span>
             <span className="text-foreground font-medium">
               {status.runningActivities.map(a => getActivityLabel(a.activityKey)).join(', ')}
             </span>
+          </div>
+        )}
+        {presentation.secondaryLabel && (
+          <div className="col-span-2">
+            <span className="text-muted-foreground">Background: </span>
+            <span className="text-foreground">{presentation.secondaryLabel}</span>
           </div>
         )}
         {status.lastCompletedActivity && (

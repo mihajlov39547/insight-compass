@@ -53,6 +53,14 @@ export interface DocumentProcessingStatus {
   warnings: string[];
 }
 
+export interface DocumentStatusPresentation {
+  primaryLabel: string;
+  primaryTone: 'ready' | 'partial' | 'processing' | 'failed';
+  secondaryLabel: string | null;
+  isCoreReady: boolean;
+  isPartiallyReady: boolean;
+}
+
 const ACTIVITY_LABELS: Record<string, string> = {
   'document.prepare_run': 'Initializing',
   'document.load_source': 'Loading file',
@@ -78,7 +86,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   'document.build_search_index': 'Building search index',
   'document.chunk_text': 'Chunking for retrieval',
   'document.generate_chunk_embeddings': 'Generating embeddings',
-  'document.generate_chunk_questions': 'Generating questions',
+  'document.generate_chunk_questions': 'Generating suggested questions',
   'document.finalize_document': 'Finalizing',
 };
 
@@ -103,6 +111,89 @@ export function getUserFacingStage(status: DocumentProcessingStatus): string {
   }
 
   return getActivityLabel(status.currentStage);
+}
+
+const OPTIONAL_BACKGROUND_KEYS = new Set([
+  'document.generate_chunk_questions',
+]);
+
+function getBackgroundLabel(activityKey: string): string {
+  switch (activityKey) {
+    case 'document.generate_chunk_questions':
+      return 'Enhancing retrieval in background';
+    default:
+      return `Enhancing in background: ${getActivityLabel(activityKey).toLowerCase()}`;
+  }
+}
+
+function getBlockingStageLabel(status: DocumentProcessingStatus): string {
+  const blocking = status.runningActivities.filter(
+    (a) => !a.isOptional && !OPTIONAL_BACKGROUND_KEYS.has(a.activityKey)
+  );
+
+  if (blocking.length > 0) {
+    return blocking.map((a) => getActivityLabel(a.activityKey)).join(', ');
+  }
+
+  return getUserFacingStage(status);
+}
+
+function getBackgroundActivityLabel(status: DocumentProcessingStatus): string | null {
+  const background = status.runningActivities.find(
+    (a) => a.isOptional || OPTIONAL_BACKGROUND_KEYS.has(a.activityKey)
+  );
+  if (!background) return null;
+  return getBackgroundLabel(background.activityKey);
+}
+
+export function deriveDocumentStatusPresentation(
+  status: DocumentProcessingStatus
+): DocumentStatusPresentation {
+  if (status.documentStatus === 'failed') {
+    return {
+      primaryLabel: 'Failed',
+      primaryTone: 'failed',
+      secondaryLabel: null,
+      isCoreReady: false,
+      isPartiallyReady: false,
+    };
+  }
+
+  const hasChunks = status.metrics.chunkCount > 0;
+  const hasEmbeddings = status.metrics.embeddingCount > 0 && status.metrics.embeddingCoverage >= 90;
+  const searchReady = status.readiness.keywordSearchReady || status.readiness.semanticSearchReady || status.readiness.hybridReady;
+  const coreReady = status.readiness.textExtracted && hasChunks && hasEmbeddings && searchReady;
+  const partiallyReady = status.readiness.textExtracted && (searchReady || hasEmbeddings);
+
+  const backgroundLabel = getBackgroundActivityLabel(status);
+
+  if (coreReady || status.readiness.groundedChatReady || status.documentStatus === 'completed') {
+    return {
+      primaryLabel: status.readiness.groundedChatReady ? 'Ready for chat' : 'Ready for search and chat',
+      primaryTone: 'ready',
+      secondaryLabel: backgroundLabel,
+      isCoreReady: true,
+      isPartiallyReady: false,
+    };
+  }
+
+  if (partiallyReady) {
+    return {
+      primaryLabel: 'Partially ready',
+      primaryTone: 'partial',
+      secondaryLabel: backgroundLabel,
+      isCoreReady: false,
+      isPartiallyReady: true,
+    };
+  }
+
+  return {
+    primaryLabel: getBlockingStageLabel(status),
+    primaryTone: 'processing',
+    secondaryLabel: backgroundLabel,
+    isCoreReady: false,
+    isPartiallyReady: false,
+  };
 }
 
 export function useDocumentProcessingStatus(documentId: string | null, enabled = true) {

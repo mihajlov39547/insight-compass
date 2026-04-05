@@ -12,7 +12,7 @@ const STAGE_LABELS: Record<string, string> = {
   chunking: 'Chunking text',
   generating_embeddings: 'Generating embeddings',
   embedding: 'Generating embeddings',
-  generating_chunk_questions: 'Generating questions',
+  generating_chunk_questions: 'Generating suggested questions',
 };
 
 export function DocumentStatusBadge({ status }: { status: string }) {

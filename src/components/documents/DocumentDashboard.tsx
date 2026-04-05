@@ -23,7 +23,7 @@ import { AIReadyBadge } from './AIReadyBadge';
 import { useDocumentChunkStats } from '@/hooks/useDocumentChunkStats';
 import { useDocumentQuestionStats } from '@/hooks/useDocumentQuestionStats';
 import { useDocumentProcessingStatus } from '@/hooks/useDocumentProcessingStatus';
-import { getUserFacingStage } from '@/hooks/useDocumentProcessingStatus';
+import { deriveDocumentStatusPresentation } from '@/hooks/useDocumentProcessingStatus';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
@@ -299,6 +299,10 @@ function DocumentRow({
     ? (processingStatus.readiness.semanticSearchReady || processingStatus.readiness.keywordSearchReady) && doc.processing_status !== 'completed'
     : false;
 
+  const statusPresentation = processingStatus
+    ? deriveDocumentStatusPresentation(processingStatus)
+    : null;
+
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
       <div className="rounded-lg border border-border bg-card transition-shadow hover:shadow-sm">
@@ -312,8 +316,14 @@ function DocumentRow({
                 <p className="text-sm font-medium text-foreground truncate" title={doc.file_name}>
                   {truncateFileName(doc.file_name)}
                 </p>
-                <DocumentStatusBadge status={doc.processing_status} />
-                {isPartiallyReady && (
+                <DocumentStatusBadge
+                  status={statusPresentation?.primaryTone === 'ready'
+                    ? 'completed'
+                    : statusPresentation?.primaryTone === 'failed'
+                      ? 'failed'
+                      : doc.processing_status}
+                />
+                {isPartiallyReady && statusPresentation?.primaryTone !== 'ready' && (
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-blue-500/10 text-blue-700 border-blue-500/20">
                     <Zap className="h-2.5 w-2.5" /> Partially ready
                   </Badge>
@@ -323,8 +333,14 @@ function DocumentRow({
               <p className="text-xs text-muted-foreground mt-0.5">
                 {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
                 {doc.word_count ? ` • ${doc.word_count.toLocaleString()} words` : ''}
-                {isProcessing && processingStatus && processingStatus.runningActivities.length > 0 && (
-                  <span className="text-primary"> • {getUserFacingStage(processingStatus)}</span>
+                {statusPresentation?.primaryTone === 'ready' && statusPresentation.secondaryLabel && (
+                  <span className="text-muted-foreground"> • {statusPresentation.secondaryLabel}</span>
+                )}
+                {statusPresentation?.primaryTone === 'partial' && statusPresentation.secondaryLabel && (
+                  <span className="text-muted-foreground"> • {statusPresentation.secondaryLabel}</span>
+                )}
+                {isProcessing && statusPresentation?.primaryTone === 'processing' && statusPresentation?.primaryLabel && (
+                  <span className="text-primary"> • {statusPresentation.primaryLabel}</span>
                 )}
               </p>
             </div>

@@ -16,6 +16,7 @@ import { useDeleteDocument, useRetryProcessing, DbDocument } from '@/hooks/useDo
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from './DocumentStatusBadge';
 import { DocumentUsability } from './DocumentUsability';
+import { useDocumentProcessingStatus, deriveDocumentStatusPresentation } from '@/hooks/useDocumentProcessingStatus';
 import { AIReadyBadge } from './AIReadyBadge';
 import { useDocumentChunkStats } from '@/hooks/useDocumentChunkStats';
 import { useDocumentQuestionStats } from '@/hooks/useDocumentQuestionStats';
@@ -251,7 +252,19 @@ function DocumentRow({
 }) {
   const Icon = fileIcons[doc.file_type] || FileIcon;
   const color = fileColors[doc.file_type] || 'text-muted-foreground';
-  const isAIReady = doc.processing_status === 'completed' && (chunkStats?.embeddedCount ?? 0) > 0 && chunkStats?.embeddedCount === chunkStats?.chunkCount;
+  const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
+  const { data: processingStatus } = useDocumentProcessingStatus(
+    doc.id,
+    isExpanded || isProcessing
+  );
+
+  const statusPresentation = processingStatus
+    ? deriveDocumentStatusPresentation(processingStatus)
+    : null;
+
+  const isAIReady = processingStatus
+    ? processingStatus.readiness.groundedChatReady
+    : (doc.processing_status === 'completed' && (chunkStats?.embeddedCount ?? 0) > 0 && chunkStats?.embeddedCount === chunkStats?.chunkCount);
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -266,12 +279,21 @@ function DocumentRow({
                 <p className="text-sm font-medium text-foreground truncate" title={doc.file_name}>
                   {truncateFileName(doc.file_name)}
                 </p>
-                <DocumentStatusBadge status={doc.processing_status} />
+                <DocumentStatusBadge
+                  status={statusPresentation?.primaryTone === 'ready'
+                    ? 'completed'
+                    : statusPresentation?.primaryTone === 'failed'
+                      ? 'failed'
+                      : doc.processing_status}
+                />
                 <AIReadyBadge isReady={isAIReady} />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
                 {doc.word_count ? ` • ${doc.word_count.toLocaleString()} words` : ''}
+                {statusPresentation?.secondaryLabel && (
+                  <span className="text-muted-foreground"> • {statusPresentation.secondaryLabel}</span>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
