@@ -194,12 +194,17 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       hasLengthInstruction,
     });
 
-    // OpenAI gpt-5 / gpt-5.2 reject the legacy `max_tokens` param;
-    // Gemini models accept either. Send only `max_completion_tokens` for
-    // OpenAI models and only `max_tokens` for others to stay compatible.
+    // OpenAI gpt-5 / gpt-5.2 reject the legacy `max_tokens` param and
+    // use reasoning tokens that count against max_completion_tokens.
+    // Bump the limit for OpenAI reasoning models so internal chain-of-thought
+    // doesn't consume the entire budget, leaving nothing for the answer.
     const isOpenAI = resolvedModel.startsWith("openai/");
+    const isOpenAIReasoning = isOpenAI && !resolvedModel.includes("nano") && !resolvedModel.includes("mini");
+    const effectiveMaxTokens = isOpenAIReasoning
+      ? Math.max(responseLengthConfig.maxOutputTokens * 4, 1024)
+      : responseLengthConfig.maxOutputTokens;
     const tokenLimitField = isOpenAI
-      ? { max_completion_tokens: responseLengthConfig.maxOutputTokens }
+      ? { max_completion_tokens: effectiveMaxTokens }
       : { max_tokens: responseLengthConfig.maxOutputTokens };
 
     const response = await fetch(
