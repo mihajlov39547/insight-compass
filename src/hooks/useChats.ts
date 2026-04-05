@@ -98,7 +98,7 @@ export function useDeleteChat() {
         .eq('chat_id', id);
       if (docsError) throw docsError;
 
-      const docs = (chatDocs ?? []) as Array<{ id: string; storage_path: string }>;
+      const docs = (chatDocs ?? []) as unknown as Array<{ id: string; storage_path: string }>;
       const storagePaths = docs
         .map((d) => d.storage_path)
         .filter((p): p is string => typeof p === 'string' && p.length > 0);
