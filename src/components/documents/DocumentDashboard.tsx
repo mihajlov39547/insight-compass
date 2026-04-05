@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   FileText, FileType, FileSpreadsheet, File as FileIcon, Upload, Trash2,
   RotateCcw, ChevronDown, ChevronRight, Search, ArrowUpDown, Filter,
-  FolderOpen, MessageSquare, Download
+  FolderOpen, MessageSquare, Download, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,9 +18,12 @@ import { useDocuments, useDeleteDocument, useRetryProcessing, DbDocument } from 
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from './DocumentStatusBadge';
 import { DocumentUsability } from './DocumentUsability';
+import { DocumentProcessingOverview } from './DocumentProcessingOverview';
 import { AIReadyBadge } from './AIReadyBadge';
 import { useDocumentChunkStats } from '@/hooks/useDocumentChunkStats';
 import { useDocumentQuestionStats } from '@/hooks/useDocumentQuestionStats';
+import { useDocumentProcessingStatus } from '@/hooks/useDocumentProcessingStatus';
+import { getUserFacingStage } from '@/hooks/useDocumentProcessingStatus';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
@@ -281,7 +284,20 @@ function DocumentRow({
 }) {
   const Icon = fileIcons[doc.file_type] || FileIcon;
   const color = fileColors[doc.file_type] || 'text-muted-foreground';
-  const isAIReady = doc.processing_status === 'completed' && (chunkStats?.embeddedCount ?? 0) > 0 && chunkStats?.embeddedCount === chunkStats?.chunkCount;
+  const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
+
+  const { data: processingStatus } = useDocumentProcessingStatus(
+    doc.id,
+    isExpanded || isProcessing
+  );
+
+  const isAIReady = processingStatus
+    ? processingStatus.readiness.groundedChatReady
+    : (doc.processing_status === 'completed' && (chunkStats?.embeddedCount ?? 0) > 0 && chunkStats?.embeddedCount === chunkStats?.chunkCount);
+
+  const isPartiallyReady = processingStatus
+    ? (processingStatus.readiness.semanticSearchReady || processingStatus.readiness.keywordSearchReady) && doc.processing_status !== 'completed'
+    : false;
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -297,11 +313,19 @@ function DocumentRow({
                   {truncateFileName(doc.file_name)}
                 </p>
                 <DocumentStatusBadge status={doc.processing_status} />
+                {isPartiallyReady && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-blue-500/10 text-blue-700 border-blue-500/20">
+                    <Zap className="h-2.5 w-2.5" /> Partially ready
+                  </Badge>
+                )}
                 <AIReadyBadge isReady={isAIReady} />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
                 {doc.word_count ? ` • ${doc.word_count.toLocaleString()} words` : ''}
+                {isProcessing && processingStatus && processingStatus.runningActivities.length > 0 && (
+                  <span className="text-primary"> • {getUserFacingStage(processingStatus)}</span>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
@@ -329,17 +353,6 @@ function DocumentRow({
               {doc.word_count != null && <MetaItem label="Words" value={doc.word_count.toLocaleString()} />}
               {doc.char_count != null && <MetaItem label="Characters" value={doc.char_count.toLocaleString()} />}
               {doc.page_count != null && <MetaItem label="Pages" value={doc.page_count.toString()} />}
-              {chunkStats && chunkStats.chunkCount > 0 && <MetaItem label="Chunks created" value={chunkStats.chunkCount.toString()} />}
-              {chunkStats && chunkStats.embeddedCount > 0 && <MetaItem label="Embeddings created" value={`${chunkStats.embeddedCount}/${chunkStats.chunkCount}`} />}
-              {chunkStats && chunkStats.chunkCount > 0 && (
-                <MetaItem label="Embedding coverage" value={`${Math.round((chunkStats.embeddedCount / chunkStats.chunkCount) * 100)}%`} />
-              )}
-              {chunkStats && chunkStats.embeddedCount === chunkStats.chunkCount && chunkStats.chunkCount > 0 && (
-                <MetaItem label="Semantic retrieval" value="Ready" />
-              )}
-              {doc.retry_count > 0 && <MetaItem label="Retry attempts" value={doc.retry_count.toString()} />}
-              {doc.last_retry_at && <MetaItem label="Last retry" value={new Date(doc.last_retry_at).toLocaleString()} />}
-              <MetaItem label="Status" value={doc.processing_status} />
             </div>
 
             {doc.processing_error && (
@@ -355,7 +368,11 @@ function DocumentRow({
               </div>
             )}
 
-            <DocumentUsability doc={doc} chunkStats={chunkStats} questionStats={questionStats} />
+            {processingStatus ? (
+              <DocumentProcessingOverview status={processingStatus} />
+            ) : (
+              <DocumentUsability doc={doc} chunkStats={chunkStats} questionStats={questionStats} />
+            )}
           </div>
         </CollapsibleContent>
       </div>
