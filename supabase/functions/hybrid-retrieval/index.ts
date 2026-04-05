@@ -184,7 +184,7 @@ serve(async (req) => {
 
     // Fetch user-configured retrieval weights in parallel with search
     const weightsPromise = loadRetrievalWeights(adminClient, user.id);
-    const keywordPromise = runKeywordSearch(adminClient, user.id, query, scope, projectId, notebookId);
+    const keywordPromise = runKeywordSearch(adminClient, user.id, query, scope, projectId, notebookId, chatId);
     const chunkSemanticPromise = runChunkSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
     const questionSemanticPromise = runQuestionSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
 
@@ -234,7 +234,7 @@ interface KeywordHit {
 
 async function runKeywordSearch(
   client: any, userId: string, query: string,
-  scope: string, projectId?: string, notebookId?: string
+  scope: string, projectId?: string, notebookId?: string, chatId?: string
 ): Promise<KeywordHit[]> {
   try {
     let docQuery = client
@@ -244,7 +244,12 @@ async function runKeywordSearch(
       .eq("processing_status", "completed");
 
     if (scope === "project" && projectId) {
-      docQuery = docQuery.eq("project_id", projectId);
+      if (chatId) {
+        // In project chat, include both project-level docs and docs attached to this chat.
+        docQuery = docQuery.or(`project_id.eq.${projectId},chat_id.eq.${chatId}`);
+      } else {
+        docQuery = docQuery.eq("project_id", projectId);
+      }
     } else if (scope === "notebook" && notebookId) {
       docQuery = docQuery.eq("notebook_id", notebookId).eq("notebook_enabled", true);
     }
@@ -367,23 +372,51 @@ async function runChunkSemanticSearch(
   try {
     if (!embedding) return [];
 
-    const rpcParams: any = {
-      query_embedding: JSON.stringify(embedding),
-      match_count: 20,
-      similarity_threshold: 0.15,
+    const buildRpcParams = (filters?: { projectId?: string; notebookId?: string; chatId?: string }) => {
+      const params: any = {
+        query_embedding: JSON.stringify(embedding),
+        match_count: 20,
+        similarity_threshold: 0.15,
+      };
+      if (filters?.projectId) params.filter_project_id = filters.projectId;
+      if (filters?.notebookId) params.filter_notebook_id = filters.notebookId;
+      if (filters?.chatId) params.filter_chat_id = filters.chatId;
+      return params;
     };
 
-    if (scope === "project" && projectId) rpcParams.filter_project_id = projectId;
-    if (scope === "notebook" && notebookId) rpcParams.filter_notebook_id = notebookId;
-    if (chatId) rpcParams.filter_chat_id = chatId;
+    const runRpc = async (filters?: { projectId?: string; notebookId?: string; chatId?: string }) => {
+      const { data, error } = await userClient.rpc("search_document_chunks", buildRpcParams(filters));
+      if (error) {
+        console.warn("Chunk semantic search RPC error:", error);
+        return [] as any[];
+      }
+      return data ?? [];
+    };
 
-    const { data, error } = await userClient.rpc("search_document_chunks", rpcParams);
-    if (error) {
-      console.warn("Chunk semantic search RPC error:", error);
-      return [];
+    let rows: any[] = [];
+    if (scope === "project" && projectId && chatId) {
+      const [projectRows, chatRows] = await Promise.all([
+        runRpc({ projectId }),
+        runRpc({ chatId }),
+      ]);
+      rows = [...projectRows, ...chatRows];
+    } else {
+      rows = await runRpc({
+        projectId: scope === "project" ? projectId : undefined,
+        notebookId: scope === "notebook" ? notebookId : undefined,
+        chatId,
+      });
     }
 
-    return (data ?? []).map((r: any) => ({
+    const deduped = new Map<string, any>();
+    for (const row of rows) {
+      const existing = deduped.get(row.chunk_id);
+      if (!existing || Number(row.similarity ?? 0) > Number(existing.similarity ?? 0)) {
+        deduped.set(row.chunk_id, row);
+      }
+    }
+
+    return Array.from(deduped.values()).map((r: any) => ({
       chunkId: r.chunk_id,
       documentId: r.document_id,
       fileName: r.file_name,
@@ -413,23 +446,51 @@ async function runQuestionSemanticSearch(
   try {
     if (!embedding) return [];
 
-    const rpcParams: any = {
-      query_embedding: JSON.stringify(embedding),
-      match_count: 30,
-      similarity_threshold: 0.15,
+    const buildRpcParams = (filters?: { projectId?: string; notebookId?: string; chatId?: string }) => {
+      const params: any = {
+        query_embedding: JSON.stringify(embedding),
+        match_count: 30,
+        similarity_threshold: 0.15,
+      };
+      if (filters?.projectId) params.filter_project_id = filters.projectId;
+      if (filters?.notebookId) params.filter_notebook_id = filters.notebookId;
+      if (filters?.chatId) params.filter_chat_id = filters.chatId;
+      return params;
     };
 
-    if (scope === "project" && projectId) rpcParams.filter_project_id = projectId;
-    if (scope === "notebook" && notebookId) rpcParams.filter_notebook_id = notebookId;
-    if (chatId) rpcParams.filter_chat_id = chatId;
+    const runRpc = async (filters?: { projectId?: string; notebookId?: string; chatId?: string }) => {
+      const { data, error } = await userClient.rpc("search_document_chunk_questions", buildRpcParams(filters));
+      if (error) {
+        console.warn("Question semantic search RPC error:", error);
+        return [] as any[];
+      }
+      return data ?? [];
+    };
 
-    const { data, error } = await userClient.rpc("search_document_chunk_questions", rpcParams);
-    if (error) {
-      console.warn("Question semantic search RPC error:", error);
-      return [];
+    let rows: any[] = [];
+    if (scope === "project" && projectId && chatId) {
+      const [projectRows, chatRows] = await Promise.all([
+        runRpc({ projectId }),
+        runRpc({ chatId }),
+      ]);
+      rows = [...projectRows, ...chatRows];
+    } else {
+      rows = await runRpc({
+        projectId: scope === "project" ? projectId : undefined,
+        notebookId: scope === "notebook" ? notebookId : undefined,
+        chatId,
+      });
     }
 
-    return (data ?? []).map((r: any) => ({
+    const deduped = new Map<string, any>();
+    for (const row of rows) {
+      const existing = deduped.get(row.chunk_id);
+      if (!existing || Number(row.similarity ?? 0) > Number(existing.similarity ?? 0)) {
+        deduped.set(row.chunk_id, row);
+      }
+    }
+
+    return Array.from(deduped.values()).map((r: any) => ({
       chunkId: r.chunk_id,
       documentId: r.document_id,
       fileName: r.file_name,
