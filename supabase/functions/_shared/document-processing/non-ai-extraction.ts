@@ -34,6 +34,27 @@ function extractXmlTextNodes(xml: string, tagRegex: RegExp): string {
   return normalizeWhitespace(parts.join(" "));
 }
 
+async function parseOfficeText(bytes: Uint8Array) {
+  const mod = await import("https://esm.sh/officeparser@6.0.7?target=es2022");
+  const parseOffice = (mod as any).parseOffice
+    || (mod as any).default?.parseOffice
+    || (mod as any).default;
+
+  if (typeof parseOffice !== "function") {
+    throw new Error("officeparser parseOffice export not available");
+  }
+
+  const ast = await parseOffice(bytes.slice().buffer);
+  const text = typeof ast?.toText === "function"
+    ? String(ast.toText() || "")
+    : String(ast?.text || "");
+
+  return {
+    text: normalizeWhitespace(text),
+    ast,
+  };
+}
+
 async function parseZipEntryText(zipBytes: Uint8Array, targetPath: string): Promise<string | null> {
   const view = new DataView(zipBytes.buffer, zipBytes.byteOffset, zipBytes.byteLength);
 
@@ -177,6 +198,25 @@ export async function extractSpreadsheetTextNonAi(bytes: Uint8Array, fileName: s
   }
 
   if (ext === "xlsx" || ext === "xls") {
+    if (ext === "xlsx") {
+      try {
+        const parsed = await parseOfficeText(bytes);
+        if (parsed.text) {
+          return {
+            text: parsed.text,
+            sheet_count: null,
+            row_count: null,
+            column_count_estimate: null,
+            method: "officeparser_xlsx_ast",
+            warning: null,
+          };
+        }
+      } catch (error) {
+        // Fall back to SheetJS parser below.
+        console.warn("officeparser xlsx extraction failed:", error);
+      }
+    }
+
     try {
       const XLSX = await import("https://esm.sh/xlsx@0.18.5?target=es2022");
       const workbook = XLSX.read(bytes, { type: "array" });
@@ -228,6 +268,27 @@ export async function extractPresentationTextNonAi(bytes: Uint8Array, fileName: 
   const parserWarnings: string[] = [];
 
   if (ext === "pptx") {
+    try {
+      const parsed = await parseOfficeText(bytes);
+      if (parsed.text) {
+        return {
+          text: parsed.text,
+          extracted_text: parsed.text,
+          extracted_text_length: parsed.text.length,
+          slide_count: null,
+          notes_count: null,
+          presentation_type: "pptx",
+          support_status: "supported",
+          method: "officeparser_pptx_ast",
+          parser_warnings: [],
+          warning: null,
+        };
+      }
+      parserWarnings.push("officeparser returned empty text for PPTX");
+    } catch (error) {
+      parserWarnings.push(error instanceof Error ? `officeparser failed: ${error.message}` : "officeparser failed for PPTX");
+    }
+
     const slideTexts: string[] = [];
     const notesTexts: string[] = [];
     let slideIndex = 1;
