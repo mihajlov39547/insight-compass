@@ -226,6 +226,42 @@ function extractDocText(bytes: Uint8Array): { text: string; method: string; enco
   return { text: best.text, method: best.method, encoding: best.encoding };
 }
 
+async function extractDocTextWithWordExtractor(
+  bytes: Uint8Array
+): Promise<{ text: string; method: string; encoding: string; quality: TextQuality } | null> {
+  let tmpPath: string | null = null;
+  try {
+    const mod = await import("https://esm.sh/word-extractor@0.3.0?target=es2022");
+    const WordExtractorCtor = (mod as any).default ?? mod;
+    const extractor = new WordExtractorCtor();
+
+    tmpPath = await Deno.makeTempFile({ suffix: ".doc" });
+    await Deno.writeFile(tmpPath, bytes);
+
+    const extracted = await extractor.extract(tmpPath);
+    const body = typeof extracted?.getBody === "function"
+      ? extracted.getBody()
+      : (extracted?.body ?? "");
+
+    const text = String(body || "").trim();
+    if (!text) return null;
+
+    return {
+      text,
+      method: "word-extractor",
+      encoding: "binary-doc",
+      quality: assessTextQuality(text),
+    };
+  } catch (e) {
+    console.warn(`[doc-extraction] word-extractor failed: ${e}`);
+    return null;
+  } finally {
+    if (tmpPath) {
+      await Deno.remove(tmpPath).catch(() => {});
+    }
+  }
+}
+
 // ─── Structural / XML Noise Filtering ──────────────────────────────────
 
 const STRUCTURAL_PATTERNS = [
@@ -582,6 +618,12 @@ export async function extractText(
   }
 
   if (ext === "doc" || mimeType === "application/msword") {
+    const extractedByWordExtractor = await extractDocTextWithWordExtractor(bytes);
+    if (extractedByWordExtractor && (extractedByWordExtractor.quality.readable || extractedByWordExtractor.text.length > 0)) {
+      console.log(`[doc-extraction] method=word-extractor, encoding=binary-doc, textLen=${extractedByWordExtractor.text.length}, isOLE2=${isOLE2(bytes)}`);
+      return extractedByWordExtractor;
+    }
+
     const result = extractDocText(bytes);
     const quality = assessTextQuality(result.text);
     console.log(`[doc-extraction] method=${result.method}, encoding=${result.encoding}, textLen=${result.text.length}, isOLE2=${isOLE2(bytes)}`);
