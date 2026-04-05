@@ -28,12 +28,36 @@ import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
 import { useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge';
+import { deriveDocumentStatusPresentation, useDocumentProcessingStatus } from '@/hooks/useDocumentProcessingStatus';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { supabase } from '@/integrations/supabase/client';
+
+function NotebookSourceStatus({ doc }: { doc: DbDocument }) {
+  const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
+  const { data: processingStatus } = useDocumentProcessingStatus(doc.id, isProcessing);
+  const presentation = processingStatus
+    ? deriveDocumentStatusPresentation(processingStatus)
+    : null;
+
+  const displayStatus = presentation?.primaryTone === 'ready'
+    ? 'completed'
+    : presentation?.primaryTone === 'failed'
+      ? 'failed'
+      : doc.processing_status;
+
+  return (
+    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+      <DocumentStatusBadge status={displayStatus} />
+      {presentation?.secondaryLabel && (
+        <span className="text-[10px] text-muted-foreground">• {presentation.secondaryLabel}</span>
+      )}
+    </div>
+  );
+}
 
 export function NotebookWorkspace() {
   const { selectedNotebookId, setShowShare } = useApp();
@@ -408,9 +432,7 @@ export function NotebookWorkspace() {
                         </button>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground truncate">{doc.file_name}</p>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <DocumentStatusBadge status={doc.processing_status} />
-                          </div>
+                          <NotebookSourceStatus doc={doc} />
                         </div>
                         <Button
                           variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"

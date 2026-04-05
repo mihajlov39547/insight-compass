@@ -16,6 +16,7 @@ import { useDeleteDocument, useRetryProcessing, DbDocument } from '@/hooks/useDo
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from './DocumentStatusBadge';
 import { DocumentUsability } from './DocumentUsability';
+import { DocumentProcessingOverview } from './DocumentProcessingOverview';
 import { useDocumentProcessingStatus, deriveDocumentStatusPresentation } from '@/hooks/useDocumentProcessingStatus';
 import { AIReadyBadge } from './AIReadyBadge';
 import { useDocumentChunkStats } from '@/hooks/useDocumentChunkStats';
@@ -331,7 +332,6 @@ function DocumentRow({
               )}
               {doc.retry_count > 0 && <MetaItem label="Retry attempts" value={doc.retry_count.toString()} />}
               {doc.last_retry_at && <MetaItem label="Last retry" value={new Date(doc.last_retry_at).toLocaleString()} />}
-              <MetaItem label="Status" value={doc.processing_status} />
             </div>
 
             {doc.processing_error && (
@@ -347,7 +347,11 @@ function DocumentRow({
               </div>
             )}
 
-            <DocumentUsability doc={doc} chunkStats={chunkStats} questionStats={questionStats} />
+            {processingStatus ? (
+              <DocumentProcessingOverview status={processingStatus} />
+            ) : (
+              <DocumentUsability doc={doc} chunkStats={chunkStats} questionStats={questionStats} />
+            )}
           </div>
         </CollapsibleContent>
       </div>
