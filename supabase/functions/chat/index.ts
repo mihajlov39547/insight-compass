@@ -194,6 +194,14 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       hasLengthInstruction,
     });
 
+    // OpenAI gpt-5 / gpt-5.2 reject the legacy `max_tokens` param;
+    // Gemini models accept either. Send only `max_completion_tokens` for
+    // OpenAI models and only `max_tokens` for others to stay compatible.
+    const isOpenAI = resolvedModel.startsWith("openai/");
+    const tokenLimitField = isOpenAI
+      ? { max_completion_tokens: responseLengthConfig.maxOutputTokens }
+      : { max_tokens: responseLengthConfig.maxOutputTokens };
+
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
@@ -208,8 +216,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
             { role: "system", content: systemPrompt },
             ...messages,
           ],
-          max_tokens: responseLengthConfig.maxOutputTokens,
-          max_completion_tokens: responseLengthConfig.maxOutputTokens,
+          ...tokenLimitField,
           stream: true,
         }),
       }
