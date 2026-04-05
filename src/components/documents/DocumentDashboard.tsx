@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   FileText, FileType, FileSpreadsheet, File as FileIcon, Upload, Trash2,
   RotateCcw, ChevronDown, ChevronRight, Search, ArrowUpDown, Filter,
-  FolderOpen, MessageSquare, Download
+  FolderOpen, MessageSquare, Download, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
