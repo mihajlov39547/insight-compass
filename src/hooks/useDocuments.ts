@@ -122,21 +122,27 @@ async function startDocumentWorkflow(doc: DbDocument, mode: 'upload' | 'retry'):
 
   const workflowData = await workflowResp.json().catch(() => ({}));
 
-  // Best-effort immediate worker kick to reduce time-to-first-activity.
-  fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-worker`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
-    body: JSON.stringify({
-      max_activities_to_process: 5,
-      lease_seconds: 180,
-      debug: false,
-    }),
-  }).catch(() => {
-    // Ignore fire-and-forget kick errors; cron/normal worker invocation remains authoritative.
-  });
+  // Best-effort immediate worker kicks to reduce time-to-first-activity.
+  // Fire two rapid kicks: one immediately, one after a short delay for any
+  // downstream activities queued by the first kick.
+  const kickWorker = () => {
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-worker`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({
+        max_activities_to_process: 10,
+        lease_seconds: 180,
+        debug: false,
+      }),
+    }).catch(() => {});
+  };
+
+  kickWorker();
+  setTimeout(kickWorker, 3000);
+  setTimeout(kickWorker, 8000);
 
   console.info('[doc-trigger] workflow started', {
     document_id: doc.id,
