@@ -1357,6 +1357,10 @@ export type Database = {
         }
         Returns: string
       }
+      edge_condition_matches: {
+        Args: { p_condition_expr: Json; p_context: Json }
+        Returns: boolean
+      }
       get_document_chunk_stats: {
         Args: { doc_ids: string[] }
         Returns: {
@@ -1427,6 +1431,12 @@ export type Database = {
           rank: number
           snippet: string
           summary: string
+        }[]
+      }
+      workflow_reachable_activity_ids: {
+        Args: { p_workflow_run_id: string }
+        Returns: {
+          activity_id: string
         }[]
       }
     }
