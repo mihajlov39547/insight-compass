@@ -6,10 +6,11 @@ import {
   Brain, Library, Lightbulb, Palette, Music, Heart,
   BarChart3, GraduationCap, Camera, BookOpenCheck
 } from 'lucide-react';
+import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { useNotebooks, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, useCreateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { useAuth } from '@/contexts/useAuth';
 import { useApp } from '@/contexts/useApp';
-import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -366,21 +367,18 @@ export function NotebooksLanding() {
                         .eq('processing_status', 'completed')
                         .limit(15);
 
-                      const resp = await fetch(
-                        `${SUPABASE_URL}/functions/v1/improve-description`,
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-                          },
-                          body: JSON.stringify({
-                            projectName: editName,
-                            currentDescription: editDescription,
-                            documents: (nbDocs || []).map((d: any) => ({ fileName: d.file_name, summary: d.summary })),
-                          }),
-                        }
-                      );
+                      const resp = await fetch(getFunctionUrl('/functions/v1/improve-description'), {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                        },
+                        body: JSON.stringify({
+                          projectName: editName,
+                          currentDescription: editDescription,
+                          documents: (nbDocs || []).map((d: any) => ({ fileName: d.file_name, summary: d.summary })),
+                        }),
+                      });
 
                       const data = await resp.json();
                       if (!resp.ok) throw new Error(data.error || 'Failed to improve description');

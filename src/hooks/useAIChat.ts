@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { DEFAULT_MODEL_ID } from '@/data/mockData';
+import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
 import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
@@ -11,8 +12,8 @@ import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
 
-const CHAT_URL = `${SUPABASE_URL}/functions/v1/chat`;
-const TITLE_URL = `${SUPABASE_URL}/functions/v1/generate-chat-title`;
+const CHAT_URL = getFunctionUrl('/functions/v1/chat');
+const TITLE_URL = getFunctionUrl('/functions/v1/generate-chat-title');
 
 interface UseAIChatOptions {
   chatId: string;

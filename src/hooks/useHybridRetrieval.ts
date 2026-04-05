@@ -1,6 +1,7 @@
-import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { getFunctionUrl } from '@/config/env';
+import { supabase } from '@/integrations/supabase/client';
 
-const RETRIEVAL_URL = `${SUPABASE_URL}/functions/v1/hybrid-retrieval`;
+const RETRIEVAL_URL = getFunctionUrl('/functions/v1/hybrid-retrieval');
 
 export interface HybridResult {
   documentId: string;

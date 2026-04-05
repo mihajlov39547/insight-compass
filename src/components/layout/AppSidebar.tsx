@@ -24,9 +24,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 
 import { toast } from 'sonner';
-import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
 import { planIcons, planLabels } from '@/lib/planConfig';
 import { formatDistanceToNow } from 'date-fns';
@@ -240,7 +241,7 @@ export function AppSidebar() {
     try {
       const { data: docs } = await supabase.from('documents').select('file_name, summary').eq('project_id', editProject.id).eq('processing_status', 'completed').limit(15);
       const { data: chatList } = await supabase.from('chats').select('name').eq('project_id', editProject.id).eq('is_archived', false).order('updated_at', { ascending: false }).limit(10);
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/improve-description`, {
+      const resp = await fetch(getFunctionUrl('/functions/v1/improve-description'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` },
         body: JSON.stringify({
@@ -381,7 +382,7 @@ export function AppSidebar() {
                         .limit(15);
 
                       const resp = await fetch(
-                        `${SUPABASE_URL}/functions/v1/improve-description`,
+                        getFunctionUrl('/functions/v1/improve-description'),
                         {
                           method: 'POST',
                           headers: {

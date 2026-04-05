@@ -28,11 +28,12 @@ import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
 import { useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge';
+import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
-import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 export function NotebookWorkspace() {
   const { selectedNotebookId, setShowShare } = useApp();
@@ -191,7 +192,7 @@ export function NotebookWorkspace() {
 
               // Trigger reprocessing via workflow
               fetch(
-                `${SUPABASE_URL}/functions/v1/workflow-start`,
+                getFunctionUrl('/functions/v1/workflow-start'),
                 {
                   method: 'POST',
                   headers: {
@@ -308,7 +309,7 @@ export function NotebookWorkspace() {
 
       // Trigger processing via workflow
       fetch(
-        `${SUPABASE_URL}/functions/v1/workflow-start`,
+        getFunctionUrl('/functions/v1/workflow-start'),
         {
           method: 'POST',
           headers: {

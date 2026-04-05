@@ -6,9 +6,9 @@ import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { useApp } from '@/contexts/useApp';
 import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
-import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -137,7 +137,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     setIsImproving(true);
     try {
       const resp = await fetch(
-        `${SUPABASE_URL}/functions/v1/improve-prompt`,
+        getFunctionUrl('/functions/v1/improve-prompt'),
         {
           method: 'POST',
           headers: {

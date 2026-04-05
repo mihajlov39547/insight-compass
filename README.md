@@ -27,6 +27,18 @@ npm install
 npm run dev
 ```
 
+## Environment configuration
+
+Supabase configuration is centralized in [src/config/env.ts](src/config/env.ts).
+
+Resolution order:
+
+1. Vite build env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
+2. Runtime overrides from [public/env.js](public/env.js) (`window.__ENV__`)
+3. Hardcoded fallback values in [src/config/env.ts](src/config/env.ts)
+
+For hosted preview environments (including Lovable preview), update [public/env.js](public/env.js) to manage runtime values in one place.
+
 ## Build
 
 ```sh

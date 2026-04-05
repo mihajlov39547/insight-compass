@@ -12,7 +12,8 @@ import { useChats } from '@/hooks/useAllChats';
 import { useDocuments } from '@/hooks/useDocuments';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/useAuth';
-import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
+import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -170,7 +171,7 @@ export function ProjectsLanding() {
         .limit(10);
 
       const resp = await fetch(
-        `${SUPABASE_URL}/functions/v1/improve-description`,
+        getFunctionUrl('/functions/v1/improve-description'),
         {
           method: 'POST',
           headers: {

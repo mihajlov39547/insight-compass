@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
+import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 
 export interface DbDocument {
   id: string;
@@ -102,7 +103,7 @@ async function startDocumentWorkflow(doc: DbDocument, mode: 'upload' | 'retry'):
   };
 
   const workflowResp = await fetch(
-    `${SUPABASE_URL}/functions/v1/workflow-start`,
+    getFunctionUrl('/functions/v1/workflow-start'),
     {
       method: 'POST',
       headers: {
@@ -126,7 +127,7 @@ async function startDocumentWorkflow(doc: DbDocument, mode: 'upload' | 'retry'):
   // Fire two rapid kicks: one immediately, one after a short delay for any
   // downstream activities queued by the first kick.
   const kickWorker = () => {
-    fetch(`${SUPABASE_URL}/functions/v1/workflow-worker`, {
+    fetch(getFunctionUrl('/functions/v1/workflow-worker'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
