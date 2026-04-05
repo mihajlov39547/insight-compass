@@ -4,8 +4,7 @@ import {
   currentUser,
   mockNotifications,
   Notification,
-  User,
-  Document
+  User
 } from '@/data/mockData';
 import { DbProject } from '@/hooks/useProjects';
 import { DbChat } from '@/hooks/useChats';
