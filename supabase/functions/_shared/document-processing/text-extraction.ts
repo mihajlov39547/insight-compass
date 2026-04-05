@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { extractText as extractPdfText } from "https://esm.sh/unpdf@0.12.1";
+import mammoth from "https://esm.sh/mammoth@1.8.0?target=es2022";
 
 // ─── Windows-1251 Decoder (Serbian Cyrillic) ───────────────────────────
 
@@ -589,36 +590,19 @@ export async function extractText(
 
   if (ext === "docx" || mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
     try {
-      const docXml = await extractDocxEntry(bytes, "word/document.xml");
-      if (docXml) {
-        const paragraphs: string[] = [];
-        const pBlocks = docXml.split(/<w:p[\s>]/);
-        let wtNodesFound = 0;
-        for (const block of pBlocks) {
-          const textParts: string[] = [];
-          const wtMatches = block.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g);
-          for (const m of wtMatches) {
-            textParts.push(m[1]);
-            wtNodesFound++;
-          }
-          if (textParts.length > 0) paragraphs.push(textParts.join(""));
-        }
-        const text = paragraphs.join("\n");
-        console.log(`[docx-extraction] ZIP ok, document.xml found, w:t nodes=${wtNodesFound}, paragraphs=${paragraphs.length}, textLen=${text.length}`);
-        let quality = assessTextQuality(text);
-        if (!quality.readable && text.length > 50 && wtNodesFound > 3) {
-          quality = { ...quality, readable: true, score: Math.max(quality.score, 0.5), reason: "docx_zip_trusted" };
-        }
-        if (quality.readable) {
-          return { text, method: "docx_zip", encoding: "utf-8", quality };
-        }
-      } else {
-        console.log("[docx-extraction] word/document.xml not found in ZIP");
+      const result = await mammoth.extractRawText({ arrayBuffer: bytes.slice().buffer });
+      const text = String(result.value || "").trim();
+      const messageCount = Array.isArray(result.messages) ? result.messages.length : 0;
+      console.log(`[docx-extraction] mammoth completed, messages=${messageCount}, textLen=${text.length}`);
+      const quality = assessTextQuality(text);
+      if (quality.readable || text.length > 0) {
+        return { text, method: "mammoth", encoding: "utf-8", quality };
       }
     } catch (e) {
-      console.warn(`[docx-extraction] ZIP extraction failed: ${e}`);
+      console.warn(`[docx-extraction] mammoth failed: ${e}`);
     }
 
+    // Fallback only if Mammoth fails or returns no text.
     const raw = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
     const matches = raw.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g);
     const parts: string[] = [];
