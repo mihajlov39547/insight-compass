@@ -355,9 +355,13 @@ export function useDeleteDocument() {
 
   return useMutation({
     mutationFn: async (doc: DbDocument) => {
-      await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from('insight-navigator')
         .remove([doc.storage_path]);
+
+      if (storageError && !/not found/i.test(storageError.message || '')) {
+        throw storageError;
+      }
 
       const { error } = await supabase
         .from('documents' as any)
