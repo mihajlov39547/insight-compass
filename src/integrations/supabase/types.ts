@@ -1370,6 +1370,10 @@ export type Database = {
           embedded_count: number
         }[]
       }
+      get_document_processing_status: {
+        Args: { p_document_id: string }
+        Returns: Json
+      }
       get_document_question_stats: {
         Args: { doc_ids: string[] }
         Returns: {
