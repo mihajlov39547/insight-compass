@@ -79,6 +79,10 @@ async function extractDocxEntry(zipBytes: Uint8Array, targetPath: string): Promi
           const writer = ds.writable.getWriter();
           const reader = ds.readable.getReader();
 
+          // Use only the entry payload bytes. Passing the backing ArrayBuffer can
+          // include unrelated ZIP bytes and cause decompression to hang.
+          const input = compressedData.slice();
+
           const chunks: Uint8Array[] = [];
           const readAll = (async () => {
             while (true) {
@@ -88,9 +92,18 @@ async function extractDocxEntry(zipBytes: Uint8Array, targetPath: string): Promi
             }
           })();
 
-          await writer.write(new Uint8Array(compressedData.buffer as ArrayBuffer));
-          await writer.close();
-          await readAll;
+          const inflateWithTimeout = Promise.race([
+            (async () => {
+              await writer.write(input);
+              await writer.close();
+              await readAll;
+            })(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("DOCX inflate timeout")), 8000)
+            ),
+          ]);
+
+          await inflateWithTimeout;
 
           const totalLen = chunks.reduce((s, c) => s + c.length, 0);
           const result = new Uint8Array(totalLen);

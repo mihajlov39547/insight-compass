@@ -81,6 +81,9 @@ async function parseZipEntryText(zipBytes: Uint8Array, targetPath: string): Prom
           const writer = ds.writable.getWriter();
           const reader = ds.readable.getReader();
 
+          // Preserve subarray boundaries to avoid feeding unrelated ZIP bytes.
+          const input = compressedData.slice();
+
           const chunks: Uint8Array[] = [];
           const readAll = (async () => {
             while (true) {
@@ -90,9 +93,18 @@ async function parseZipEntryText(zipBytes: Uint8Array, targetPath: string): Prom
             }
           })();
 
-          await writer.write(new Uint8Array(compressedData.buffer as ArrayBuffer));
-          await writer.close();
-          await readAll;
+          const inflateWithTimeout = Promise.race([
+            (async () => {
+              await writer.write(input);
+              await writer.close();
+              await readAll;
+            })(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("ZIP inflate timeout")), 8000)
+            ),
+          ]);
+
+          await inflateWithTimeout;
 
           const totalLen = chunks.reduce((s, c) => s + c.length, 0);
           const out = new Uint8Array(totalLen);
