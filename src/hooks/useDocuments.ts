@@ -220,6 +220,7 @@ const ALLOWED_EXTENSIONS = new Set([
   'eml',
   'msg',
   'txt',
+  'txtx',
   'md',
   'rtf',
   'xml',

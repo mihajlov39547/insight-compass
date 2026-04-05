@@ -598,7 +598,7 @@ export async function extractText(
 ): Promise<ExtractTextResult> {
   const ext = fileName.split(".").pop()?.toLowerCase() || "";
 
-  if (mimeType.startsWith("text/") || ["txt", "md", "csv", "rtf"].includes(ext)) {
+  if (mimeType.startsWith("text/") || ["txt", "txtx", "md", "csv", "rtf"].includes(ext)) {
     const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
     return { text, method: "plaintext", encoding: "utf-8", quality: assessTextQuality(text) };
   }
@@ -678,6 +678,7 @@ export function categorizeFile(fileType: string): string {
     case "xlsx":
     case "csv": return "spreadsheet";
     case "txt": return "text";
+    case "txtx": return "text";
     case "md": return "markdown";
     case "rtf": return "rich_text";
     default: return "other";

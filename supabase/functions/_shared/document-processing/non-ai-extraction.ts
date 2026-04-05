@@ -608,7 +608,7 @@ export function extractPlainTextLikeContent(bytes: Uint8Array, fileName: string)
   const ext = (fileName.split(".").pop() || "").toLowerCase();
   const text = toUtf8(bytes);
 
-  if (["txt", "md", "json", "xml", "csv", "rtf", "log"].includes(ext)) {
+  if (["txt", "txtx", "md", "json", "xml", "csv", "rtf", "log"].includes(ext)) {
     const normalized = text.replace(/\u0000/g, "").trim();
     const stats = countStats(normalized);
     return {

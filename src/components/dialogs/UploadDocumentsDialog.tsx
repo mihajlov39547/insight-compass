@@ -169,13 +169,13 @@ export function UploadDocumentsDialog({
               id="file-upload-real"
               type="file"
               multiple
-              accept=".pdf,.doc,.docx,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.pptx,.eml,.msg,.txt,.md,.rtf,.xml,.json,.log"
+              accept=".pdf,.doc,.docx,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.pptx,.eml,.msg,.txt,.txtx,.md,.rtf,.xml,.json,.log"
               onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ''; }}
               className="hidden"
             />
             <Upload className={cn('h-10 w-10 mx-auto mb-3', isDragging ? 'text-accent' : 'text-muted-foreground')} />
             <p className="text-sm font-medium text-foreground mb-1">Drop files here or click to browse</p>
-            <p className="text-xs text-muted-foreground">Supported: PDF, DOC/DOCX, CSV/XLS/XLSX, JPG/JPEG/PNG, PPTX, EML/MSG, TXT/MD/RTF/XML/JSON/LOG • Max 20 MB</p>
+            <p className="text-xs text-muted-foreground">Supported: PDF, DOC/DOCX, CSV/XLS/XLSX, JPG/JPEG/PNG, PPTX, EML/MSG, TXT/TXTX/MD/RTF/XML/JSON/LOG • Max 20 MB</p>
           </div>
 
           {/* File list */}

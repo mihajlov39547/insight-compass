@@ -1085,6 +1085,7 @@ export async function extractTextStage(
     "eml",
     "msg",
     "txt",
+    "txtx",
     "md",
     "rtf",
     "xml",
