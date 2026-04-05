@@ -9,7 +9,7 @@ import {
 import { useNotebooks, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, useCreateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { useAuth } from '@/contexts/useAuth';
 import { useApp } from '@/contexts/useApp';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -367,12 +367,12 @@ export function NotebooksLanding() {
                         .limit(15);
 
                       const resp = await fetch(
-                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-description`,
+                        `${SUPABASE_URL}/functions/v1/improve-description`,
                         {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
-                            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
                           },
                           body: JSON.stringify({
                             projectName: editName,

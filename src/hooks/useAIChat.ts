@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { DEFAULT_MODEL_ID } from '@/data/mockData';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
@@ -11,8 +11,8 @@ import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-const TITLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`;
+const CHAT_URL = `${SUPABASE_URL}/functions/v1/chat`;
+const TITLE_URL = `${SUPABASE_URL}/functions/v1/generate-chat-title`;
 
 interface UseAIChatOptions {
   chatId: string;
@@ -244,7 +244,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: contextMessages,
@@ -317,7 +317,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
             userMessage: content,

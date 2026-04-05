@@ -1,6 +1,6 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
 
-const RETRIEVAL_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hybrid-retrieval`;
+const RETRIEVAL_URL = `${SUPABASE_URL}/functions/v1/hybrid-retrieval`;
 
 export interface HybridResult {
   documentId: string;

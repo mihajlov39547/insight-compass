@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 
 export interface DbDocument {
@@ -102,12 +102,12 @@ async function startDocumentWorkflow(doc: DbDocument, mode: 'upload' | 'retry'):
   };
 
   const workflowResp = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-start`,
+    `${SUPABASE_URL}/functions/v1/workflow-start`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
       },
       body: JSON.stringify(requestPayload),
     }
@@ -126,11 +126,11 @@ async function startDocumentWorkflow(doc: DbDocument, mode: 'upload' | 'retry'):
   // Fire two rapid kicks: one immediately, one after a short delay for any
   // downstream activities queued by the first kick.
   const kickWorker = () => {
-    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-worker`, {
+    fetch(`${SUPABASE_URL}/functions/v1/workflow-worker`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
       },
       body: JSON.stringify({
         max_activities_to_process: 10,

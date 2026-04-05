@@ -32,7 +32,7 @@ import { modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
 
 export function NotebookWorkspace() {
   const { selectedNotebookId, setShowShare } = useApp();
@@ -191,12 +191,12 @@ export function NotebookWorkspace() {
 
               // Trigger reprocessing via workflow
               fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-start`,
+                `${SUPABASE_URL}/functions/v1/workflow-start`,
                 {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                    Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
                   },
                   body: JSON.stringify({
                     definition_key: 'document_processing_v1',
@@ -308,12 +308,12 @@ export function NotebookWorkspace() {
 
       // Trigger processing via workflow
       fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-start`,
+        `${SUPABASE_URL}/functions/v1/workflow-start`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
             definition_key: 'document_processing_v1',

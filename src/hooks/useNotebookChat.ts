@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { DEFAULT_MODEL_ID } from '@/data/mockData';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
@@ -9,8 +9,8 @@ import { useUserSettings } from '@/hooks/useUserSettings';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-const SCOPE_CHECK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notebook-scope-check`;
+const CHAT_URL = `${SUPABASE_URL}/functions/v1/chat`;
+const SCOPE_CHECK_URL = `${SUPABASE_URL}/functions/v1/notebook-scope-check`;
 
 export interface DbNotebookMessage {
   id: string;
@@ -129,7 +129,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
             notebookTitle: notebookName || '',
@@ -192,7 +192,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: contextMessages,
@@ -271,12 +271,12 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           }));
 
           const resp2 = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/improve-notebook`,
+            `${SUPABASE_URL}/functions/v1/improve-notebook`,
             {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
               },
               body: JSON.stringify({
                 notebookName: notebookName || '',
