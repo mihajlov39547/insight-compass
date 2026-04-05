@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { extractText as extractPdfText } from "https://esm.sh/unpdf@0.12.1";
+import pdfParse from "https://esm.sh/pdf-parse@1.1.1?target=es2022";
+import { Buffer } from "node:buffer";
 import mammoth from "https://esm.sh/mammoth@1.8.0?target=es2022";
 
 // ─── Windows-1251 Decoder (Serbian Cyrillic) ───────────────────────────
@@ -604,16 +605,16 @@ export async function extractText(
 
   if (ext === "pdf" || mimeType === "application/pdf") {
     try {
-      const result = await extractPdfText(bytes, { mergePages: true });
-      const text = result.text || "";
+      const result = await pdfParse(Buffer.from(bytes));
+      const text = String(result?.text || "");
       const quality = assessTextQuality(text);
       if (quality.readable) {
-        return { text, method: "unpdf", quality };
+        return { text, method: "pdf-parse", quality };
       }
-      return { text, method: "unpdf_low_quality", quality };
+      return { text, method: "pdf-parse_low_quality", quality };
     } catch (e) {
-      console.warn("unpdf extraction failed:", e);
-      return { text: "", method: "unpdf_error", quality: assessTextQuality("") };
+      console.warn("pdf-parse extraction failed:", e);
+      return { text: "", method: "pdf-parse_error", quality: assessTextQuality("") };
     }
   }
 
