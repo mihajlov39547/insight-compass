@@ -101,12 +101,41 @@ export function useDeleteNotebook() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // Remove notebook association from documents  
-      await (supabase.from('documents') as any).update({ notebook_id: null }).eq('notebook_id', id);
+      const { data: notebookDocs, error: docsError } = await (supabase.from('documents') as any)
+        .select('id, storage_path')
+        .eq('notebook_id', id);
+      if (docsError) throw docsError;
+
+      const docs = (notebookDocs ?? []) as Array<{ id: string; storage_path: string }>;
+      const storagePaths = docs
+        .map((d) => d.storage_path)
+        .filter((p): p is string => typeof p === 'string' && p.length > 0);
+
+      if (storagePaths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from('insight-navigator')
+          .remove(storagePaths);
+        if (storageError && !/not found/i.test(storageError.message || '')) {
+          throw storageError;
+        }
+      }
+
+      if (docs.length > 0) {
+        const docIds = docs.map((d) => d.id);
+        const { error: deleteDocsError } = await (supabase.from('documents' as any) as any)
+          .delete()
+          .in('id', docIds);
+        if (deleteDocsError) throw deleteDocsError;
+      }
 
       const { error } = await (supabase.from('notebooks' as any) as any).delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['notebooks'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['notebooks'] });
+      qc.invalidateQueries({ queryKey: ['documents'] });
+      qc.invalidateQueries({ queryKey: ['notebook-documents'] });
+      qc.invalidateQueries({ queryKey: ['notebook-document-counts'] });
+    },
   });
 }

@@ -92,12 +92,43 @@ export function useDeleteChat() {
 
   return useMutation({
     mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
+      const { data: chatDocs, error: docsError } = await supabase
+        .from('documents' as any)
+        .select('id, storage_path')
+        .eq('chat_id', id);
+      if (docsError) throw docsError;
+
+      const docs = (chatDocs ?? []) as Array<{ id: string; storage_path: string }>;
+      const storagePaths = docs
+        .map((d) => d.storage_path)
+        .filter((p): p is string => typeof p === 'string' && p.length > 0);
+
+      if (storagePaths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from('insight-navigator')
+          .remove(storagePaths);
+        if (storageError && !/not found/i.test(storageError.message || '')) {
+          throw storageError;
+        }
+      }
+
+      if (docs.length > 0) {
+        const docIds = docs.map((d) => d.id);
+        const { error: deleteDocsError } = await supabase
+          .from('documents' as any)
+          .delete()
+          .in('id', docIds);
+        if (deleteDocsError) throw deleteDocsError;
+      }
+
       const { error } = await supabase.from('chats').delete().eq('id', id);
       if (error) throw error;
       return { projectId };
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['chats', data.projectId] });
+      qc.invalidateQueries({ queryKey: ['documents', data.projectId] });
+      qc.invalidateQueries({ queryKey: ['document-count', data.projectId] });
     },
   });
 }
