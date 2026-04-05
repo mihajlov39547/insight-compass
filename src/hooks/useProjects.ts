@@ -123,8 +123,8 @@ export function useDeleteProject() {
       if (chatDocsError) throw chatDocsError;
 
       const combinedDocs = [
-        ...((projectDocs ?? []) as Array<{ id: string; storage_path: string }>),
-        ...((chatDocs ?? []) as Array<{ id: string; storage_path: string }>),
+        ...((projectDocs ?? []) as unknown as Array<{ id: string; storage_path: string }>),
+        ...((chatDocs ?? []) as unknown as Array<{ id: string; storage_path: string }>),
       ];
 
       const uniqueDocs = Array.from(new Map(combinedDocs.map((d) => [d.id, d])).values());
