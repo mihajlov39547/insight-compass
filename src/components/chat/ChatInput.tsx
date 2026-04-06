@@ -72,7 +72,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
 
     const nextHeight = Math.min(Math.max(el.scrollHeight, minHeight), maxHeight);
     el.style.height = `${nextHeight}px`;
-    el.style.overflowY = 'hidden';
+    el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden';
   }, [getTextareaHeights]);
 
   useEffect(() => {
