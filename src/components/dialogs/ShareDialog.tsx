@@ -43,6 +43,9 @@ export function ShareDialog() {
 
     setSending(true);
     try {
+      const inviterName = profile?.full_name || profile?.username || user.email || 'A team member';
+      const inviteId = crypto.randomUUID();
+
       // Look up the invited user by email to get their user_id
       const { data: invitedProfile } = await supabase
         .from('profiles')
@@ -50,32 +53,34 @@ export function ShareDialog() {
         .eq('email', email.trim().toLowerCase())
         .maybeSingle();
 
-      // Create share record (use invited user's id if found, otherwise use a placeholder)
-      const sharedWithUserId = invitedProfile?.user_id || '00000000-0000-0000-0000-000000000000';
+      // Only create share record if the user exists in the system
+      if (invitedProfile?.user_id) {
+        const { error: shareError } = await supabase.from('shares').insert({
+          id: inviteId,
+          item_id: itemId,
+          item_type: entityType,
+          permission,
+          shared_by_user_id: user.id,
+          shared_with_user_id: invitedProfile.user_id,
+        });
 
-      const shareId = crypto.randomUUID();
-      const { error: shareError } = await supabase.from('shares').insert({
-        id: shareId,
-        item_id: itemId,
-        item_type: entityType,
-        permission,
-        shared_by_user_id: user.id,
-        shared_with_user_id: sharedWithUserId,
-      });
-
-      if (shareError) {
-        console.error('Share insert error:', shareError);
-        toast.error('Failed to create share');
-        return;
+        if (shareError) {
+          if (shareError.code === '23505') {
+            toast.info('This user already has access');
+          } else {
+            console.error('Share insert error:', shareError);
+            toast.error('Failed to create share');
+          }
+          return;
+        }
       }
 
       // Send invitation email
-      const inviterName = profile?.full_name || profile?.username || user.email || 'A team member';
-      const { error: emailError } = await supabase.functions.invoke('send-transactional-email', {
+      const { data, error: emailError } = await supabase.functions.invoke('send-transactional-email', {
         body: {
           templateName: 'share-invitation',
           recipientEmail: email.trim(),
-          idempotencyKey: `share-invite-${shareId}`,
+          idempotencyKey: `share-invite-${inviteId}`,
           templateData: {
             inviterName,
             itemName: context,
@@ -88,7 +93,7 @@ export function ShareDialog() {
 
       if (emailError) {
         console.error('Email send error:', emailError);
-        toast.warning('Share created but invitation email could not be sent');
+        toast.warning('Invitation email could not be sent');
       } else {
         toast.success(`Invitation sent to ${email.trim()}`);
       }
