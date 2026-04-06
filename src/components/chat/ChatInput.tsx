@@ -49,6 +49,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   const [isImproving, setIsImproving] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [promptOptions, setPromptOptions] = useState<ChatPromptOptions>({ useWebSearch: false });
+  const [attachedImages, setAttachedImages] = useState<PastedImage[]>([]);
   const { setShowDocuments, setDocumentScope, selectedChatId } = useApp();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
