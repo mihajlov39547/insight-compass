@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe } from 'lucide-react';
+import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -16,12 +16,20 @@ export interface ChatPromptOptions {
   useWebSearch: boolean;
 }
 
+export interface PastedImage {
+  file: File;
+  previewUrl: string;
+}
+
 export interface ChatSendPayload {
   text: string;
   options: ChatPromptOptions;
+  images?: PastedImage[];
 }
 
 const MAX_TEXTAREA_ROWS = 5;
+const MAX_ATTACHED_IMAGES = 5;
+const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp'];
 
 interface ChatInputProps {
   onSend: (payload: ChatSendPayload, modelId?: string) => void;
