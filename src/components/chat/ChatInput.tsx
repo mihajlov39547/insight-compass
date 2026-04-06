@@ -230,6 +230,33 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
               isFocused ? "border-accent shadow-lg shadow-accent/10" : "border-border"
             )}
           >
+            {/* Image previews */}
+            {attachedImages.length > 0 && (
+              <div className="flex items-center gap-2 px-3 pt-2 pb-1 overflow-x-auto">
+                {attachedImages.map((img, idx) => (
+                  <div key={idx} className="relative group shrink-0">
+                    <img
+                      src={img.previewUrl}
+                      alt={`Attached ${idx + 1}`}
+                      className="h-16 w-16 rounded-lg object-cover border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {attachedImages.length < MAX_ATTACHED_IMAGES && (
+                  <div className="h-16 w-16 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground shrink-0">
+                    <ImageIcon className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="relative px-3 pt-2 pb-1">
               {variant === 'project' && promptOptions.useWebSearch && (
                 <Globe className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
