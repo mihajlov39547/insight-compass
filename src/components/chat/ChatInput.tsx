@@ -96,9 +96,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   };
 
   const handleMessageChange = (nextValue: string) => {
-    if (canFitValueWithinMaxRows(nextValue)) {
-      setMessage(nextValue);
-    }
+    setMessage(nextValue);
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
