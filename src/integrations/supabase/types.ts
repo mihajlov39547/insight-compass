@@ -903,7 +903,8 @@ export type Database = {
           item_type: string
           permission: string
           shared_by_user_id: string
-          shared_with_user_id: string
+          shared_with_email: string | null
+          shared_with_user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -912,7 +913,8 @@ export type Database = {
           item_type: string
           permission?: string
           shared_by_user_id: string
-          shared_with_user_id: string
+          shared_with_email?: string | null
+          shared_with_user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -921,7 +923,8 @@ export type Database = {
           item_type?: string
           permission?: string
           shared_by_user_id?: string
-          shared_with_user_id?: string
+          shared_with_email?: string | null
+          shared_with_user_id?: string | null
         }
         Relationships: []
       }
