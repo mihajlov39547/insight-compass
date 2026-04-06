@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe } from 'lucide-react';
+import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -16,12 +16,20 @@ export interface ChatPromptOptions {
   useWebSearch: boolean;
 }
 
+export interface PastedImage {
+  file: File;
+  previewUrl: string;
+}
+
 export interface ChatSendPayload {
   text: string;
   options: ChatPromptOptions;
+  images?: PastedImage[];
 }
 
 const MAX_TEXTAREA_ROWS = 5;
+const MAX_ATTACHED_IMAGES = 5;
+const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp'];
 
 interface ChatInputProps {
   onSend: (payload: ChatSendPayload, modelId?: string) => void;
@@ -41,6 +49,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   const [isImproving, setIsImproving] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [promptOptions, setPromptOptions] = useState<ChatPromptOptions>({ useWebSearch: false });
+  const [attachedImages, setAttachedImages] = useState<PastedImage[]>([]);
   const { setShowDocuments, setDocumentScope, selectedChatId } = useApp();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -79,11 +88,49 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     resizeTextarea();
   }, [message, resizeTextarea]);
 
+  const hasContent = message.trim() || attachedImages.length > 0;
+
+  const addImages = useCallback((files: File[]) => {
+    const valid = files.filter(f => ACCEPTED_IMAGE_TYPES.includes(f.type));
+    if (valid.length === 0) return;
+    setAttachedImages(prev => {
+      const remaining = MAX_ATTACHED_IMAGES - prev.length;
+      if (remaining <= 0) {
+        toast.error(`Maximum ${MAX_ATTACHED_IMAGES} images allowed`);
+        return prev;
+      }
+      const toAdd = valid.slice(0, remaining);
+      if (valid.length > remaining) {
+        toast.error(`Only ${remaining} more image(s) can be attached`);
+      }
+      return [...prev, ...toAdd.map(file => ({ file, previewUrl: URL.createObjectURL(file) }))];
+    });
+  }, []);
+
+  const removeImage = useCallback((index: number) => {
+    setAttachedImages(prev => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      attachedImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && !isGenerating) {
-      onSend({ text: message.trim(), options: promptOptions }, selectedModel);
+    if (hasContent && !isGenerating) {
+      onSend(
+        { text: message.trim(), options: promptOptions, images: attachedImages.length > 0 ? attachedImages : undefined },
+        selectedModel
+      );
       setMessage('');
+      setAttachedImages([]);
       setPromptOptions({ useWebSearch: false });
     }
   };
@@ -102,6 +149,23 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const el = textareaRef.current;
     if (!el) return;
+
+    // Check for pasted images first
+    const imageFiles: File[] = [];
+    if (e.clipboardData.files.length > 0) {
+      for (let i = 0; i < e.clipboardData.files.length; i++) {
+        const file = e.clipboardData.files[i];
+        if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+          imageFiles.push(file);
+        }
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      addImages(imageFiles);
+      return;
+    }
 
     // Try HTML first for formatted content, convert to plain text fallback
     const htmlContent = e.clipboardData.getData('text/html');
@@ -166,6 +230,33 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
               isFocused ? "border-accent shadow-lg shadow-accent/10" : "border-border"
             )}
           >
+            {/* Image previews */}
+            {attachedImages.length > 0 && (
+              <div className="flex items-center gap-2 px-3 pt-2 pb-1 overflow-x-auto">
+                {attachedImages.map((img, idx) => (
+                  <div key={idx} className="relative group shrink-0">
+                    <img
+                      src={img.previewUrl}
+                      alt={`Attached ${idx + 1}`}
+                      className="h-16 w-16 rounded-lg object-cover border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {attachedImages.length < MAX_ATTACHED_IMAGES && (
+                  <div className="h-16 w-16 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground shrink-0">
+                    <ImageIcon className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="relative px-3 pt-2 pb-1">
               {variant === 'project' && promptOptions.useWebSearch && (
                 <Globe className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -285,7 +376,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     </>
                   )}
 
-                  <Button type="submit" size="icon" disabled={!message.trim() || isGenerating} className={cn("h-8 w-8 rounded-lg transition-all", message.trim() && !isGenerating ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                  <Button type="submit" size="icon" disabled={!hasContent || isGenerating} className={cn("h-8 w-8 rounded-lg transition-all", hasContent && !isGenerating ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
