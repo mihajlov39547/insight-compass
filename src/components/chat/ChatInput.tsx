@@ -376,7 +376,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     </>
                   )}
 
-                  <Button type="submit" size="icon" disabled={!message.trim() || isGenerating} className={cn("h-8 w-8 rounded-lg transition-all", message.trim() && !isGenerating ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+                  <Button type="submit" size="icon" disabled={!hasContent || isGenerating} className={cn("h-8 w-8 rounded-lg transition-all", hasContent && !isGenerating ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-muted text-muted-foreground")}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
