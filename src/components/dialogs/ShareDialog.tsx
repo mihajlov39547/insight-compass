@@ -53,26 +53,30 @@ export function ShareDialog() {
         .eq('email', email.trim().toLowerCase())
         .maybeSingle();
 
-      // Only create share record if the user exists in the system
+      // Always create a share record — with user_id if registered, email-only if not
+      const sharePayload: any = {
+        id: inviteId,
+        item_id: itemId,
+        item_type: entityType,
+        permission,
+        shared_by_user_id: user.id,
+        shared_with_email: email.trim().toLowerCase(),
+      };
       if (invitedProfile?.user_id) {
-        const { error: shareError } = await supabase.from('shares').insert({
-          id: inviteId,
-          item_id: itemId,
-          item_type: entityType,
-          permission,
-          shared_by_user_id: user.id,
-          shared_with_user_id: invitedProfile.user_id,
-        });
+        sharePayload.shared_with_user_id = invitedProfile.user_id;
+      }
 
-        if (shareError) {
-          if (shareError.code === '23505') {
-            toast.info('This user already has access');
-          } else {
-            console.error('Share insert error:', shareError);
-            toast.error('Failed to create share');
-          }
-          return;
+      const { error: shareError } = await supabase.from('shares').insert(sharePayload);
+
+      if (shareError) {
+        if (shareError.code === '23505') {
+          toast.info('This user already has access');
+        } else {
+          console.error('Share insert error:', shareError);
+          toast.error('Failed to create share');
         }
+        setSending(false);
+        return;
       }
 
       // Send invitation email
