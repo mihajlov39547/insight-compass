@@ -249,11 +249,6 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     </button>
                   </div>
                 ))}
-                {attachedImages.length < MAX_ATTACHED_IMAGES && (
-                  <div className="h-16 w-16 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground shrink-0">
-                    <ImageIcon className="h-4 w-4" />
-                  </div>
-                )}
               </div>
             )}
 
