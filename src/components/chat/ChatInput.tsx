@@ -88,11 +88,49 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     resizeTextarea();
   }, [message, resizeTextarea]);
 
+  const hasContent = message.trim() || attachedImages.length > 0;
+
+  const addImages = useCallback((files: File[]) => {
+    const valid = files.filter(f => ACCEPTED_IMAGE_TYPES.includes(f.type));
+    if (valid.length === 0) return;
+    setAttachedImages(prev => {
+      const remaining = MAX_ATTACHED_IMAGES - prev.length;
+      if (remaining <= 0) {
+        toast.error(`Maximum ${MAX_ATTACHED_IMAGES} images allowed`);
+        return prev;
+      }
+      const toAdd = valid.slice(0, remaining);
+      if (valid.length > remaining) {
+        toast.error(`Only ${remaining} more image(s) can be attached`);
+      }
+      return [...prev, ...toAdd.map(file => ({ file, previewUrl: URL.createObjectURL(file) }))];
+    });
+  }, []);
+
+  const removeImage = useCallback((index: number) => {
+    setAttachedImages(prev => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      attachedImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && !isGenerating) {
-      onSend({ text: message.trim(), options: promptOptions }, selectedModel);
+    if (hasContent && !isGenerating) {
+      onSend(
+        { text: message.trim(), options: promptOptions, images: attachedImages.length > 0 ? attachedImages : undefined },
+        selectedModel
+      );
       setMessage('');
+      setAttachedImages([]);
       setPromptOptions({ useWebSearch: false });
     }
   };
@@ -111,6 +149,23 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const el = textareaRef.current;
     if (!el) return;
+
+    // Check for pasted images first
+    const imageFiles: File[] = [];
+    if (e.clipboardData.files.length > 0) {
+      for (let i = 0; i < e.clipboardData.files.length; i++) {
+        const file = e.clipboardData.files[i];
+        if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+          imageFiles.push(file);
+        }
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      addImages(imageFiles);
+      return;
+    }
 
     // Try HTML first for formatted content, convert to plain text fallback
     const htmlContent = e.clipboardData.getData('text/html');
