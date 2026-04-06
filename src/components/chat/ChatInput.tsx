@@ -61,17 +61,6 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     };
   }, []);
 
-  const canFitValueWithinMaxRows = useCallback((nextValue: string) => {
-    const el = textareaRef.current;
-    if (!el) return true;
-
-    const previousDomValue = el.value;
-    el.value = nextValue;
-    const { maxHeight } = getTextareaHeights();
-    const fits = el.scrollHeight <= maxHeight + 1;
-    el.value = previousDomValue;
-    return fits;
-  }, [getTextareaHeights]);
 
   const resizeTextarea = useCallback(() => {
     const el = textareaRef.current;
