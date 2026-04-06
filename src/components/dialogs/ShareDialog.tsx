@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
-import { Users, Copy, Check, Mail, Link2 } from 'lucide-react';
+import { Users, Copy, Check, Mail, Link2, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApp } from '@/contexts/useApp';
 import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
+import { useAuth } from '@/contexts/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function ShareDialog() {
   const { showShare, setShowShare, selectedProjectId, selectedNotebookId, activeView } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: notebooks = [] } = useNotebooks();
+  const { user, profile } = useAuth();
   const [email, setEmail] = useState('');
+  const [permission, setPermission] = useState('editor');
   const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
   const selectedNotebook = notebooks.find(n => n.id === selectedNotebookId);
@@ -26,6 +30,77 @@ export function ShareDialog() {
   const isNotebook = activeView === 'notebook-workspace';
   const context = isNotebook ? selectedNotebook?.name || 'Notebook' : selectedProject?.name || 'Project';
   const entityType = isNotebook ? 'notebook' : 'project';
+  const itemId = isNotebook ? selectedNotebookId : selectedProjectId;
+
+  const handleInvite = async () => {
+    if (!email.trim() || !user || !itemId) return;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setSending(true);
+    try {
+      // Look up the invited user by email to get their user_id
+      const { data: invitedProfile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
+
+      // Create share record (use invited user's id if found, otherwise use a placeholder)
+      const sharedWithUserId = invitedProfile?.user_id || '00000000-0000-0000-0000-000000000000';
+
+      const shareId = crypto.randomUUID();
+      const { error: shareError } = await supabase.from('shares').insert({
+        id: shareId,
+        item_id: itemId,
+        item_type: entityType,
+        permission,
+        shared_by_user_id: user.id,
+        shared_with_user_id: sharedWithUserId,
+      });
+
+      if (shareError) {
+        console.error('Share insert error:', shareError);
+        toast.error('Failed to create share');
+        return;
+      }
+
+      // Send invitation email
+      const inviterName = profile?.full_name || profile?.username || user.email || 'A team member';
+      const { error: emailError } = await supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'share-invitation',
+          recipientEmail: email.trim(),
+          idempotencyKey: `share-invite-${shareId}`,
+          templateData: {
+            inviterName,
+            itemName: context,
+            itemType: entityType,
+            permission,
+            acceptUrl: window.location.origin,
+          },
+        },
+      });
+
+      if (emailError) {
+        console.error('Email send error:', emailError);
+        toast.warning('Share created but invitation email could not be sent');
+      } else {
+        toast.success(`Invitation sent to ${email.trim()}`);
+      }
+
+      setEmail('');
+    } catch (err: any) {
+      console.error('Invite error:', err);
+      toast.error('Failed to send invitation');
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <Dialog open={showShare} onOpenChange={setShowShare}>
@@ -42,9 +117,17 @@ export function ShareDialog() {
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Enter email address" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-9" />
+                <Input
+                  placeholder="Enter email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-9"
+                  type="email"
+                  disabled={sending}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleInvite(); } }}
+                />
               </div>
-              <Select defaultValue="editor">
+              <Select value={permission} onValueChange={setPermission}>
                 <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="viewer">Viewer</SelectItem>
@@ -52,7 +135,13 @@ export function ShareDialog() {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
-              <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">Invite</Button>
+              <Button
+                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                onClick={handleInvite}
+                disabled={!email.trim() || sending}
+              >
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Invite'}
+              </Button>
             </div>
           </div>
           <div className="space-y-3">
@@ -66,9 +155,6 @@ export function ShareDialog() {
                 {copied ? <><Check className="h-4 w-4 text-success" />Copied</> : <><Copy className="h-4 w-4" />Copy</>}
               </Button>
             </div>
-          </div>
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">Sharing will be available in a future update.</p>
           </div>
         </div>
         <div className="flex justify-end pt-4 border-t border-border">
