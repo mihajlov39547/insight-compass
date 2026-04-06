@@ -103,20 +103,23 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     const el = textareaRef.current;
     if (!el) return;
 
-    const pasteText = e.clipboardData.getData('text');
+    // Try HTML first for formatted content, convert to plain text fallback
+    const htmlContent = e.clipboardData.getData('text/html');
+    const plainText = e.clipboardData.getData('text/plain') || e.clipboardData.getData('text');
+    const pasteText = htmlContent ? (plainText || '') : plainText;
     if (!pasteText) return;
 
+    e.preventDefault();
     const start = el.selectionStart ?? message.length;
     const end = el.selectionEnd ?? message.length;
     const nextValue = message.slice(0, start) + pasteText + message.slice(end);
-
-    if (!canFitValueWithinMaxRows(nextValue)) {
-      e.preventDefault();
-      return;
-    }
-
-    e.preventDefault();
     setMessage(nextValue);
+
+    // Restore cursor position after paste
+    requestAnimationFrame(() => {
+      const newPos = start + pasteText.length;
+      el.selectionStart = el.selectionEnd = newPos;
+    });
   };
 
   const handleImprovePrompt = async () => {
