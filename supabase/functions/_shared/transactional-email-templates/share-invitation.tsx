@@ -14,6 +14,8 @@ interface ShareInvitationProps {
   acceptUrl?: string
 }
 
+// This module is used by edge functions, not React Fast Refresh runtime.
+// eslint-disable-next-line react-refresh/only-export-components
 const ShareInvitationEmail = ({
   inviterName = 'A team member',
   itemName = 'Untitled',
