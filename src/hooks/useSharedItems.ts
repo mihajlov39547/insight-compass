@@ -38,7 +38,7 @@ export function useSharedItems() {
       const sharerIds = [...new Set(shares.map(s => s.shared_by_user_id))];
       const { data: sharerProfiles } = await supabase
         .from('profiles')
-        .select('user_id, full_name, avatar_url')
+        .select('user_id, full_name, avatar_url, username, email')
         .in('user_id', sharerIds);
 
       const profileMap = new Map(
