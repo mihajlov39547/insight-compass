@@ -6,12 +6,16 @@ import { InlineRenameTitle } from '@/components/shared/InlineRenameTitle';
 import { useApp } from '@/contexts/useApp';
 import { useProjects, useUpdateProject } from '@/hooks/useProjects';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
+import { useItemRole } from '@/hooks/useItemRole';
+import { getItemPermissions } from '@/lib/permissions';
 import { toast } from 'sonner';
 
 export function ContextualHeader() {
   const { selectedProjectId } = useApp();
   const { data: projects = [] } = useProjects();
   const updateProject = useUpdateProject();
+  const { data: myRole } = useItemRole(selectedProjectId, 'project');
+  const permissions = getItemPermissions(myRole);
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
@@ -28,17 +32,22 @@ export function ContextualHeader() {
       title={(
         <span className="inline-flex items-center gap-2">
           <FolderOpen className="h-5 w-5 text-accent" />
-          <InlineRenameTitle
-            value={selectedProject.name}
-            onSave={async (name) => {
-              await updateProject.mutateAsync({ id: selectedProject.id, name });
-              toast.success('Project renamed');
-            }}
-            className="text-lg font-semibold text-foreground"
-          />
+          {permissions.canRename ? (
+            <InlineRenameTitle
+              value={selectedProject.name}
+              onSave={async (name) => {
+                await updateProject.mutateAsync({ id: selectedProject.id, name });
+                toast.success('Project renamed');
+              }}
+              className="text-lg font-semibold text-foreground"
+            />
+          ) : (
+            <span className="text-lg font-semibold text-foreground">{selectedProject.name}</span>
+          )}
         </span>
       )}
       subtitle={selectedProject.description}
+      showShare={permissions.canManageSharing}
     />
   );
 }

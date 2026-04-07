@@ -11,6 +11,9 @@ import { useAIChat } from '@/hooks/useAIChat';
 import { ProjectsLanding } from '@/components/projects/ProjectsLanding';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ProjectChatGrid } from '@/components/dashboard/ProjectChatGrid';
+import { useItemRole } from '@/hooks/useItemRole';
+import { getItemPermissions } from '@/lib/permissions';
+import { Badge } from '@/components/ui/badge';
 import type { ChatSendPayload } from './ChatInput';
 
 export function ChatWorkspace() {
@@ -23,9 +26,11 @@ export function ChatWorkspace() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
-
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const selectedChat = chats.find(c => c.id === selectedChatId);
+
+  const { data: myRole } = useItemRole(selectedProjectId, 'project');
+  const permissions = getItemPermissions(myRole);
 
   const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt } = useAIChat({
     chatId: selectedChatId ?? '',
@@ -34,7 +39,6 @@ export function ChatWorkspace() {
     projectDescription: selectedProject?.description,
   });
 
-  // Get previous user and assistant messages for prompt improvement context
   const previousUserMessage = useMemo(() => {
     const userMsgs = messages.filter(m => m.role === 'user');
     return userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content : undefined;
@@ -48,7 +52,6 @@ export function ChatWorkspace() {
   const handleMessagesScroll = () => {
     const el = messagesViewportRef.current;
     if (!el) return;
-
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     setIsNearBottom(distanceFromBottom < 120);
     setShowScrollTop(el.scrollTop > 240);
@@ -57,7 +60,6 @@ export function ChatWorkspace() {
   useEffect(() => {
     const el = messagesViewportRef.current;
     if (!el || !isNearBottom) return;
-
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages, streamingContent, isNearBottom]);
 
@@ -71,9 +73,14 @@ export function ChatWorkspace() {
         <div className="flex-1 min-h-0 overflow-y-auto p-4">
           <div className="max-w-6xl mx-auto animate-fade-in">
             <div className="flex items-center justify-end gap-2 mb-4">
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowShare(true)}>
-                <Share2 className="h-4 w-4" /> Share
-              </Button>
+              {!permissions.isOwner && myRole && (
+                <Badge variant="outline" className="text-xs capitalize">{myRole}</Badge>
+              )}
+              {permissions.canManageSharing && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowShare(true)}>
+                  <Share2 className="h-4 w-4" /> Share
+                </Button>
+              )}
             </div>
 
             <div className="text-center space-y-6 max-w-3xl mx-auto mb-6">
@@ -82,21 +89,23 @@ export function ChatWorkspace() {
                 <FeatureCard icon={<Zap className="h-5 w-5" />} title="Instant Answers" description="Get accurate responses with source citations" />
                 <FeatureCard icon={<Shield className="h-5 w-5" />} title="Secure & Private" description="Your data stays within your workspace" />
               </div>
-              <Button
-                className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-                onClick={() => {
-                  createChat.mutate(
-                    { projectId: selectedProjectId!, name: 'New Chat', language: selectedProject!.language },
-                    { onSuccess: (chat) => setSelectedChatId(chat.id) }
-                  );
-                }}
-                disabled={createChat.isPending}
-              >
-                <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? 'Creating...' : 'Create New Chat'}
-              </Button>
+              {permissions.canCreateChats && (
+                <Button
+                  className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+                  onClick={() => {
+                    createChat.mutate(
+                      { projectId: selectedProjectId!, name: 'New Chat', language: selectedProject!.language },
+                      { onSuccess: (chat) => setSelectedChatId(chat.id) }
+                    );
+                  }}
+                  disabled={createChat.isPending}
+                >
+                  <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? 'Creating...' : 'Create New Chat'}
+                </Button>
+              )}
             </div>
 
-            <ProjectChatGrid chats={chats} />
+            <ProjectChatGrid chats={chats} permissions={permissions} />
           </div>
         </div>
       );
@@ -110,18 +119,22 @@ export function ChatWorkspace() {
             <FeatureCard icon={<Zap className="h-5 w-5" />} title="Instant Answers" description="Get accurate responses with source citations" />
             <FeatureCard icon={<Shield className="h-5 w-5" />} title="Secure & Private" description="Your data stays within your workspace" />
           </div>
-          <Button
-            className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-            onClick={() => {
-              createChat.mutate(
-                { projectId: selectedProjectId!, name: 'New Chat', language: selectedProject!.language },
-                { onSuccess: (chat) => setSelectedChatId(chat.id) }
-              );
-            }}
-            disabled={createChat.isPending}
-          >
-            <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? 'Creating...' : 'Create New Chat'}
-          </Button>
+          {permissions.canCreateChats ? (
+            <Button
+              className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={() => {
+                createChat.mutate(
+                  { projectId: selectedProjectId!, name: 'New Chat', language: selectedProject!.language },
+                  { onSuccess: (chat) => setSelectedChatId(chat.id) }
+                );
+              }}
+              disabled={createChat.isPending}
+            >
+              <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? 'Creating...' : 'Create New Chat'}
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground">No chats yet. Ask an editor or admin to create one.</p>
+          )}
         </div>
       </div>
     );
@@ -161,7 +174,6 @@ export function ChatWorkspace() {
             ))
           )}
 
-          {/* Streaming assistant message */}
           {isGenerating && streamingContent !== null && (
             <div className="flex gap-3 animate-fade-in">
               <Avatar className="h-8 w-8 shrink-0 bg-gradient-to-br from-accent to-accent/70">
@@ -188,7 +200,6 @@ export function ChatWorkspace() {
             </div>
           )}
 
-          {/* Error state with retry */}
           {error && (
             <div className="flex items-center gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5 animate-fade-in">
               <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
@@ -224,7 +235,9 @@ export function ChatWorkspace() {
           </Button>
         )}
       </div>
-      <ChatInput onSend={handleSend} isGenerating={isGenerating} previousUserMessage={previousUserMessage} previousAssistantMessage={previousAssistantMessage} />
+      {permissions.canSendMessages && (
+        <ChatInput onSend={handleSend} isGenerating={isGenerating} previousUserMessage={previousUserMessage} previousAssistantMessage={previousAssistantMessage} />
+      )}
     </div>
   );
 }

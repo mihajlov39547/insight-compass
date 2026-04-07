@@ -10,6 +10,7 @@ import { ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import type { ItemPermissions } from '@/lib/permissions';
 
 const BATCH_SIZE = 6;
 
@@ -30,9 +31,10 @@ function formatActivity(dateStr: string): string {
 
 interface Props {
   chats: DbChat[];
+  permissions?: ItemPermissions | null;
 }
 
-export function ProjectChatGrid({ chats }: Props) {
+export function ProjectChatGrid({ chats, permissions }: Props) {
   const { selectedChatId, setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
@@ -47,6 +49,10 @@ export function ProjectChatGrid({ chats }: Props) {
   const visibleChats = chats.slice(0, visibleCount);
   const hasMore = chats.length > visibleCount;
   const allShown = visibleCount >= chats.length;
+
+  const canRename = permissions ? permissions.canRenameChats : true;
+  const canDelete = permissions ? permissions.canDeleteChats : true;
+  const showActions = canRename || canDelete || (permissions ? permissions.canViewDocuments : true);
 
   const handleManageChatDocs = (chat: DbChat) => {
     setSelectedProjectId(chat.project_id);
@@ -91,31 +97,33 @@ export function ProjectChatGrid({ chats }: Props) {
                 }
               }}
             >
-              <div className="absolute top-2 right-2 z-10">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-foreground"
-                      onClick={(e) => e.stopPropagation()}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <ChatActionsMenuContent
-                    onRenameChat={() => {
-                      setRenameChatId(chat.id);
-                      setRenameChatValue(chat.name);
-                    }}
-                    onManageDocuments={() => handleManageChatDocs(chat)}
-                    onDeleteChat={() => handleDeleteChat(chat)}
-                  />
-                </DropdownMenu>
-              </div>
+              {showActions && (
+                <div className="absolute top-2 right-2 z-10">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-foreground"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <ChatActionsMenuContent
+                      permissions={permissions}
+                      onRenameChat={() => {
+                        setRenameChatId(chat.id);
+                        setRenameChatValue(chat.name);
+                      }}
+                      onManageDocuments={() => handleManageChatDocs(chat)}
+                      onDeleteChat={() => handleDeleteChat(chat)}
+                    />
+                  </DropdownMenu>
+                </div>
+              )}
 
-              {/* Title */}
               <div className="flex items-center gap-2 mb-1.5 pr-8">
                 <MessageSquare className="h-3.5 w-3.5 text-accent shrink-0" />
                 <span className="font-medium text-sm text-foreground truncate">
@@ -123,12 +131,10 @@ export function ProjectChatGrid({ chats }: Props) {
                 </span>
               </div>
 
-              {/* Preview */}
               <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2rem] mb-2.5">
                 {lastMessage || 'No messages yet'}
               </p>
 
-              {/* Metadata row */}
               <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <FileText className="h-3 w-3" />
@@ -141,7 +147,6 @@ export function ProjectChatGrid({ chats }: Props) {
         })}
       </div>
 
-      {/* Progressive load / all shown */}
       {hasMore && (
         <Button
           variant="ghost"
