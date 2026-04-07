@@ -305,8 +305,6 @@ function useOwnerProfile(userId?: string) {
   });
 }
 
-// Need to import useQuery for the OwnerRow
-import { useQuery } from '@tanstack/react-query';
 
 function MemberRow({
   member,
