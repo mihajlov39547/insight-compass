@@ -32,6 +32,8 @@ import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuC
 import { planIcons, planLabels } from '@/lib/planConfig';
 import { formatDistanceToNow } from 'date-fns';
 import { useRecentChats } from '@/hooks/useRecentChats';
+import { useItemRole } from '@/hooks/useItemRole';
+import { getItemPermissions } from '@/lib/permissions';
 
 export function AppSidebar() {
   const { 
@@ -720,43 +722,24 @@ export function AppSidebar() {
               {notebooksListOpen && (
                 <div className="pl-4 ml-3 border-l border-sidebar-border space-y-0.5">
                   {sortedNotebooks.map((nb) => (
-                    <div key={nb.id} className="group flex items-center gap-0.5">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            className={cn(
-                              "flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
-                              selectedNotebookId === nb.id
-                                ? "bg-accent/50 text-accent-foreground font-medium"
-                                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                            )}
-                            onClick={() => {
-                              setSelectedProjectId(null); setSelectedChatId(null);
-                              setSelectedNotebookId(nb.id); setActiveView('notebook-workspace');
-                            }}
-                          >
-                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedNotebookId === nb.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
-                              <BookOpenCheck className="h-3 w-3" />
-                            </div>
-                            <span className="truncate">{nb.name}</span>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{nb.name}</TooltipContent>
-                      </Tooltip>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
-                            <MoreHorizontal className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <NotebookActionsMenuContent
-                          onManageNotebook={() => handleManageNotebook(nb)}
-                          onManageDocuments={() => { setSelectedNotebookId(nb.id); setActiveView('notebook-documents'); }}
-                          onArchiveNotebook={() => handleArchiveNotebookSidebar(nb.id)}
-                          onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id)}
-                        />
-                      </DropdownMenu>
-                    </div>
+                    <SidebarNotebookItem
+                      key={nb.id}
+                      notebook={nb}
+                      isSelected={selectedNotebookId === nb.id}
+                      onOpenNotebook={() => {
+                        setSelectedProjectId(null);
+                        setSelectedChatId(null);
+                        setSelectedNotebookId(nb.id);
+                        setActiveView('notebook-workspace');
+                      }}
+                      onManageNotebook={() => handleManageNotebook(nb)}
+                      onManageDocuments={() => {
+                        setSelectedNotebookId(nb.id);
+                        setActiveView('notebook-documents');
+                      }}
+                      onArchiveNotebook={() => handleArchiveNotebookSidebar(nb.id)}
+                      onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id)}
+                    />
                   ))}
                   {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
                 </div>
@@ -945,6 +928,8 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onRenameChat: (chatId: string, currentName: string) => void;
 }) {
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
+  const { data: myRole } = useItemRole(project.id, 'project');
+  const permissions = getItemPermissions(myRole);
   const { setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
 
   const handleManageProjectDocs = () => { setSelectedProjectId(project.id); setSelectedChatId(null); setActiveView('project-documents'); };
@@ -976,18 +961,20 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
           <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{project.name}</TooltipContent>
         </Tooltip>
         <div className="flex items-center flex-shrink-0">
-          <Tooltip><TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent" onClick={onNewChat}>
-              <Plus className="h-3 w-3" />
-            </Button>
-          </TooltipTrigger><TooltipContent>New Chat</TooltipContent></Tooltip>
+          {permissions.canCreateChats && (
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent" onClick={onNewChat}>
+                <Plus className="h-3 w-3" />
+              </Button>
+            </TooltipTrigger><TooltipContent>New Chat</TooltipContent></Tooltip>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent">
                 <MoreHorizontal className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <ProjectActionsMenuContent onManageProject={onRename} onManageDocuments={handleManageProjectDocs} onArchiveProject={onArchive} onDeleteProject={onDelete} />
+            <ProjectActionsMenuContent permissions={permissions} onManageProject={onRename} onManageDocuments={handleManageProjectDocs} onArchiveProject={onArchive} onDeleteProject={onDelete} />
           </DropdownMenu>
         </div>
       </div>
@@ -1018,12 +1005,71 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <ChatActionsMenuContent onRenameChat={() => onRenameChat(chat.id, chat.name)} onManageDocuments={() => handleManageChatDocs(chat)} onDeleteChat={() => onDeleteChat(chat.id)} />
+              <ChatActionsMenuContent permissions={permissions} onRenameChat={() => onRenameChat(chat.id, chat.name)} onManageDocuments={() => handleManageChatDocs(chat)} onDeleteChat={() => onDeleteChat(chat.id)} />
             </DropdownMenu>
           </div>
         ))}
         {chats.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No chats yet</p>}
       </CollapsibleContent>
     </Collapsible>
+  );
+}
+
+function SidebarNotebookItem({
+  notebook,
+  isSelected,
+  onOpenNotebook,
+  onManageNotebook,
+  onManageDocuments,
+  onArchiveNotebook,
+  onDeleteNotebook,
+}: {
+  notebook: DbNotebook;
+  isSelected: boolean;
+  onOpenNotebook: () => void;
+  onManageNotebook: () => void;
+  onManageDocuments: () => void;
+  onArchiveNotebook: () => void;
+  onDeleteNotebook: () => void;
+}) {
+  const { data: myRole } = useItemRole(notebook.id, 'notebook');
+  const permissions = getItemPermissions(myRole);
+
+  return (
+    <div className="group flex items-center gap-0.5">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            className={cn(
+              "flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors",
+              isSelected
+                ? "bg-accent/50 text-accent-foreground font-medium"
+                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+            onClick={onOpenNotebook}
+          >
+            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", isSelected ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
+              <BookOpenCheck className="h-3 w-3" />
+            </div>
+            <span className="truncate">{notebook.name}</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{notebook.name}</TooltipContent>
+      </Tooltip>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-5 w-5 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent flex-shrink-0">
+            <MoreHorizontal className="h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <NotebookActionsMenuContent
+          permissions={permissions}
+          onManageNotebook={onManageNotebook}
+          onManageDocuments={onManageDocuments}
+          onArchiveNotebook={onArchiveNotebook}
+          onDeleteNotebook={onDeleteNotebook}
+        />
+      </DropdownMenu>
+    </div>
   );
 }

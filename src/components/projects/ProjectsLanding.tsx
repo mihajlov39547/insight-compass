@@ -18,6 +18,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ProjectActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { useItemRole } from '@/hooks/useItemRole';
+import { getItemPermissions } from '@/lib/permissions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -294,27 +296,13 @@ export function ProjectsLanding() {
                   className={`group relative flex flex-col justify-between min-h-[180px] rounded-xl border p-5 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer active:scale-[0.98] ${CARD_COLORS[colorIdx]}`}
                   style={{ animationDelay: `${idx * 60}ms` }}
                 >
-                  <div className="absolute top-2 right-2 z-10">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-foreground"
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <ProjectActionsMenuContent
-                        onManageProject={() => handleManageProject(project)}
-                        onManageDocuments={() => handleManageProjectDocs(project.id)}
-                        onArchiveProject={() => handleArchiveProject(project.id)}
-                        onDeleteProject={() => handleDeleteProject(project.id)}
-                      />
-                    </DropdownMenu>
-                  </div>
+                  <ProjectCardActions
+                    project={project}
+                    onManageProject={() => handleManageProject(project)}
+                    onManageDocuments={() => handleManageProjectDocs(project.id)}
+                    onArchiveProject={() => handleArchiveProject(project.id)}
+                    onDeleteProject={() => handleDeleteProject(project.id)}
+                  />
                   <div>
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${ICON_COLORS[colorIdx]}`}>
                       <IconComponent className="h-6 w-6" />
@@ -446,6 +434,48 @@ export function ProjectsLanding() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function ProjectCardActions({
+  project,
+  onManageProject,
+  onManageDocuments,
+  onArchiveProject,
+  onDeleteProject,
+}: {
+  project: DbProject;
+  onManageProject: () => void;
+  onManageDocuments: () => void;
+  onArchiveProject: () => void;
+  onDeleteProject: () => void;
+}) {
+  const { data: myRole } = useItemRole(project.id, 'project');
+  const permissions = getItemPermissions(myRole);
+
+  return (
+    <div className="absolute top-2 right-2 z-10">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-foreground"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <ProjectActionsMenuContent
+          permissions={permissions}
+          onManageProject={onManageProject}
+          onManageDocuments={onManageDocuments}
+          onArchiveProject={onArchiveProject}
+          onDeleteProject={onDeleteProject}
+        />
+      </DropdownMenu>
     </div>
   );
 }

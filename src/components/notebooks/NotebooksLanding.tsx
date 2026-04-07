@@ -16,6 +16,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { useItemRole } from '@/hooks/useItemRole';
+import { getItemPermissions } from '@/lib/permissions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -224,30 +226,16 @@ export function NotebooksLanding() {
                 className={`group relative flex flex-col justify-between min-h-[200px] rounded-xl border p-5 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer active:scale-[0.98] ${CARD_COLORS[colorIdx]}`}
                 style={{ animationDelay: `${idx * 60}ms` }}
               >
-                <div className="absolute top-2 right-2 z-10">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-foreground"
-                        onClick={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <NotebookActionsMenuContent
-                      onManageNotebook={() => handleManage(notebook)}
-                      onManageDocuments={() => {
-                        setSelectedNotebookId(notebook.id);
-                        setActiveView('notebook-documents');
-                      }}
-                      onArchiveNotebook={() => handleArchive(notebook.id)}
-                      onDeleteNotebook={() => handleDelete(notebook.id)}
-                    />
-                  </DropdownMenu>
-                </div>
+                <NotebookCardActions
+                  notebook={notebook}
+                  onManageNotebook={() => handleManage(notebook)}
+                  onManageDocuments={() => {
+                    setSelectedNotebookId(notebook.id);
+                    setActiveView('notebook-documents');
+                  }}
+                  onArchiveNotebook={() => handleArchive(notebook.id)}
+                  onDeleteNotebook={() => handleDelete(notebook.id)}
+                />
                 <div>
                   <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-3 ${ICON_COLORS[colorIdx]} bg-white/60`}>
                     <IconComponent className="h-7 w-7" />
@@ -427,6 +415,48 @@ export function NotebooksLanding() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function NotebookCardActions({
+  notebook,
+  onManageNotebook,
+  onManageDocuments,
+  onArchiveNotebook,
+  onDeleteNotebook,
+}: {
+  notebook: DbNotebook;
+  onManageNotebook: () => void;
+  onManageDocuments: () => void;
+  onArchiveNotebook: () => void;
+  onDeleteNotebook: () => void;
+}) {
+  const { data: myRole } = useItemRole(notebook.id, 'notebook');
+  const permissions = getItemPermissions(myRole);
+
+  return (
+    <div className="absolute top-2 right-2 z-10">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-foreground"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <NotebookActionsMenuContent
+          permissions={permissions}
+          onManageNotebook={onManageNotebook}
+          onManageDocuments={onManageDocuments}
+          onArchiveNotebook={onArchiveNotebook}
+          onDeleteNotebook={onDeleteNotebook}
+        />
+      </DropdownMenu>
     </div>
   );
 }

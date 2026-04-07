@@ -23,11 +23,11 @@ export function ProjectActionsMenuContent({
   permissions,
   shareDisabled,
 }: ProjectActionsMenuContentProps) {
-  const canManage = permissions ? permissions.canRename : true;
-  const canShare = permissions ? permissions.canManageSharing : !shareDisabled;
-  const canArchive = permissions ? permissions.canArchive : true;
-  const canDelete = permissions ? permissions.canDelete : true;
-  const canViewDocs = permissions ? permissions.canViewDocuments : true;
+  const canManage = permissions ? permissions.canRename : false;
+  const canShare = !!onShareProject && (permissions ? permissions.canManageSharing : !shareDisabled);
+  const canArchive = permissions ? permissions.canArchive : false;
+  const canDelete = permissions ? permissions.canDelete : false;
+  const canViewDocs = permissions ? permissions.canViewDocuments : false;
 
   return (
     <DropdownMenuContent
@@ -80,9 +80,9 @@ export function ChatActionsMenuContent({
   onDeleteChat,
   permissions,
 }: ChatActionsMenuContentProps) {
-  const canRename = permissions ? permissions.canRenameChats : true;
-  const canDelete = permissions ? permissions.canDeleteChats : true;
-  const canViewDocs = permissions ? permissions.canViewDocuments : true;
+  const canRename = permissions ? permissions.canRenameChats : false;
+  const canDelete = permissions ? permissions.canDeleteChats : false;
+  const canViewDocs = permissions ? permissions.canViewDocuments : false;
 
   return (
     <DropdownMenuContent
@@ -134,11 +134,11 @@ export function NotebookActionsMenuContent({
   permissions,
   shareDisabled,
 }: NotebookActionsMenuContentProps) {
-  const canManage = permissions ? permissions.canRename : true;
-  const canShare = permissions ? permissions.canManageSharing : !shareDisabled;
-  const canArchive = permissions ? permissions.canArchive : true;
-  const canDelete = permissions ? permissions.canDelete : true;
-  const canViewDocs = permissions ? permissions.canViewDocuments : true;
+  const canManage = permissions ? permissions.canRename : false;
+  const canShare = !!onShareNotebook && (permissions ? permissions.canManageSharing : !shareDisabled);
+  const canArchive = permissions ? permissions.canArchive : false;
+  const canDelete = permissions ? permissions.canDelete : false;
+  const canViewDocs = permissions ? permissions.canViewDocuments : false;
 
   return (
     <DropdownMenuContent
