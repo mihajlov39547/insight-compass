@@ -184,7 +184,7 @@ serve(async (req) => {
 
     // Fetch user-configured retrieval weights in parallel with search
     const weightsPromise = loadRetrievalWeights(adminClient, user.id);
-    const keywordPromise = runKeywordSearch(adminClient, user.id, query, scope, projectId, notebookId, chatId);
+    const keywordPromise = runKeywordSearch(userClient, query, scope, projectId, notebookId, chatId);
     const chunkSemanticPromise = runChunkSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
     const questionSemanticPromise = runQuestionSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
 
@@ -196,8 +196,7 @@ serve(async (req) => {
     ]);
 
     const combined = await mergeResults(
-      adminClient,
-      user.id,
+      userClient,
       keywordResults,
       chunkSemanticResults,
       questionSemanticResults,
@@ -233,14 +232,14 @@ interface KeywordHit {
 }
 
 async function runKeywordSearch(
-  client: any, userId: string, query: string,
+  client: any,
+  query: string,
   scope: string, projectId?: string, notebookId?: string, chatId?: string
 ): Promise<KeywordHit[]> {
   try {
     let docQuery = client
       .from("documents")
       .select("id, file_name, summary, project_id, chat_id, notebook_id, processing_status")
-      .eq("user_id", userId)
       .eq("processing_status", "completed");
 
     if (scope === "project" && projectId) {
@@ -511,17 +510,15 @@ async function runQuestionSemanticSearch(
 }
 
 async function getKeywordFallbackChunks(
-  adminClient: any,
-  userId: string,
+  client: any,
   missingDocIds: string[]
 ): Promise<Map<string, any>> {
   const fallback = new Map<string, any>();
   if (missingDocIds.length === 0) return fallback;
 
-  const { data, error } = await adminClient
+  const { data, error } = await client
     .from("document_chunks")
     .select("id, document_id, chunk_index, chunk_text, page, section, project_id, chat_id, notebook_id")
-    .eq("user_id", userId)
     .in("document_id", missingDocIds)
     .order("document_id", { ascending: true })
     .order("chunk_index", { ascending: true });
@@ -556,8 +553,7 @@ function minMaxNormalize(values: number[]): (value: number) => number {
 }
 
 async function mergeResults(
-  adminClient: any,
-  userId: string,
+  client: any,
   keywordHits: KeywordHit[],
   chunkHits: ChunkSemanticHit[],
   questionHits: QuestionSemanticHit[],
@@ -646,7 +642,7 @@ async function mergeResults(
     .filter((docId, idx, arr) => arr.indexOf(docId) === idx && !coveredDocs.has(docId));
 
   if (missingKeywordDocs.length > 0) {
-    const fallbackChunks = await getKeywordFallbackChunks(adminClient, userId, missingKeywordDocs);
+    const fallbackChunks = await getKeywordFallbackChunks(client, missingKeywordDocs);
     for (const docId of missingKeywordDocs) {
       const row = fallbackChunks.get(docId);
       const kw = keywordByDoc.get(docId);

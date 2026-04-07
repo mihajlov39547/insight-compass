@@ -35,6 +35,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { supabase } from '@/integrations/supabase/client';
+import { useItemRole } from '@/hooks/useItemRole';
+import { getItemPermissions } from '@/lib/permissions';
 
 function NotebookSourceStatus({ doc }: { doc: DbDocument }) {
   const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
@@ -62,6 +64,8 @@ function NotebookSourceStatus({ doc }: { doc: DbDocument }) {
 export function NotebookWorkspace() {
   const { selectedNotebookId, setShowShare } = useApp();
   const queryClient = useQueryClient();
+  const { data: myRole } = useItemRole(selectedNotebookId, 'notebook');
+  const permissions = getItemPermissions(myRole);
   const { data: notebooks = [] } = useNotebooks();
   const updateNotebook = useUpdateNotebook();
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
@@ -120,6 +124,11 @@ export function NotebookWorkspace() {
   }, [messages, streamingContent, isChatNearBottom]);
 
   const handleToggleSource = async (doc: DbDocument) => {
+    if (!permissions.canManageDocumentState) {
+      toast.error('You do not have permission to manage notebook sources');
+      return;
+    }
+
     const currentEnabled = (doc as any).notebook_enabled !== false;
     await (supabase.from('documents') as any)
       .update({ notebook_enabled: !currentEnabled })
@@ -128,6 +137,11 @@ export function NotebookWorkspace() {
   };
 
   const handleSaveToNote = (content: string) => {
+    if (!permissions.canCreateNotes) {
+      toast.error('You do not have permission to create notes');
+      return;
+    }
+
     if (!selectedNotebookId) return;
     createNote.mutate({
       notebookId: selectedNotebookId,
@@ -150,6 +164,11 @@ export function NotebookWorkspace() {
   };
 
   const handleAddNote = () => {
+    if (!permissions.canCreateNotes) {
+      toast.error('You do not have permission to create notes');
+      return;
+    }
+
     if (!selectedNotebookId) return;
     createNote.mutate({ notebookId: selectedNotebookId, title: '', content: '' }, {
       onSuccess: (note) => {
@@ -162,6 +181,10 @@ export function NotebookWorkspace() {
   };
 
   const handleStartEdit = (note: DbNotebookNote) => {
+    if (!permissions.canEditNotes) {
+      return;
+    }
+
     setEditingNote(note);
     setEditTitle(note.title);
     setEditContent(note.content);
@@ -169,6 +192,11 @@ export function NotebookWorkspace() {
   };
 
   const handleSaveNote = async () => {
+    if (!permissions.canEditNotes) {
+      toast.error('You do not have permission to edit notes');
+      return;
+    }
+
     if (!editingNote || !selectedNotebookId) return;
     updateNote.mutate({
       id: editingNote.id,
@@ -251,6 +279,11 @@ export function NotebookWorkspace() {
   };
 
   const handleDeleteNote = (note: DbNotebookNote) => {
+    if (!permissions.canDeleteNotes) {
+      toast.error('You do not have permission to delete notes');
+      return;
+    }
+
     if (!selectedNotebookId) return;
     deleteNote.mutate({ id: note.id, notebookId: selectedNotebookId });
     if (editingNote?.id === note.id) {
@@ -260,6 +293,11 @@ export function NotebookWorkspace() {
   };
 
   const handleAddNoteToSources = async () => {
+    if (!permissions.canManageDocumentState) {
+      toast.error('You do not have permission to manage notebook sources');
+      return;
+    }
+
     if (!editingNote || !selectedNotebookId) return;
     // Save note first
     if (editTitle !== editingNote.title || editContent !== editingNote.content) {
@@ -372,19 +410,23 @@ export function NotebookWorkspace() {
       {/* Header */}
       <WorkspaceContextHeader
         title={(
-          <InlineRenameTitle
-            value={notebook.name}
-            onSave={async (name) => {
-              await updateNotebook.mutateAsync({ id: notebook.id, name });
-              toast.success('Notebook renamed');
-            }}
-            as="h1"
-            className="text-lg font-semibold text-foreground"
-          />
+          permissions.canRename ? (
+            <InlineRenameTitle
+              value={notebook.name}
+              onSave={async (name) => {
+                await updateNotebook.mutateAsync({ id: notebook.id, name });
+                toast.success('Notebook renamed');
+              }}
+              as="h1"
+              className="text-lg font-semibold text-foreground"
+            />
+          ) : (
+            <span className="text-lg font-semibold text-foreground">{notebook.name}</span>
+          )
         )}
         subtitle={notebook.description}
-        showShare
-        onShare={() => setShowShare(true)}
+        showShare={permissions.canManageSharing}
+        onShare={permissions.canManageSharing ? () => setShowShare(true) : undefined}
       />
 
       {/* 3-column layout */}
@@ -394,9 +436,11 @@ export function NotebookWorkspace() {
           <div className="flex flex-col h-full border-r border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Sources</h2>
-              <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setShowUpload(true)}>
-                <Plus className="h-3 w-3" /> Add source
-              </Button>
+              {permissions.canUploadDocuments && (
+                <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setShowUpload(true)}>
+                  <Plus className="h-3 w-3" /> Add source
+                </Button>
+              )}
             </div>
             <ScrollArea className="flex-1">
               {documents.length === 0 ? (
@@ -406,9 +450,11 @@ export function NotebookWorkspace() {
                   </div>
                   <p className="text-sm font-medium text-foreground mb-1">No sources yet</p>
                   <p className="text-xs text-muted-foreground mb-3">Upload documents to start asking questions</p>
-                  <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => setShowUpload(true)}>
-                    <Upload className="h-3 w-3" /> Upload
-                  </Button>
+                  {permissions.canUploadDocuments && (
+                    <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => setShowUpload(true)}>
+                      <Upload className="h-3 w-3" /> Upload
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="p-2 space-y-1">
@@ -419,27 +465,37 @@ export function NotebookWorkspace() {
                         "flex items-start gap-2 p-2 rounded-lg transition-colors",
                         enabled ? "bg-card" : "bg-muted/50 opacity-60"
                       )}>
-                        <button
-                          onClick={() => handleToggleSource(doc)}
-                          className="mt-0.5 shrink-0"
-                          title={enabled ? 'Disable source' : 'Enable source'}
-                        >
-                          {enabled ? (
-                            <ToggleRight className="h-4 w-4 text-accent" />
+                        {permissions.canManageDocumentState ? (
+                          <button
+                            onClick={() => handleToggleSource(doc)}
+                            className="mt-0.5 shrink-0"
+                            title={enabled ? 'Disable source' : 'Enable source'}
+                          >
+                            {enabled ? (
+                              <ToggleRight className="h-4 w-4 text-accent" />
+                            ) : (
+                              <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </button>
+                        ) : (
+                          enabled ? (
+                            <ToggleRight className="h-4 w-4 text-accent/50 mt-0.5 shrink-0" />
                           ) : (
-                            <ToggleLeft className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </button>
+                            <ToggleLeft className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                          )
+                        )}
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground truncate">{doc.file_name}</p>
                           <NotebookSourceStatus doc={doc} />
                         </div>
-                        <Button
-                          variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => deleteDocument.mutate(doc)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {permissions.canDeleteDocuments && (
+                          <Button
+                            variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => deleteDocument.mutate(doc)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     );
                   })}
@@ -498,6 +554,7 @@ export function NotebookWorkspace() {
                           message={msg}
                           onSaveToNote={handleSaveToNote}
                           onCopy={handleCopyContent}
+                          canSaveToNotes={permissions.canCreateNotes}
                         />
                       ))
                     )}
@@ -556,20 +613,26 @@ export function NotebookWorkspace() {
                 </div>
 
                 {/* Chat input — shared component */}
-                <ChatInput
-                  onSend={(payload, modelId) => {
-                    sendMessage(payload.text, modelId, payload.options);
-                  }}
-                  isGenerating={isGenerating}
-                  previousUserMessage={previousUserMessage}
-                  previousAssistantMessage={previousAssistantMessage}
-                  variant="notebook"
-                  footerLeft={
-                    <span className="text-xs text-muted-foreground">
-                      {enabledDocs.length} source{enabledDocs.length !== 1 ? 's' : ''} enabled
-                    </span>
-                  }
-                />
+                {permissions.canSendMessages ? (
+                  <ChatInput
+                    onSend={(payload, modelId) => {
+                      sendMessage(payload.text, modelId, payload.options);
+                    }}
+                    isGenerating={isGenerating}
+                    previousUserMessage={previousUserMessage}
+                    previousAssistantMessage={previousAssistantMessage}
+                    variant="notebook"
+                    footerLeft={
+                      <span className="text-xs text-muted-foreground">
+                        {enabledDocs.length} source{enabledDocs.length !== 1 ? 's' : ''} enabled
+                      </span>
+                    }
+                  />
+                ) : (
+                  <div className="px-4 py-3 border-t border-border text-xs text-muted-foreground">
+                    You have read-only access to this notebook.
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -582,9 +645,11 @@ export function NotebookWorkspace() {
           <div className="flex flex-col h-full border-l border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Notes</h2>
-              <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddNote} disabled={createNote.isPending}>
-                <Plus className="h-3 w-3" /> Add note
-              </Button>
+              {permissions.canCreateNotes && (
+                <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddNote} disabled={createNote.isPending}>
+                  <Plus className="h-3 w-3" /> Add note
+                </Button>
+              )}
             </div>
             <ScrollArea className="flex-1">
               {notes.length === 0 ? (
@@ -601,7 +666,7 @@ export function NotebookWorkspace() {
                     <button
                       key={note.id}
                       className="w-full text-left p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
-                      onClick={() => handleStartEdit(note)}
+                      onClick={() => permissions.canEditNotes && handleStartEdit(note)}
                     >
                       {note.title && <p className="text-sm font-medium text-foreground mb-1 truncate">{note.title}</p>}
                       <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">{note.content || 'Empty note'}</p>
@@ -624,7 +689,7 @@ export function NotebookWorkspace() {
       <Dialog open={noteModalOpen} onOpenChange={(open) => { if (!open) { setNoteModalOpen(false); setEditingNote(null); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Note</DialogTitle>
+            <DialogTitle>{permissions.canEditNotes ? 'Edit Note' : 'View Note'}</DialogTitle>
             <DialogDescription className="sr-only">Edit your notebook note</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -634,33 +699,39 @@ export function NotebookWorkspace() {
               placeholder="Note title"
               className="text-base font-medium"
               autoFocus
+              readOnly={!permissions.canEditNotes}
             />
-            <NoteFormatToolbar
-              textareaRef={noteTextareaRef}
-              value={editContent}
-              onChange={setEditContent}
-            />
+            {permissions.canEditNotes && (
+              <NoteFormatToolbar
+                textareaRef={noteTextareaRef}
+                value={editContent}
+                onChange={setEditContent}
+              />
+            )}
             <Textarea
               ref={noteTextareaRef}
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               placeholder="Write your note…"
               className="min-h-[200px] resize-none text-sm leading-relaxed font-mono"
+              readOnly={!permissions.canEditNotes}
             />
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <div className="flex items-center gap-2 mr-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1 text-xs"
-                onClick={handleAddNoteToSources}
-                disabled={addingToSources || !editContent.trim()}
-              >
-                {addingToSources ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileUp className="h-3 w-3" />}
-                Add to sources
-              </Button>
-              {editingNote && (
+              {permissions.canManageDocumentState && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-xs"
+                  onClick={handleAddNoteToSources}
+                  disabled={addingToSources || !editContent.trim()}
+                >
+                  {addingToSources ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileUp className="h-3 w-3" />}
+                  Add to sources
+                </Button>
+              )}
+              {editingNote && permissions.canDeleteNotes && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -673,12 +744,14 @@ export function NotebookWorkspace() {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={() => { setNoteModalOpen(false); setEditingNote(null); }}>
-                Cancel
+                {permissions.canEditNotes ? 'Cancel' : 'Close'}
               </Button>
-              <Button size="sm" className="gap-1 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleSaveNote} disabled={updateNote.isPending}>
-                {updateNote.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                Save
-              </Button>
+              {permissions.canEditNotes && (
+                <Button size="sm" className="gap-1 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleSaveNote} disabled={updateNote.isPending}>
+                  {updateNote.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                  Save
+                </Button>
+              )}
             </div>
           </DialogFooter>
         </DialogContent>
@@ -696,10 +769,11 @@ export function NotebookWorkspace() {
 }
 
 /* --- Notebook Chat Message --- */
-function NotebookChatMessage({ message, onSaveToNote, onCopy }: {
+function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes }: {
   message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
+  canSaveToNotes: boolean;
 }) {
   const isUser = message.role === 'user';
   const modelName = message.model_id ? modelOptions.find(m => m.id === message.model_id)?.name ?? message.model_id.split('/').pop() : null;
@@ -762,9 +836,11 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy }: {
                   {responseLengthLabel}
                 </span>
               )}
-              <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] gap-1 text-muted-foreground hover:text-foreground" onClick={() => onSaveToNote(message.content)}>
-                <BookmarkPlus className="h-3 w-3" /> Save to note
-              </Button>
+              {canSaveToNotes && (
+                <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] gap-1 text-muted-foreground hover:text-foreground" onClick={() => onSaveToNote(message.content)}>
+                  <BookmarkPlus className="h-3 w-3" /> Save to note
+                </Button>
+              )}
               <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] gap-1 text-muted-foreground hover:text-foreground" onClick={() => onCopy(message.content)}>
                 <Copy className="h-3 w-3" /> Copy
               </Button>
