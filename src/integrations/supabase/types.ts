@@ -1463,6 +1463,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_item_permission: {
+        Args: {
+          p_item_id: string
+          p_item_type: string
+          p_min_role: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       claim_next_activity: {
         Args: {
           p_handler_keys?: string[]
@@ -1506,6 +1515,10 @@ export type Database = {
       }
       get_email_by_username: {
         Args: { lookup_username: string }
+        Returns: string
+      }
+      get_user_item_role: {
+        Args: { p_item_id: string; p_item_type: string; p_user_id: string }
         Returns: string
       }
       is_activity_runnable: {
