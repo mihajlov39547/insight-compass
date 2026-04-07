@@ -80,7 +80,7 @@ export function useSharedItems() {
           item_name: itemData?.name ?? 'Unknown',
           item_description: itemData?.description ?? '',
           item_updated_at: itemData?.updated_at ?? s.created_at,
-          shared_by_name: sharer?.full_name ?? 'Unknown',
+          shared_by_name: sharer?.full_name || sharer?.username || sharer?.email || 'Unknown',
           shared_by_avatar: sharer?.avatar_url ?? undefined,
         } as SharedItem;
       });
