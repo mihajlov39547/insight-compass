@@ -86,6 +86,8 @@ export function useSharedItems() {
       });
     },
     enabled: !!user,
-    staleTime: 30000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
