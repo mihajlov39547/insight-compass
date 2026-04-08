@@ -58,16 +58,57 @@
 
 ---
 
-## Phase 2 — NOT STARTED (Future extensibility hooks)
+## Phase 1.5 — ✅ COMPLETED (Hardening Pass)
+
+### Deliverables
+1. **Timestamp correctness**
+   - Added `documents.updated_at` with trigger-managed updates
+   - Resources sorting and relative timestamps now use `updated_at`
+
+2. **Permission-aware action contract in RPC**
+   - Added action flags in `get_user_resources()`:
+     - `can_open`, `can_view_details`, `can_download`, `can_rename`, `can_delete`, `can_retry`
+   - Added ownership semantics:
+     - `is_owned_by_me`, `is_shared_with_me`
+     - `is_shared` kept as compatibility alias
+
+3. **Resource-action payload correctness**
+   - Removed UI dependence on fabricated `DbDocument` payloads for Resources actions
+   - Added dedicated resource action handler hook (`useResourceActions`) for delete/retry/download
+
+4. **SECURITY DEFINER hardening**
+   - Locked function execution with `REVOKE ALL ... FROM PUBLIC` and `GRANT EXECUTE ... TO authenticated`
+   - Explicit `search_path` and auth guard in hardened RPC
+
+5. **Classification drift prevention**
+   - Frontend now treats backend classification as canonical and only validates unknown values
+
+### Files created/modified
+- `supabase/migrations/20260408233000_documents_updated_at_column.sql` — NEW
+- `supabase/migrations/20260408233500_harden_get_user_resources.sql` — NEW
+- `src/hooks/useResourceActions.ts` — NEW
+- `src/components/views/ResourcesLanding.tsx` — UPDATED
+- `src/lib/resourceClassification.ts` — UPDATED
+- `src/hooks/useDocuments.ts` — UPDATED
+- `src/integrations/supabase/types.ts` — UPDATED
+
+### Validation
+- [x] Build passes
+- [x] Lint passes
+- [x] Existing tests pass
+
+---
+
+## Phase 2 — 🟡 READY TO START (Prerequisites in place)
 
 ### Planned
-- Source type/provider architecture for linked/synced resources
+- Source type/provider architecture for linked/synced resources (partially prepared via model/RPC)
 - "Add link" / "Connect source" entry points in UI
 - Media resource adapters (YouTube, audio, video)
 - Grid/card view toggle
-- Resource detail panel/drawer
+- Resource detail panel/drawer (currently lightweight "View details" action only)
 - Bulk actions
-- Download functionality
+- Download functionality (baseline implemented for uploaded file resources)
 
 ### How future resource types plug in
 1. Add new source adapter in backend (e.g., `get_youtube_resources()`)
