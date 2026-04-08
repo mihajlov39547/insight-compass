@@ -205,6 +205,10 @@ export function ResourcesLanding() {
 
   const handleRetry = (resource: Resource) => {
     if (!resource.canRetry) return;
+    if (resource.provider === 'youtube' && resource.transcriptStatus === 'failed') {
+      handleRetryTranscript(resource);
+      return;
+    }
     const actionInput = toResourceActionInput(resource);
     retryMutation.mutate(actionInput, {
       onSuccess: () => toast({ title: 'Retry queued', description: `${resource.title} will be processed again.` }),
@@ -557,7 +561,7 @@ export function ResourcesLanding() {
                   onDelete={() => handleDelete(resource)}
                   onRetry={() => handleRetry(resource)}
                   isDeleting={deleteMutation.isPending}
-                  isRetrying={retryMutation.isPending}
+                  isRetrying={retryMutation.isPending || retryTranscriptMutation.isPending}
                 />
               ))}
             </div>
@@ -712,6 +716,9 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   const showActions = canOpen || canViewDetails || canDownload || canRetry || canDelete || canRename;
   const isLinkedResource = resource.resourceType === 'link' || resource.sourceType === 'linked';
   const previewImage = resource.mediaThumbnailUrl || resource.previewFaviconUrl;
+  const retryLabel = resource.provider === 'youtube' && resource.transcriptStatus === 'failed'
+    ? 'Retry transcript'
+    : 'Retry processing';
 
   const relativeDate = useMemo(() => {
     const d = new Date(resource.updatedAt);
@@ -839,7 +846,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
               {canRetry && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onRetry} disabled={isRetrying}>
                   <RotateCcw className="h-3.5 w-3.5" />
-                  Retry processing
+                  {retryLabel}
                 </DropdownMenuItem>
               )}
               {canDelete && (
@@ -1414,7 +1421,7 @@ function ResourceDetailsDrawer({
                 <FileType className="h-3.5 w-3.5" /> Rename
               </Button>
             )}
-            {resource.canRetry && resource.readiness === 'failed' && (
+            {resource.canRetry && resource.readiness === 'failed' && !canRetryTranscript && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRetry(resource)} disabled={isRetrying}>
                 <RotateCcw className="h-3.5 w-3.5" /> Retry
               </Button>

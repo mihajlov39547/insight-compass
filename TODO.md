@@ -204,6 +204,16 @@
    - New YouTube links enqueue transcript jobs automatically
    - Frontend triggers worker best-effort after enqueue/create
 - Drawer now shows transcript availability/errors and supports retry action for failed transcript ingestion
+- Worker security hardening completed:
+   - `claim_next_youtube_transcript_job` and `complete_youtube_transcript_job` restricted to service role execution
+   - Completion now validates running-state and lease validity
+   - Completion includes worker identity checks to prevent unrelated completions
+- `get_user_resources()` retry contract aligned for YouTube transcript failures (`can_retry = true` when eligible)
+
+#### Transcript persistence strategy (current)
+- `transcript_text` is currently persisted in `youtube_transcript_jobs.transcript_text`
+- Transcript metadata/state is mirrored on `resource_links` (`transcript_status`, `transcript_error`, metadata lifecycle)
+- Dedicated long-term transcript content/search indexing path is **not yet implemented** and remains a planned follow-up
 
 #### Files created/updated in this pass
 - `supabase/migrations/20260409020000_transcript_async_flow.sql` — NEW
@@ -212,6 +222,7 @@
 - `src/lib/resourceClassification.ts` — UPDATED (`transcriptError` field mapping)
 - `src/integrations/supabase/types.ts` — UPDATED (transcript queue RPC typings + `transcript_error`)
 - `src/components/views/ResourcesLanding.tsx` — UPDATED (drawer transcript error + retry action)
+- `supabase/migrations/20260409024500_transcript_worker_security_hardening.sql` — NEW
 
 ### Planned
 - Source type/provider architecture for linked/synced resources (baseline delivered with enrichment)

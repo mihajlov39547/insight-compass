@@ -178,6 +178,7 @@ serve(async (req) => {
           p_success: true,
           p_transcript_text: transcript,
           p_error: null,
+          p_worker_id: workerId,
         });
 
         if (completeError) {
@@ -193,6 +194,7 @@ serve(async (req) => {
           p_success: false,
           p_transcript_text: null,
           p_error: message,
+          p_worker_id: workerId,
         });
 
         failed += 1;

@@ -1596,6 +1596,7 @@ export type Database = {
           p_job_id: string
           p_success: boolean
           p_transcript_text?: string
+          p_worker_id?: string
         }
         Returns: {
           job_id: string
