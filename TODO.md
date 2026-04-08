@@ -114,6 +114,20 @@
 #### Files updated in this pass
 - `src/components/views/ResourcesLanding.tsx` — UPDATED (details drawer, metadata, permissions, drawer actions)
 
+### Pass 2 — ✅ COMPLETED
+
+#### Delivered in this pass
+- Rename action implemented end-to-end from both row menu and details drawer
+- Added backend rename mutation path (`rename_user_resource`) with permission checks aligned to `can_rename`
+- Added optimistic rename update for resources list and drawer title
+- Added rollback on mutation error and resource query invalidation on success
+
+#### Files created/updated in this pass
+- `supabase/migrations/20260408235500_rename_user_resource.sql` — NEW
+- `src/hooks/useResourceActions.ts` — UPDATED (`useRenameResource`)
+- `src/components/views/ResourcesLanding.tsx` — UPDATED (rename dialog + row/drawer wiring)
+- `src/integrations/supabase/types.ts` — UPDATED (`rename_user_resource` RPC type)
+
 ### Planned
 - Source type/provider architecture for linked/synced resources (partially prepared via model/RPC)
 - "Add link" / "Connect source" entry points in UI

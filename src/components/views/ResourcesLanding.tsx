@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -17,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useResources } from '@/hooks/useResources';
-import { downloadResourceFromStorage, useDeleteResource, useRetryResourceProcessing, type ResourceActionInput } from '@/hooks/useResourceActions';
+import { downloadResourceFromStorage, useDeleteResource, useRenameResource, useRetryResourceProcessing, type ResourceActionInput } from '@/hooks/useResourceActions';
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
 import {
@@ -85,6 +86,7 @@ export function ResourcesLanding() {
   const { user } = useAuth();
   const { setActiveView, setSelectedProjectId, setSelectedNotebookId, setSelectedChatId } = useApp();
   const deleteMutation = useDeleteResource();
+  const renameMutation = useRenameResource();
   const retryMutation = useRetryResourceProcessing();
 
   const [search, setSearch] = useState('');
@@ -95,6 +97,9 @@ export function ResourcesLanding() {
   const [sort, setSort] = useState<SortKey>('newest');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameResource, setRenameResource] = useState<Resource | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   // ── Stats ───────────────────────────────────────────────────────
   const totalCount = resources.length;
@@ -204,6 +209,60 @@ export function ResourcesLanding() {
     } catch (err: any) {
       toast({ title: 'Download failed', description: err.message || 'Unable to create download link', variant: 'destructive' });
     }
+  };
+
+  const openRenameDialog = (resource: Resource) => {
+    if (!resource.canRename) return;
+    setRenameResource(resource);
+    setRenameValue(resource.title);
+    setRenameOpen(true);
+  };
+
+  const handleRenameSubmit = () => {
+    if (!renameResource) return;
+
+    const nextTitle = renameValue.trim();
+    if (!nextTitle) {
+      toast({ title: 'Rename failed', description: 'Title cannot be empty.', variant: 'destructive' });
+      return;
+    }
+
+    if (nextTitle === renameResource.title) {
+      setRenameOpen(false);
+      setRenameResource(null);
+      return;
+    }
+
+    const actionInput = toResourceActionInput(renameResource);
+    const targetId = renameResource.id;
+    const previousTitle = renameResource.title;
+    const previousUpdatedAt = renameResource.updatedAt;
+    const optimisticUpdatedAt = new Date().toISOString();
+
+    setSelectedResource(prev => (
+      prev && prev.id === targetId ? { ...prev, title: nextTitle, updatedAt: optimisticUpdatedAt } : prev
+    ));
+
+    setRenameOpen(false);
+    setRenameResource(null);
+
+    renameMutation.mutate(
+      { resource: actionInput, newTitle: nextTitle },
+      {
+        onSuccess: (result) => {
+          setSelectedResource(prev => (
+            prev && prev.id === result.id ? { ...prev, title: result.title, updatedAt: result.updatedAt } : prev
+          ));
+          toast({ title: 'Resource renamed', description: `Renamed to ${result.title}` });
+        },
+        onError: (err: any) => {
+          setSelectedResource(prev => (
+            prev && prev.id === targetId ? { ...prev, title: previousTitle, updatedAt: previousUpdatedAt } : prev
+          ));
+          toast({ title: 'Rename failed', description: err.message, variant: 'destructive' });
+        },
+      },
+    );
   };
 
   const handleOpenPersonalFallback = (resource: Resource) => {
@@ -374,6 +433,7 @@ export function ResourcesLanding() {
                   resource={resource}
                   onOpen={() => handleOpen(resource)}
                   onViewDetails={() => handleViewDetails(resource)}
+                  onRename={() => openRenameDialog(resource)}
                   onDownload={() => handleDownload(resource)}
                   onDelete={() => handleDelete(resource)}
                   onRetry={() => handleRetry(resource)}
@@ -394,12 +454,29 @@ export function ResourcesLanding() {
           if (!open) setSelectedResource(null);
         }}
         onOpenResource={handleOpenFromDrawer}
+        onRename={openRenameDialog}
         onDownload={handleDownload}
         onRetry={handleRetry}
         onDelete={handleDelete}
         onOpenPersonalFallback={handleOpenPersonalFallback}
         isRetrying={retryMutation.isPending}
         isDeleting={deleteMutation.isPending}
+      />
+
+      <RenameResourceDialog
+        open={renameOpen}
+        value={renameValue}
+        currentTitle={renameResource?.title || ''}
+        submitting={renameMutation.isPending}
+        onOpenChange={(open) => {
+          setRenameOpen(open);
+          if (!open) {
+            setRenameResource(null);
+            setRenameValue('');
+          }
+        }}
+        onValueChange={setRenameValue}
+        onSubmit={handleRenameSubmit}
       />
     </div>
   );
@@ -455,10 +532,11 @@ function ReadinessBadge({ readiness }: { readiness: ReadinessStatus }) {
   }
 }
 
-function ResourceRow({ resource, onOpen, onViewDetails, onDownload, onDelete, onRetry, isDeleting, isRetrying }: {
+function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, onDelete, onRetry, isDeleting, isRetrying }: {
   resource: Resource;
   onOpen: () => void;
   onViewDetails: () => void;
+  onRename: () => void;
   onDownload: () => void;
   onDelete: () => void;
   onRetry: () => void;
@@ -565,9 +643,9 @@ function ResourceRow({ resource, onOpen, onViewDetails, onDownload, onDelete, on
                 </DropdownMenuItem>
               )}
               {canRename && (
-                <DropdownMenuItem className="text-xs gap-2" disabled>
+                <DropdownMenuItem className="text-xs gap-2" onClick={onRename}>
                   <FileType className="h-3.5 w-3.5" />
-                  Rename (coming soon)
+                  Rename
                 </DropdownMenuItem>
               )}
               {canRetry && (
@@ -620,6 +698,65 @@ function EmptyState({ hasResources, hasFilters }: { hasResources: boolean; hasFi
   );
 }
 
+function RenameResourceDialog({
+  open,
+  value,
+  currentTitle,
+  submitting,
+  onOpenChange,
+  onValueChange,
+  onSubmit,
+}: {
+  open: boolean;
+  value: string;
+  currentTitle: string;
+  submitting: boolean;
+  onOpenChange: (open: boolean) => void;
+  onValueChange: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Rename resource</DialogTitle>
+          <DialogDescription>
+            Update the resource title shown across Resources and related workspaces.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Current title</p>
+          <p className="text-sm truncate" title={currentTitle}>{currentTitle || 'Untitled resource'}</p>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">New title</p>
+          <Input
+            value={value}
+            onChange={(e) => onValueChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onSubmit();
+              }
+            }}
+            placeholder="Enter new title"
+            autoFocus
+          />
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
+          <Button onClick={onSubmit} disabled={submitting || !value.trim()}>
+            {submitting ? 'Renaming...' : 'Rename'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function PermissionRow({ label, enabled }: { label: string; enabled: boolean }) {
   return (
     <div className="flex items-center justify-between rounded-md border border-border/60 px-2.5 py-1.5">
@@ -636,6 +773,7 @@ function ResourceDetailsDrawer({
   open,
   onOpenChange,
   onOpenResource,
+  onRename,
   onDownload,
   onRetry,
   onDelete,
@@ -647,6 +785,7 @@ function ResourceDetailsDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpenResource: (resource: Resource) => void;
+  onRename: (resource: Resource) => void;
   onDownload: (resource: Resource) => void;
   onRetry: (resource: Resource) => void;
   onDelete: (resource: Resource) => void;
@@ -780,6 +919,11 @@ function ResourceDetailsDrawer({
             {resource.canDownload && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
                 <Download className="h-3.5 w-3.5" /> Download
+              </Button>
+            )}
+            {resource.canRename && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRename(resource)}>
+                <FileType className="h-3.5 w-3.5" /> Rename
               </Button>
             )}
             {resource.canRetry && resource.readiness === 'failed' && (

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startDocumentWorkflow } from '@/hooks/useDocuments';
-import type { ContainerType } from '@/lib/resourceClassification';
+import type { ContainerType, Resource } from '@/lib/resourceClassification';
 
 export interface ResourceActionInput {
   id: string;
@@ -11,6 +11,17 @@ export interface ResourceActionInput {
   containerType: ContainerType;
   containerId: string | null;
   processingStatus: string;
+}
+
+export interface RenameResourceInput {
+  resource: ResourceActionInput;
+  newTitle: string;
+}
+
+interface RenameResourceResult {
+  id: string;
+  title: string;
+  updatedAt: string;
 }
 
 function invalidateResourceScopes(
@@ -89,4 +100,51 @@ export async function downloadResourceFromStorage(storagePath: string): Promise<
   if (error) throw error;
   if (!data?.signedUrl) throw new Error('Unable to create download URL');
   return data.signedUrl;
+}
+
+export function useRenameResource() {
+  const queryClient = useQueryClient();
+
+  return useMutation<RenameResourceResult, Error, RenameResourceInput, { previousResources: Array<[readonly unknown[], Resource[] | undefined]> }>({
+    mutationFn: async ({ resource, newTitle }) => {
+      const normalizedTitle = newTitle.trim();
+      const { data, error } = await supabase.rpc('rename_user_resource' as any, {
+        p_resource_id: resource.id,
+        p_new_title: normalizedTitle,
+      });
+
+      if (error) throw error;
+
+      const row = Array.isArray(data) ? data[0] : data;
+      return {
+        id: resource.id,
+        title: row?.title || normalizedTitle,
+        updatedAt: row?.updated_at || new Date().toISOString(),
+      };
+    },
+    onMutate: async ({ resource, newTitle }) => {
+      await queryClient.cancelQueries({ queryKey: ['resources'] });
+      const previousResources = queryClient.getQueriesData<Resource[]>({ queryKey: ['resources'] });
+      const optimisticUpdatedAt = new Date().toISOString();
+
+      for (const [queryKey, queryData] of previousResources) {
+        if (!queryData) continue;
+        queryClient.setQueryData<Resource[]>(queryKey, queryData.map((item) => (
+          item.id === resource.id
+            ? { ...item, title: newTitle.trim(), updatedAt: optimisticUpdatedAt }
+            : item
+        )));
+      }
+
+      return { previousResources };
+    },
+    onError: (_error, _variables, context) => {
+      for (const [queryKey, queryData] of context?.previousResources || []) {
+        queryClient.setQueryData(queryKey, queryData);
+      }
+    },
+    onSuccess: (_result, variables) => {
+      invalidateResourceScopes(queryClient, variables.resource);
+    },
+  });
 }

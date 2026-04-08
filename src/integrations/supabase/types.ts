@@ -1582,6 +1582,14 @@ export type Database = {
           read_ct: number
         }[]
       }
+      rename_user_resource: {
+        Args: { p_new_title: string; p_resource_id: string }
+        Returns: {
+          id: string
+          title: string
+          updated_at: string
+        }[]
+      }
       schedule_downstream_activities: {
         Args: {
           p_actor?: string
