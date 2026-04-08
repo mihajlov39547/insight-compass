@@ -1,15 +1,490 @@
-import React from 'react';
-import { FileText, Upload } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import {
+  FileText, Image, FileSpreadsheet, Presentation, Mail, FileType,
+  Database, Music, Video, Link, File, Search, ArrowUpDown, Filter,
+  Upload, FolderOpen, BookOpen, User, Globe, Clock, CheckCircle2,
+  AlertCircle, Loader2, MoreHorizontal, Download, Eye, RotateCcw,
+  Trash2, ExternalLink, X
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useResources } from '@/hooks/useResources';
+import { useDeleteDocument, useRetryProcessing, type DbDocument } from '@/hooks/useDocuments';
+import { useApp } from '@/contexts/useApp';
+import { useAuth } from '@/contexts/useAuth';
+import {
+  type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
+  RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName
+} from '@/lib/resourceClassification';
+import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
+// ── Icon mapping ────────────────────────────────────────────────────
+const RESOURCE_ICONS: Record<ResourceType, React.ElementType> = {
+  document: FileText,
+  image: Image,
+  spreadsheet: FileSpreadsheet,
+  presentation: Presentation,
+  email: Mail,
+  text: FileType,
+  dataset: Database,
+  audio: Music,
+  video: Video,
+  link: Link,
+  other: File,
+};
+
+const RESOURCE_COLORS: Record<ResourceType, string> = {
+  document: 'text-blue-500',
+  image: 'text-emerald-500',
+  spreadsheet: 'text-green-600',
+  presentation: 'text-orange-500',
+  email: 'text-violet-500',
+  text: 'text-muted-foreground',
+  dataset: 'text-cyan-500',
+  audio: 'text-pink-500',
+  video: 'text-red-500',
+  link: 'text-sky-500',
+  other: 'text-muted-foreground',
+};
+
+const CONTAINER_ICONS: Record<ContainerType, React.ElementType> = {
+  project: FolderOpen,
+  notebook: BookOpen,
+  personal: User,
+};
+
+// ── Filter types ────────────────────────────────────────────────────
+type OwnershipFilter = 'all' | 'mine' | 'shared';
+type StatusFilter = 'all' | 'ready' | 'processing' | 'failed';
+type TypeFilter = 'all' | ResourceType;
+type ContainerFilter = 'all' | ContainerType;
+type SortKey = 'newest' | 'oldest' | 'name' | 'type' | 'status';
+
+// ── Main Component ──────────────────────────────────────────────────
 export function ResourcesLanding() {
+  const { data: resources = [], isLoading } = useResources();
+  const { user } = useAuth();
+  const deleteMutation = useDeleteDocument();
+  const { retry: retryProcessing } = useRetryProcessing();
+
+  const [search, setSearch] = useState('');
+  const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [containerFilter, setContainerFilter] = useState<ContainerFilter>('all');
+  const [sort, setSort] = useState<SortKey>('newest');
+
+  // ── Stats ───────────────────────────────────────────────────────
+  const totalCount = resources.length;
+  const readyCount = resources.filter(r => r.readiness === 'ready').length;
+  const processingCount = resources.filter(r => r.readiness === 'processing').length;
+  const failedCount = resources.filter(r => r.readiness === 'failed').length;
+  const myCount = resources.filter(r => r.ownerUserId === user?.id).length;
+  const sharedCount = resources.filter(r => r.isShared).length;
+
+  // ── Active resource types (for filter chips) ──────────────────
+  const activeResourceTypes = useMemo(() => {
+    const types = new Set(resources.map(r => r.resourceType));
+    return Array.from(types) as ResourceType[];
+  }, [resources]);
+
+  // ── Filtered + sorted ─────────────────────────────────────────
+  const filtered = useMemo(() => {
+    let list = [...resources];
+
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(r =>
+        r.title.toLowerCase().includes(q) ||
+        r.containerName?.toLowerCase().includes(q) ||
+        r.ownerDisplayName.toLowerCase().includes(q) ||
+        r.extension.toLowerCase().includes(q)
+      );
+    }
+
+    if (ownershipFilter === 'mine') list = list.filter(r => r.ownerUserId === user?.id);
+    if (ownershipFilter === 'shared') list = list.filter(r => r.isShared);
+
+    if (statusFilter === 'ready') list = list.filter(r => r.readiness === 'ready');
+    if (statusFilter === 'processing') list = list.filter(r => r.readiness === 'processing');
+    if (statusFilter === 'failed') list = list.filter(r => r.readiness === 'failed');
+
+    if (typeFilter !== 'all') list = list.filter(r => r.resourceType === typeFilter);
+
+    if (containerFilter === 'project') list = list.filter(r => r.containerType === 'project');
+    if (containerFilter === 'notebook') list = list.filter(r => r.containerType === 'notebook');
+    if (containerFilter === 'personal') list = list.filter(r => r.containerType === 'personal');
+
+    switch (sort) {
+      case 'oldest': return list.sort((a, b) => new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime());
+      case 'name': return list.sort((a, b) => a.title.localeCompare(b.title));
+      case 'type': return list.sort((a, b) => a.resourceType.localeCompare(b.resourceType));
+      case 'status': return list.sort((a, b) => a.readiness.localeCompare(b.readiness));
+      default: return list.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+    }
+  }, [resources, search, ownershipFilter, statusFilter, typeFilter, containerFilter, sort, user?.id]);
+
+  const hasActiveFilters = ownershipFilter !== 'all' || statusFilter !== 'all' || typeFilter !== 'all' || containerFilter !== 'all' || search.length > 0;
+
+  const handleDelete = (resource: Resource) => {
+    const doc = { id: resource.id, storage_path: '', project_id: resource.containerType === 'project' ? resource.containerId : null, notebook_id: resource.containerType === 'notebook' ? resource.containerId : null } as any as DbDocument;
+    deleteMutation.mutate(doc, {
+      onSuccess: () => toast({ title: `${resource.title} deleted` }),
+      onError: (err: any) => toast({ title: 'Delete failed', description: err.message, variant: 'destructive' }),
+    });
+  };
+
+  const handleRetry = (resource: Resource) => {
+    const doc = { id: resource.id, processing_status: resource.processingStatus } as any as DbDocument;
+    retryProcessing(doc);
+  };
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-8">
-      <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-        <FileText className="h-8 w-8 text-primary" />
+    <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
+      {/* ── Header ────────────────────────────────────────────── */}
+      <div className="px-6 py-5 border-b border-border bg-card shrink-0">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Globe className="h-5 w-5 text-primary" />
+              <h1 className="text-lg font-semibold text-foreground">Resources</h1>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              All documents and resources across your projects and notebooks
+            </p>
+          </div>
+        </div>
+
+        {/* ── Summary stats ───────────────────────────────────── */}
+        <div className="flex items-center gap-5 flex-wrap">
+          <StatPill label="Total" value={totalCount} />
+          <StatPill label="Ready" value={readyCount} variant="success" />
+          <StatPill label="Processing" value={processingCount} variant="warning" />
+          {failedCount > 0 && <StatPill label="Failed" value={failedCount} variant="error" />}
+          <div className="h-4 w-px bg-border" />
+          <StatPill label="Mine" value={myCount} />
+          {sharedCount > 0 && <StatPill label="Shared" value={sharedCount} variant="info" />}
+        </div>
       </div>
-      <h1 className="text-2xl font-bold text-foreground mb-2">Resources</h1>
-      <p className="text-muted-foreground text-center max-w-md">
-        Browse and manage all your documents across projects and notebooks. Upload documents to any project or notebook to get started.
+
+      {/* ── Controls ──────────────────────────────────────────── */}
+      <div className="px-6 py-3 border-b border-border bg-muted/30 shrink-0 space-y-3">
+        {/* Row 1: Search + Sort */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search resources…"
+              className="pl-9 h-8 text-sm"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+
+          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+            <SelectTrigger className="w-[150px] h-8 text-sm">
+              <ArrowUpDown className="h-3 w-3 mr-1.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="type">Type</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Row 2: Filter chips */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+
+          {/* Ownership */}
+          <Tabs value={ownershipFilter} onValueChange={(v) => setOwnershipFilter(v as OwnershipFilter)}>
+            <TabsList className="h-7 p-0.5">
+              <TabsTrigger value="all" className="text-xs px-2.5 h-6">All</TabsTrigger>
+              <TabsTrigger value="mine" className="text-xs px-2.5 h-6">Mine</TabsTrigger>
+              <TabsTrigger value="shared" className="text-xs px-2.5 h-6">Shared</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="h-4 w-px bg-border" />
+
+          {/* Status */}
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+            <SelectTrigger className="w-[120px] h-7 text-xs">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="ready">Ready</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Type */}
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
+            <SelectTrigger className="w-[130px] h-7 text-xs">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              {activeResourceTypes.map(t => (
+                <SelectItem key={t} value={t}>{RESOURCE_TYPE_LABELS[t]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Container */}
+          <Select value={containerFilter} onValueChange={(v) => setContainerFilter(v as ContainerFilter)}>
+            <SelectTrigger className="w-[130px] h-7 text-xs">
+              <SelectValue placeholder="Location" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All locations</SelectItem>
+              <SelectItem value="project">Projects</SelectItem>
+              <SelectItem value="notebook">Notebooks</SelectItem>
+              <SelectItem value="personal">Personal</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1"
+              onClick={() => { setSearch(''); setOwnershipFilter('all'); setStatusFilter('all'); setTypeFilter('all'); setContainerFilter('all'); }}
+            >
+              <X className="h-3 w-3" /> Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Resource list ─────────────────────────────────────── */}
+      <ScrollArea className="flex-1">
+        <div className="px-6 py-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState hasResources={resources.length > 0} hasFilters={hasActiveFilters} />
+          ) : (
+            <div className="space-y-1">
+              {/* Table header */}
+              <div className="grid grid-cols-[1fr_120px_140px_100px_100px_40px] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+                <span>Resource</span>
+                <span>Type</span>
+                <span>Location</span>
+                <span>Status</span>
+                <span>Updated</span>
+                <span></span>
+              </div>
+
+              {filtered.map(resource => (
+                <ResourceRow
+                  key={resource.id}
+                  resource={resource}
+                  onDelete={() => handleDelete(resource)}
+                  onRetry={() => handleRetry(resource)}
+                  isDeleting={deleteMutation.isPending}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────────────
+
+function StatPill({ label, value, variant }: {
+  label: string;
+  value: number;
+  variant?: 'success' | 'warning' | 'error' | 'info';
+}) {
+  const colorClass = variant === 'success' ? 'text-green-600'
+    : variant === 'warning' ? 'text-amber-600'
+    : variant === 'error' ? 'text-destructive'
+    : variant === 'info' ? 'text-blue-600'
+    : 'text-foreground';
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={cn("text-base font-semibold tabular-nums", colorClass)}>{value}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+function ReadinessBadge({ readiness }: { readiness: ReadinessStatus }) {
+  switch (readiness) {
+    case 'ready':
+      return (
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
+          <CheckCircle2 className="h-2.5 w-2.5" /> Ready
+        </Badge>
+      );
+    case 'processing':
+      return (
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-amber-500/10 text-amber-700 border-amber-500/20">
+          <Loader2 className="h-2.5 w-2.5 animate-spin" /> Processing
+        </Badge>
+      );
+    case 'failed':
+      return (
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-destructive/10 text-destructive border-destructive/20">
+          <AlertCircle className="h-2.5 w-2.5" /> Failed
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+          Unknown
+        </Badge>
+      );
+  }
+}
+
+function ResourceRow({ resource, onDelete, onRetry, isDeleting }: {
+  resource: Resource;
+  onDelete: () => void;
+  onRetry: () => void;
+  isDeleting: boolean;
+}) {
+  const Icon = RESOURCE_ICONS[resource.resourceType] || File;
+  const color = RESOURCE_COLORS[resource.resourceType] || 'text-muted-foreground';
+  const ContainerIcon = CONTAINER_ICONS[resource.containerType] || Globe;
+  const isOwner = !resource.isShared;
+
+  const relativeDate = useMemo(() => {
+    const d = new Date(resource.uploadedAt);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return `${diffDays}d ago`;
+    return d.toLocaleDateString();
+  }, [resource.uploadedAt]);
+
+  return (
+    <div className="grid grid-cols-[1fr_120px_140px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors group">
+      {/* Resource info */}
+      <div className="flex items-center gap-3 min-w-0">
+        <div className={cn('p-1.5 rounded-md bg-muted shrink-0', color)}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground truncate" title={resource.title}>
+            {truncateFileName(resource.title)}
+          </p>
+          <p className="text-[11px] text-muted-foreground truncate">
+            {resource.extension.toUpperCase()} • {formatFileSize(resource.sizeBytes)}
+            {resource.isShared && (
+              <span> • by {resource.ownerDisplayName}</span>
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* Type */}
+      <div>
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal">
+          {RESOURCE_TYPE_LABELS[resource.resourceType]}
+        </Badge>
+      </div>
+
+      {/* Location */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <ContainerIcon className="h-3 w-3 text-muted-foreground shrink-0" />
+        <span className="text-xs text-muted-foreground truncate">
+          {resource.containerName || 'Personal'}
+        </span>
+      </div>
+
+      {/* Status */}
+      <div>
+        <ReadinessBadge readiness={resource.readiness} />
+      </div>
+
+      {/* Updated */}
+      <div className="flex items-center gap-1">
+        <Clock className="h-3 w-3 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">{relativeDate}</span>
+      </div>
+
+      {/* Actions */}
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {resource.containerName && (
+              <DropdownMenuItem className="text-xs gap-2">
+                <ExternalLink className="h-3.5 w-3.5" />
+                View in {resource.containerType === 'project' ? 'project' : 'notebook'}
+              </DropdownMenuItem>
+            )}
+            {resource.readiness === 'failed' && (
+              <DropdownMenuItem className="text-xs gap-2" onClick={onRetry}>
+                <RotateCcw className="h-3.5 w-3.5" />
+                Retry processing
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-xs gap-2 text-destructive focus:text-destructive"
+              onClick={onDelete}
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ hasResources, hasFilters }: { hasResources: boolean; hasFilters: boolean }) {
+  if (hasFilters) {
+    return (
+      <div className="text-center py-20">
+        <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+        <h3 className="text-sm font-medium text-foreground mb-1">No matching resources</h3>
+        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+          Try adjusting your filters or search query to find what you're looking for.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="text-center py-20">
+      <Globe className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+      <h3 className="text-sm font-medium text-foreground mb-1">No resources yet</h3>
+      <p className="text-sm text-muted-foreground max-w-md mx-auto">
+        Upload documents to your projects or notebooks to see them here. Resources from shared workspaces will also appear once available.
       </p>
     </div>
   );

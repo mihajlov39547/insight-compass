@@ -1521,6 +1521,34 @@ export type Database = {
         Args: { p_item_id: string; p_item_type: string; p_user_id: string }
         Returns: string
       }
+      get_user_resources: {
+        Args: never
+        Returns: {
+          container_id: string
+          container_name: string
+          container_type: string
+          detected_language: string
+          extension: string
+          id: string
+          is_shared: boolean
+          mime_type: string
+          owner_display_name: string
+          owner_user_id: string
+          page_count: number
+          processing_error: string
+          processing_status: string
+          provider: string
+          resource_kind: string
+          resource_type: string
+          size_bytes: number
+          source_type: string
+          summary: string
+          title: string
+          updated_at: string
+          uploaded_at: string
+          word_count: number
+        }[]
+      }
       is_activity_runnable: {
         Args: { p_activity_id: string; p_workflow_run_id: string }
         Returns: boolean
