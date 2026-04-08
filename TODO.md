@@ -167,9 +167,29 @@
 - `src/integrations/supabase/types.ts` — UPDATED (enriched RPC return typing)
 - `src/components/views/ResourcesLanding.tsx` — UPDATED (list/drawer enrichment UI)
 
+### Pass 5 — ✅ COMPLETED
+
+#### Delivered in this pass
+- Added first adapter-driven ingestion lifecycle for linked media
+- Implemented YouTube URL adapter baseline:
+   - URL normalization and YouTube video ID extraction
+   - Provider detection and adapter routing
+   - Video metadata baseline fields (`media_video_id`, `media_thumbnail_url`, channel placeholder)
+   - Transcript-ready stub output (`transcript_status = ready`)
+- Replaced stub-only link enrichment flow with adapter lifecycle progression:
+   - `linked` -> `metadata_ready` -> `transcript_ready` (YouTube)
+- Extended `get_user_resources()` to expose media metadata and transcript fields
+- Surfaced media/link adapter fields directly in Resources list and details drawer
+
+#### Files created/updated in this pass
+- `supabase/migrations/20260409013000_youtube_adapter_baseline.sql` — NEW
+- `src/lib/resourceClassification.ts` — UPDATED (media + transcript fields; readiness mapping for new statuses)
+- `src/integrations/supabase/types.ts` — UPDATED (RPC return type includes media/transcript fields)
+- `src/components/views/ResourcesLanding.tsx` — UPDATED (media chips/preview/transcript in list and drawer)
+
 ### Planned
 - Source type/provider architecture for linked/synced resources (baseline delivered with enrichment)
-- Media resource adapters (YouTube, audio, video) with first real ingestion adapter pending
+- Media resource adapters (YouTube baseline delivered; next: richer metadata + real transcript fetch)
 - Grid/card view toggle
 - Resource detail panel/drawer (implemented baseline; can be extended with richer history/previews)
 - Bulk actions

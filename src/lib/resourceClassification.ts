@@ -73,10 +73,12 @@ export type ReadinessStatus = 'ready' | 'processing' | 'failed' | 'partial' | 'u
 
 export function deriveReadiness(processingStatus: string): ReadinessStatus {
   if (processingStatus === 'completed') return 'ready';
+  if (processingStatus === 'metadata_ready' || processingStatus === 'transcript_ready') return 'ready';
   if (processingStatus === 'failed') return 'failed';
   if (['uploaded', 'extracting_metadata', 'extracting_content', 'detecting_language',
     'summarizing', 'indexing', 'chunking', 'generating_embeddings',
     'generating_chunk_questions', 'pending', 'queued', 'claimed',
+    'linked',
     'running', 'waiting_retry'].includes(processingStatus)) return 'processing';
   return 'unknown';
 }
@@ -122,6 +124,11 @@ export interface Resource {
   previewTitle: string | null;
   previewDomain: string | null;
   previewFaviconUrl: string | null;
+  mediaVideoId: string | null;
+  mediaChannelName: string | null;
+  mediaThumbnailUrl: string | null;
+  mediaDurationSeconds: number | null;
+  transcriptStatus: string | null;
 }
 
 function parseResourceType(value: unknown): ResourceType {
@@ -187,6 +194,11 @@ export function mapRpcRowToResource(row: Record<string, any>): Resource {
     previewTitle: row.preview_title || null,
     previewDomain: row.preview_domain || null,
     previewFaviconUrl: row.preview_favicon_url || null,
+    mediaVideoId: row.media_video_id || null,
+    mediaChannelName: row.media_channel_name || null,
+    mediaThumbnailUrl: row.media_thumbnail_url || null,
+    mediaDurationSeconds: row.media_duration_seconds ?? null,
+    transcriptStatus: row.transcript_status || null,
   };
 }
 

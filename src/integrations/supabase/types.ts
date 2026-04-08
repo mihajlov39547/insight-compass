@@ -1543,6 +1543,10 @@ export type Database = {
           is_shared: boolean
           is_shared_with_me: boolean
           link_url: string | null
+          media_channel_name: string | null
+          media_duration_seconds: number | null
+          media_thumbnail_url: string | null
+          media_video_id: string | null
           mime_type: string
           owner_display_name: string
           owner_user_id: string
@@ -1561,6 +1565,7 @@ export type Database = {
           storage_path: string
           summary: string
           title: string
+          transcript_status: string | null
           updated_at: string
           uploaded_at: string
           word_count: number
