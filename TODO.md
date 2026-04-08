@@ -99,14 +99,27 @@
 
 ---
 
-## Phase 2 — 🟡 READY TO START (Prerequisites in place)
+## Phase 2 — 🟡 IN PROGRESS
+
+### Pass 1 — ✅ COMPLETED
+
+#### Delivered in this pass
+- Details drawer UI and state management added to Resources page
+- Row "View details" action now opens the drawer
+- Drawer includes full metadata and processing blocks
+- Drawer includes explicit permission blocks (`can_open`, `can_view_details`, `can_download`, `can_rename`, `can_delete`, `can_retry`)
+- Personal-resource open fallback added from drawer:
+   - If resource has no workspace container, drawer offers "View in personal resources" and applies personal focus filters
+
+#### Files updated in this pass
+- `src/components/views/ResourcesLanding.tsx` — UPDATED (details drawer, metadata, permissions, drawer actions)
 
 ### Planned
 - Source type/provider architecture for linked/synced resources (partially prepared via model/RPC)
 - "Add link" / "Connect source" entry points in UI
 - Media resource adapters (YouTube, audio, video)
 - Grid/card view toggle
-- Resource detail panel/drawer (currently lightweight "View details" action only)
+- Resource detail panel/drawer (implemented baseline; can be extended with richer history/previews)
 - Bulk actions
 - Download functionality (baseline implemented for uploaded file resources)
 

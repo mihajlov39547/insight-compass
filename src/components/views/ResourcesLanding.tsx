@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   FileText, Image, FileSpreadsheet, Presentation, Mail, FileType,
   Database, Music, Video, Link, File, Search, ArrowUpDown, Filter,
-  Upload, FolderOpen, BookOpen, User, Globe, Clock, CheckCircle2,
+  FolderOpen, BookOpen, User, Globe, Clock, CheckCircle2,
   AlertCircle, Loader2, MoreHorizontal, Download, Eye, RotateCcw,
   Trash2, ExternalLink, X
 } from 'lucide-react';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
@@ -68,6 +69,16 @@ type TypeFilter = 'all' | ResourceType;
 type ContainerFilter = 'all' | ContainerType;
 type SortKey = 'newest' | 'oldest' | 'name' | 'type' | 'status';
 
+function formatTimestamp(value: string): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Unknown';
+  return d.toLocaleString();
+}
+
+function formatProvider(value: string): string {
+  return value.replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
+}
+
 // ── Main Component ──────────────────────────────────────────────────
 export function ResourcesLanding() {
   const { data: resources = [], isLoading } = useResources();
@@ -82,6 +93,8 @@ export function ResourcesLanding() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [containerFilter, setContainerFilter] = useState<ContainerFilter>('all');
   const [sort, setSort] = useState<SortKey>('newest');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
 
   // ── Stats ───────────────────────────────────────────────────────
   const totalCount = resources.length;
@@ -179,10 +192,8 @@ export function ResourcesLanding() {
 
   const handleViewDetails = (resource: Resource) => {
     if (!resource.canViewDetails) return;
-    toast({
-      title: resource.title,
-      description: `${resource.resourceType} • ${resource.containerName || 'Personal'} • ${resource.ownerDisplayName}`,
-    });
+    setSelectedResource(resource);
+    setDetailsOpen(true);
   };
 
   const handleDownload = async (resource: Resource) => {
@@ -193,6 +204,23 @@ export function ResourcesLanding() {
     } catch (err: any) {
       toast({ title: 'Download failed', description: err.message || 'Unable to create download link', variant: 'destructive' });
     }
+  };
+
+  const handleOpenPersonalFallback = (resource: Resource) => {
+    setOwnershipFilter(resource.isOwnedByMe ? 'mine' : 'all');
+    setContainerFilter('personal');
+    setSearch(resource.title);
+    setDetailsOpen(false);
+    toast({ title: 'Showing personal resources', description: 'Applied personal filter and focused this resource.' });
+  };
+
+  const handleOpenFromDrawer = (resource: Resource) => {
+    if (resource.canOpen && resource.containerId) {
+      handleOpen(resource);
+      setDetailsOpen(false);
+      return;
+    }
+    handleOpenPersonalFallback(resource);
   };
 
   return (
@@ -357,6 +385,22 @@ export function ResourcesLanding() {
           )}
         </div>
       </ScrollArea>
+
+      <ResourceDetailsDrawer
+        resource={selectedResource}
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setSelectedResource(null);
+        }}
+        onOpenResource={handleOpenFromDrawer}
+        onDownload={handleDownload}
+        onRetry={handleRetry}
+        onDelete={handleDelete}
+        onOpenPersonalFallback={handleOpenPersonalFallback}
+        isRetrying={retryMutation.isPending}
+        isDeleting={deleteMutation.isPending}
+      />
     </div>
   );
 }
@@ -573,5 +617,190 @@ function EmptyState({ hasResources, hasFilters }: { hasResources: boolean; hasFi
         Upload documents to your projects or notebooks to see them here. Resources from shared workspaces will also appear once available.
       </p>
     </div>
+  );
+}
+
+function PermissionRow({ label, enabled }: { label: string; enabled: boolean }) {
+  return (
+    <div className="flex items-center justify-between rounded-md border border-border/60 px-2.5 py-1.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <Badge variant={enabled ? 'secondary' : 'outline'} className="text-[10px] px-1.5 py-0">
+        {enabled ? 'Allowed' : 'Not allowed'}
+      </Badge>
+    </div>
+  );
+}
+
+function ResourceDetailsDrawer({
+  resource,
+  open,
+  onOpenChange,
+  onOpenResource,
+  onDownload,
+  onRetry,
+  onDelete,
+  onOpenPersonalFallback,
+  isRetrying,
+  isDeleting,
+}: {
+  resource: Resource | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpenResource: (resource: Resource) => void;
+  onDownload: (resource: Resource) => void;
+  onRetry: (resource: Resource) => void;
+  onDelete: (resource: Resource) => void;
+  onOpenPersonalFallback: (resource: Resource) => void;
+  isRetrying: boolean;
+  isDeleting: boolean;
+}) {
+  if (!resource) return null;
+
+  const canOpenWorkspace = resource.canOpen && !!resource.containerId;
+  const canFallbackPersonalOpen = resource.containerType === 'personal';
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden">
+        <div className="h-full flex flex-col">
+          <SheetHeader className="px-6 py-4 border-b border-border text-left">
+            <SheetTitle className="pr-10 truncate">{resource.title}</SheetTitle>
+            <SheetDescription>
+              {resource.containerName || 'Personal'} • {resource.ownerDisplayName}
+            </SheetDescription>
+            <div className="flex items-center gap-1.5 flex-wrap pt-1">
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{RESOURCE_TYPE_LABELS[resource.resourceType]}</Badge>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{resource.sourceType}</Badge>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{formatProvider(resource.provider)}</Badge>
+              <ReadinessBadge readiness={resource.readiness} />
+            </div>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1">
+            <div className="px-6 py-4 space-y-5">
+              <section className="space-y-2">
+                <h3 className="text-sm font-medium">Metadata</h3>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Resource ID</p>
+                    <p className="font-mono break-all mt-1">{resource.id}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">File size</p>
+                    <p className="mt-1">{formatFileSize(resource.sizeBytes)}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">MIME type</p>
+                    <p className="mt-1 break-all">{resource.mimeType || 'Unknown'}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Extension</p>
+                    <p className="mt-1">{resource.extension.toUpperCase()}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Uploaded</p>
+                    <p className="mt-1">{formatTimestamp(resource.uploadedAt)}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Last updated</p>
+                    <p className="mt-1">{formatTimestamp(resource.updatedAt)}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2 col-span-2">
+                    <p className="text-muted-foreground">Container</p>
+                    <p className="mt-1">
+                      {resource.containerType} {resource.containerName ? `• ${resource.containerName}` : ''}
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2 col-span-2">
+                    <p className="text-muted-foreground">Owner</p>
+                    <p className="mt-1">{resource.ownerDisplayName}</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="text-sm font-medium">Processing</h3>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Status</p>
+                    <p className="mt-1">{resource.processingStatus}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Language</p>
+                    <p className="mt-1">{resource.detectedLanguage || 'Unknown'}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Page count</p>
+                    <p className="mt-1">{resource.pageCount ?? 'N/A'}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Word count</p>
+                    <p className="mt-1">{resource.wordCount ?? 'N/A'}</p>
+                  </div>
+                  {resource.processingError && (
+                    <div className="rounded-md border border-destructive/20 bg-destructive/5 p-2 col-span-2">
+                      <p className="text-muted-foreground">Processing error</p>
+                      <p className="mt-1 text-destructive break-words">{resource.processingError}</p>
+                    </div>
+                  )}
+                  {resource.summary && (
+                    <div className="rounded-md border border-border/60 p-2 col-span-2">
+                      <p className="text-muted-foreground">Summary</p>
+                      <p className="mt-1 whitespace-pre-wrap">{resource.summary}</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="text-sm font-medium">Permissions</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  <PermissionRow label="Open" enabled={resource.canOpen} />
+                  <PermissionRow label="View details" enabled={resource.canViewDetails} />
+                  <PermissionRow label="Download" enabled={resource.canDownload} />
+                  <PermissionRow label="Rename" enabled={resource.canRename} />
+                  <PermissionRow label="Delete" enabled={resource.canDelete} />
+                  <PermissionRow label="Retry processing" enabled={resource.canRetry} />
+                </div>
+              </section>
+            </div>
+          </ScrollArea>
+
+          <div className="border-t border-border px-6 py-3 flex items-center gap-2 flex-wrap">
+            {canOpenWorkspace && (
+              <Button size="sm" className="gap-1.5" onClick={() => onOpenResource(resource)}>
+                <ExternalLink className="h-3.5 w-3.5" /> Open workspace
+              </Button>
+            )}
+            {!canOpenWorkspace && canFallbackPersonalOpen && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onOpenPersonalFallback(resource)}>
+                <Globe className="h-3.5 w-3.5" /> View in personal resources
+              </Button>
+            )}
+            {resource.canDownload && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
+                <Download className="h-3.5 w-3.5" /> Download
+              </Button>
+            )}
+            {resource.canRetry && resource.readiness === 'failed' && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRetry(resource)} disabled={isRetrying}>
+                <RotateCcw className="h-3.5 w-3.5" /> Retry
+              </Button>
+            )}
+            {resource.canDelete && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-destructive border-destructive/30 hover:text-destructive"
+                onClick={() => onDelete(resource)}
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </Button>
+            )}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
