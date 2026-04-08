@@ -128,9 +128,29 @@
 - `src/components/views/ResourcesLanding.tsx` — UPDATED (rename dialog + row/drawer wiring)
 - `src/integrations/supabase/types.ts` — UPDATED (`rename_user_resource` RPC type)
 
+### Pass 3 — ✅ COMPLETED
+
+#### Delivered in this pass
+- Added **Add link** and **Connect source** entry points in Resources header
+- Added Add Link dialog with provider + location targeting (personal/project/notebook)
+- Added Connect Source dialog that records source connection requests
+- Added backend stubs:
+   - `create_link_resource_stub(...)`
+   - `create_source_connection_request_stub(...)`
+- Added stub storage tables for future integrations:
+   - `resource_links`
+   - `source_connection_requests`
+- Extended `get_user_resources()` to include linked stub resources via `UNION ALL`
+- Updated rename path compatibility so rename works for both documents and linked resources
+
+#### Files created/updated in this pass
+- `supabase/migrations/20260409000500_link_and_source_stubs.sql` — NEW
+- `src/components/views/ResourcesLanding.tsx` — UPDATED (entry points + dialogs)
+- `src/hooks/useResourceActions.ts` — UPDATED (`useCreateLinkResource`, `useCreateSourceConnectionRequest`)
+- `src/integrations/supabase/types.ts` — UPDATED (new RPC type signatures)
+
 ### Planned
-- Source type/provider architecture for linked/synced resources (partially prepared via model/RPC)
-- "Add link" / "Connect source" entry points in UI
+- Source type/provider architecture for linked/synced resources (baseline delivered for link/source stubs)
 - Media resource adapters (YouTube, audio, video)
 - Grid/card view toggle
 - Resource detail panel/drawer (implemented baseline; can be extended with richer history/previews)

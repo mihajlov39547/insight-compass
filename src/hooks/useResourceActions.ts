@@ -18,6 +18,19 @@ export interface RenameResourceInput {
   newTitle: string;
 }
 
+export interface CreateLinkResourceInput {
+  url: string;
+  title?: string;
+  provider: string;
+  containerType: ContainerType;
+  containerId: string | null;
+}
+
+export interface CreateSourceConnectionRequestInput {
+  provider: string;
+  displayName?: string;
+}
+
 interface RenameResourceResult {
   id: string;
   title: string;
@@ -145,6 +158,51 @@ export function useRenameResource() {
     },
     onSuccess: (_result, variables) => {
       invalidateResourceScopes(queryClient, variables.resource);
+    },
+  });
+}
+
+export function useCreateLinkResource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateLinkResourceInput) => {
+      const { data, error } = await supabase.rpc('create_link_resource_stub' as any, {
+        p_url: input.url.trim(),
+        p_title: input.title?.trim() || null,
+        p_provider: input.provider,
+        p_container_type: input.containerType,
+        p_container_id: input.containerId,
+      });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data[0] : data;
+    },
+    onSuccess: (_result, input) => {
+      invalidateResourceScopes(queryClient, {
+        id: '',
+        title: input.title || input.url,
+        storagePath: '',
+        ownerUserId: '',
+        containerType: input.containerType,
+        containerId: input.containerId,
+        processingStatus: 'completed',
+      });
+    },
+  });
+}
+
+export function useCreateSourceConnectionRequest() {
+  return useMutation({
+    mutationFn: async (input: CreateSourceConnectionRequestInput) => {
+      const { data, error } = await supabase.rpc('create_source_connection_request_stub' as any, {
+        p_provider: input.provider,
+        p_display_name: input.displayName?.trim() || null,
+        p_metadata: { stub: true },
+      });
+
+      if (error) throw error;
+      return Array.isArray(data) ? data[0] : data;
     },
   });
 }

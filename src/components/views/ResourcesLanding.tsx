@@ -18,9 +18,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useResources } from '@/hooks/useResources';
-import { downloadResourceFromStorage, useDeleteResource, useRenameResource, useRetryResourceProcessing, type ResourceActionInput } from '@/hooks/useResourceActions';
+import {
+  downloadResourceFromStorage,
+  useCreateLinkResource,
+  useCreateSourceConnectionRequest,
+  useDeleteResource,
+  useRenameResource,
+  useRetryResourceProcessing,
+  type ResourceActionInput,
+} from '@/hooks/useResourceActions';
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
+import { useProjects } from '@/hooks/useProjects';
+import { useNotebooks } from '@/hooks/useNotebooks';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
   RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName
@@ -85,6 +95,10 @@ export function ResourcesLanding() {
   const { data: resources = [], isLoading } = useResources();
   const { user } = useAuth();
   const { setActiveView, setSelectedProjectId, setSelectedNotebookId, setSelectedChatId } = useApp();
+  const { data: projects = [] } = useProjects();
+  const { data: notebooks = [] } = useNotebooks();
+  const createLinkMutation = useCreateLinkResource();
+  const createSourceConnectionMutation = useCreateSourceConnectionRequest();
   const deleteMutation = useDeleteResource();
   const renameMutation = useRenameResource();
   const retryMutation = useRetryResourceProcessing();
@@ -100,6 +114,15 @@ export function ResourcesLanding() {
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameResource, setRenameResource] = useState<Resource | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [addLinkOpen, setAddLinkOpen] = useState(false);
+  const [connectSourceOpen, setConnectSourceOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkProvider, setLinkProvider] = useState('unknown');
+  const [linkContainerType, setLinkContainerType] = useState<ContainerType>('personal');
+  const [linkContainerId, setLinkContainerId] = useState<string | null>(null);
+  const [sourceProvider, setSourceProvider] = useState('google_drive');
+  const [sourceDisplayName, setSourceDisplayName] = useState('');
 
   // ── Stats ───────────────────────────────────────────────────────
   const totalCount = resources.length;
@@ -282,6 +305,72 @@ export function ResourcesLanding() {
     handleOpenPersonalFallback(resource);
   };
 
+  const resetAddLinkDialog = () => {
+    setLinkUrl('');
+    setLinkTitle('');
+    setLinkProvider('unknown');
+    setLinkContainerType('personal');
+    setLinkContainerId(null);
+  };
+
+  const handleAddLink = () => {
+    if (!linkUrl.trim()) {
+      toast({ title: 'Add link failed', description: 'URL is required.', variant: 'destructive' });
+      return;
+    }
+
+    const requiresContainerId = linkContainerType !== 'personal';
+    if (requiresContainerId && !linkContainerId) {
+      toast({ title: 'Add link failed', description: 'Choose a target workspace.', variant: 'destructive' });
+      return;
+    }
+
+    createLinkMutation.mutate(
+      {
+        url: linkUrl,
+        title: linkTitle || undefined,
+        provider: linkProvider,
+        containerType: linkContainerType,
+        containerId: requiresContainerId ? linkContainerId : null,
+      },
+      {
+        onSuccess: () => {
+          toast({ title: 'Link added', description: 'Your linked resource now appears in Resources.' });
+          setAddLinkOpen(false);
+          resetAddLinkDialog();
+        },
+        onError: (err: any) => {
+          toast({ title: 'Add link failed', description: err.message, variant: 'destructive' });
+        },
+      },
+    );
+  };
+
+  const handleConnectSource = () => {
+    if (!sourceProvider.trim()) {
+      toast({ title: 'Connect source failed', description: 'Provider is required.', variant: 'destructive' });
+      return;
+    }
+
+    createSourceConnectionMutation.mutate(
+      {
+        provider: sourceProvider,
+        displayName: sourceDisplayName || undefined,
+      },
+      {
+        onSuccess: () => {
+          toast({ title: 'Connection request captured', description: 'We will use this when source sync adapters are enabled.' });
+          setConnectSourceOpen(false);
+          setSourceDisplayName('');
+          setSourceProvider('google_drive');
+        },
+        onError: (err: any) => {
+          toast({ title: 'Connect source failed', description: err.message, variant: 'destructive' });
+        },
+      },
+    );
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
       {/* ── Header ────────────────────────────────────────────── */}
@@ -295,6 +384,14 @@ export function ResourcesLanding() {
             <p className="text-sm text-muted-foreground mt-1">
               All documents and resources across your projects and notebooks
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setConnectSourceOpen(true)}>
+              Connect source
+            </Button>
+            <Button size="sm" onClick={() => setAddLinkOpen(true)}>
+              Add link
+            </Button>
           </div>
         </div>
 
@@ -477,6 +574,42 @@ export function ResourcesLanding() {
         }}
         onValueChange={setRenameValue}
         onSubmit={handleRenameSubmit}
+      />
+
+      <AddLinkDialog
+        open={addLinkOpen}
+        url={linkUrl}
+        title={linkTitle}
+        provider={linkProvider}
+        containerType={linkContainerType}
+        containerId={linkContainerId}
+        projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+        notebooks={notebooks.map((n) => ({ id: n.id, name: n.name }))}
+        submitting={createLinkMutation.isPending}
+        onOpenChange={(open) => {
+          setAddLinkOpen(open);
+          if (!open) resetAddLinkDialog();
+        }}
+        onUrlChange={setLinkUrl}
+        onTitleChange={setLinkTitle}
+        onProviderChange={setLinkProvider}
+        onContainerTypeChange={(value) => {
+          setLinkContainerType(value);
+          setLinkContainerId(null);
+        }}
+        onContainerIdChange={setLinkContainerId}
+        onSubmit={handleAddLink}
+      />
+
+      <ConnectSourceDialog
+        open={connectSourceOpen}
+        provider={sourceProvider}
+        displayName={sourceDisplayName}
+        submitting={createSourceConnectionMutation.isPending}
+        onOpenChange={setConnectSourceOpen}
+        onProviderChange={setSourceProvider}
+        onDisplayNameChange={setSourceDisplayName}
+        onSubmit={handleConnectSource}
       />
     </div>
   );
@@ -750,6 +883,197 @@ function RenameResourceDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
           <Button onClick={onSubmit} disabled={submitting || !value.trim()}>
             {submitting ? 'Renaming...' : 'Rename'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddLinkDialog({
+  open,
+  url,
+  title,
+  provider,
+  containerType,
+  containerId,
+  projects,
+  notebooks,
+  submitting,
+  onOpenChange,
+  onUrlChange,
+  onTitleChange,
+  onProviderChange,
+  onContainerTypeChange,
+  onContainerIdChange,
+  onSubmit,
+}: {
+  open: boolean;
+  url: string;
+  title: string;
+  provider: string;
+  containerType: ContainerType;
+  containerId: string | null;
+  projects: Array<{ id: string; name: string }>;
+  notebooks: Array<{ id: string; name: string }>;
+  submitting: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUrlChange: (value: string) => void;
+  onTitleChange: (value: string) => void;
+  onProviderChange: (value: string) => void;
+  onContainerTypeChange: (value: ContainerType) => void;
+  onContainerIdChange: (value: string | null) => void;
+  onSubmit: () => void;
+}) {
+  const targetOptions = containerType === 'project' ? projects : notebooks;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add link resource</DialogTitle>
+          <DialogDescription>
+            Create a linked resource so non-uploaded content can start flowing through Resources.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">URL</p>
+          <Input
+            value={url}
+            onChange={(e) => onUrlChange(e.target.value)}
+            placeholder="https://example.com/resource"
+            autoFocus
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Title (optional)</p>
+          <Input
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            placeholder="Readable resource title"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Provider</p>
+            <Select value={provider} onValueChange={onProviderChange}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unknown">Unknown</SelectItem>
+                <SelectItem value="youtube">YouTube</SelectItem>
+                <SelectItem value="google_drive">Google Drive</SelectItem>
+                <SelectItem value="dropbox">Dropbox</SelectItem>
+                <SelectItem value="notion">Notion</SelectItem>
+                <SelectItem value="internal">Internal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Location</p>
+            <Select value={containerType} onValueChange={(v) => onContainerTypeChange(v as ContainerType)}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="project">Project</SelectItem>
+                <SelectItem value="notebook">Notebook</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {containerType !== 'personal' && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Target {containerType}</p>
+            <Select value={containerId ?? undefined} onValueChange={(v) => onContainerIdChange(v || null)}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder={`Select a ${containerType}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {targetOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
+          <Button onClick={onSubmit} disabled={submitting || !url.trim()}>
+            {submitting ? 'Adding...' : 'Add link'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ConnectSourceDialog({
+  open,
+  provider,
+  displayName,
+  submitting,
+  onOpenChange,
+  onProviderChange,
+  onDisplayNameChange,
+  onSubmit,
+}: {
+  open: boolean;
+  provider: string;
+  displayName: string;
+  submitting: boolean;
+  onOpenChange: (open: boolean) => void;
+  onProviderChange: (value: string) => void;
+  onDisplayNameChange: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Connect source</DialogTitle>
+          <DialogDescription>
+            Capture a source connection request now and wire the adapter in later phases.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Provider</p>
+          <Select value={provider} onValueChange={onProviderChange}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="google_drive">Google Drive</SelectItem>
+              <SelectItem value="dropbox">Dropbox</SelectItem>
+              <SelectItem value="notion">Notion</SelectItem>
+              <SelectItem value="youtube">YouTube</SelectItem>
+              <SelectItem value="unknown">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Display name (optional)</p>
+          <Input
+            value={displayName}
+            onChange={(e) => onDisplayNameChange(e.target.value)}
+            placeholder="Team Drive, Marketing Notion, etc."
+          />
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
+          <Button onClick={onSubmit} disabled={submitting || !provider.trim()}>
+            {submitting ? 'Saving...' : 'Save request'}
           </Button>
         </DialogFooter>
       </DialogContent>

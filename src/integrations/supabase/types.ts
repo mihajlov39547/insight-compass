@@ -1598,6 +1598,30 @@ export type Database = {
         }
         Returns: string[]
       }
+      create_link_resource_stub: {
+        Args: {
+          p_container_id?: string
+          p_container_type?: string
+          p_provider?: string
+          p_title?: string
+          p_url: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          title: string
+          url: string
+        }[]
+      }
+      create_source_connection_request_stub: {
+        Args: { p_display_name?: string; p_metadata?: Json; p_provider: string }
+        Returns: {
+          created_at: string
+          id: string
+          provider: string
+          status: string
+        }[]
+      }
       search_document_chunks: {
         Args: {
           filter_chat_id?: string
