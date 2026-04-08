@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useResources } from '@/hooks/useResources';
-import { useDeleteDocument, useRetryProcessing, type DbDocument } from '@/hooks/useDocuments';
+import { downloadResourceFromStorage, useDeleteResource, useRetryResourceProcessing, type ResourceActionInput } from '@/hooks/useResourceActions';
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
 import {
@@ -72,8 +72,9 @@ type SortKey = 'newest' | 'oldest' | 'name' | 'type' | 'status';
 export function ResourcesLanding() {
   const { data: resources = [], isLoading } = useResources();
   const { user } = useAuth();
-  const deleteMutation = useDeleteDocument();
-  const { retry: retryProcessing } = useRetryProcessing();
+  const { setActiveView, setSelectedProjectId, setSelectedNotebookId, setSelectedChatId } = useApp();
+  const deleteMutation = useDeleteResource();
+  const retryMutation = useRetryResourceProcessing();
 
   const [search, setSearch] = useState('');
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>('all');
@@ -88,7 +89,7 @@ export function ResourcesLanding() {
   const processingCount = resources.filter(r => r.readiness === 'processing').length;
   const failedCount = resources.filter(r => r.readiness === 'failed').length;
   const myCount = resources.filter(r => r.ownerUserId === user?.id).length;
-  const sharedCount = resources.filter(r => r.isShared).length;
+  const sharedCount = resources.filter(r => r.isSharedWithMe).length;
 
   // ── Active resource types (for filter chips) ──────────────────
   const activeResourceTypes = useMemo(() => {
@@ -111,7 +112,7 @@ export function ResourcesLanding() {
     }
 
     if (ownershipFilter === 'mine') list = list.filter(r => r.ownerUserId === user?.id);
-    if (ownershipFilter === 'shared') list = list.filter(r => r.isShared);
+    if (ownershipFilter === 'shared') list = list.filter(r => r.isSharedWithMe);
 
     if (statusFilter === 'ready') list = list.filter(r => r.readiness === 'ready');
     if (statusFilter === 'processing') list = list.filter(r => r.readiness === 'processing');
@@ -124,27 +125,74 @@ export function ResourcesLanding() {
     if (containerFilter === 'personal') list = list.filter(r => r.containerType === 'personal');
 
     switch (sort) {
-      case 'oldest': return list.sort((a, b) => new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime());
+      case 'oldest': return list.sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime());
       case 'name': return list.sort((a, b) => a.title.localeCompare(b.title));
       case 'type': return list.sort((a, b) => a.resourceType.localeCompare(b.resourceType));
       case 'status': return list.sort((a, b) => a.readiness.localeCompare(b.readiness));
-      default: return list.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+      default: return list.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     }
   }, [resources, search, ownershipFilter, statusFilter, typeFilter, containerFilter, sort, user?.id]);
 
   const hasActiveFilters = ownershipFilter !== 'all' || statusFilter !== 'all' || typeFilter !== 'all' || containerFilter !== 'all' || search.length > 0;
 
+  const toResourceActionInput = (resource: Resource): ResourceActionInput => ({
+    id: resource.id,
+    title: resource.title,
+    storagePath: resource.storagePath,
+    ownerUserId: resource.ownerUserId,
+    containerType: resource.containerType,
+    containerId: resource.containerId,
+    processingStatus: resource.processingStatus,
+  });
+
   const handleDelete = (resource: Resource) => {
-    const doc = { id: resource.id, storage_path: '', project_id: resource.containerType === 'project' ? resource.containerId : null, notebook_id: resource.containerType === 'notebook' ? resource.containerId : null } as any as DbDocument;
-    deleteMutation.mutate(doc, {
+    if (!resource.canDelete) return;
+    const actionInput = toResourceActionInput(resource);
+    deleteMutation.mutate(actionInput, {
       onSuccess: () => toast({ title: `${resource.title} deleted` }),
       onError: (err: any) => toast({ title: 'Delete failed', description: err.message, variant: 'destructive' }),
     });
   };
 
   const handleRetry = (resource: Resource) => {
-    const doc = { id: resource.id, processing_status: resource.processingStatus } as any as DbDocument;
-    retryProcessing(doc);
+    if (!resource.canRetry) return;
+    const actionInput = toResourceActionInput(resource);
+    retryMutation.mutate(actionInput, {
+      onSuccess: () => toast({ title: 'Retry queued', description: `${resource.title} will be processed again.` }),
+      onError: (err: any) => toast({ title: 'Retry failed', description: err.message, variant: 'destructive' }),
+    });
+  };
+
+  const handleOpen = (resource: Resource) => {
+    if (!resource.canOpen || !resource.containerId) return;
+    if (resource.containerType === 'project') {
+      setSelectedProjectId(resource.containerId);
+      setSelectedChatId(null);
+      setActiveView('project-documents');
+      return;
+    }
+    if (resource.containerType === 'notebook') {
+      setSelectedNotebookId(resource.containerId);
+      setActiveView('notebook-documents');
+    }
+  };
+
+  const handleViewDetails = (resource: Resource) => {
+    if (!resource.canViewDetails) return;
+    toast({
+      title: resource.title,
+      description: `${resource.resourceType} • ${resource.containerName || 'Personal'} • ${resource.ownerDisplayName}`,
+    });
+  };
+
+  const handleDownload = async (resource: Resource) => {
+    if (!resource.canDownload) return;
+    try {
+      const signedUrl = await downloadResourceFromStorage(resource.storagePath);
+      window.open(signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      toast({ title: 'Download failed', description: err.message || 'Unable to create download link', variant: 'destructive' });
+    }
   };
 
   return (
@@ -195,8 +243,8 @@ export function ResourcesLanding() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
-              <SelectItem value="oldest">Oldest first</SelectItem>
+              <SelectItem value="newest">Last updated (newest)</SelectItem>
+              <SelectItem value="oldest">Last updated (oldest)</SelectItem>
               <SelectItem value="name">Name</SelectItem>
               <SelectItem value="type">Type</SelectItem>
               <SelectItem value="status">Status</SelectItem>
@@ -296,9 +344,13 @@ export function ResourcesLanding() {
                 <ResourceRow
                   key={resource.id}
                   resource={resource}
+                  onOpen={() => handleOpen(resource)}
+                  onViewDetails={() => handleViewDetails(resource)}
+                  onDownload={() => handleDownload(resource)}
                   onDelete={() => handleDelete(resource)}
                   onRetry={() => handleRetry(resource)}
                   isDeleting={deleteMutation.isPending}
+                  isRetrying={retryMutation.isPending}
                 />
               ))}
             </div>
@@ -359,19 +411,29 @@ function ReadinessBadge({ readiness }: { readiness: ReadinessStatus }) {
   }
 }
 
-function ResourceRow({ resource, onDelete, onRetry, isDeleting }: {
+function ResourceRow({ resource, onOpen, onViewDetails, onDownload, onDelete, onRetry, isDeleting, isRetrying }: {
   resource: Resource;
+  onOpen: () => void;
+  onViewDetails: () => void;
+  onDownload: () => void;
   onDelete: () => void;
   onRetry: () => void;
   isDeleting: boolean;
+  isRetrying: boolean;
 }) {
   const Icon = RESOURCE_ICONS[resource.resourceType] || File;
   const color = RESOURCE_COLORS[resource.resourceType] || 'text-muted-foreground';
   const ContainerIcon = CONTAINER_ICONS[resource.containerType] || Globe;
-  const isOwner = !resource.isShared;
+  const canRetry = resource.canRetry && resource.readiness === 'failed';
+  const canDelete = resource.canDelete;
+  const canOpen = resource.canOpen && !!resource.containerId;
+  const canViewDetails = resource.canViewDetails;
+  const canDownload = resource.canDownload && !!resource.storagePath;
+  const canRename = resource.canRename;
+  const showActions = canOpen || canViewDetails || canDownload || canRetry || canDelete || canRename;
 
   const relativeDate = useMemo(() => {
-    const d = new Date(resource.uploadedAt);
+    const d = new Date(resource.updatedAt);
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -382,7 +444,7 @@ function ResourceRow({ resource, onDelete, onRetry, isDeleting }: {
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays < 30) return `${diffDays}d ago`;
     return d.toLocaleDateString();
-  }, [resource.uploadedAt]);
+  }, [resource.updatedAt]);
 
   return (
     <div className="grid grid-cols-[1fr_120px_140px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors group">
@@ -397,7 +459,7 @@ function ResourceRow({ resource, onDelete, onRetry, isDeleting }: {
           </p>
           <p className="text-[11px] text-muted-foreground truncate">
             {resource.extension.toUpperCase()} • {formatFileSize(resource.sizeBytes)}
-            {resource.isShared && (
+            {resource.isSharedWithMe && (
               <span> • by {resource.ownerDisplayName}</span>
             )}
           </p>
@@ -432,36 +494,60 @@ function ResourceRow({ resource, onDelete, onRetry, isDeleting }: {
 
       {/* Actions */}
       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7">
-              <MoreHorizontal className="h-3.5 w-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            {resource.containerName && (
-              <DropdownMenuItem className="text-xs gap-2">
-                <ExternalLink className="h-3.5 w-3.5" />
-                View in {resource.containerType === 'project' ? 'project' : 'notebook'}
-              </DropdownMenuItem>
-            )}
-            {resource.readiness === 'failed' && (
-              <DropdownMenuItem className="text-xs gap-2" onClick={onRetry}>
-                <RotateCcw className="h-3.5 w-3.5" />
-                Retry processing
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-xs gap-2 text-destructive focus:text-destructive"
-              onClick={onDelete}
-              disabled={isDeleting}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {showActions ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {canOpen && (
+                <DropdownMenuItem className="text-xs gap-2" onClick={onOpen}>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Open workspace
+                </DropdownMenuItem>
+              )}
+              {canViewDetails && (
+                <DropdownMenuItem className="text-xs gap-2" onClick={onViewDetails}>
+                  <Eye className="h-3.5 w-3.5" />
+                  View details
+                </DropdownMenuItem>
+              )}
+              {canDownload && (
+                <DropdownMenuItem className="text-xs gap-2" onClick={onDownload}>
+                  <Download className="h-3.5 w-3.5" />
+                  Download
+                </DropdownMenuItem>
+              )}
+              {canRename && (
+                <DropdownMenuItem className="text-xs gap-2" disabled>
+                  <FileType className="h-3.5 w-3.5" />
+                  Rename (coming soon)
+                </DropdownMenuItem>
+              )}
+              {canRetry && (
+                <DropdownMenuItem className="text-xs gap-2" onClick={onRetry} disabled={isRetrying}>
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Retry processing
+                </DropdownMenuItem>
+              )}
+              {canDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-xs gap-2 text-destructive focus:text-destructive"
+                    onClick={onDelete}
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
       </div>
     </div>
   );

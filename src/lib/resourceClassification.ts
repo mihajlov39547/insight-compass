@@ -9,6 +9,10 @@ export type ResourceType =
   | 'document' | 'image' | 'spreadsheet' | 'presentation'
   | 'email' | 'text' | 'dataset' | 'audio' | 'video' | 'link' | 'other';
 
+const RESOURCE_TYPE_VALUES: ResourceType[] = [
+  'document', 'image', 'spreadsheet', 'presentation', 'email', 'text', 'dataset', 'audio', 'video', 'link', 'other',
+];
+
 export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
   document: 'Document',
   image: 'Image',
@@ -39,6 +43,8 @@ export const RESOURCE_TYPE_ICONS: Record<ResourceType, string> = {
 
 // ── Source Types ─────────────────────────────────────────────────────
 export type SourceType = 'uploaded' | 'linked' | 'synced' | 'generated' | 'imported';
+
+const SOURCE_TYPE_VALUES: SourceType[] = ['uploaded', 'linked', 'synced', 'generated', 'imported'];
 
 export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
   uploaded: 'Uploaded',
@@ -86,12 +92,22 @@ export interface Resource {
   mimeType: string;
   extension: string;
   sizeBytes: number;
+  storagePath: string;
   ownerUserId: string;
   ownerDisplayName: string;
   containerType: ContainerType;
   containerId: string | null;
   containerName: string | null;
+  isOwnedByMe: boolean;
+  isSharedWithMe: boolean;
+  // Backward-compatible alias for legacy shared chip/filter behavior.
   isShared: boolean;
+  canOpen: boolean;
+  canViewDetails: boolean;
+  canDownload: boolean;
+  canRename: boolean;
+  canDelete: boolean;
+  canRetry: boolean;
   uploadedAt: string;
   updatedAt: string;
   processingStatus: string;
@@ -103,26 +119,55 @@ export interface Resource {
   detectedLanguage: string | null;
 }
 
+function parseResourceType(value: unknown): ResourceType {
+  if (typeof value === 'string' && RESOURCE_TYPE_VALUES.includes(value as ResourceType)) {
+    return value as ResourceType;
+  }
+  return 'other';
+}
+
+function parseSourceType(value: unknown): SourceType {
+  if (typeof value === 'string' && SOURCE_TYPE_VALUES.includes(value as SourceType)) {
+    return value as SourceType;
+  }
+  return 'uploaded';
+}
+
 /**
  * Maps a raw row from get_user_resources RPC into the frontend Resource shape.
  */
 export function mapRpcRowToResource(row: Record<string, any>): Resource {
+  // Backend RPC classification is canonical; frontend only validates unknown values.
+  const resourceType = parseResourceType(row.resource_type);
+  const sourceType = parseSourceType(row.source_type);
+  const sharedWithMe = row.is_shared_with_me ?? row.is_shared ?? false;
+  const ownedByMe = row.is_owned_by_me ?? !sharedWithMe;
+
   return {
     id: row.id,
     resourceKind: row.resource_kind,
-    resourceType: row.resource_type as ResourceType,
-    sourceType: (row.source_type || 'uploaded') as SourceType,
+    resourceType,
+    sourceType,
     provider: (row.provider || 'local_upload') as SourceProvider,
     title: row.title,
     mimeType: row.mime_type,
     extension: row.extension,
     sizeBytes: Number(row.size_bytes),
+    storagePath: row.storage_path,
     ownerUserId: row.owner_user_id,
     ownerDisplayName: row.owner_display_name || 'Unknown',
     containerType: (row.container_type || 'personal') as ContainerType,
     containerId: row.container_id || null,
     containerName: row.container_name || null,
-    isShared: row.is_shared ?? false,
+    isOwnedByMe: !!ownedByMe,
+    isSharedWithMe: !!sharedWithMe,
+    isShared: !!sharedWithMe,
+    canOpen: row.can_open ?? true,
+    canViewDetails: row.can_view_details ?? true,
+    canDownload: row.can_download ?? true,
+    canRename: row.can_rename ?? false,
+    canDelete: row.can_delete ?? false,
+    canRetry: row.can_retry ?? false,
     uploadedAt: row.uploaded_at,
     updatedAt: row.updated_at,
     processingStatus: row.processing_status,

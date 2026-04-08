@@ -15,6 +15,7 @@ export interface DbDocument {
   file_size: number;
   storage_path: string;
   created_at: string;
+  updated_at?: string;
   processing_status: string;
   processing_error: string | null;
   detected_language: string | null;
@@ -24,6 +25,13 @@ export interface DbDocument {
   char_count: number | null;
   retry_count: number;
   last_retry_at: string | null;
+}
+
+export interface DocumentWorkflowTriggerInput {
+  id: string;
+  user_id: string;
+  storage_path: string;
+  processing_status: string;
 }
 
 const PROCESSING_STATES = new Set([
@@ -54,7 +62,7 @@ async function markDocumentTriggerFailed(documentId: string, message: string): P
   }
 }
 
-async function startDocumentWorkflow(doc: DbDocument, mode: 'upload' | 'retry'): Promise<{
+export async function startDocumentWorkflow(doc: DocumentWorkflowTriggerInput, mode: 'upload' | 'retry'): Promise<{
   path: 'workflow' | 'workflow_existing';
   workflowRunId?: string;
 }> {
@@ -341,6 +349,7 @@ export function useRetryProcessing() {
     },
     onSuccess: (_, doc) => {
       queryClient.invalidateQueries({ queryKey: ['documents', doc.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
     },
   });
 
@@ -374,6 +383,7 @@ export function useDeleteDocument() {
     onSuccess: (doc) => {
       queryClient.invalidateQueries({ queryKey: ['documents', doc.project_id] });
       queryClient.invalidateQueries({ queryKey: ['document-count', doc.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
       if (doc.notebook_id) {
         queryClient.invalidateQueries({ queryKey: ['notebook-documents', doc.notebook_id] });
         queryClient.invalidateQueries({ queryKey: ['notebook-document-counts'] });

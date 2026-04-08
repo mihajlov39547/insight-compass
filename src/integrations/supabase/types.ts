@@ -464,6 +464,7 @@ export type Database = {
           retry_count: number
           storage_path: string
           summary: string | null
+          updated_at: string
           user_id: string
           word_count: number | null
         }
@@ -487,6 +488,7 @@ export type Database = {
           retry_count?: number
           storage_path: string
           summary?: string | null
+          updated_at?: string
           user_id: string
           word_count?: number | null
         }
@@ -510,6 +512,7 @@ export type Database = {
           retry_count?: number
           storage_path?: string
           summary?: string | null
+          updated_at?: string
           user_id?: string
           word_count?: number | null
         }
@@ -1524,13 +1527,21 @@ export type Database = {
       get_user_resources: {
         Args: never
         Returns: {
-          container_id: string
-          container_name: string
+          can_download: boolean
+          can_open: boolean
+          can_rename: boolean
+          can_retry: boolean
+          can_view_details: boolean
+          container_id: string | null
+          container_name: string | null
           container_type: string
+          can_delete: boolean
           detected_language: string
           extension: string
           id: string
+          is_owned_by_me: boolean
           is_shared: boolean
+          is_shared_with_me: boolean
           mime_type: string
           owner_display_name: string
           owner_user_id: string
@@ -1542,6 +1553,7 @@ export type Database = {
           resource_type: string
           size_bytes: number
           source_type: string
+          storage_path: string
           summary: string
           title: string
           updated_at: string
