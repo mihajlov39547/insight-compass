@@ -210,10 +210,11 @@
    - Completion includes worker identity checks to prevent unrelated completions
 - `get_user_resources()` retry contract aligned for YouTube transcript failures (`can_retry = true` when eligible)
 
-#### Transcript persistence strategy (current)
-- `transcript_text` is currently persisted in `youtube_transcript_jobs.transcript_text`
-- Transcript metadata/state is mirrored on `resource_links` (`transcript_status`, `transcript_error`, metadata lifecycle)
-- Dedicated long-term transcript content/search indexing path is **not yet implemented** and remains a planned follow-up
+#### Transcript persistence strategy (updated)
+- `transcript_text` remains persisted in `youtube_transcript_jobs.transcript_text` for audit/debug lineage
+- Transcript content is now additionally persisted in dedicated retrieval storage:
+   - `link_transcript_chunks` (chunk text, embedding, search_vector, access scope fields)
+- Transcript metadata/state remains mirrored on `resource_links` (`transcript_status`, `transcript_error`, metadata lifecycle)
 
 #### Files created/updated in this pass
 - `supabase/migrations/20260409020000_transcript_async_flow.sql` — NEW
@@ -224,9 +225,36 @@
 - `src/components/views/ResourcesLanding.tsx` — UPDATED (drawer transcript error + retry action)
 - `supabase/migrations/20260409024500_transcript_worker_security_hardening.sql` — NEW
 
+### Pass 7 — ✅ COMPLETED
+
+#### Delivered in this pass
+- Added dedicated transcript chunk persistence + retrieval/index path
+   - New table: `link_transcript_chunks`
+   - Embedding index + full-text search vector index
+   - New RPCs:
+      - `search_link_transcript_chunks(...)`
+      - `get_link_transcript_preview(...)`
+- Updated transcript worker to persist chunked transcript content with embeddings before completion
+- Extended transcript completion RPC to track persisted chunk count metadata
+- Added transcript semantic retrieval into `hybrid-retrieval` so chat grounding can use transcript chunks
+- Added transcript preview/query tab in Resources drawer
+   - Tabbed UI (`Overview` / `Transcript`)
+   - Search inside transcript excerpts via RPC
+- Added automatic background schedule baseline for transcript worker
+   - pg_cron + pg_net schedule attempts to run worker every minute when extensions are available
+
+#### Files created/updated in this pass
+- `supabase/migrations/20260409034000_transcript_chunks_and_schedule.sql` — NEW
+- `supabase/functions/youtube-transcript-worker/index.ts` — UPDATED (chunk persistence)
+- `supabase/functions/hybrid-retrieval/index.ts` — UPDATED (transcript semantic retrieval integration)
+- `src/hooks/useResourceTranscriptPreview.ts` — NEW
+- `src/components/views/ResourcesLanding.tsx` — UPDATED (transcript tab + query UX)
+- `src/integrations/supabase/types.ts` — UPDATED (transcript preview/search RPC typings)
+- `supabase/config.toml` — UPDATED (`youtube-transcript-worker` function config)
+
 ### Planned
 - Source type/provider architecture for linked/synced resources (baseline delivered with enrichment)
-- Media resource adapters (YouTube async transcript ingestion delivered; next: richer metadata + additional providers)
+- Media resource adapters (YouTube transcript retrieval path delivered; next: richer metadata + additional providers)
 - Grid/card view toggle
 - Resource detail panel/drawer (implemented baseline; can be extended with richer history/previews)
 - Bulk actions

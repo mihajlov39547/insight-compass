@@ -1592,6 +1592,7 @@ export type Database = {
       }
       complete_youtube_transcript_job: {
         Args: {
+          p_chunk_count?: number
           p_error?: string
           p_job_id: string
           p_success: boolean
@@ -1602,6 +1603,15 @@ export type Database = {
           job_id: string
           resource_id: string
           transcript_status: string
+        }[]
+      }
+      get_link_transcript_preview: {
+        Args: { p_limit?: number; p_query?: string; p_resource_id: string }
+        Returns: {
+          chunk_index: number
+          chunk_text: string
+          match_rank: number | null
+          token_count: number
         }[]
       }
       is_activity_runnable: {
@@ -1640,6 +1650,29 @@ export type Database = {
           p_workflow_run_id: string
         }
         Returns: string[]
+      }
+      search_link_transcript_chunks: {
+        Args: {
+          filter_chat_id?: string
+          filter_notebook_id?: string
+          filter_project_id?: string
+          match_count?: number
+          query_embedding: string
+          similarity_threshold?: number
+        }
+        Returns: {
+          chunk_id: string
+          chunk_index: number
+          chunk_text: string
+          media_video_id: string | null
+          normalized_url: string | null
+          notebook_id: string | null
+          project_id: string | null
+          resource_id: string
+          resource_title: string
+          similarity: number
+          transcript_status: string | null
+        }[]
       }
       create_link_resource_stub: {
         Args: {

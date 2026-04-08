@@ -1,6 +1,8 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { chunkText, estimateTokenCount } from "../_shared/document-processing/chunking.ts";
+import { generateEmbeddingsLocal } from "../_shared/document-processing/embeddings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,6 +111,85 @@ async function fetchTranscriptForVideo(videoId: string): Promise<string> {
   throw new Error("Transcript track found but content is unavailable");
 }
 
+function buildTranscriptChunks(transcript: string): Array<{ chunk_index: number; chunk_text: string; token_count: number }> {
+  const chunks = chunkText(transcript);
+  if (chunks.length === 0) {
+    const fallback = transcript.trim();
+    if (!fallback) return [];
+    return [{
+      chunk_index: 0,
+      chunk_text: fallback,
+      token_count: estimateTokenCount(fallback),
+    }];
+  }
+
+  return chunks.map((chunk) => ({
+    chunk_index: chunk.chunk_index,
+    chunk_text: chunk.chunk_text,
+    token_count: estimateTokenCount(chunk.chunk_text),
+  }));
+}
+
+async function persistTranscriptChunks(
+  supabase: any,
+  resourceId: string,
+  transcript: string,
+): Promise<number> {
+  const { data: linkRow, error: linkError } = await supabase
+    .from("resource_links")
+    .select("id, user_id, project_id, notebook_id")
+    .eq("id", resourceId)
+    .single();
+
+  if (linkError || !linkRow) {
+    throw new Error(`Unable to load resource link context for transcript persistence: ${linkError?.message || "not found"}`);
+  }
+
+  const chunks = buildTranscriptChunks(transcript);
+  if (chunks.length === 0) {
+    throw new Error("Transcript content is empty after normalization");
+  }
+
+  const embeddings = generateEmbeddingsLocal(chunks.map((chunk) => chunk.chunk_text));
+
+  const { error: deleteError } = await supabase
+    .from("link_transcript_chunks")
+    .delete()
+    .eq("resource_link_id", resourceId);
+
+  if (deleteError) {
+    throw new Error(`Failed to clear existing transcript chunks: ${deleteError.message}`);
+  }
+
+  const rows = chunks.map((chunk, index) => ({
+    resource_link_id: linkRow.id,
+    user_id: linkRow.user_id,
+    project_id: linkRow.project_id || null,
+    notebook_id: linkRow.notebook_id || null,
+    chunk_index: chunk.chunk_index,
+    chunk_text: chunk.chunk_text,
+    embedding: embeddings[index] ? JSON.stringify(embeddings[index]) : null,
+    token_count: chunk.token_count,
+    metadata_json: {
+      source: "youtube_transcript",
+      worker: "youtube-transcript-worker",
+    },
+  }));
+
+  for (let i = 0; i < rows.length; i += 50) {
+    const batch = rows.slice(i, i + 50);
+    const { error: insertError } = await supabase
+      .from("link_transcript_chunks")
+      .insert(batch);
+
+    if (insertError) {
+      throw new Error(`Failed to persist transcript chunk batch: ${insertError.message}`);
+    }
+  }
+
+  return rows.length;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -172,6 +253,7 @@ serve(async (req) => {
         }
 
         const transcript = await fetchTranscriptForVideo(videoId);
+        const persistedChunkCount = await persistTranscriptChunks(supabase, String(claimedRow.resource_id), transcript);
 
         const { error: completeError } = await supabase.rpc("complete_youtube_transcript_job", {
           p_job_id: claimedRow.job_id,
@@ -179,6 +261,7 @@ serve(async (req) => {
           p_transcript_text: transcript,
           p_error: null,
           p_worker_id: workerId,
+          p_chunk_count: persistedChunkCount,
         });
 
         if (completeError) {

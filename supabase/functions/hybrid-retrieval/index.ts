@@ -187,12 +187,14 @@ serve(async (req) => {
     const keywordPromise = runKeywordSearch(userClient, query, scope, projectId, notebookId, chatId);
     const chunkSemanticPromise = runChunkSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
     const questionSemanticPromise = runQuestionSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
+    const transcriptSemanticPromise = runTranscriptSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
 
-    const [weights, keywordResults, chunkSemanticResults, questionSemanticResults] = await Promise.all([
+    const [weights, keywordResults, chunkSemanticResults, questionSemanticResults, transcriptSemanticResults] = await Promise.all([
       weightsPromise,
       keywordPromise,
       chunkSemanticPromise,
       questionSemanticPromise,
+      transcriptSemanticPromise,
     ]);
 
     const combined = await mergeResults(
@@ -200,6 +202,7 @@ serve(async (req) => {
       keywordResults,
       chunkSemanticResults,
       questionSemanticResults,
+      transcriptSemanticResults,
       maxResults,
       scope,
       projectId,
@@ -324,6 +327,18 @@ interface ChunkSemanticHit {
   section: string | null;
   projectId: string | null;
   chatId: string | null;
+  notebookId: string | null;
+}
+
+interface TranscriptSemanticHit {
+  chunkId: string;
+  resourceId: string;
+  resourceTitle: string;
+  chunkText: string;
+  chunkIndex: number;
+  similarity: number;
+  normalizedUrl: string | null;
+  projectId: string | null;
   notebookId: string | null;
 }
 
@@ -509,6 +524,69 @@ async function runQuestionSemanticSearch(
   }
 }
 
+async function runTranscriptSemanticSearch(
+  userClient: any,
+  embedding: number[] | null,
+  scope: string,
+  projectId?: string,
+  notebookId?: string,
+  chatId?: string,
+): Promise<TranscriptSemanticHit[]> {
+  try {
+    if (!embedding) return [];
+
+    const buildRpcParams = (filters?: { projectId?: string; notebookId?: string; chatId?: string }) => {
+      const params: any = {
+        query_embedding: JSON.stringify(embedding),
+        match_count: 20,
+        similarity_threshold: 0.15,
+      };
+      if (filters?.projectId) params.filter_project_id = filters.projectId;
+      if (filters?.notebookId) params.filter_notebook_id = filters.notebookId;
+      if (filters?.chatId) params.filter_chat_id = filters.chatId;
+      return params;
+    };
+
+    const runRpc = async (filters?: { projectId?: string; notebookId?: string; chatId?: string }) => {
+      const { data, error } = await userClient.rpc("search_link_transcript_chunks", buildRpcParams(filters));
+      if (error) {
+        console.warn("Transcript semantic search RPC error:", error);
+        return [] as any[];
+      }
+      return data ?? [];
+    };
+
+    const rows = await runRpc({
+      projectId: scope === "project" ? projectId : undefined,
+      notebookId: scope === "notebook" ? notebookId : undefined,
+      chatId,
+    });
+
+    const deduped = new Map<string, any>();
+    for (const row of rows) {
+      const existing = deduped.get(row.chunk_id);
+      if (!existing || Number(row.similarity ?? 0) > Number(existing.similarity ?? 0)) {
+        deduped.set(row.chunk_id, row);
+      }
+    }
+
+    return Array.from(deduped.values()).map((r: any) => ({
+      chunkId: r.chunk_id,
+      resourceId: r.resource_id,
+      resourceTitle: r.resource_title,
+      chunkText: r.chunk_text,
+      chunkIndex: r.chunk_index,
+      similarity: r.similarity,
+      normalizedUrl: r.normalized_url,
+      projectId: r.project_id,
+      notebookId: r.notebook_id,
+    }));
+  } catch (e) {
+    console.warn("Transcript semantic search failed:", e);
+    return [];
+  }
+}
+
 async function getKeywordFallbackChunks(
   client: any,
   missingDocIds: string[]
@@ -557,6 +635,7 @@ async function mergeResults(
   keywordHits: KeywordHit[],
   chunkHits: ChunkSemanticHit[],
   questionHits: QuestionSemanticHit[],
+  transcriptHits: TranscriptSemanticHit[],
   maxResults: number,
   _scope: string,
   _projectId?: string,
@@ -583,6 +662,34 @@ async function mergeResults(
         chatId: hit.chatId,
         notebookId: hit.notebookId,
         summary: null,
+        chunkSimilarityRaw: clampNonNegative(hit.similarity),
+        questionSimilarityRaw: 0,
+        keywordRaw: 0,
+        bestQuestionText: null,
+      });
+    } else {
+      existing.chunkSimilarityRaw = Math.max(existing.chunkSimilarityRaw, clampNonNegative(hit.similarity));
+    }
+  }
+
+  // Seed transcript chunk hits into the same candidate pool with pseudo-document IDs.
+  for (const hit of transcriptHits) {
+    const key = hit.chunkId;
+    const pseudoDocumentId = `link:${hit.resourceId}`;
+    const existing = candidates.get(key);
+    if (!existing) {
+      candidates.set(key, {
+        chunkId: hit.chunkId,
+        documentId: pseudoDocumentId,
+        fileName: `${hit.resourceTitle} (Transcript)`,
+        chunkText: hit.chunkText,
+        chunkIndex: hit.chunkIndex,
+        page: null,
+        section: "Transcript",
+        projectId: hit.projectId,
+        chatId: null,
+        notebookId: hit.notebookId,
+        summary: hit.normalizedUrl,
         chunkSimilarityRaw: clampNonNegative(hit.similarity),
         questionSimilarityRaw: 0,
         keywordRaw: 0,

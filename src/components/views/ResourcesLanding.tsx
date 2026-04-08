@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   FileText, Image, FileSpreadsheet, Presentation, Mail, FileType,
   Database, Music, Video, Link, File, Search, ArrowUpDown, Filter,
@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useResources } from '@/hooks/useResources';
 import {
   downloadResourceFromStorage,
@@ -32,6 +32,7 @@ import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
 import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
+import { useResourceTranscriptPreview } from '@/hooks/useResourceTranscriptPreview';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
   RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName
@@ -1183,6 +1184,22 @@ function ResourceDetailsDrawer({
   isRetryingTranscript: boolean;
   isDeleting: boolean;
 }) {
+  const resourceId = resource?.id ?? null;
+  const [detailsTab, setDetailsTab] = useState<'overview' | 'transcript'>('overview');
+  const [transcriptQuery, setTranscriptQuery] = useState('');
+  const showTranscriptTab = resource?.provider === 'youtube' || !!resource?.transcriptStatus;
+  const transcriptPreviewEnabled = !!resource && showTranscriptTab && resource.transcriptStatus === 'ready';
+  const { data: transcriptPreviewChunks = [], isLoading: isTranscriptPreviewLoading } = useResourceTranscriptPreview(
+    resourceId,
+    transcriptQuery,
+    transcriptPreviewEnabled && open,
+  );
+
+  useEffect(() => {
+    setDetailsTab('overview');
+    setTranscriptQuery('');
+  }, [resourceId, open]);
+
   if (!resource) return null;
 
   const canOpenWorkspace = resource.canOpen && !!resource.containerId;
@@ -1207,7 +1224,14 @@ function ResourceDetailsDrawer({
           </SheetHeader>
 
           <ScrollArea className="flex-1">
-            <div className="px-6 py-4 space-y-5">
+            <div className="px-6 py-4">
+              <Tabs value={detailsTab} onValueChange={(value) => setDetailsTab(value as 'overview' | 'transcript')}>
+                <TabsList className="h-8 p-0.5">
+                  <TabsTrigger value="overview" className="text-xs h-7 px-3">Overview</TabsTrigger>
+                  {showTranscriptTab && <TabsTrigger value="transcript" className="text-xs h-7 px-3">Transcript</TabsTrigger>}
+                </TabsList>
+
+                <TabsContent value="overview" className="mt-3 space-y-5">
               <section className="space-y-2">
                 <h3 className="text-sm font-medium">Metadata</h3>
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -1397,6 +1421,68 @@ function ResourceDetailsDrawer({
                   <PermissionRow label="Retry processing" enabled={resource.canRetry} />
                 </div>
               </section>
+                </TabsContent>
+
+                {showTranscriptTab && (
+                  <TabsContent value="transcript" className="mt-3 space-y-3">
+                    <div className="rounded-md border border-border/60 p-3 text-xs space-y-1">
+                      <p className="text-muted-foreground">Transcript status</p>
+                      <p className="font-medium">{resource.transcriptStatus || 'none'}</p>
+                      {resource.transcriptError && (
+                        <p className="text-destructive break-words">{resource.transcriptError}</p>
+                      )}
+                    </div>
+
+                    {resource.transcriptStatus === 'ready' ? (
+                      <>
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">Search transcript</p>
+                          <Input
+                            value={transcriptQuery}
+                            onChange={(e) => setTranscriptQuery(e.target.value)}
+                            placeholder="Find a phrase in transcript"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          {isTranscriptPreviewLoading ? (
+                            <div className="py-6 flex items-center justify-center">
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            </div>
+                          ) : transcriptPreviewChunks.length === 0 ? (
+                            <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground">
+                              No transcript excerpts found.
+                            </div>
+                          ) : (
+                            transcriptPreviewChunks.slice(0, 20).map((chunk) => (
+                              <div key={`${chunk.chunkIndex}-${chunk.chunkText.slice(0, 16)}`} className="rounded-md border border-border/60 p-3 space-y-1">
+                                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                                  <span>Chunk {chunk.chunkIndex + 1}</span>
+                                  <span>{chunk.tokenCount} tokens</span>
+                                </div>
+                                <p className="text-xs whitespace-pre-wrap leading-relaxed">{chunk.chunkText}</p>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </>
+                    ) : resource.transcriptStatus === 'failed' ? (
+                      <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-xs">
+                        Transcript ingestion failed. Use Retry transcript to queue another attempt.
+                      </div>
+                    ) : resource.transcriptStatus === 'queued' || resource.transcriptStatus === 'running' ? (
+                      <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3 text-xs">
+                        Transcript ingestion is in progress. This tab will populate when processing is complete.
+                      </div>
+                    ) : (
+                      <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground">
+                        Transcript is not available for this resource yet.
+                      </div>
+                    )}
+                  </TabsContent>
+                )}
+              </Tabs>
             </div>
           </ScrollArea>
 
