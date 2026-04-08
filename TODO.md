@@ -187,9 +187,35 @@
 - `src/integrations/supabase/types.ts` — UPDATED (RPC return type includes media/transcript fields)
 - `src/components/views/ResourcesLanding.tsx` — UPDATED (media chips/preview/transcript in list and drawer)
 
+### Pass 6 — ✅ COMPLETED
+
+#### Delivered in this pass
+- Replaced transcript-ready stub with real async transcript ingestion flow
+- Added YouTube transcript job queue and lifecycle RPCs:
+   - `enqueue_youtube_transcript_job(...)`
+   - `claim_next_youtube_transcript_job(...)`
+   - `complete_youtube_transcript_job(...)`
+- Added transcript status progression for linked media:
+   - `queued` -> `running` -> `ready` / `failed`
+- Added transcript worker edge function:
+   - `supabase/functions/youtube-transcript-worker`
+   - Claims queued jobs, fetches YouTube transcript tracks, completes jobs with success/failure
+- Integrated ingestion trigger points:
+   - New YouTube links enqueue transcript jobs automatically
+   - Frontend triggers worker best-effort after enqueue/create
+- Drawer now shows transcript availability/errors and supports retry action for failed transcript ingestion
+
+#### Files created/updated in this pass
+- `supabase/migrations/20260409020000_transcript_async_flow.sql` — NEW
+- `supabase/functions/youtube-transcript-worker/index.ts` — NEW
+- `src/hooks/useResourceActions.ts` — UPDATED (`useRetryYouTubeTranscriptIngestion` + worker kick)
+- `src/lib/resourceClassification.ts` — UPDATED (`transcriptError` field mapping)
+- `src/integrations/supabase/types.ts` — UPDATED (transcript queue RPC typings + `transcript_error`)
+- `src/components/views/ResourcesLanding.tsx` — UPDATED (drawer transcript error + retry action)
+
 ### Planned
 - Source type/provider architecture for linked/synced resources (baseline delivered with enrichment)
-- Media resource adapters (YouTube baseline delivered; next: richer metadata + real transcript fetch)
+- Media resource adapters (YouTube async transcript ingestion delivered; next: richer metadata + additional providers)
 - Grid/card view toggle
 - Resource detail panel/drawer (implemented baseline; can be extended with richer history/previews)
 - Bulk actions

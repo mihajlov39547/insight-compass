@@ -129,6 +129,7 @@ export interface Resource {
   mediaThumbnailUrl: string | null;
   mediaDurationSeconds: number | null;
   transcriptStatus: string | null;
+  transcriptError: string | null;
 }
 
 function parseResourceType(value: unknown): ResourceType {
@@ -199,6 +200,7 @@ export function mapRpcRowToResource(row: Record<string, any>): Resource {
     mediaThumbnailUrl: row.media_thumbnail_url || null,
     mediaDurationSeconds: row.media_duration_seconds ?? null,
     transcriptStatus: row.transcript_status || null,
+    transcriptError: row.transcript_error || null,
   };
 }
 

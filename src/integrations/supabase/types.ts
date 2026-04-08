@@ -1565,10 +1565,42 @@ export type Database = {
           storage_path: string
           summary: string
           title: string
+          transcript_error: string | null
           transcript_status: string | null
           updated_at: string
           uploaded_at: string
           word_count: number
+        }[]
+      }
+      enqueue_youtube_transcript_job: {
+        Args: { p_force_retry?: boolean; p_resource_id: string }
+        Returns: {
+          job_id: string | null
+          transcript_status: string
+        }[]
+      }
+      claim_next_youtube_transcript_job: {
+        Args: { p_lease_seconds?: number; p_worker_id: string }
+        Returns: {
+          attempt_count: number
+          job_id: string
+          max_attempts: number
+          normalized_url: string
+          resource_id: string
+          video_id: string
+        }[]
+      }
+      complete_youtube_transcript_job: {
+        Args: {
+          p_error?: string
+          p_job_id: string
+          p_success: boolean
+          p_transcript_text?: string
+        }
+        Returns: {
+          job_id: string
+          resource_id: string
+          transcript_status: string
         }[]
       }
       is_activity_runnable: {

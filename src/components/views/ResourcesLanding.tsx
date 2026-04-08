@@ -24,6 +24,7 @@ import {
   useCreateSourceConnectionRequest,
   useDeleteResource,
   useRenameResource,
+  useRetryYouTubeTranscriptIngestion,
   useRetryResourceProcessing,
   type ResourceActionInput,
 } from '@/hooks/useResourceActions';
@@ -101,6 +102,7 @@ export function ResourcesLanding() {
   const createSourceConnectionMutation = useCreateSourceConnectionRequest();
   const deleteMutation = useDeleteResource();
   const renameMutation = useRenameResource();
+  const retryTranscriptMutation = useRetryYouTubeTranscriptIngestion();
   const retryMutation = useRetryResourceProcessing();
 
   const [search, setSearch] = useState('');
@@ -207,6 +209,20 @@ export function ResourcesLanding() {
     retryMutation.mutate(actionInput, {
       onSuccess: () => toast({ title: 'Retry queued', description: `${resource.title} will be processed again.` }),
       onError: (err: any) => toast({ title: 'Retry failed', description: err.message, variant: 'destructive' }),
+    });
+  };
+
+  const handleRetryTranscript = (resource: Resource) => {
+    if (resource.provider !== 'youtube') return;
+    if (!resource.transcriptStatus || resource.transcriptStatus !== 'failed') return;
+
+    retryTranscriptMutation.mutate(toResourceActionInput(resource), {
+      onSuccess: () => {
+        toast({ title: 'Transcript retry queued', description: 'Transcript ingestion is running again.' });
+      },
+      onError: (err: any) => {
+        toast({ title: 'Transcript retry failed', description: err.message, variant: 'destructive' });
+      },
     });
   };
 
@@ -560,9 +576,11 @@ export function ResourcesLanding() {
         onRename={openRenameDialog}
         onDownload={handleDownload}
         onRetry={handleRetry}
+        onRetryTranscript={handleRetryTranscript}
         onDelete={handleDelete}
         onOpenPersonalFallback={handleOpenPersonalFallback}
         isRetrying={retryMutation.isPending}
+        isRetryingTranscript={retryTranscriptMutation.isPending}
         isDeleting={deleteMutation.isPending}
       />
 
@@ -1137,9 +1155,11 @@ function ResourceDetailsDrawer({
   onRename,
   onDownload,
   onRetry,
+  onRetryTranscript,
   onDelete,
   onOpenPersonalFallback,
   isRetrying,
+  isRetryingTranscript,
   isDeleting,
 }: {
   resource: Resource | null;
@@ -1149,15 +1169,18 @@ function ResourceDetailsDrawer({
   onRename: (resource: Resource) => void;
   onDownload: (resource: Resource) => void;
   onRetry: (resource: Resource) => void;
+  onRetryTranscript: (resource: Resource) => void;
   onDelete: (resource: Resource) => void;
   onOpenPersonalFallback: (resource: Resource) => void;
   isRetrying: boolean;
+  isRetryingTranscript: boolean;
   isDeleting: boolean;
 }) {
   if (!resource) return null;
 
   const canOpenWorkspace = resource.canOpen && !!resource.containerId;
   const canFallbackPersonalOpen = resource.containerType === 'personal';
+  const canRetryTranscript = resource.provider === 'youtube' && resource.transcriptStatus === 'failed';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -1329,6 +1352,18 @@ function ResourceDetailsDrawer({
                         <p className="mt-1">{resource.transcriptStatus}</p>
                       </div>
                     )}
+                    {resource.transcriptError && (
+                      <div className="rounded-md border border-destructive/20 bg-destructive/5 p-2 col-span-2">
+                        <p className="text-muted-foreground">Transcript error</p>
+                        <p className="mt-1 text-destructive break-words">{resource.transcriptError}</p>
+                      </div>
+                    )}
+                    {resource.transcriptStatus === 'ready' && (
+                      <div className="rounded-md border border-green-500/20 bg-green-500/5 p-2 col-span-2">
+                        <p className="text-muted-foreground">Transcript</p>
+                        <p className="mt-1 text-green-700">Available</p>
+                      </div>
+                    )}
                     {resource.mediaThumbnailUrl && (
                       <div className="rounded-md border border-border/60 p-2 col-span-2">
                         <p className="text-muted-foreground">Thumbnail</p>
@@ -1382,6 +1417,17 @@ function ResourceDetailsDrawer({
             {resource.canRetry && resource.readiness === 'failed' && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRetry(resource)} disabled={isRetrying}>
                 <RotateCcw className="h-3.5 w-3.5" /> Retry
+              </Button>
+            )}
+            {canRetryTranscript && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => onRetryTranscript(resource)}
+                disabled={isRetryingTranscript}
+              >
+                <RotateCcw className="h-3.5 w-3.5" /> Retry transcript
               </Button>
             )}
             {resource.canDelete && (
