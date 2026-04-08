@@ -148,7 +148,10 @@ export function ResourcesLanding() {
         r.title.toLowerCase().includes(q) ||
         r.containerName?.toLowerCase().includes(q) ||
         r.ownerDisplayName.toLowerCase().includes(q) ||
-        r.extension.toLowerCase().includes(q)
+        r.extension.toLowerCase().includes(q) ||
+        r.previewTitle?.toLowerCase().includes(q) ||
+        r.previewDomain?.toLowerCase().includes(q) ||
+        r.linkUrl?.toLowerCase().includes(q)
       );
     }
 
@@ -686,6 +689,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   const canDownload = resource.canDownload && !!resource.storagePath;
   const canRename = resource.canRename;
   const showActions = canOpen || canViewDetails || canDownload || canRetry || canDelete || canRename;
+  const isLinkedResource = resource.resourceType === 'link' || resource.sourceType === 'linked';
 
   const relativeDate = useMemo(() => {
     const d = new Date(resource.updatedAt);
@@ -712,12 +716,37 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
           <p className="text-sm font-medium text-foreground truncate" title={resource.title}>
             {truncateFileName(resource.title)}
           </p>
-          <p className="text-[11px] text-muted-foreground truncate">
-            {resource.extension.toUpperCase()} • {formatFileSize(resource.sizeBytes)}
-            {resource.isSharedWithMe && (
-              <span> • by {resource.ownerDisplayName}</span>
-            )}
-          </p>
+          {isLinkedResource ? (
+            <div className="mt-1 space-y-1">
+              <div className="flex items-center gap-1.5 min-w-0">
+                {resource.previewFaviconUrl && (
+                  <img
+                    src={resource.previewFaviconUrl}
+                    alt="site icon"
+                    className="h-3.5 w-3.5 rounded-sm shrink-0"
+                    loading="lazy"
+                  />
+                )}
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {resource.previewDomain || resource.normalizedUrl || resource.linkUrl || 'Linked resource'}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0">{resource.sourceType}</Badge>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0">{formatProvider(resource.provider)}</Badge>
+                {resource.isSharedWithMe && (
+                  <span className="text-[10px] text-muted-foreground">by {resource.ownerDisplayName}</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground truncate">
+              {resource.extension.toUpperCase()} • {formatFileSize(resource.sizeBytes)}
+              {resource.isSharedWithMe && (
+                <span> • by {resource.ownerDisplayName}</span>
+              )}
+            </p>
+          )}
         </div>
       </div>
 
@@ -1161,6 +1190,14 @@ function ResourceDetailsDrawer({
                     <p className="mt-1">{resource.extension.toUpperCase()}</p>
                   </div>
                   <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Source type</p>
+                    <p className="mt-1">{resource.sourceType}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
+                    <p className="text-muted-foreground">Provider</p>
+                    <p className="mt-1">{formatProvider(resource.provider)}</p>
+                  </div>
+                  <div className="rounded-md border border-border/60 p-2">
                     <p className="text-muted-foreground">Uploaded</p>
                     <p className="mt-1">{formatTimestamp(resource.uploadedAt)}</p>
                   </div>
@@ -1178,6 +1215,47 @@ function ResourceDetailsDrawer({
                     <p className="text-muted-foreground">Owner</p>
                     <p className="mt-1">{resource.ownerDisplayName}</p>
                   </div>
+                  {resource.linkUrl && (
+                    <div className="rounded-md border border-border/60 p-2 col-span-2">
+                      <p className="text-muted-foreground">Original URL</p>
+                      <a
+                        href={resource.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 block text-primary underline break-all"
+                      >
+                        {resource.linkUrl}
+                      </a>
+                    </div>
+                  )}
+                  {resource.normalizedUrl && (
+                    <div className="rounded-md border border-border/60 p-2 col-span-2">
+                      <p className="text-muted-foreground">Normalized URL</p>
+                      <p className="mt-1 break-all">{resource.normalizedUrl}</p>
+                    </div>
+                  )}
+                  {resource.previewTitle && (
+                    <div className="rounded-md border border-border/60 p-2 col-span-2">
+                      <p className="text-muted-foreground">Preview title</p>
+                      <p className="mt-1">{resource.previewTitle}</p>
+                    </div>
+                  )}
+                  {(resource.previewDomain || resource.previewFaviconUrl) && (
+                    <div className="rounded-md border border-border/60 p-2 col-span-2">
+                      <p className="text-muted-foreground">Preview domain</p>
+                      <div className="mt-1 flex items-center gap-2 min-w-0">
+                        {resource.previewFaviconUrl && (
+                          <img
+                            src={resource.previewFaviconUrl}
+                            alt="site icon"
+                            className="h-4 w-4 rounded-sm shrink-0"
+                            loading="lazy"
+                          />
+                        )}
+                        <p className="truncate">{resource.previewDomain || 'Unknown domain'}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
 

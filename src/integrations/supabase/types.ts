@@ -1542,15 +1542,20 @@ export type Database = {
           is_owned_by_me: boolean
           is_shared: boolean
           is_shared_with_me: boolean
+          link_url: string | null
           mime_type: string
           owner_display_name: string
           owner_user_id: string
           page_count: number
+          preview_domain: string | null
+          preview_favicon_url: string | null
+          preview_title: string | null
           processing_error: string
           processing_status: string
           provider: string
           resource_kind: string
           resource_type: string
+          normalized_url: string | null
           size_bytes: number
           source_type: string
           storage_path: string

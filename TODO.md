@@ -75,7 +75,6 @@
 3. **Resource-action payload correctness**
    - Removed UI dependence on fabricated `DbDocument` payloads for Resources actions
    - Added dedicated resource action handler hook (`useResourceActions`) for delete/retry/download
-
 4. **SECURITY DEFINER hardening**
    - Locked function execution with `REVOKE ALL ... FROM PUBLIC` and `GRANT EXECUTE ... TO authenticated`
    - Explicit `search_path` and auth guard in hardened RPC
@@ -149,9 +148,28 @@
 - `src/hooks/useResourceActions.ts` — UPDATED (`useCreateLinkResource`, `useCreateSourceConnectionRequest`)
 - `src/integrations/supabase/types.ts` — UPDATED (new RPC type signatures)
 
+### Pass 4 — ✅ COMPLETED
+
+#### Delivered in this pass
+- Added server-side URL normalization baseline for linked resources
+- Added provider auto-detection from URL domain:
+   - `youtube`, `google_drive`, `dropbox`, `notion`, fallback `unknown`
+- Added preview metadata extraction baseline for links:
+   - `preview_title`, `preview_domain`, `preview_favicon_url`, `normalized_url`
+- Extended `get_user_resources()` to return enriched link preview fields
+- Surfaced linked-resource enrichment directly in UI:
+   - List rows: source/provider chips + preview domain/favicon
+   - Details drawer: URL, normalized URL, preview title/domain/favicon
+
+#### Files created/updated in this pass
+- `supabase/migrations/20260409004000_link_enrichment_baseline.sql` — NEW
+- `src/lib/resourceClassification.ts` — UPDATED (preview fields in model)
+- `src/integrations/supabase/types.ts` — UPDATED (enriched RPC return typing)
+- `src/components/views/ResourcesLanding.tsx` — UPDATED (list/drawer enrichment UI)
+
 ### Planned
-- Source type/provider architecture for linked/synced resources (baseline delivered for link/source stubs)
-- Media resource adapters (YouTube, audio, video)
+- Source type/provider architecture for linked/synced resources (baseline delivered with enrichment)
+- Media resource adapters (YouTube, audio, video) with first real ingestion adapter pending
 - Grid/card view toggle
 - Resource detail panel/drawer (implemented baseline; can be extended with richer history/previews)
 - Bulk actions

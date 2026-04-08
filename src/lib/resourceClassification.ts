@@ -117,6 +117,11 @@ export interface Resource {
   pageCount: number | null;
   wordCount: number | null;
   detectedLanguage: string | null;
+  linkUrl: string | null;
+  normalizedUrl: string | null;
+  previewTitle: string | null;
+  previewDomain: string | null;
+  previewFaviconUrl: string | null;
 }
 
 function parseResourceType(value: unknown): ResourceType {
@@ -177,6 +182,11 @@ export function mapRpcRowToResource(row: Record<string, any>): Resource {
     pageCount: row.page_count,
     wordCount: row.word_count,
     detectedLanguage: row.detected_language || null,
+    linkUrl: row.link_url || null,
+    normalizedUrl: row.normalized_url || null,
+    previewTitle: row.preview_title || null,
+    previewDomain: row.preview_domain || null,
+    previewFaviconUrl: row.preview_favicon_url || null,
   };
 }
 
