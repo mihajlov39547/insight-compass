@@ -605,6 +605,76 @@ export type Database = {
         }
         Relationships: []
       }
+      link_transcript_chunks: {
+        Row: {
+          chunk_index: number
+          chunk_text: string
+          created_at: string
+          embedding: string | null
+          id: string
+          metadata_json: Json
+          notebook_id: string | null
+          project_id: string | null
+          resource_link_id: string
+          search_vector: unknown
+          token_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chunk_index: number
+          chunk_text: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata_json?: Json
+          notebook_id?: string | null
+          project_id?: string | null
+          resource_link_id: string
+          search_vector?: unknown
+          token_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chunk_index?: number
+          chunk_text?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata_json?: Json
+          notebook_id?: string | null
+          project_id?: string | null
+          resource_link_id?: string
+          search_vector?: unknown
+          token_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "link_transcript_chunks_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "link_transcript_chunks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "link_transcript_chunks_resource_link_id_fkey"
+            columns: ["resource_link_id"]
+            isOneToOne: false
+            referencedRelation: "resource_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           chat_id: string
@@ -898,6 +968,105 @@ export type Database = {
           },
         ]
       }
+      resource_links: {
+        Row: {
+          adapter_key: string | null
+          created_at: string
+          id: string
+          media_channel_name: string | null
+          media_duration_seconds: number | null
+          media_thumbnail_url: string | null
+          media_video_id: string | null
+          metadata: Json
+          normalized_url: string | null
+          notebook_id: string | null
+          preview_domain: string | null
+          preview_favicon_url: string | null
+          preview_title: string | null
+          project_id: string | null
+          provider: string
+          resource_type: string
+          source_type: string
+          status: string
+          title: string
+          transcript_error: string | null
+          transcript_status: string
+          transcript_updated_at: string | null
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          adapter_key?: string | null
+          created_at?: string
+          id?: string
+          media_channel_name?: string | null
+          media_duration_seconds?: number | null
+          media_thumbnail_url?: string | null
+          media_video_id?: string | null
+          metadata?: Json
+          normalized_url?: string | null
+          notebook_id?: string | null
+          preview_domain?: string | null
+          preview_favicon_url?: string | null
+          preview_title?: string | null
+          project_id?: string | null
+          provider?: string
+          resource_type?: string
+          source_type?: string
+          status?: string
+          title: string
+          transcript_error?: string | null
+          transcript_status?: string
+          transcript_updated_at?: string | null
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          adapter_key?: string | null
+          created_at?: string
+          id?: string
+          media_channel_name?: string | null
+          media_duration_seconds?: number | null
+          media_thumbnail_url?: string | null
+          media_video_id?: string | null
+          metadata?: Json
+          normalized_url?: string | null
+          notebook_id?: string | null
+          preview_domain?: string | null
+          preview_favicon_url?: string | null
+          preview_title?: string | null
+          project_id?: string | null
+          provider?: string
+          resource_type?: string
+          source_type?: string
+          status?: string
+          title?: string
+          transcript_error?: string | null
+          transcript_status?: string
+          transcript_updated_at?: string | null
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_links_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shares: {
         Row: {
           created_at: string
@@ -928,6 +1097,39 @@ export type Database = {
           shared_by_user_id?: string
           shared_with_email?: string | null
           shared_with_user_id?: string | null
+        }
+        Relationships: []
+      }
+      source_connection_requests: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          metadata: Json
+          provider: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          metadata?: Json
+          provider: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1461,6 +1663,65 @@ export type Database = {
           },
         ]
       }
+      youtube_transcript_jobs: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          lease_expires_at: string | null
+          max_attempts: number
+          requested_by: string
+          resource_link_id: string
+          started_at: string | null
+          status: string
+          transcript_text: string | null
+          updated_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          lease_expires_at?: string | null
+          max_attempts?: number
+          requested_by: string
+          resource_link_id: string
+          started_at?: string | null
+          status?: string
+          transcript_text?: string | null
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          lease_expires_at?: string | null
+          max_attempts?: number
+          requested_by?: string
+          resource_link_id?: string
+          started_at?: string | null
+          status?: string
+          transcript_text?: string | null
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "youtube_transcript_jobs_resource_link_id_fkey"
+            columns: ["resource_link_id"]
+            isOneToOne: false
+            referencedRelation: "resource_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1482,102 +1743,6 @@ export type Database = {
           p_worker_id: string
         }
         Returns: string
-      }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      edge_condition_matches: {
-        Args: { p_condition_expr: Json; p_context: Json }
-        Returns: boolean
-      }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
-      }
-      get_document_chunk_stats: {
-        Args: { doc_ids: string[] }
-        Returns: {
-          avg_token_count: number
-          chunk_count: number
-          document_id: string
-          embedded_count: number
-        }[]
-      }
-      get_document_processing_status: {
-        Args: { p_document_id: string }
-        Returns: Json
-      }
-      get_document_question_stats: {
-        Args: { doc_ids: string[] }
-        Returns: {
-          document_id: string
-          embedded_question_count: number
-          question_count: number
-        }[]
-      }
-      get_email_by_username: {
-        Args: { lookup_username: string }
-        Returns: string
-      }
-      get_user_item_role: {
-        Args: { p_item_id: string; p_item_type: string; p_user_id: string }
-        Returns: string
-      }
-      get_user_resources: {
-        Args: never
-        Returns: {
-          can_download: boolean
-          can_open: boolean
-          can_rename: boolean
-          can_retry: boolean
-          can_view_details: boolean
-          container_id: string | null
-          container_name: string | null
-          container_type: string
-          can_delete: boolean
-          detected_language: string
-          extension: string
-          id: string
-          is_owned_by_me: boolean
-          is_shared: boolean
-          is_shared_with_me: boolean
-          link_url: string | null
-          media_channel_name: string | null
-          media_duration_seconds: number | null
-          media_thumbnail_url: string | null
-          media_video_id: string | null
-          mime_type: string
-          owner_display_name: string
-          owner_user_id: string
-          page_count: number
-          preview_domain: string | null
-          preview_favicon_url: string | null
-          preview_title: string | null
-          processing_error: string
-          processing_status: string
-          provider: string
-          resource_kind: string
-          resource_type: string
-          normalized_url: string | null
-          size_bytes: number
-          source_type: string
-          storage_path: string
-          summary: string
-          title: string
-          transcript_error: string | null
-          transcript_status: string | null
-          updated_at: string
-          uploaded_at: string
-          word_count: number
-        }[]
-      }
-      enqueue_youtube_transcript_job: {
-        Args: { p_force_retry?: boolean; p_resource_id: string }
-        Returns: {
-          job_id: string | null
-          transcript_status: string
-        }[]
       }
       claim_next_youtube_transcript_job: {
         Args: { p_lease_seconds?: number; p_worker_id: string }
@@ -1605,74 +1770,6 @@ export type Database = {
           transcript_status: string
         }[]
       }
-      get_link_transcript_preview: {
-        Args: { p_limit?: number; p_query?: string; p_resource_id: string }
-        Returns: {
-          chunk_index: number
-          chunk_text: string
-          match_rank: number | null
-          token_count: number
-        }[]
-      }
-      is_activity_runnable: {
-        Args: { p_activity_id: string; p_workflow_run_id: string }
-        Returns: boolean
-      }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
-      }
-      rename_user_resource: {
-        Args: { p_new_title: string; p_resource_id: string }
-        Returns: {
-          id: string
-          title: string
-          updated_at: string
-        }[]
-      }
-      schedule_downstream_activities: {
-        Args: {
-          p_actor?: string
-          p_completed_activity_id: string
-          p_workflow_run_id: string
-        }
-        Returns: string[]
-      }
-      search_link_transcript_chunks: {
-        Args: {
-          filter_notebook_id?: string
-          filter_project_id?: string
-          match_count?: number
-          query_embedding: string
-          similarity_threshold?: number
-        }
-        Returns: {
-          chunk_id: string
-          chunk_index: number
-          chunk_text: string
-          media_video_id: string | null
-          normalized_url: string | null
-          notebook_id: string | null
-          project_id: string | null
-          resource_id: string
-          resource_title: string
-          similarity: number
-          transcript_status: string | null
-        }[]
-      }
       create_link_resource_stub: {
         Args: {
           p_container_id?: string
@@ -1696,6 +1793,211 @@ export type Database = {
           provider: string
           status: string
         }[]
+      }
+      delete_email: {
+        Args: { message_id: number; queue_name: string }
+        Returns: boolean
+      }
+      detect_source_provider_from_url: {
+        Args: { p_url: string }
+        Returns: string
+      }
+      edge_condition_matches: {
+        Args: { p_condition_expr: Json; p_context: Json }
+        Returns: boolean
+      }
+      enqueue_email: {
+        Args: { payload: Json; queue_name: string }
+        Returns: number
+      }
+      enqueue_youtube_transcript_job: {
+        Args: { p_force_retry?: boolean; p_resource_id: string }
+        Returns: {
+          job_id: string
+          transcript_status: string
+        }[]
+      }
+      extract_url_domain: { Args: { p_url: string }; Returns: string }
+      extract_youtube_video_id: { Args: { p_url: string }; Returns: string }
+      get_document_chunk_stats: {
+        Args: { doc_ids: string[] }
+        Returns: {
+          avg_token_count: number
+          chunk_count: number
+          document_id: string
+          embedded_count: number
+        }[]
+      }
+      get_document_processing_status: {
+        Args: { p_document_id: string }
+        Returns: Json
+      }
+      get_document_question_stats: {
+        Args: { doc_ids: string[] }
+        Returns: {
+          document_id: string
+          embedded_question_count: number
+          question_count: number
+        }[]
+      }
+      get_email_by_username: {
+        Args: { lookup_username: string }
+        Returns: string
+      }
+      get_link_transcript_preview: {
+        Args: { p_limit?: number; p_query?: string; p_resource_id: string }
+        Returns: {
+          chunk_index: number
+          chunk_text: string
+          match_rank: number
+          token_count: number
+        }[]
+      }
+      get_user_item_role: {
+        Args: { p_item_id: string; p_item_type: string; p_user_id: string }
+        Returns: string
+      }
+      get_user_resources: {
+        Args: never
+        Returns: {
+          can_delete: boolean
+          can_download: boolean
+          can_open: boolean
+          can_rename: boolean
+          can_retry: boolean
+          can_view_details: boolean
+          container_id: string
+          container_name: string
+          container_type: string
+          detected_language: string
+          extension: string
+          id: string
+          is_owned_by_me: boolean
+          is_shared: boolean
+          is_shared_with_me: boolean
+          link_url: string
+          media_channel_name: string
+          media_duration_seconds: number
+          media_thumbnail_url: string
+          media_video_id: string
+          mime_type: string
+          normalized_url: string
+          owner_display_name: string
+          owner_user_id: string
+          page_count: number
+          preview_domain: string
+          preview_favicon_url: string
+          preview_title: string
+          processing_error: string
+          processing_status: string
+          provider: string
+          resource_kind: string
+          resource_type: string
+          size_bytes: number
+          source_type: string
+          storage_path: string
+          summary: string
+          title: string
+          transcript_error: string
+          transcript_status: string
+          updated_at: string
+          uploaded_at: string
+          word_count: number
+        }[]
+      }
+      get_user_resources_v6_base: {
+        Args: never
+        Returns: {
+          can_delete: boolean
+          can_download: boolean
+          can_open: boolean
+          can_rename: boolean
+          can_retry: boolean
+          can_view_details: boolean
+          container_id: string
+          container_name: string
+          container_type: string
+          detected_language: string
+          extension: string
+          id: string
+          is_owned_by_me: boolean
+          is_shared: boolean
+          is_shared_with_me: boolean
+          link_url: string
+          media_channel_name: string
+          media_duration_seconds: number
+          media_thumbnail_url: string
+          media_video_id: string
+          mime_type: string
+          normalized_url: string
+          owner_display_name: string
+          owner_user_id: string
+          page_count: number
+          preview_domain: string
+          preview_favicon_url: string
+          preview_title: string
+          processing_error: string
+          processing_status: string
+          provider: string
+          resource_kind: string
+          resource_type: string
+          size_bytes: number
+          source_type: string
+          storage_path: string
+          summary: string
+          title: string
+          transcript_error: string
+          transcript_status: string
+          updated_at: string
+          uploaded_at: string
+          word_count: number
+        }[]
+      }
+      is_activity_runnable: {
+        Args: { p_activity_id: string; p_workflow_run_id: string }
+        Returns: boolean
+      }
+      move_to_dlq: {
+        Args: {
+          dlq_name: string
+          message_id: number
+          payload: Json
+          source_queue: string
+        }
+        Returns: number
+      }
+      normalize_resource_url: { Args: { p_url: string }; Returns: string }
+      read_email_batch: {
+        Args: { batch_size: number; queue_name: string; vt: number }
+        Returns: {
+          message: Json
+          msg_id: number
+          read_ct: number
+        }[]
+      }
+      rename_user_resource: {
+        Args: { p_new_title: string; p_resource_id: string }
+        Returns: {
+          id: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      run_link_adapter_enrichment: {
+        Args: { p_resource_id: string }
+        Returns: {
+          id: string
+          provider: string
+          status: string
+        }[]
+      }
+      schedule_downstream_activities: {
+        Args: {
+          p_actor?: string
+          p_completed_activity_id: string
+          p_workflow_run_id: string
+        }
+        Returns: string[]
       }
       search_document_chunks: {
         Args: {
@@ -1734,6 +2036,28 @@ export type Database = {
           rank: number
           snippet: string
           summary: string
+        }[]
+      }
+      search_link_transcript_chunks: {
+        Args: {
+          filter_notebook_id?: string
+          filter_project_id?: string
+          match_count?: number
+          query_embedding: string
+          similarity_threshold?: number
+        }
+        Returns: {
+          chunk_id: string
+          chunk_index: number
+          chunk_text: string
+          media_video_id: string
+          normalized_url: string
+          notebook_id: string
+          project_id: string
+          resource_id: string
+          resource_title: string
+          similarity: number
+          transcript_status: string
         }[]
       }
       workflow_reachable_activity_ids: {
