@@ -28,7 +28,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 }
 
 function isAuthorizedWorkerRequest(req: Request): boolean {
-  // Method 1: shared secret header
+  // Method 1: shared secret header (for manual/external invocation)
   const expectedSecret = Deno.env.get("YOUTUBE_TRANSCRIPT_WORKER_SECRET");
   const providedSecret = req.headers.get("x-worker-secret");
   if (expectedSecret && expectedSecret.trim() !== "" && providedSecret === expectedSecret) {
