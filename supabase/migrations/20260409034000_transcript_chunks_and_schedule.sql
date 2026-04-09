@@ -1,3 +1,7 @@
+-- Environment requirement for scheduled worker invocation:
+--   ALTER DATABASE postgres SET app.settings.supabase_url = 'https://<project-ref>.supabase.co';
+--   ALTER DATABASE postgres SET app.settings.youtube_transcript_worker_secret = '<strong-random-secret>';
+
 CREATE TABLE IF NOT EXISTS public.link_transcript_chunks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   resource_link_id uuid NOT NULL REFERENCES public.resource_links(id) ON DELETE CASCADE,
@@ -42,13 +46,14 @@ CREATE INDEX IF NOT EXISTS idx_link_transcript_chunks_embedding
   ON public.link_transcript_chunks USING ivfflat (embedding extensions.vector_cosine_ops)
   WITH (lists = 100);
 
+DROP FUNCTION IF EXISTS public.search_link_transcript_chunks(extensions.vector, integer, double precision, uuid, uuid, uuid);
+
 CREATE OR REPLACE FUNCTION public.search_link_transcript_chunks(
   query_embedding extensions.vector,
   match_count integer DEFAULT 10,
   similarity_threshold double precision DEFAULT 0.0,
   filter_project_id uuid DEFAULT NULL::uuid,
-  filter_notebook_id uuid DEFAULT NULL::uuid,
-  filter_chat_id uuid DEFAULT NULL::uuid
+  filter_notebook_id uuid DEFAULT NULL::uuid
 )
 RETURNS TABLE(
   chunk_id uuid,
@@ -97,8 +102,8 @@ AS $$
   LIMIT match_count;
 $$;
 
-REVOKE ALL ON FUNCTION public.search_link_transcript_chunks(extensions.vector, integer, double precision, uuid, uuid, uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.search_link_transcript_chunks(extensions.vector, integer, double precision, uuid, uuid, uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.search_link_transcript_chunks(extensions.vector, integer, double precision, uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.search_link_transcript_chunks(extensions.vector, integer, double precision, uuid, uuid) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_link_transcript_preview(
   p_resource_id uuid,
@@ -294,9 +299,28 @@ GRANT EXECUTE ON FUNCTION public.complete_youtube_transcript_job(uuid, boolean, 
 DO $$
 DECLARE
   v_job_exists boolean := false;
+  v_supabase_url text := current_setting('app.settings.supabase_url', true);
+  v_worker_secret text := current_setting('app.settings.youtube_transcript_worker_secret', true);
+  v_headers jsonb;
 BEGIN
+  IF v_supabase_url IS NULL OR btrim(v_supabase_url) = '' THEN
+    RAISE NOTICE 'app.settings.supabase_url is not set; transcript worker schedule not installed';
+    RETURN;
+  END IF;
+
+  IF v_worker_secret IS NULL OR btrim(v_worker_secret) = '' THEN
+    RAISE NOTICE 'app.settings.youtube_transcript_worker_secret is not set; transcript worker schedule not installed';
+    RETURN;
+  END IF;
+
+  v_headers := jsonb_build_object(
+    'Content-Type', 'application/json',
+    'x-worker-secret', v_worker_secret
+  );
+
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron')
-     AND EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_net') THEN
+     AND EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_net')
+     AND EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'cron') THEN
     EXECUTE $check$
       SELECT EXISTS(
         SELECT 1 FROM cron.job WHERE jobname = 'youtube-transcript-worker-minute'
@@ -304,19 +328,23 @@ BEGIN
     $check$ INTO v_job_exists;
 
     IF NOT v_job_exists THEN
-      EXECUTE $schedule$
-        SELECT cron.schedule(
-          'youtube-transcript-worker-minute',
-          '* * * * *',
-          $cron$
-            SELECT net.http_post(
-              url := 'https://mdrxzwudhtmkyqcxwvcy.supabase.co/functions/v1/youtube-transcript-worker',
-              headers := '{"Content-Type":"application/json"}'::jsonb,
-              body := '{"max_jobs":10}'::jsonb
-            );
-          $cron$
-        )
-      $schedule$;
+      EXECUTE format(
+        $schedule$
+          SELECT cron.schedule(
+            'youtube-transcript-worker-minute',
+            '* * * * *',
+            $cron$
+              SELECT net.http_post(
+                url := %L,
+                headers := %L::jsonb,
+                body := '{"max_jobs":10}'::jsonb
+              );
+            $cron$
+          )
+        $schedule$,
+        v_supabase_url || '/functions/v1/youtube-transcript-worker',
+        v_headers::text
+      );
     END IF;
   ELSE
     RAISE NOTICE 'pg_cron and/or pg_net extension unavailable; transcript worker schedule not installed';

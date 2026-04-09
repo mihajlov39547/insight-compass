@@ -1653,7 +1653,6 @@ export type Database = {
       }
       search_link_transcript_chunks: {
         Args: {
-          filter_chat_id?: string
           filter_notebook_id?: string
           filter_project_id?: string
           match_count?: number

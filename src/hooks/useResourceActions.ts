@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startDocumentWorkflow } from '@/hooks/useDocuments';
 import type { ContainerType, Resource } from '@/lib/resourceClassification';
-import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 
 export interface ResourceActionInput {
   id: string;
@@ -178,17 +177,6 @@ export function useCreateLinkResource() {
 
       if (error) throw error;
 
-      fetch(getFunctionUrl('/functions/v1/youtube-transcript-worker'), {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ max_jobs: 3 }),
-      }).catch(() => {
-        // Ignore worker trigger failures; queued transcript jobs remain available.
-      });
-
       return Array.isArray(data) ? data[0] : data;
     },
     onSuccess: (_result, input) => {
@@ -231,18 +219,6 @@ export function useRetryYouTubeTranscriptIngestion() {
       });
 
       if (error) throw error;
-
-      // Best-effort worker kick; queueing already succeeded even if this call fails.
-      fetch(getFunctionUrl('/functions/v1/youtube-transcript-worker'), {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ max_jobs: 3 }),
-      }).catch(() => {
-        // Ignore kick failures; jobs remain queued for next worker run.
-      });
 
       return resource;
     },

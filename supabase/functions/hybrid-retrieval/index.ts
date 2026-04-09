@@ -187,7 +187,7 @@ serve(async (req) => {
     const keywordPromise = runKeywordSearch(userClient, query, scope, projectId, notebookId, chatId);
     const chunkSemanticPromise = runChunkSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
     const questionSemanticPromise = runQuestionSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
-    const transcriptSemanticPromise = runTranscriptSemanticSearch(userClient, embedding, scope, projectId, notebookId, chatId);
+    const transcriptSemanticPromise = runTranscriptSemanticSearch(userClient, embedding, scope, projectId, notebookId);
 
     const [weights, keywordResults, chunkSemanticResults, questionSemanticResults, transcriptSemanticResults] = await Promise.all([
       weightsPromise,
@@ -530,12 +530,11 @@ async function runTranscriptSemanticSearch(
   scope: string,
   projectId?: string,
   notebookId?: string,
-  chatId?: string,
 ): Promise<TranscriptSemanticHit[]> {
   try {
     if (!embedding) return [];
 
-    const buildRpcParams = (filters?: { projectId?: string; notebookId?: string; chatId?: string }) => {
+    const buildRpcParams = (filters?: { projectId?: string; notebookId?: string }) => {
       const params: any = {
         query_embedding: JSON.stringify(embedding),
         match_count: 20,
@@ -543,11 +542,10 @@ async function runTranscriptSemanticSearch(
       };
       if (filters?.projectId) params.filter_project_id = filters.projectId;
       if (filters?.notebookId) params.filter_notebook_id = filters.notebookId;
-      if (filters?.chatId) params.filter_chat_id = filters.chatId;
       return params;
     };
 
-    const runRpc = async (filters?: { projectId?: string; notebookId?: string; chatId?: string }) => {
+    const runRpc = async (filters?: { projectId?: string; notebookId?: string }) => {
       const { data, error } = await userClient.rpc("search_link_transcript_chunks", buildRpcParams(filters));
       if (error) {
         console.warn("Transcript semantic search RPC error:", error);
@@ -559,7 +557,6 @@ async function runTranscriptSemanticSearch(
     const rows = await runRpc({
       projectId: scope === "project" ? projectId : undefined,
       notebookId: scope === "notebook" ? notebookId : undefined,
-      chatId,
     });
 
     const deduped = new Map<string, any>();

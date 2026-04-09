@@ -7,8 +7,19 @@ import { generateEmbeddingsLocal } from "../_shared/document-processing/embeddin
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-worker-secret, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function isAuthorizedWorkerRequest(req: Request): boolean {
+  const expectedSecret = Deno.env.get("YOUTUBE_TRANSCRIPT_WORKER_SECRET");
+  const providedSecret = req.headers.get("x-worker-secret");
+
+  if (!expectedSecret || expectedSecret.trim() === "") {
+    return false;
+  }
+
+  return providedSecret === expectedSecret;
+}
 
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
@@ -197,6 +208,10 @@ serve(async (req) => {
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  if (!isAuthorizedWorkerRequest(req)) {
+    return jsonResponse({ error: "Unauthorized worker invocation" }, 401);
   }
 
   try {
