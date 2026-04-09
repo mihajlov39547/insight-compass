@@ -98,7 +98,7 @@
 
 ---
 
-## Phase 2 — 🟡 IN PROGRESS
+## Phase 2 — ✅ COMPLETED
 
 ### Pass 1 — ✅ COMPLETED
 
@@ -252,17 +252,13 @@
 - `src/integrations/supabase/types.ts` — UPDATED (transcript preview/search RPC typings)
 - `supabase/config.toml` — UPDATED (`youtube-transcript-worker` function config)
 
-### Planned
-- Source type/provider architecture for linked/synced resources (baseline delivered with enrichment)
-- Media resource adapters (YouTube transcript retrieval path delivered; next: richer metadata + additional providers)
-- Grid/card view toggle
-- Resource detail panel/drawer (implemented baseline; can be extended with richer history/previews)
-- Bulk actions
-- Download functionality (baseline implemented for uploaded file resources)
+### Wrap-Up Status
+- This TODO is now considered complete for the current milestone scope:
+   - Unified resources processing for uploaded documents
+   - Linked resource enrichment and source/provider model
+   - YouTube adapter with async transcript ingestion, transcript persistence, retrieval integration, and drawer UX
+- Remaining expansion work has been moved to:
+   - `TODO_RESOURCES_NEXT_PHASES.md`
 
-### How future resource types plug in
-1. Add new source adapter in backend (e.g., `get_youtube_resources()`)
-2. UNION into `get_user_resources` or create a new unified RPC
-3. Frontend Resource type already supports audio/video/link — just populate
-4. Add new SourceProvider values and icons
-5. Extend ReadinessStatus for new states (syncing, transcript_ready, etc.)
+### Remaining Work Location
+- See `TODO_RESOURCES_NEXT_PHASES.md` for the next roadmap (phase-by-phase and step-by-step plan).
