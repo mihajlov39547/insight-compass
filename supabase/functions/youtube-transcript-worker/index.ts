@@ -21,17 +21,20 @@ function isAuthorizedWorkerRequest(req: Request): boolean {
   const expectedSecret = Deno.env.get("YOUTUBE_TRANSCRIPT_WORKER_SECRET");
   const providedSecret = req.headers.get("x-worker-secret");
   if (expectedSecret && expectedSecret.trim() !== "" && providedSecret === expectedSecret) {
+    console.log("Auth: passed via x-worker-secret");
     return true;
   }
 
   // Method 2: service_role key via Authorization header
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (serviceRoleKey) {
-    const authHeader = req.headers.get("authorization") ?? "";
-    const token = authHeader.replace(/^Bearer\s+/i, "");
-    if (token && token === serviceRoleKey) {
-      return true;
-    }
+  const authHeader = req.headers.get("authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+  console.log("Auth debug: has_service_role_env=", !!serviceRoleKey, "has_auth_header=", authHeader.length > 0, "token_len=", token.length, "srk_len=", serviceRoleKey?.length ?? 0, "match=", !!(token && serviceRoleKey && token === serviceRoleKey));
+
+  if (serviceRoleKey && token && token === serviceRoleKey) {
+    console.log("Auth: passed via service_role Bearer");
+    return true;
   }
 
   return false;
