@@ -16,25 +16,33 @@ const corsHeaders = {
  * 2. Authorization: Bearer <service_role_key> — verified by creating a
  *    supabase admin client and confirming the key works
  */
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 function isAuthorizedWorkerRequest(req: Request): boolean {
-  // Method 1: shared secret
+  // Method 1: shared secret header
   const expectedSecret = Deno.env.get("YOUTUBE_TRANSCRIPT_WORKER_SECRET");
   const providedSecret = req.headers.get("x-worker-secret");
   if (expectedSecret && expectedSecret.trim() !== "" && providedSecret === expectedSecret) {
-    console.log("Auth: passed via x-worker-secret");
     return true;
   }
 
-  // Method 2: service_role key via Authorization header
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  // Method 2: service_role JWT via Authorization header (used by pg_cron via vault)
   const authHeader = req.headers.get("authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-  console.log("Auth debug: has_service_role_env=", !!serviceRoleKey, "has_auth_header=", authHeader.length > 0, "token_len=", token.length, "srk_len=", serviceRoleKey?.length ?? 0, "match=", !!(token && serviceRoleKey && token === serviceRoleKey));
-
-  if (serviceRoleKey && token && token === serviceRoleKey) {
-    console.log("Auth: passed via service_role Bearer");
-    return true;
+  if (token) {
+    const payload = decodeJwtPayload(token);
+    if (payload && payload.role === "service_role") {
+      return true;
+    }
   }
 
   return false;
