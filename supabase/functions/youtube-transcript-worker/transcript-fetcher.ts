@@ -2,7 +2,8 @@
  * YouTube transcript fetching with multi-strategy discovery.
  *
  * Strategy 1: Legacy timedtext list API (fast, no page scrape)
- * Strategy 2: Watch page scrape for ytInitialPlayerResponse captionTracks (robust fallback)
+ * Strategy 2: Watch page scrape for ytInitialPlayerResponse captionTracks
+ * Strategy 3: YouTube InnerTube API (bypasses web page rate limits)
  */
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -268,6 +269,97 @@ async function tryWatchPageScrape(videoId: string): Promise<StrategyResult | nul
 }
 
 /* ------------------------------------------------------------------ */
+/*  Strategy 3: YouTube InnerTube API                                  */
+/* ------------------------------------------------------------------ */
+
+const INNERTUBE_API_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+const INNERTUBE_CLIENT_VERSION = "2.20240313.05.00";
+
+async function tryInnertubeApi(videoId: string): Promise<StrategyResult | null> {
+  const url = `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`;
+  console.log(`[transcript] Strategy 3: calling InnerTube player API for videoId=${videoId}`);
+
+  try {
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+      },
+      body: JSON.stringify({
+        context: {
+          client: {
+            hl: "en",
+            gl: "US",
+            clientName: "WEB",
+            clientVersion: INNERTUBE_CLIENT_VERSION,
+          },
+        },
+        videoId,
+      }),
+    });
+
+    if (!resp.ok) {
+      console.log(`[transcript] Strategy 3: InnerTube returned ${resp.status}`);
+      return null;
+    }
+
+    const data = await resp.json();
+    const tracks: CaptionTrack[] =
+      data?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
+    console.log(`[transcript] Strategy 3: found ${tracks.length} caption tracks`);
+
+    if (tracks.length === 0) return null;
+
+    const languages = tracks.map(
+      (t: CaptionTrack) => `${t.languageCode}${t.kind === "asr" ? "(auto)" : ""}`
+    );
+    console.log(`[transcript] Strategy 3: languages=[${languages.join(", ")}]`);
+
+    const chosen = pickBestTrack(tracks);
+    if (!chosen) return null;
+
+    const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
+    console.log(`[transcript] Strategy 3: chose track: ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`);
+
+    const baseUrl = chosen.baseUrl.replace(/\\u0026/g, "&");
+    const urls = [baseUrl + "&fmt=srv3", baseUrl];
+
+    for (const captionUrl of urls) {
+      try {
+        console.log(`[transcript] Strategy 3: fetching transcript from ${captionUrl.substring(0, 120)}...`);
+        const tResp = await fetch(captionUrl, {
+          headers: { "User-Agent": USER_AGENT },
+        });
+        if (!tResp.ok) {
+          console.log(`[transcript] Strategy 3: transcript endpoint returned ${tResp.status}`);
+          continue;
+        }
+        const xml = await tResp.text();
+        const lines = extractTextLines(xml);
+        if (lines.length > 0) {
+          console.log(`[transcript] Strategy 3: extracted ${lines.length} text lines`);
+          return {
+            transcript: lines.join("\n"),
+            strategy: "innertube_api",
+            language: chosen.languageCode,
+            trackCount: tracks.length,
+          };
+        }
+      } catch (err) {
+        console.log(`[transcript] Strategy 3: fetch error: ${err}`);
+      }
+    }
+
+    console.log(`[transcript] Strategy 3: tracks found but content extraction failed`);
+    return null;
+  } catch (err) {
+    console.log(`[transcript] Strategy 3: InnerTube error: ${err}`);
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Public API                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -281,11 +373,18 @@ export async function fetchTranscriptForVideo(videoId: string): Promise<string> 
     return legacy.transcript;
   }
 
-  // Strategy 2: Watch page scrape (robust fallback)
+  // Strategy 2: Watch page scrape
   const scraped = await tryWatchPageScrape(videoId);
   if (scraped) {
     console.log(`[transcript] Success via ${scraped.strategy}, language=${scraped.language}, trackCount=${scraped.trackCount}, length=${scraped.transcript.length}`);
     return scraped.transcript;
+  }
+
+  // Strategy 3: InnerTube API (bypasses web page 429 rate limits)
+  const innertube = await tryInnertubeApi(videoId);
+  if (innertube) {
+    console.log(`[transcript] Success via ${innertube.strategy}, language=${innertube.language}, trackCount=${innertube.trackCount}, length=${innertube.transcript.length}`);
+    return innertube.transcript;
   }
 
   throw new Error("No transcript tracks available for this video");
