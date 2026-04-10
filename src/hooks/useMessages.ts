@@ -65,3 +65,41 @@ export function useSendMessage() {
     },
   });
 }
+
+export function useDeleteMessagePair() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ messageId, chatId }: { messageId: string; chatId: string }) => {
+      const { data: msg, error: msgError } = await supabase
+        .from('messages')
+        .select('created_at, role')
+        .eq('id', messageId)
+        .single();
+      if (msgError) throw msgError;
+
+      const { data: nextMsgs, error: nextError } = await supabase
+        .from('messages')
+        .select('id, role')
+        .eq('chat_id', chatId)
+        .gt('created_at', msg.created_at)
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      const idsToDelete = [messageId];
+      if (nextMsgs && nextMsgs.length > 0 && nextMsgs[0].role === 'assistant') {
+        idsToDelete.push(nextMsgs[0].id);
+      }
+
+      const { error: deleteError } = await supabase
+        .from('messages')
+        .delete()
+        .in('id', idsToDelete);
+      if (deleteError) throw deleteError;
+      return idsToDelete;
+    },
+    onSuccess: (_, { chatId }) => {
+      qc.invalidateQueries({ queryKey: ['messages', chatId] });
+    },
+  });
+}

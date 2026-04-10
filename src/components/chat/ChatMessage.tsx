@@ -1,5 +1,6 @@
 import React from 'react';
-import { User, Sparkles, Bot, Copy, Check } from 'lucide-react';
+import { User, Sparkles, Bot, Copy, Check, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Message, modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
@@ -10,6 +11,7 @@ import { useApp } from '@/contexts/useApp';
 interface ChatMessageProps {
   message: Message;
   onRetry?: () => void;
+  onDeletePair?: (id: string) => void;
 }
 
 export function ChatMessage({ message, onRetry }: ChatMessageProps) {
@@ -116,6 +118,36 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
           <p className="text-[10px] text-muted-foreground">
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
+          {isUser && onDeletePair && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded hover:text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Trash2 className="h-2.5 w-2.5" />
+                  Delete
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this question and its corresponding answer from the system and database. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onDeletePair(message.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           {!isUser && (
             <>
               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">

@@ -3,6 +3,7 @@ import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Spark
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
 import { useCreateChat, useChats } from '@/hooks/useChats';
+import { useDeleteMessagePair } from '@/hooks/useMessages';
 import { ChatInput } from './ChatInput';
 import { useApp } from '@/contexts/useApp';
 import { useMessages } from '@/hooks/useMessages';
@@ -21,6 +22,7 @@ export function ChatWorkspace() {
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
   const createChat = useCreateChat();
+  const { mutate: deleteMessagePair } = useDeleteMessagePair();
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -170,7 +172,7 @@ export function ChatWorkspace() {
                 sources: message.sources || [],
                 timestamp: message.created_at,
                 modelId: message.model_id ?? undefined,
-              }} />
+              }} onDeletePair={(id) => selectedChatId && deleteMessagePair({ messageId: id, chatId: selectedChatId })} />
             ))
           )}
 

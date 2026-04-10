@@ -19,11 +19,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useApp } from '@/contexts/useApp';
 import { useNotebooks, useUpdateNotebook } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDeleteNotebookNote, DbNotebookNote } from '@/hooks/useNotebookNotes';
-import { useNotebookMessages, useNotebookAIChat } from '@/hooks/useNotebookChat';
+import { useNotebookMessages, useNotebookAIChat, useDeleteNotebookMessagePair } from '@/hooks/useNotebookChat';
 import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
 import { useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
@@ -76,6 +77,7 @@ export function NotebookWorkspace() {
   const createNote = useCreateNotebookNote();
   const updateNote = useUpdateNotebookNote();
   const deleteNote = useDeleteNotebookNote();
+  const { mutate: deleteMessagePair } = useDeleteNotebookMessagePair();
 
   const { sendMessage, isGenerating, streamingContent, error, clearError } = useNotebookAIChat({
     notebookId: selectedNotebookId ?? '',
@@ -555,6 +557,7 @@ export function NotebookWorkspace() {
                           onSaveToNote={handleSaveToNote}
                           onCopy={handleCopyContent}
                           canSaveToNotes={permissions.canCreateNotes}
+                          onDeletePair={(id) => selectedNotebookId && deleteMessagePair({ messageId: id, notebookId: selectedNotebookId })}
                         />
                       ))
                     )}
@@ -769,11 +772,12 @@ export function NotebookWorkspace() {
 }
 
 /* --- Notebook Chat Message --- */
-function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes }: {
+function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair }: {
   message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
   canSaveToNotes: boolean;
+  onDeletePair?: (id: string) => void;
 }) {
   const isUser = message.role === 'user';
   const modelName = message.model_id ? modelOptions.find(m => m.id === message.model_id)?.name ?? message.model_id.split('/').pop() : null;
@@ -826,6 +830,36 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes }: 
           <p className="text-[10px] text-muted-foreground">
             {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
+          {isUser && onDeletePair && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded hover:text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Trash2 className="h-2.5 w-2.5" />
+                  Delete
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this question and its corresponding answer from the system and database. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onDeletePair(message.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           {!isUser && (
             <>
               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">

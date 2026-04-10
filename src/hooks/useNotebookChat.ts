@@ -321,3 +321,38 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
 
   return { sendMessage, isGenerating, streamingContent, error, clearError };
 }
+
+export function useDeleteNotebookMessagePair() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ messageId, notebookId }: { messageId: string; notebookId: string }) => {
+      const { data: msg, error: msgError } = await (supabase.from('notebook_messages' as any) as any)
+        .select('created_at, role')
+        .eq('id', messageId)
+        .single();
+      if (msgError) throw msgError;
+
+      const { data: nextMsgs } = await (supabase.from('notebook_messages' as any) as any)
+        .select('id, role')
+        .eq('notebook_id', notebookId)
+        .gt('created_at', msg.created_at)
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      const idsToDelete = [messageId];
+      if (nextMsgs && nextMsgs.length > 0 && nextMsgs[0].role === 'assistant') {
+        idsToDelete.push(nextMsgs[0].id);
+      }
+
+      const { error: deleteError } = await (supabase.from('notebook_messages' as any) as any)
+        .delete()
+        .in('id', idsToDelete);
+      if (deleteError) throw deleteError;
+      return idsToDelete;
+    },
+    onSuccess: (_, { notebookId }) => {
+      qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
+    },
+  });
+}
