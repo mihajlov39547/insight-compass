@@ -1418,8 +1418,14 @@ function ResourceDetailsDrawer({
                         </div>
                       </>
                     ) : resource.transcriptStatus === 'failed' ? (
-                      <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-xs">
-                        Transcript ingestion failed. Use Retry transcript to queue another attempt.
+                      <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-xs space-y-1.5">
+                        <p className="font-medium text-destructive">Transcript fetch failed</p>
+                        {(resource.transcriptError || resource.processingError) ? (
+                          <p className="text-destructive/90 break-words">{resource.transcriptError || resource.processingError}</p>
+                        ) : (
+                          <p className="text-destructive/70">No additional error details available.</p>
+                        )}
+                        <p className="text-muted-foreground pt-1">Use Retry transcript to queue another attempt.</p>
                       </div>
                     ) : resource.transcriptStatus === 'queued' || resource.transcriptStatus === 'running' ? (
                       <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3 text-xs">
