@@ -296,11 +296,11 @@ const INNERTUBE_API_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
 // Multiple client configs to try — Android client bypasses consent gates
 const INNERTUBE_CLIENTS = [
   {
-    label: "ANDROID",
-    clientName: "ANDROID",
-    clientVersion: "19.09.37",
+    label: "EMBEDDED",
+    clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    clientVersion: "2.0",
     apiUrl: `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
-    userAgent: "com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip",
+    userAgent: USER_AGENT,
   },
   {
     label: "WEB",
