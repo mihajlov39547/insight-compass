@@ -2,7 +2,8 @@
  * YouTube transcript fetching with multi-strategy discovery.
  *
  * Strategy 1: Legacy timedtext list API (fast, no page scrape)
- * Strategy 2: Watch page scrape for ytInitialPlayerResponse captionTracks (robust fallback)
+ * Strategy 2: Watch page scrape for ytInitialPlayerResponse captionTracks
+ * Strategy 3: YouTube InnerTube API (bypasses web page rate limits)
  */
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -193,77 +194,205 @@ function pickBestTrack(tracks: CaptionTrack[]): CaptionTrack | null {
 }
 
 async function tryWatchPageScrape(videoId: string): Promise<StrategyResult | null> {
-  const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
-  console.log(`[transcript] Strategy 2: fetching watch page ${watchUrl}`);
-
-  const resp = await fetch(watchUrl, {
-    headers: {
-      "User-Agent": USER_AGENT,
-      "Accept-Language": "en-US,en;q=0.9",
+  // Try multiple page URLs: embed page (no consent gate), watch page with consent cookie
+  const pages = [
+    {
+      label: "embed",
+      url: `https://www.youtube.com/embed/${encodeURIComponent(videoId)}`,
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "en-US,en;q=0.9",
+      },
     },
-  });
-
-  if (!resp.ok) {
-    console.log(`[transcript] Strategy 2: watch page returned ${resp.status}`);
-    return null;
-  }
-
-  const html = await resp.text();
-  console.log(`[transcript] Strategy 2: watch page length=${html.length}`);
-
-  const tracks = extractCaptionTracksFromHtml(html);
-  console.log(`[transcript] Strategy 2: found ${tracks.length} caption tracks`);
-
-  if (tracks.length === 0) return null;
-
-  const languages = tracks.map(
-    (t) => `${t.languageCode}${t.kind === "asr" ? "(auto)" : ""}`
-  );
-  console.log(`[transcript] Strategy 2: languages=[${languages.join(", ")}]`);
-
-  const chosen = pickBestTrack(tracks);
-  if (!chosen) return null;
-
-  const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
-  console.log(`[transcript] Strategy 2: chose track: ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`);
-
-  // Fetch the transcript content — baseUrl returns XML with <text> elements
-  // Unescape unicode sequences from JSON
-  const baseUrl = chosen.baseUrl.replace(/\\u0026/g, "&");
-
-  // Try with fmt=srv3 first for richer XML, then plain
-  const urls = [
-    baseUrl + "&fmt=srv3",
-    baseUrl,
+    {
+      label: "watch+consent",
+      url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cookie": "CONSENT=PENDING+987",
+      },
+    },
+    {
+      label: "watch",
+      url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+    },
   ];
 
-  for (const url of urls) {
+  for (const page of pages) {
+    console.log(`[transcript] Strategy 2 (${page.label}): fetching ${page.url}`);
+
+    const resp = await fetch(page.url, { headers: page.headers });
+
+    if (!resp.ok) {
+      console.log(`[transcript] Strategy 2 (${page.label}): returned ${resp.status}`);
+      continue;
+    }
+
+    const html = await resp.text();
+    console.log(`[transcript] Strategy 2 (${page.label}): page length=${html.length}`);
+
+    const tracks = extractCaptionTracksFromHtml(html);
+    console.log(`[transcript] Strategy 2 (${page.label}): found ${tracks.length} caption tracks`);
+
+    if (tracks.length === 0) continue;
+
+    const languages = tracks.map(
+      (t) => `${t.languageCode}${t.kind === "asr" ? "(auto)" : ""}`
+    );
+    console.log(`[transcript] Strategy 2 (${page.label}): languages=[${languages.join(", ")}]`);
+
+    const chosen = pickBestTrack(tracks);
+    if (!chosen) continue;
+
+    const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
+    console.log(`[transcript] Strategy 2 (${page.label}): chose track: ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`);
+
+    const baseUrl = chosen.baseUrl.replace(/\\u0026/g, "&");
+    const urls = [baseUrl + "&fmt=srv3", baseUrl];
+
+    for (const url of urls) {
+      try {
+        console.log(`[transcript] Strategy 2 (${page.label}): fetching transcript from ${url.substring(0, 120)}...`);
+        const tResp = await fetch(url, {
+          headers: { "User-Agent": USER_AGENT },
+        });
+        if (!tResp.ok) {
+          console.log(`[transcript] Strategy 2 (${page.label}): transcript endpoint returned ${tResp.status}`);
+          continue;
+        }
+        const xml = await tResp.text();
+        const lines = extractTextLines(xml);
+        if (lines.length > 0) {
+          console.log(`[transcript] Strategy 2 (${page.label}): extracted ${lines.length} text lines`);
+          return {
+            transcript: lines.join("\n"),
+            strategy: `page_scrape_${page.label}`,
+            language: chosen.languageCode,
+            trackCount: tracks.length,
+          };
+        }
+      } catch (err) {
+        console.log(`[transcript] Strategy 2 (${page.label}): fetch error: ${err}`);
+      }
+    }
+
+    console.log(`[transcript] Strategy 2 (${page.label}): tracks found but content extraction failed`);
+  }
+
+  return null;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Strategy 3: YouTube InnerTube API                                  */
+/* ------------------------------------------------------------------ */
+
+const INNERTUBE_API_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+
+// Multiple client configs to try — Android client bypasses consent gates
+const INNERTUBE_CLIENTS = [
+  {
+    label: "EMBEDDED",
+    clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    clientVersion: "2.0",
+    apiUrl: `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
+    userAgent: USER_AGENT,
+  },
+  {
+    label: "WEB",
+    clientName: "WEB",
+    clientVersion: "2.20240313.05.00",
+    apiUrl: `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
+    userAgent: USER_AGENT,
+  },
+];
+
+async function tryInnertubeApi(videoId: string): Promise<StrategyResult | null> {
+  for (const client of INNERTUBE_CLIENTS) {
+    console.log(`[transcript] Strategy 3 (${client.label}): calling InnerTube player API for videoId=${videoId}`);
+
     try {
-      console.log(`[transcript] Strategy 2: fetching transcript from ${url.substring(0, 120)}...`);
-      const tResp = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT },
+      const resp = await fetch(client.apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": client.userAgent,
+        },
+        body: JSON.stringify({
+          context: {
+            client: {
+              hl: "en",
+              gl: "US",
+              clientName: client.clientName,
+              clientVersion: client.clientVersion,
+            },
+          },
+          videoId,
+        }),
       });
-      if (!tResp.ok) {
-        console.log(`[transcript] Strategy 2: transcript endpoint returned ${tResp.status}`);
+
+      if (!resp.ok) {
+        console.log(`[transcript] Strategy 3 (${client.label}): InnerTube returned ${resp.status}`);
         continue;
       }
-      const xml = await tResp.text();
-      const lines = extractTextLines(xml);
-      if (lines.length > 0) {
-        console.log(`[transcript] Strategy 2: extracted ${lines.length} text lines`);
-        return {
-          transcript: lines.join("\n"),
-          strategy: "watch_page_scrape",
-          language: chosen.languageCode,
-          trackCount: tracks.length,
-        };
+
+      const data = await resp.json();
+      const tracks: CaptionTrack[] =
+        data?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
+      console.log(`[transcript] Strategy 3 (${client.label}): found ${tracks.length} caption tracks`);
+
+      if (tracks.length === 0) continue;
+
+      const languages = tracks.map(
+        (t: CaptionTrack) => `${t.languageCode}${t.kind === "asr" ? "(auto)" : ""}`
+      );
+      console.log(`[transcript] Strategy 3 (${client.label}): languages=[${languages.join(", ")}]`);
+
+      const chosen = pickBestTrack(tracks);
+      if (!chosen) continue;
+
+      const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
+      console.log(`[transcript] Strategy 3 (${client.label}): chose track: ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`);
+
+      const baseUrl = chosen.baseUrl.replace(/\\u0026/g, "&");
+      const captionUrls = [baseUrl + "&fmt=srv3", baseUrl];
+
+      for (const captionUrl of captionUrls) {
+        try {
+          console.log(`[transcript] Strategy 3 (${client.label}): fetching transcript from ${captionUrl.substring(0, 120)}...`);
+          const tResp = await fetch(captionUrl, {
+            headers: { "User-Agent": client.userAgent },
+          });
+          if (!tResp.ok) {
+            console.log(`[transcript] Strategy 3 (${client.label}): transcript endpoint returned ${tResp.status}`);
+            continue;
+          }
+          const xml = await tResp.text();
+          const lines = extractTextLines(xml);
+          if (lines.length > 0) {
+            console.log(`[transcript] Strategy 3 (${client.label}): extracted ${lines.length} text lines`);
+            return {
+              transcript: lines.join("\n"),
+              strategy: `innertube_${client.label.toLowerCase()}`,
+              language: chosen.languageCode,
+              trackCount: tracks.length,
+            };
+          }
+        } catch (err) {
+          console.log(`[transcript] Strategy 3 (${client.label}): fetch error: ${err}`);
+        }
       }
+
+      console.log(`[transcript] Strategy 3 (${client.label}): tracks found but content extraction failed`);
     } catch (err) {
-      console.log(`[transcript] Strategy 2: fetch error: ${err}`);
+      console.log(`[transcript] Strategy 3 (${client.label}): InnerTube error: ${err}`);
     }
   }
 
-  console.log(`[transcript] Strategy 2: tracks found but content extraction failed`);
   return null;
 }
 
@@ -281,11 +410,18 @@ export async function fetchTranscriptForVideo(videoId: string): Promise<string> 
     return legacy.transcript;
   }
 
-  // Strategy 2: Watch page scrape (robust fallback)
+  // Strategy 2: Watch page scrape
   const scraped = await tryWatchPageScrape(videoId);
   if (scraped) {
     console.log(`[transcript] Success via ${scraped.strategy}, language=${scraped.language}, trackCount=${scraped.trackCount}, length=${scraped.transcript.length}`);
     return scraped.transcript;
+  }
+
+  // Strategy 3: InnerTube API (bypasses web page 429 rate limits)
+  const innertube = await tryInnertubeApi(videoId);
+  if (innertube) {
+    console.log(`[transcript] Success via ${innertube.strategy}, language=${innertube.language}, trackCount=${innertube.trackCount}, length=${innertube.transcript.length}`);
+    return innertube.transcript;
   }
 
   throw new Error("No transcript tracks available for this video");
