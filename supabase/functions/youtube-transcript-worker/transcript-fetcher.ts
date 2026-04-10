@@ -273,31 +273,48 @@ async function tryWatchPageScrape(videoId: string): Promise<StrategyResult | nul
 /* ------------------------------------------------------------------ */
 
 const INNERTUBE_API_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
-const INNERTUBE_CLIENT_VERSION = "2.20240313.05.00";
+
+// Multiple client configs to try — Android client bypasses consent gates
+const INNERTUBE_CLIENTS = [
+  {
+    label: "ANDROID",
+    clientName: "ANDROID",
+    clientVersion: "19.09.37",
+    apiUrl: `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
+    userAgent: "com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip",
+  },
+  {
+    label: "WEB",
+    clientName: "WEB",
+    clientVersion: "2.20240313.05.00",
+    apiUrl: `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
+    userAgent: USER_AGENT,
+  },
+];
 
 async function tryInnertubeApi(videoId: string): Promise<StrategyResult | null> {
-  const url = `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`;
-  console.log(`[transcript] Strategy 3: calling InnerTube player API for videoId=${videoId}`);
+  for (const client of INNERTUBE_CLIENTS) {
+    console.log(`[transcript] Strategy 3 (${client.label}): calling InnerTube player API for videoId=${videoId}`);
 
-  try {
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-      },
-      body: JSON.stringify({
-        context: {
-          client: {
-            hl: "en",
-            gl: "US",
-            clientName: "WEB",
-            clientVersion: INNERTUBE_CLIENT_VERSION,
-          },
+    try {
+      const resp = await fetch(client.apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": client.userAgent,
         },
-        videoId,
-      }),
-    });
+        body: JSON.stringify({
+          context: {
+            client: {
+              hl: "en",
+              gl: "US",
+              clientName: client.clientName,
+              clientVersion: client.clientVersion,
+            },
+          },
+          videoId,
+        }),
+      });
 
     if (!resp.ok) {
       console.log(`[transcript] Strategy 3: InnerTube returned ${resp.status}`);
