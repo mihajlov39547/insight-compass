@@ -189,6 +189,7 @@ export function ResourcesLanding() {
     containerType: resource.containerType,
     containerId: resource.containerId,
     processingStatus: resource.processingStatus,
+    resourceKind: resource.resourceKind,
   });
 
   const handleDelete = (resource: Resource) => {
