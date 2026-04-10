@@ -11,6 +11,7 @@ export interface ResourceActionInput {
   containerType: ContainerType;
   containerId: string | null;
   processingStatus: string;
+  resourceKind?: string;
 }
 
 export interface RenameResourceInput {
