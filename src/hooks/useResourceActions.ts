@@ -27,10 +27,6 @@ export interface CreateLinkResourceInput {
   containerId: string | null;
 }
 
-export interface CreateSourceConnectionRequestInput {
-  provider: string;
-  displayName?: string;
-}
 
 interface RenameResourceResult {
   id: string;
@@ -217,20 +213,6 @@ export function useCreateLinkResource() {
   });
 }
 
-export function useCreateSourceConnectionRequest() {
-  return useMutation({
-    mutationFn: async (input: CreateSourceConnectionRequestInput) => {
-      const { data, error } = await supabase.rpc('create_source_connection_request_stub' as any, {
-        p_provider: input.provider,
-        p_display_name: input.displayName?.trim() || null,
-        p_metadata: { stub: true },
-      });
-
-      if (error) throw error;
-      return Array.isArray(data) ? data[0] : data;
-    },
-  });
-}
 
 export function useRetryYouTubeTranscriptIngestion() {
   const queryClient = useQueryClient();
