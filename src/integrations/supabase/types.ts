@@ -1999,6 +1999,34 @@ export type Database = {
         }
         Returns: string[]
       }
+      search_document_chunk_questions: {
+        Args: {
+          filter_chat_id?: string
+          filter_notebook_id?: string
+          filter_project_id?: string
+          match_count?: number
+          query_embedding: string
+          similarity_threshold?: number
+        }
+        Returns: {
+          chat_id: string
+          chunk_id: string
+          chunk_index: number
+          chunk_text: string
+          document_id: string
+          file_name: string
+          language: string
+          metadata_json: Json
+          notebook_id: string
+          page: number
+          project_id: string
+          question_id: string
+          question_text: string
+          section: string
+          similarity: number
+          token_count: number
+        }[]
+      }
       search_document_chunks: {
         Args: {
           filter_chat_id?: string
