@@ -60,22 +60,45 @@ export function useDeleteResource() {
 
   return useMutation({
     mutationFn: async (resource: ResourceActionInput) => {
-      if (resource.storagePath) {
-        const { error: storageError } = await supabase.storage
-          .from('insight-navigator')
-          .remove([resource.storagePath]);
+      const isLinkedResource = resource.resourceKind === 'resource' || resource.resourceKind === 'link';
 
-        if (storageError && !/not found/i.test(storageError.message || '')) {
-          throw storageError;
+      if (isLinkedResource) {
+        // Linked resources live in resource_links; FK cascades handle
+        // youtube_transcript_jobs and link_transcript_chunks automatically.
+        const { data, error, count } = await supabase
+          .from('resource_links' as any)
+          .delete()
+          .eq('id', resource.id)
+          .select('id');
+
+        if (error) throw error;
+        if (!data || (data as any[]).length === 0) {
+          throw new Error('Delete had no effect — linked resource not found or not permitted.');
+        }
+      } else {
+        // Document-backed resources: remove storage file first, then DB row.
+        if (resource.storagePath) {
+          const { error: storageError } = await supabase.storage
+            .from('insight-navigator')
+            .remove([resource.storagePath]);
+
+          if (storageError && !/not found/i.test(storageError.message || '')) {
+            throw storageError;
+          }
+        }
+
+        const { data, error } = await supabase
+          .from('documents' as any)
+          .delete()
+          .eq('id', resource.id)
+          .select('id');
+
+        if (error) throw error;
+        if (!data || (data as any[]).length === 0) {
+          throw new Error('Delete had no effect — document not found or not permitted.');
         }
       }
 
-      const { error } = await supabase
-        .from('documents' as any)
-        .delete()
-        .eq('id', resource.id);
-
-      if (error) throw error;
       return resource;
     },
     onSuccess: (resource) => {
