@@ -194,77 +194,96 @@ function pickBestTrack(tracks: CaptionTrack[]): CaptionTrack | null {
 }
 
 async function tryWatchPageScrape(videoId: string): Promise<StrategyResult | null> {
-  const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
-  console.log(`[transcript] Strategy 2: fetching watch page ${watchUrl}`);
-
-  const resp = await fetch(watchUrl, {
-    headers: {
-      "User-Agent": USER_AGENT,
-      "Accept-Language": "en-US,en;q=0.9",
+  // Try multiple page URLs: embed page (no consent gate), watch page with consent cookie
+  const pages = [
+    {
+      label: "embed",
+      url: `https://www.youtube.com/embed/${encodeURIComponent(videoId)}`,
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "en-US,en;q=0.9",
+      },
     },
-  });
-
-  if (!resp.ok) {
-    console.log(`[transcript] Strategy 2: watch page returned ${resp.status}`);
-    return null;
-  }
-
-  const html = await resp.text();
-  console.log(`[transcript] Strategy 2: watch page length=${html.length}`);
-
-  const tracks = extractCaptionTracksFromHtml(html);
-  console.log(`[transcript] Strategy 2: found ${tracks.length} caption tracks`);
-
-  if (tracks.length === 0) return null;
-
-  const languages = tracks.map(
-    (t) => `${t.languageCode}${t.kind === "asr" ? "(auto)" : ""}`
-  );
-  console.log(`[transcript] Strategy 2: languages=[${languages.join(", ")}]`);
-
-  const chosen = pickBestTrack(tracks);
-  if (!chosen) return null;
-
-  const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
-  console.log(`[transcript] Strategy 2: chose track: ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`);
-
-  // Fetch the transcript content — baseUrl returns XML with <text> elements
-  // Unescape unicode sequences from JSON
-  const baseUrl = chosen.baseUrl.replace(/\\u0026/g, "&");
-
-  // Try with fmt=srv3 first for richer XML, then plain
-  const urls = [
-    baseUrl + "&fmt=srv3",
-    baseUrl,
+    {
+      label: "watch+consent",
+      url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cookie": "CONSENT=PENDING+987",
+      },
+    },
+    {
+      label: "watch",
+      url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+    },
   ];
 
-  for (const url of urls) {
-    try {
-      console.log(`[transcript] Strategy 2: fetching transcript from ${url.substring(0, 120)}...`);
-      const tResp = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT },
-      });
-      if (!tResp.ok) {
-        console.log(`[transcript] Strategy 2: transcript endpoint returned ${tResp.status}`);
-        continue;
-      }
-      const xml = await tResp.text();
-      const lines = extractTextLines(xml);
-      if (lines.length > 0) {
-        console.log(`[transcript] Strategy 2: extracted ${lines.length} text lines`);
-        return {
-          transcript: lines.join("\n"),
-          strategy: "watch_page_scrape",
-          language: chosen.languageCode,
-          trackCount: tracks.length,
-        };
-      }
-    } catch (err) {
-      console.log(`[transcript] Strategy 2: fetch error: ${err}`);
+  for (const page of pages) {
+    console.log(`[transcript] Strategy 2 (${page.label}): fetching ${page.url}`);
+
+    const resp = await fetch(page.url, { headers: page.headers });
+
+    if (!resp.ok) {
+      console.log(`[transcript] Strategy 2 (${page.label}): returned ${resp.status}`);
+      continue;
     }
+
+    const html = await resp.text();
+    console.log(`[transcript] Strategy 2 (${page.label}): page length=${html.length}`);
+
+    const tracks = extractCaptionTracksFromHtml(html);
+    console.log(`[transcript] Strategy 2 (${page.label}): found ${tracks.length} caption tracks`);
+
+    if (tracks.length === 0) continue;
+
+    const languages = tracks.map(
+      (t) => `${t.languageCode}${t.kind === "asr" ? "(auto)" : ""}`
+    );
+    console.log(`[transcript] Strategy 2 (${page.label}): languages=[${languages.join(", ")}]`);
+
+    const chosen = pickBestTrack(tracks);
+    if (!chosen) continue;
+
+    const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
+    console.log(`[transcript] Strategy 2 (${page.label}): chose track: ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`);
+
+    const baseUrl = chosen.baseUrl.replace(/\\u0026/g, "&");
+    const urls = [baseUrl + "&fmt=srv3", baseUrl];
+
+    for (const url of urls) {
+      try {
+        console.log(`[transcript] Strategy 2 (${page.label}): fetching transcript from ${url.substring(0, 120)}...`);
+        const tResp = await fetch(url, {
+          headers: { "User-Agent": USER_AGENT },
+        });
+        if (!tResp.ok) {
+          console.log(`[transcript] Strategy 2 (${page.label}): transcript endpoint returned ${tResp.status}`);
+          continue;
+        }
+        const xml = await tResp.text();
+        const lines = extractTextLines(xml);
+        if (lines.length > 0) {
+          console.log(`[transcript] Strategy 2 (${page.label}): extracted ${lines.length} text lines`);
+          return {
+            transcript: lines.join("\n"),
+            strategy: `page_scrape_${page.label}`,
+            language: chosen.languageCode,
+            trackCount: tracks.length,
+          };
+        }
+      } catch (err) {
+        console.log(`[transcript] Strategy 2 (${page.label}): fetch error: ${err}`);
+      }
+    }
+
+    console.log(`[transcript] Strategy 2 (${page.label}): tracks found but content extraction failed`);
   }
 
-  console.log(`[transcript] Strategy 2: tracks found but content extraction failed`);
   return null;
 }
 
