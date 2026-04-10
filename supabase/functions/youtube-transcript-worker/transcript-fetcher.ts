@@ -6,6 +6,8 @@
  * Strategy 3: YouTube InnerTube API (bypasses web page rate limits)
  */
 
+// @ts-nocheck
+
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 const WORKER_USER_AGENT = "insight-compass-transcript-worker/1.0";
 
@@ -291,28 +293,38 @@ async function tryWatchPageScrape(videoId: string): Promise<StrategyResult | nul
 /*  Strategy 3: YouTube InnerTube API                                  */
 /* ------------------------------------------------------------------ */
 
-const INNERTUBE_API_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+const INNERTUBE_API_KEY = Deno.env.get("INNERTUBE_API_KEY")?.trim() || "";
 
-// Multiple client configs to try — Android client bypasses consent gates
-const INNERTUBE_CLIENTS = [
-  {
-    label: "EMBEDDED",
-    clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-    clientVersion: "2.0",
-    apiUrl: `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
-    userAgent: USER_AGENT,
-  },
-  {
-    label: "WEB",
-    clientName: "WEB",
-    clientVersion: "2.20240313.05.00",
-    apiUrl: `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
-    userAgent: USER_AGENT,
-  },
-];
+function buildInnertubeClients() {
+  if (!INNERTUBE_API_KEY) return [];
+
+  // Multiple client configs to try — embedded and web clients.
+  return [
+    {
+      label: "EMBEDDED",
+      clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+      clientVersion: "2.0",
+      apiUrl: `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
+      userAgent: USER_AGENT,
+    },
+    {
+      label: "WEB",
+      clientName: "WEB",
+      clientVersion: "2.20240313.05.00",
+      apiUrl: `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
+      userAgent: USER_AGENT,
+    },
+  ];
+}
 
 async function tryInnertubeApi(videoId: string): Promise<StrategyResult | null> {
-  for (const client of INNERTUBE_CLIENTS) {
+  const clients = buildInnertubeClients();
+  if (clients.length === 0) {
+    console.log("[transcript] Strategy 3: INNERTUBE_API_KEY is not configured; skipping");
+    return null;
+  }
+
+  for (const client of clients) {
     console.log(`[transcript] Strategy 3 (${client.label}): calling InnerTube player API for videoId=${videoId}`);
 
     try {
