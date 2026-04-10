@@ -316,64 +316,65 @@ async function tryInnertubeApi(videoId: string): Promise<StrategyResult | null> 
         }),
       });
 
-    if (!resp.ok) {
-      console.log(`[transcript] Strategy 3: InnerTube returned ${resp.status}`);
-      return null;
-    }
-
-    const data = await resp.json();
-    const tracks: CaptionTrack[] =
-      data?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
-    console.log(`[transcript] Strategy 3: found ${tracks.length} caption tracks`);
-
-    if (tracks.length === 0) return null;
-
-    const languages = tracks.map(
-      (t: CaptionTrack) => `${t.languageCode}${t.kind === "asr" ? "(auto)" : ""}`
-    );
-    console.log(`[transcript] Strategy 3: languages=[${languages.join(", ")}]`);
-
-    const chosen = pickBestTrack(tracks);
-    if (!chosen) return null;
-
-    const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
-    console.log(`[transcript] Strategy 3: chose track: ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`);
-
-    const baseUrl = chosen.baseUrl.replace(/\\u0026/g, "&");
-    const urls = [baseUrl + "&fmt=srv3", baseUrl];
-
-    for (const captionUrl of urls) {
-      try {
-        console.log(`[transcript] Strategy 3: fetching transcript from ${captionUrl.substring(0, 120)}...`);
-        const tResp = await fetch(captionUrl, {
-          headers: { "User-Agent": USER_AGENT },
-        });
-        if (!tResp.ok) {
-          console.log(`[transcript] Strategy 3: transcript endpoint returned ${tResp.status}`);
-          continue;
-        }
-        const xml = await tResp.text();
-        const lines = extractTextLines(xml);
-        if (lines.length > 0) {
-          console.log(`[transcript] Strategy 3: extracted ${lines.length} text lines`);
-          return {
-            transcript: lines.join("\n"),
-            strategy: "innertube_api",
-            language: chosen.languageCode,
-            trackCount: tracks.length,
-          };
-        }
-      } catch (err) {
-        console.log(`[transcript] Strategy 3: fetch error: ${err}`);
+      if (!resp.ok) {
+        console.log(`[transcript] Strategy 3 (${client.label}): InnerTube returned ${resp.status}`);
+        continue;
       }
-    }
 
-    console.log(`[transcript] Strategy 3: tracks found but content extraction failed`);
-    return null;
-  } catch (err) {
-    console.log(`[transcript] Strategy 3: InnerTube error: ${err}`);
-    return null;
+      const data = await resp.json();
+      const tracks: CaptionTrack[] =
+        data?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
+      console.log(`[transcript] Strategy 3 (${client.label}): found ${tracks.length} caption tracks`);
+
+      if (tracks.length === 0) continue;
+
+      const languages = tracks.map(
+        (t: CaptionTrack) => `${t.languageCode}${t.kind === "asr" ? "(auto)" : ""}`
+      );
+      console.log(`[transcript] Strategy 3 (${client.label}): languages=[${languages.join(", ")}]`);
+
+      const chosen = pickBestTrack(tracks);
+      if (!chosen) continue;
+
+      const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
+      console.log(`[transcript] Strategy 3 (${client.label}): chose track: ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`);
+
+      const baseUrl = chosen.baseUrl.replace(/\\u0026/g, "&");
+      const captionUrls = [baseUrl + "&fmt=srv3", baseUrl];
+
+      for (const captionUrl of captionUrls) {
+        try {
+          console.log(`[transcript] Strategy 3 (${client.label}): fetching transcript from ${captionUrl.substring(0, 120)}...`);
+          const tResp = await fetch(captionUrl, {
+            headers: { "User-Agent": client.userAgent },
+          });
+          if (!tResp.ok) {
+            console.log(`[transcript] Strategy 3 (${client.label}): transcript endpoint returned ${tResp.status}`);
+            continue;
+          }
+          const xml = await tResp.text();
+          const lines = extractTextLines(xml);
+          if (lines.length > 0) {
+            console.log(`[transcript] Strategy 3 (${client.label}): extracted ${lines.length} text lines`);
+            return {
+              transcript: lines.join("\n"),
+              strategy: `innertube_${client.label.toLowerCase()}`,
+              language: chosen.languageCode,
+              trackCount: tracks.length,
+            };
+          }
+        } catch (err) {
+          console.log(`[transcript] Strategy 3 (${client.label}): fetch error: ${err}`);
+        }
+      }
+
+      console.log(`[transcript] Strategy 3 (${client.label}): tracks found but content extraction failed`);
+    } catch (err) {
+      console.log(`[transcript] Strategy 3 (${client.label}): InnerTube error: ${err}`);
+    }
   }
+
+  return null;
 }
 
 /* ------------------------------------------------------------------ */
