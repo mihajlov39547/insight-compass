@@ -101,6 +101,7 @@ export function useDeleteNotebook() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Gather storage paths for documents attached to this notebook
       const { data: notebookDocs, error: docsError } = await (supabase.from('documents') as any)
         .select('id, storage_path')
         .eq('notebook_id', id);
@@ -111,6 +112,7 @@ export function useDeleteNotebook() {
         .map((d) => d.storage_path)
         .filter((p): p is string => typeof p === 'string' && p.length > 0);
 
+      // Remove files from storage (DB rows cascade-delete automatically via FK)
       if (storagePaths.length > 0) {
         const { error: storageError } = await supabase.storage
           .from('insight-navigator')
@@ -120,14 +122,8 @@ export function useDeleteNotebook() {
         }
       }
 
-      if (docs.length > 0) {
-        const docIds = docs.map((d) => d.id);
-        const { error: deleteDocsError } = await (supabase.from('documents' as any) as any)
-          .delete()
-          .in('id', docIds);
-        if (deleteDocsError) throw deleteDocsError;
-      }
-
+      // Delete notebook — cascades to: documents → analysis/chunks/chunk_questions,
+      // notebook_messages, notebook_notes, resource_links, link_transcript_chunks, shares (via trigger)
       const { error } = await (supabase.from('notebooks' as any) as any).delete().eq('id', id);
       if (error) throw error;
     },
@@ -136,6 +132,8 @@ export function useDeleteNotebook() {
       qc.invalidateQueries({ queryKey: ['documents'] });
       qc.invalidateQueries({ queryKey: ['notebook-documents'] });
       qc.invalidateQueries({ queryKey: ['notebook-document-counts'] });
+      qc.invalidateQueries({ queryKey: ['resources'] });
+      qc.invalidateQueries({ queryKey: ['shares'] });
     },
   });
 }
