@@ -667,25 +667,38 @@ export async function extractText(
   }
 
   if (ext === "docx" || mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    try {
-      const timeoutMs = Math.max(
-        3000,
-        Number(Deno.env.get("DOCUMENT_DOCX_TIMEOUT_MS") || 12000),
-      );
+    const timeoutMs = Math.max(
+      3000,
+      Number(Deno.env.get("DOCUMENT_DOCX_TIMEOUT_MS") || 12000),
+    );
 
+    const runMammothWithTimeout = async (input: { buffer?: Uint8Array | Buffer; arrayBuffer?: ArrayBuffer }) => {
       const result = await Promise.race([
-        mammoth.extractRawText({ arrayBuffer: bytes.slice().buffer }),
+        mammoth.extractRawText(input as any),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error(`mammoth timeout after ${timeoutMs}ms`)), timeoutMs)
         ),
       ]) as any;
 
-      const text = String(result.value || "").trim();
-      const messageCount = Array.isArray(result.messages) ? result.messages.length : 0;
-      console.log(`[docx-extraction] mammoth completed, messages=${messageCount}, textLen=${text.length}`);
-      const quality = assessTextQuality(text);
-      if (quality.readable || text.length > 0) {
-        return { text, method: "mammoth", encoding: "utf-8", quality };
+      const text = String(result?.value || "").trim();
+      const messageCount = Array.isArray(result?.messages) ? result.messages.length : 0;
+      return { text, messageCount };
+    };
+
+    try {
+      // Prefer buffer semantics first (as requested), then arrayBuffer fallback.
+      const firstPass = await runMammothWithTimeout({ buffer: Buffer.from(bytes) });
+      console.log(`[docx-extraction] mammoth(buffer) completed, messages=${firstPass.messageCount}, textLen=${firstPass.text.length}`);
+      const firstQuality = assessTextQuality(firstPass.text);
+      if (firstQuality.readable || firstPass.text.length > 0) {
+        return { text: firstPass.text, method: "mammoth_buffer", encoding: "utf-8", quality: firstQuality };
+      }
+
+      const secondPass = await runMammothWithTimeout({ arrayBuffer: bytes.slice().buffer });
+      console.log(`[docx-extraction] mammoth(arrayBuffer) completed, messages=${secondPass.messageCount}, textLen=${secondPass.text.length}`);
+      const secondQuality = assessTextQuality(secondPass.text);
+      if (secondQuality.readable || secondPass.text.length > 0) {
+        return { text: secondPass.text, method: "mammoth_arraybuffer", encoding: "utf-8", quality: secondQuality };
       }
     } catch (e) {
       console.warn(`[docx-extraction] mammoth failed: ${e}`);
