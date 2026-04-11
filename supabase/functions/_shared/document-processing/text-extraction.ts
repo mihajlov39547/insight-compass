@@ -30,6 +30,36 @@ function decodeWindows1251(bytes: Uint8Array): string {
   return result;
 }
 
+function decodeXmlEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#10;/g, "\n")
+    .replace(/&#13;/g, "\r")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_m, code) => String.fromCharCode(parseInt(code, 16)))
+    .replace(/&#(\d+);/g, (_m, code) => String.fromCharCode(Number(code)));
+}
+
+function decodeBestEffortText(bytes: Uint8Array): { text: string; encoding: string } {
+  const decodeUtf8 = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+  const decodeWin1250 = new TextDecoder("windows-1250", { fatal: false }).decode(bytes);
+  const decodeWin1251 = decodeWindows1251(bytes);
+  const decodeIso88592 = new TextDecoder("iso-8859-2", { fatal: false }).decode(bytes);
+
+  const candidates = [
+    { text: decodeUtf8, encoding: "utf-8" },
+    { text: decodeWin1250, encoding: "windows-1250" },
+    { text: decodeWin1251, encoding: "windows-1251" },
+    { text: decodeIso88592, encoding: "iso-8859-2" },
+  ];
+
+  candidates.sort((a, b) => assessTextQuality(b.text).score - assessTextQuality(a.text).score);
+  return candidates[0];
+}
+
 // ─── DOCX ZIP Extraction ───────────────────────────────────────────────
 
 async function extractDocxEntry(zipBytes: Uint8Array, targetPath: string): Promise<string | null> {
@@ -599,8 +629,13 @@ export async function extractText(
   const ext = fileName.split(".").pop()?.toLowerCase() || "";
 
   if (mimeType.startsWith("text/") || ["txt", "txtx", "md", "csv", "rtf"].includes(ext)) {
-    const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-    return { text, method: "plaintext", encoding: "utf-8", quality: assessTextQuality(text) };
+    const decoded = decodeBestEffortText(bytes);
+    return {
+      text: decoded.text,
+      method: "plaintext",
+      encoding: decoded.encoding,
+      quality: assessTextQuality(decoded.text),
+    };
   }
 
   if (ext === "pdf" || mimeType === "application/pdf") {
@@ -633,7 +668,18 @@ export async function extractText(
 
   if (ext === "docx" || mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
     try {
-      const result = await mammoth.extractRawText({ arrayBuffer: bytes.slice().buffer });
+      const timeoutMs = Math.max(
+        3000,
+        Number(Deno.env.get("DOCUMENT_DOCX_TIMEOUT_MS") || 12000),
+      );
+
+      const result = await Promise.race([
+        mammoth.extractRawText({ arrayBuffer: bytes.slice().buffer }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`mammoth timeout after ${timeoutMs}ms`)), timeoutMs)
+        ),
+      ]) as any;
+
       const text = String(result.value || "").trim();
       const messageCount = Array.isArray(result.messages) ? result.messages.length : 0;
       console.log(`[docx-extraction] mammoth completed, messages=${messageCount}, textLen=${text.length}`);
@@ -646,12 +692,25 @@ export async function extractText(
     }
 
     // Fallback only if Mammoth fails or returns no text.
-    const raw = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-    const matches = raw.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g);
-    const parts: string[] = [];
-    for (const m of matches) parts.push(m[1]);
-    const text = parts.join(" ");
-    return { text, method: "docx_xml_fallback", encoding: "utf-8", quality: assessTextQuality(text) };
+    const documentXml = await extractDocxEntry(bytes, "word/document.xml");
+    if (documentXml) {
+      const matches = documentXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g);
+      const parts: string[] = [];
+      for (const m of matches) {
+        const node = decodeXmlEntities(String(m[1] || "")).trim();
+        if (node) parts.push(node);
+      }
+      const text = parts.join(" ").replace(/\s+/g, " ").trim();
+      return { text, method: "docx_zip_xml_fallback", encoding: "utf-8", quality: assessTextQuality(text) };
+    }
+
+    const decoded = decodeBestEffortText(bytes);
+    return {
+      text: decoded.text,
+      method: "docx_decode_fallback",
+      encoding: decoded.encoding,
+      quality: assessTextQuality(decoded.text),
+    };
   }
 
   if (["xlsx", "xls"].includes(ext)) {

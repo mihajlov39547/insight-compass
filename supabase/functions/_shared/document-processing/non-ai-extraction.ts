@@ -5,6 +5,7 @@ import {
   countStats,
   normalizeForSearch,
   filterStructuralNoise,
+  assessTextQuality,
 } from "./text-extraction.ts";
 
 function toUtf8(bytes: Uint8Array): string {
@@ -13,6 +14,42 @@ function toUtf8(bytes: Uint8Array): string {
 
 function toLatin1(bytes: Uint8Array): string {
   return new TextDecoder("iso-8859-1", { fatal: false }).decode(bytes);
+}
+
+function toWindows1250(bytes: Uint8Array): string {
+  return new TextDecoder("windows-1250", { fatal: false }).decode(bytes);
+}
+
+function toWindows1251(bytes: Uint8Array): string {
+  return new TextDecoder("windows-1251", { fatal: false }).decode(bytes);
+}
+
+function toIso88592(bytes: Uint8Array): string {
+  return new TextDecoder("iso-8859-2", { fatal: false }).decode(bytes);
+}
+
+function decodeBestEffortText(bytes: Uint8Array): string {
+  const candidates = [
+    toUtf8(bytes),
+    toWindows1250(bytes),
+    toWindows1251(bytes),
+    toIso88592(bytes),
+    toLatin1(bytes),
+  ];
+
+  let best = candidates[0] || "";
+  let bestScore = assessTextQuality(best).score;
+
+  for (let i = 1; i < candidates.length; i++) {
+    const candidate = candidates[i] || "";
+    const score = assessTextQuality(candidate).score;
+    if (score > bestScore) {
+      best = candidate;
+      bestScore = score;
+    }
+  }
+
+  return best;
 }
 
 function normalizeWhitespace(text: string): string {
@@ -184,7 +221,7 @@ export async function extractSpreadsheetTextNonAi(bytes: Uint8Array, fileName: s
   const ext = (fileName.split(".").pop() || "").toLowerCase();
 
   if (ext === "csv") {
-    const text = toUtf8(bytes);
+    const text = decodeBestEffortText(bytes);
     const rows = text.split(/\r?\n/).filter(Boolean);
     const cols = rows[0]?.split(",").length ?? 0;
     return {
@@ -463,7 +500,7 @@ export async function extractEmailTextNonAi(
         throw new Error("mailparser simpleParser is unavailable");
       }
 
-      const raw = toUtf8(bytes) || toLatin1(bytes);
+      const raw = decodeBestEffortText(bytes) || toLatin1(bytes);
       const parsed = await simpleParser(raw);
       const bodyText = String(parsed?.text || "").trim();
       const bodyHtml = typeof parsed?.html === "string" ? parsed.html : null;
@@ -495,7 +532,7 @@ export async function extractEmailTextNonAi(
       };
     } catch (error) {
       parserWarnings.push(error instanceof Error ? error.message : "mailparser parsing failed");
-      const fallback = fallbackParseEml(toUtf8(bytes) || toLatin1(bytes));
+      const fallback = fallbackParseEml(decodeBestEffortText(bytes) || toLatin1(bytes));
       return {
         text: fallback.body_text,
         ...fallback,
@@ -606,7 +643,7 @@ export async function extractEmailTextNonAi(
 
 export function extractPlainTextLikeContent(bytes: Uint8Array, fileName: string) {
   const ext = (fileName.split(".").pop() || "").toLowerCase();
-  const text = toUtf8(bytes);
+  const text = decodeBestEffortText(bytes);
 
   if (["txt", "txtx", "md", "json", "xml", "csv", "rtf", "log"].includes(ext)) {
     const normalized = text.replace(/\u0000/g, "").trim();
