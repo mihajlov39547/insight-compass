@@ -80,6 +80,34 @@ function mergeMetadata(
   };
 }
 
+async function withStageTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  code: string,
+  details?: Record<string, unknown>
+): Promise<T> {
+  const ms = Math.max(1000, Math.floor(Number(timeoutMs) || 0));
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(
+            new DocumentStageError(`Stage timed out after ${ms}ms`, {
+              code,
+              classification: "retryable",
+              details,
+            })
+          );
+        }, ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function persistExtractionCheckpoint(
   supabase: SupabaseClient,
   doc: any,
@@ -486,21 +514,41 @@ export async function extractDocxTextStage(
     };
   }
 
-  const bytes = await downloadDocumentSource(supabase, doc);
-  const extraction = await extractDocxTextNonAi(bytes, doc.mime_type, doc.file_name);
+  const downloadTimeoutMs = Number(Deno.env.get("DOCUMENT_DOCX_DOWNLOAD_TIMEOUT_MS") || 20000);
+  const stageTimeoutMs = Number(Deno.env.get("DOCUMENT_DOCX_STAGE_TIMEOUT_MS") || 25000);
+  const persistTimeoutMs = Number(Deno.env.get("DOCUMENT_DOCX_PERSIST_TIMEOUT_MS") || 10000);
+
+  const bytes = await withStageTimeout(
+    downloadDocumentSource(supabase, doc),
+    downloadTimeoutMs,
+    "DOCUMENT_DOCX_DOWNLOAD_TIMEOUT",
+    { document_id: documentId, storage_path: doc.storage_path }
+  );
+
+  const extraction = await withStageTimeout(
+    extractDocxTextNonAi(bytes, doc.mime_type, doc.file_name),
+    stageTimeoutMs,
+    "DOCUMENT_DOCX_EXTRACT_STAGE_TIMEOUT",
+    { document_id: documentId, file_name: doc.file_name }
+  );
   const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
 
-  await persistExtractionCheckpoint(supabase, doc, {
-    stageKey: "document.extract_docx_text",
-    extractorSelected: extraction.method,
-    extractorStatus: status,
-    extractedText: extraction.text,
-    warning: extraction.text.trim() ? null : extraction.quality_reason,
-    metadataPatch: {
-      quality_score: extraction.quality_score,
-      quality_reason: extraction.quality_reason,
-    },
-  });
+  await withStageTimeout(
+    persistExtractionCheckpoint(supabase, doc, {
+      stageKey: "document.extract_docx_text",
+      extractorSelected: extraction.method,
+      extractorStatus: status,
+      extractedText: extraction.text,
+      warning: extraction.text.trim() ? null : extraction.quality_reason,
+      metadataPatch: {
+        quality_score: extraction.quality_score,
+        quality_reason: extraction.quality_reason,
+      },
+    }),
+    persistTimeoutMs,
+    "DOCUMENT_DOCX_PERSIST_TIMEOUT",
+    { document_id: documentId, stage_key: "document.extract_docx_text" }
+  );
 
   return {
     document_id: documentId,
