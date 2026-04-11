@@ -1,5 +1,9 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Plus, FileText, MoreHorizontal, Loader2, Sparkles,
   Atom, FlaskConical, Microscope, Scale, Landmark,
   Scroll, Wrench, Rocket, Cpu, Leaf, Globe, BookOpen,
@@ -98,6 +102,7 @@ export function NotebooksLanding() {
   const createNotebook = useCreateNotebook();
 
   const [showCreate, setShowCreate] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [createName, setCreateName] = useState('');
   const [createDescription, setCreateDescription] = useState('');
   const [createLanguage, setCreateLanguage] = useState<'en' | 'sr-lat'>('en');
@@ -162,7 +167,17 @@ export function NotebooksLanding() {
   };
 
   const handleDelete = (id: string) => {
-    deleteNotebook.mutate(id, { onSuccess: () => toast.success('Notebook deleted') });
+    setPendingDeleteId(id);
+  };
+
+  const confirmDeleteNotebook = () => {
+    if (!pendingDeleteId) return;
+    deleteNotebook.mutate(pendingDeleteId, {
+      onSuccess: () => {
+        toast.success('Notebook and all its data deleted');
+        setPendingDeleteId(null);
+      },
+    });
   };
 
   if (isLoading) {
@@ -415,6 +430,35 @@ export function NotebooksLanding() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Notebook</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this notebook and all of its data, including:
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>All chat messages and history</li>
+                <li>All uploaded documents and files</li>
+                <li>All notes</li>
+                <li>All extracted text, summaries, and processed data</li>
+                <li>All linked resources and transcripts</li>
+                <li>All sharing settings</li>
+              </ul>
+              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteNotebook}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Notebook
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Plus, FileText, Zap, Shield, MessageSquare,
   Atom, FlaskConical, Microscope, Scale, Landmark,
@@ -21,6 +21,7 @@ import { ProjectActionsMenuContent } from '@/components/actions/EntityActionMenu
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -98,6 +99,7 @@ export function ProjectsLanding() {
   const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const { data: allChats = [] } = useChats();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const { user } = useAuth();
 
@@ -222,13 +224,19 @@ export function ProjectsLanding() {
   };
 
   const handleDeleteProject = (projectId: string) => {
-    deleteProject.mutate(projectId, {
+    setPendingDeleteId(projectId);
+  };
+
+  const confirmDeleteProject = () => {
+    if (!pendingDeleteId) return;
+    deleteProject.mutate(pendingDeleteId, {
       onSuccess: () => {
-        if (selectedProjectId === projectId) {
+        if (selectedProjectId === pendingDeleteId) {
           setSelectedProjectId(null);
           setSelectedChatId(null);
         }
-        toast.success('Project and all its chats deleted');
+        toast.success('Project and all its data deleted');
+        setPendingDeleteId(null);
       },
     });
   };
@@ -434,6 +442,34 @@ export function ProjectsLanding() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this project and all of its data, including:
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>All chats and messages</li>
+                <li>All uploaded documents and files</li>
+                <li>All extracted text, summaries, and processed data</li>
+                <li>All linked resources and transcripts</li>
+                <li>All sharing settings</li>
+              </ul>
+              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteProject}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

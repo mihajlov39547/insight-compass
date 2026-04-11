@@ -98,40 +98,29 @@ export function useDeleteProject() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // Delete all messages for chats in this project
+      // Gather all storage paths for documents in this project (including chat-level docs).
       const { data: chats } = await supabase
         .from('chats')
         .select('id')
         .eq('project_id', id);
-
       const chatIds = (chats ?? []).map(c => c.id);
 
-      const [{ data: projectDocs, error: projectDocsError }, { data: chatDocs, error: chatDocsError }] = await Promise.all([
-        supabase
-          .from('documents' as any)
-          .select('id, storage_path')
-          .eq('project_id', id),
+      const [{ data: projectDocs }, { data: chatDocs }] = await Promise.all([
+        supabase.from('documents' as any).select('id, storage_path').eq('project_id', id),
         chatIds.length > 0
-          ? supabase
-              .from('documents' as any)
-              .select('id, storage_path')
-              .in('chat_id', chatIds)
-          : Promise.resolve({ data: [], error: null } as any),
+          ? supabase.from('documents' as any).select('id, storage_path').in('chat_id', chatIds)
+          : Promise.resolve({ data: [] } as any),
       ]);
 
-      if (projectDocsError) throw projectDocsError;
-      if (chatDocsError) throw chatDocsError;
-
-      const combinedDocs = [
+      const allDocs = [
         ...((projectDocs ?? []) as unknown as Array<{ id: string; storage_path: string }>),
         ...((chatDocs ?? []) as unknown as Array<{ id: string; storage_path: string }>),
       ];
+      const storagePaths = Array.from(new Set(
+        allDocs.map(d => d.storage_path).filter((p): p is string => typeof p === 'string' && p.length > 0)
+      ));
 
-      const uniqueDocs = Array.from(new Map(combinedDocs.map((d) => [d.id, d])).values());
-      const storagePaths = uniqueDocs
-        .map((d) => d.storage_path)
-        .filter((p): p is string => typeof p === 'string' && p.length > 0);
-
+      // Remove files from storage (DB rows cascade-delete automatically via FK)
       if (storagePaths.length > 0) {
         const { error: storageError } = await supabase.storage
           .from('insight-navigator')
@@ -141,20 +130,8 @@ export function useDeleteProject() {
         }
       }
 
-      if (uniqueDocs.length > 0) {
-        const docIds = uniqueDocs.map((d) => d.id);
-        const { error: deleteDocsError } = await supabase
-          .from('documents' as any)
-          .delete()
-          .in('id', docIds);
-        if (deleteDocsError) throw deleteDocsError;
-      }
-      
-      if (chatIds.length > 0) {
-        await supabase.from('messages').delete().in('chat_id', chatIds);
-        await supabase.from('chats').delete().eq('project_id', id);
-      }
-
+      // Delete project — cascades to: chats → messages, documents → analysis/chunks/chunk_questions,
+      // resource_links, link_transcript_chunks, shares (via trigger)
       const { error } = await supabase.from('projects').delete().eq('id', id);
       if (error) throw error;
     },
@@ -163,6 +140,8 @@ export function useDeleteProject() {
       qc.invalidateQueries({ queryKey: ['chats'] });
       qc.invalidateQueries({ queryKey: ['documents'] });
       qc.invalidateQueries({ queryKey: ['document-count'] });
+      qc.invalidateQueries({ queryKey: ['resources'] });
+      qc.invalidateQueries({ queryKey: ['shares'] });
     },
   });
 }

@@ -8,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import type { ItemPermissions } from '@/lib/permissions';
@@ -39,6 +40,7 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
+  const [pendingDeleteChat, setPendingDeleteChat] = useState<DbChat | null>(null);
 
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
@@ -61,10 +63,16 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
   };
 
   const handleDeleteChat = (chat: DbChat) => {
-    deleteChat.mutate({ id: chat.id, projectId: chat.project_id }, {
+    setPendingDeleteChat(chat);
+  };
+
+  const confirmDeleteChat = () => {
+    if (!pendingDeleteChat) return;
+    deleteChat.mutate({ id: pendingDeleteChat.id, projectId: pendingDeleteChat.project_id }, {
       onSuccess: () => {
-        if (selectedChatId === chat.id) setSelectedChatId(null);
-        toast.success('Chat deleted');
+        if (selectedChatId === pendingDeleteChat.id) setSelectedChatId(null);
+        toast.success('Chat and all its data deleted');
+        setPendingDeleteChat(null);
       },
     });
   };
@@ -200,6 +208,32 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!pendingDeleteChat} onOpenChange={(open) => !open && setPendingDeleteChat(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this chat and all of its data, including:
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>All messages and conversation history</li>
+                <li>All uploaded documents and files</li>
+                <li>All extracted text, summaries, and processed data</li>
+              </ul>
+              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteChat}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Chat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
