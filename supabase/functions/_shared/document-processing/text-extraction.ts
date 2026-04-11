@@ -667,10 +667,24 @@ export async function extractText(
   }
 
   if (ext === "docx" || mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    const timeoutMs = Math.max(
-      3000,
-      Number(Deno.env.get("DOCUMENT_DOCX_TIMEOUT_MS") || 12000),
-    );
+    // Prefer ZIP XML extraction first. This avoids occasional mammoth hangs in
+    // edge runtimes and preserves full Unicode text (including Serbian scripts).
+    const documentXml = await extractDocxEntry(bytes, "word/document.xml");
+    if (documentXml) {
+      const matches = documentXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g);
+      const parts: string[] = [];
+      for (const m of matches) {
+        const node = decodeXmlEntities(String(m[1] || "")).trim();
+        if (node) parts.push(node);
+      }
+      const text = parts.join(" ").replace(/\s+/g, " ").trim();
+      const quality = assessTextQuality(text);
+      if (quality.readable || text.length > 0) {
+        return { text, method: "docx_zip_xml_primary", encoding: "utf-8", quality };
+      }
+    }
+
+    const timeoutMs = Math.max(3000, Number(Deno.env.get("DOCUMENT_DOCX_TIMEOUT_MS") || 12000));
 
     const runMammothWithTimeout = async (input: { buffer?: Uint8Array | Buffer; arrayBuffer?: ArrayBuffer }) => {
       const result = await Promise.race([
@@ -704,18 +718,7 @@ export async function extractText(
       console.warn(`[docx-extraction] mammoth failed: ${e}`);
     }
 
-    // Fallback only if Mammoth fails or returns no text.
-    const documentXml = await extractDocxEntry(bytes, "word/document.xml");
-    if (documentXml) {
-      const matches = documentXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g);
-      const parts: string[] = [];
-      for (const m of matches) {
-        const node = decodeXmlEntities(String(m[1] || "")).trim();
-        if (node) parts.push(node);
-      }
-      const text = parts.join(" ").replace(/\s+/g, " ").trim();
-      return { text, method: "docx_zip_xml_fallback", encoding: "utf-8", quality: assessTextQuality(text) };
-    }
+    // Final fallback: best-effort byte decoding
 
     const decoded = decodeBestEffortText(bytes);
     return {
