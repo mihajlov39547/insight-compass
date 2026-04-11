@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Plus, FileText, Zap, Shield, MessageSquare,
   Atom, FlaskConical, Microscope, Scale, Landmark,
@@ -21,6 +21,7 @@ import { ProjectActionsMenuContent } from '@/components/actions/EntityActionMenu
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -98,6 +99,7 @@ export function ProjectsLanding() {
   const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const { data: allChats = [] } = useChats();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const { user } = useAuth();
 
@@ -222,13 +224,19 @@ export function ProjectsLanding() {
   };
 
   const handleDeleteProject = (projectId: string) => {
-    deleteProject.mutate(projectId, {
+    setPendingDeleteId(projectId);
+  };
+
+  const confirmDeleteProject = () => {
+    if (!pendingDeleteId) return;
+    deleteProject.mutate(pendingDeleteId, {
       onSuccess: () => {
-        if (selectedProjectId === projectId) {
+        if (selectedProjectId === pendingDeleteId) {
           setSelectedProjectId(null);
           setSelectedChatId(null);
         }
-        toast.success('Project and all its chats deleted');
+        toast.success('Project and all its data deleted');
+        setPendingDeleteId(null);
       },
     });
   };
