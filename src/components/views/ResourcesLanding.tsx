@@ -4,7 +4,7 @@ import {
   Database, Music, Video, Link, File, Search, ArrowUpDown, Filter,
   FolderOpen, BookOpen, User, Globe, Clock, CheckCircle2,
   AlertCircle, Loader2, MoreHorizontal, Download, Eye, RotateCcw,
-  Trash2, ExternalLink, X, HelpCircle, Plus
+  Trash2, ExternalLink, X, HelpCircle, Plus, MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
