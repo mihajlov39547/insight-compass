@@ -146,6 +146,10 @@ export function ResourcesLanding() {
       list = list.filter(r =>
         r.title.toLowerCase().includes(q) ||
         r.containerName?.toLowerCase().includes(q) ||
+        r.containerPath?.toLowerCase().includes(q) ||
+        r.projectName?.toLowerCase().includes(q) ||
+        r.chatName?.toLowerCase().includes(q) ||
+        r.notebookName?.toLowerCase().includes(q) ||
         r.ownerDisplayName.toLowerCase().includes(q) ||
         r.extension.toLowerCase().includes(q) ||
         r.previewTitle?.toLowerCase().includes(q) ||
@@ -230,6 +234,12 @@ export function ResourcesLanding() {
 
   const handleOpen = (resource: Resource) => {
     if (!resource.canOpen || !resource.containerId) return;
+    if (resource.chatId) {
+      setSelectedProjectId(resource.projectId || resource.containerId);
+      setSelectedChatId(resource.chatId);
+      setActiveView('chat-documents');
+      return;
+    }
     if (resource.containerType === 'project') {
       setSelectedProjectId(resource.containerId);
       setSelectedChatId(null);
@@ -523,7 +533,7 @@ export function ResourcesLanding() {
           ) : (
             <div className="space-y-1">
               {/* Table header */}
-              <div className="grid grid-cols-[1fr_120px_140px_100px_100px_40px] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+              <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
                 <span>Resource</span>
                 <span>Type</span>
                 <span>Location</span>
@@ -678,6 +688,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   const Icon = RESOURCE_ICONS[resource.resourceType] || File;
   const color = RESOURCE_COLORS[resource.resourceType] || 'text-muted-foreground';
   const ContainerIcon = CONTAINER_ICONS[resource.containerType] || Globe;
+  const LocationIcon = resource.chatName ? MessageSquare : ContainerIcon;
   const canRetry = resource.canRetry && resource.readiness === 'failed';
   const canDelete = resource.canDelete;
   const canOpen = resource.canOpen && !!resource.containerId;
@@ -706,7 +717,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   }, [resource.updatedAt]);
 
   return (
-    <div className="grid grid-cols-[1fr_120px_140px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors group">
+    <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors group">
       {/* Resource info */}
       <div className="flex items-center gap-3 min-w-0">
         <div className={cn('p-1.5 rounded-md bg-muted shrink-0', color)}>
@@ -763,9 +774,9 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
 
       {/* Location */}
       <div className="flex items-center gap-1.5 min-w-0">
-        <ContainerIcon className="h-3 w-3 text-muted-foreground shrink-0" />
-        <span className="text-xs text-muted-foreground truncate">
-          {resource.containerName || 'Personal'}
+        <LocationIcon className="h-3 w-3 text-muted-foreground shrink-0" />
+        <span className="text-xs text-muted-foreground truncate" title={resource.containerPath}>
+          {resource.containerPath}
         </span>
       </div>
 
@@ -1163,7 +1174,7 @@ function ResourceDetailsDrawer({
           <SheetHeader className="px-6 py-4 border-b border-border text-left">
             <SheetTitle className="pr-10 truncate">{resource.title}</SheetTitle>
             <SheetDescription>
-              {resource.containerName || 'Personal'} • {resource.ownerDisplayName}
+              {resource.containerPath} • {resource.ownerDisplayName}
             </SheetDescription>
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{RESOURCE_TYPE_LABELS[resource.resourceType]}</Badge>
@@ -1218,10 +1229,19 @@ function ResourceDetailsDrawer({
                     <p className="mt-1">{formatTimestamp(resource.updatedAt)}</p>
                   </div>
                   <div className="rounded-md border border-border/60 p-2 col-span-2">
-                    <p className="text-muted-foreground">Container</p>
+                    <p className="text-muted-foreground">Location</p>
                     <p className="mt-1">
-                      {resource.containerType} {resource.containerName ? `• ${resource.containerName}` : ''}
+                      {resource.containerPath}
                     </p>
+                    {(resource.projectName || resource.chatName || resource.notebookName) && (
+                      <p className="mt-1 text-muted-foreground">
+                        {resource.projectName ? `Project: ${resource.projectName}` : ''}
+                        {resource.projectName && resource.chatName ? ' | ' : ''}
+                        {resource.chatName ? `Chat: ${resource.chatName}` : ''}
+                        {(resource.projectName || resource.chatName) && resource.notebookName ? ' | ' : ''}
+                        {resource.notebookName ? `Notebook: ${resource.notebookName}` : ''}
+                      </p>
+                    )}
                   </div>
                   <div className="rounded-md border border-border/60 p-2 col-span-2">
                     <p className="text-muted-foreground">Owner</p>

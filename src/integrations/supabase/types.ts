@@ -1906,7 +1906,10 @@ export type Database = {
           can_view_details: boolean
           container_id: string
           container_name: string
+          container_path: string
           container_type: string
+          chat_id: string
+          chat_name: string
           detected_language: string
           extension: string
           id: string
@@ -1922,12 +1925,16 @@ export type Database = {
           normalized_url: string
           owner_display_name: string
           owner_user_id: string
+          notebook_id: string
+          notebook_name: string
           page_count: number
           preview_domain: string
           preview_favicon_url: string
           preview_title: string
           processing_error: string
           processing_status: string
+          project_id: string
+          project_name: string
           provider: string
           resource_kind: string
           resource_type: string
@@ -1954,7 +1961,10 @@ export type Database = {
           can_view_details: boolean
           container_id: string
           container_name: string
+          container_path: string
           container_type: string
+          chat_id: string
+          chat_name: string
           detected_language: string
           extension: string
           id: string
@@ -1970,12 +1980,16 @@ export type Database = {
           normalized_url: string
           owner_display_name: string
           owner_user_id: string
+          notebook_id: string
+          notebook_name: string
           page_count: number
           preview_domain: string
           preview_favicon_url: string
           preview_title: string
           processing_error: string
           processing_status: string
+          project_id: string
+          project_name: string
           provider: string
           resource_kind: string
           resource_type: string

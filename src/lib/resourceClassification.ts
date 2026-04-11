@@ -100,6 +100,13 @@ export interface Resource {
   containerType: ContainerType;
   containerId: string | null;
   containerName: string | null;
+  containerPath: string;
+  projectId: string | null;
+  projectName: string | null;
+  chatId: string | null;
+  chatName: string | null;
+  notebookId: string | null;
+  notebookName: string | null;
   isOwnedByMe: boolean;
   isSharedWithMe: boolean;
   // Backward-compatible alias for legacy shared chip/filter behavior.
@@ -146,6 +153,17 @@ function parseSourceType(value: unknown): SourceType {
   return 'uploaded';
 }
 
+function buildLocationPath(row: Record<string, any>): string {
+  const projectName = row.project_name || null;
+  const chatName = row.chat_name || null;
+  const notebookName = row.notebook_name || null;
+
+  if (notebookName) return `Notebook: ${notebookName}`;
+  if (projectName && chatName) return `Project: ${projectName} -> Chat: ${chatName}`;
+  if (projectName) return `Project: ${projectName}`;
+  return 'Personal';
+}
+
 /**
  * Maps a raw row from get_user_resources RPC into the frontend Resource shape.
  */
@@ -172,6 +190,13 @@ export function mapRpcRowToResource(row: Record<string, any>): Resource {
     containerType: (row.container_type || 'personal') as ContainerType,
     containerId: row.container_id || null,
     containerName: row.container_name || null,
+    containerPath: row.container_path || buildLocationPath(row),
+    projectId: row.project_id || null,
+    projectName: row.project_name || null,
+    chatId: row.chat_id || null,
+    chatName: row.chat_name || null,
+    notebookId: row.notebook_id || null,
+    notebookName: row.notebook_name || null,
     isOwnedByMe: !!ownedByMe,
     isSharedWithMe: !!sharedWithMe,
     isShared: !!sharedWithMe,

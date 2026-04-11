@@ -27,7 +27,7 @@ function resolveTimeoutMs(value?: number): number {
 }
 
 async function defaultExtractRawText(input: { buffer: Buffer }): Promise<{ value?: unknown }> {
-  const mammothMod: any = await import("https://esm.sh/mammoth@1.8.0?target=es2022");
+  const mammothMod: any = await import("https://esm.sh/mammoth@1.12.0?target=es2022");
   const mammoth = mammothMod?.default ?? mammothMod;
   if (!mammoth || typeof mammoth.extractRawText !== "function") {
     throw new Error("Mammoth extractRawText is unavailable");
@@ -43,12 +43,15 @@ export async function extractDocxRawTextWithMammoth(
   const now = options.now ?? Date.now;
   const startedAt = now();
   const extractRawText = options.extractRawText ?? defaultExtractRawText;
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   try {
     const result = await Promise.race([
       extractRawText({ buffer: Buffer.from(bytes) }),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("DOCX_MAMMOTH_TIMEOUT")), timeoutMs)
+        {
+          timeoutHandle = setTimeout(() => reject(new Error("DOCX_MAMMOTH_TIMEOUT")), timeoutMs);
+        }
       ),
     ]);
 
@@ -75,5 +78,9 @@ export async function extractDocxRawTextWithMammoth(
       durationMs: now() - startedAt,
       error: message,
     };
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
   }
 }
