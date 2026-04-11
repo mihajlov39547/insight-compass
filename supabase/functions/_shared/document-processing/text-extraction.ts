@@ -1,7 +1,6 @@
 // @ts-nocheck
 import pdfParse from "https://esm.sh/pdf-parse@1.1.1?target=es2022";
 import { Buffer } from "node:buffer";
-import mammoth from "https://esm.sh/mammoth@1.8.0?target=es2022";
 
 // ─── Windows-1251 Decoder (Serbian Cyrillic) ───────────────────────────
 
@@ -58,6 +57,48 @@ function decodeBestEffortText(bytes: Uint8Array): { text: string; encoding: stri
 
   candidates.sort((a, b) => assessTextQuality(b.text).score - assessTextQuality(a.text).score);
   return candidates[0];
+}
+
+async function runOptionalMammothExtraction(
+  bytes: Uint8Array,
+  timeoutMs: number,
+): Promise<{ text: string; method: string; quality: TextQuality } | null> {
+  const enabled = String(Deno.env.get("DOCUMENT_DOCX_ENABLE_MAMMOTH_FALLBACK") || "false").toLowerCase() === "true";
+  if (!enabled) return null;
+
+  try {
+    const mammothMod: any = await import("https://esm.sh/mammoth@1.8.0?target=es2022");
+    const mammoth = mammothMod?.default ?? mammothMod;
+    if (!mammoth || typeof mammoth.extractRawText !== "function") {
+      return null;
+    }
+
+    const run = async (input: { buffer?: Uint8Array | Buffer; arrayBuffer?: ArrayBuffer }, method: string) => {
+      const result = await Promise.race([
+        mammoth.extractRawText(input as any),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`mammoth timeout after ${timeoutMs}ms`)), timeoutMs)
+        ),
+      ]) as any;
+
+      const text = String(result?.value || "").trim();
+      const quality = assessTextQuality(text);
+      if (quality.readable || text.length > 0) {
+        return { text, method, quality };
+      }
+      return null;
+    };
+
+    const bufferPass = await run({ buffer: Buffer.from(bytes) }, "mammoth_buffer_fallback");
+    if (bufferPass) return bufferPass;
+
+    const arrayPass = await run({ arrayBuffer: bytes.slice().buffer }, "mammoth_arraybuffer_fallback");
+    if (arrayPass) return arrayPass;
+  } catch (e) {
+    console.warn(`[docx-extraction] optional mammoth fallback failed: ${e}`);
+  }
+
+  return null;
 }
 
 // ─── DOCX ZIP Extraction ───────────────────────────────────────────────
@@ -685,37 +726,14 @@ export async function extractText(
     }
 
     const timeoutMs = Math.max(3000, Number(Deno.env.get("DOCUMENT_DOCX_TIMEOUT_MS") || 12000));
-
-    const runMammothWithTimeout = async (input: { buffer?: Uint8Array | Buffer; arrayBuffer?: ArrayBuffer }) => {
-      const result = await Promise.race([
-        mammoth.extractRawText(input as any),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`mammoth timeout after ${timeoutMs}ms`)), timeoutMs)
-        ),
-      ]) as any;
-
-      const text = String(result?.value || "").trim();
-      const messageCount = Array.isArray(result?.messages) ? result.messages.length : 0;
-      return { text, messageCount };
-    };
-
-    try {
-      // Prefer buffer semantics first (as requested), then arrayBuffer fallback.
-      const firstPass = await runMammothWithTimeout({ buffer: Buffer.from(bytes) });
-      console.log(`[docx-extraction] mammoth(buffer) completed, messages=${firstPass.messageCount}, textLen=${firstPass.text.length}`);
-      const firstQuality = assessTextQuality(firstPass.text);
-      if (firstQuality.readable || firstPass.text.length > 0) {
-        return { text: firstPass.text, method: "mammoth_buffer", encoding: "utf-8", quality: firstQuality };
-      }
-
-      const secondPass = await runMammothWithTimeout({ arrayBuffer: bytes.slice().buffer });
-      console.log(`[docx-extraction] mammoth(arrayBuffer) completed, messages=${secondPass.messageCount}, textLen=${secondPass.text.length}`);
-      const secondQuality = assessTextQuality(secondPass.text);
-      if (secondQuality.readable || secondPass.text.length > 0) {
-        return { text: secondPass.text, method: "mammoth_arraybuffer", encoding: "utf-8", quality: secondQuality };
-      }
-    } catch (e) {
-      console.warn(`[docx-extraction] mammoth failed: ${e}`);
+    const mammothResult = await runOptionalMammothExtraction(bytes, timeoutMs);
+    if (mammothResult) {
+      return {
+        text: mammothResult.text,
+        method: mammothResult.method,
+        encoding: "utf-8",
+        quality: mammothResult.quality,
+      };
     }
 
     // Final fallback: best-effort byte decoding
