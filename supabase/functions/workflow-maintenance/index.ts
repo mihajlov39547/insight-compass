@@ -245,6 +245,16 @@ serve(async (req) => {
           .in("status", ["claimed", "running"]);
 
         if (!updateErr) {
+          // Close unfinished attempt rows to avoid orphan "running" attempts.
+          await supabase
+            .from("activity_attempts")
+            .update({
+              finished_at: nowIso,
+              error_message: "Stale activity exceeded retry budget",
+            })
+            .eq("activity_run_id", row.id)
+            .is("finished_at", null);
+
           failedCount++;
           touchedActivityIds.push(row.id);
           touchedWorkflowIds.add(row.workflow_run_id);
@@ -260,6 +270,51 @@ serve(async (req) => {
               source: "maintenance_cron",
             },
           });
+
+          // Keep workflow/document state consistent when a required activity reaches terminal failure.
+          if (!row.is_optional) {
+            await supabase
+              .from("workflow_runs")
+              .update({
+                status: "failed",
+                failure_reason: "required_activity_terminal_failure",
+                completed_at: nowIso,
+                updated_at: nowIso,
+              })
+              .eq("id", row.workflow_run_id)
+              .in("status", ["pending", "running"]);
+
+            await supabase.from("workflow_events").insert({
+              workflow_run_id: row.workflow_run_id,
+              activity_run_id: row.id,
+              event_type: "workflow_failed",
+              actor,
+              details: {
+                reason: "required_activity_terminal_failure",
+                failed_activity_id: row.id,
+                failed_activity_key: row.activity_key,
+                source: "maintenance_cron",
+              },
+            });
+
+            const { data: workflowRow } = await supabase
+              .from("workflow_runs")
+              .select("trigger_entity_type, trigger_entity_id")
+              .eq("id", row.workflow_run_id)
+              .maybeSingle();
+
+            if (workflowRow?.trigger_entity_type === "document" && workflowRow.trigger_entity_id) {
+              await supabase
+                .from("documents")
+                .update({
+                  processing_status: "failed",
+                  processing_error: "Workflow failed: stale activity exceeded retry budget",
+                  updated_at: nowIso,
+                })
+                .eq("id", workflowRow.trigger_entity_id)
+                .in("processing_status", ["extracting_metadata", "extracting_content", "detecting_language", "summarizing", "indexing", "chunking", "generating_embeddings", "generating_chunk_questions"]);
+            }
+          }
         }
       }
     }
