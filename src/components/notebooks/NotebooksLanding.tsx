@@ -462,6 +462,8 @@ export function NotebooksLanding() {
     </div>
   );
 }
+
+function NotebookCardActions({
   notebook,
   onManageNotebook,
   onManageDocuments,
