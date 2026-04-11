@@ -35,7 +35,7 @@ import { useNotebooks } from '@/hooks/useNotebooks';
 import { useResourceTranscriptPreview } from '@/hooks/useResourceTranscriptPreview';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
-  RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName
+  RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName, formatResourceLocation
 } from '@/lib/resourceClassification';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -701,6 +701,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   const retryLabel = resource.provider === 'youtube' && resource.transcriptStatus === 'failed'
     ? 'Retry transcript'
     : 'Retry processing';
+  const locationText = formatResourceLocation(resource);
 
   const relativeDate = useMemo(() => {
     const d = new Date(resource.updatedAt);
@@ -775,8 +776,8 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
       {/* Location */}
       <div className="flex items-center gap-1.5 min-w-0">
         <LocationIcon className="h-3 w-3 text-muted-foreground shrink-0" />
-        <span className="text-xs text-muted-foreground truncate" title={resource.containerPath}>
-          {resource.containerPath}
+        <span className="text-xs text-muted-foreground truncate" title={locationText}>
+          {locationText}
         </span>
       </div>
 
@@ -1166,6 +1167,7 @@ function ResourceDetailsDrawer({
   const canOpenWorkspace = resource.canOpen && !!resource.containerId;
   const canFallbackPersonalOpen = resource.containerType === 'personal';
   const canRetryTranscript = resource.provider === 'youtube' && resource.transcriptStatus === 'failed';
+  const locationText = formatResourceLocation(resource);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -1174,7 +1176,7 @@ function ResourceDetailsDrawer({
           <SheetHeader className="px-6 py-4 border-b border-border text-left">
             <SheetTitle className="pr-10 truncate">{resource.title}</SheetTitle>
             <SheetDescription>
-              {resource.containerPath} • {resource.ownerDisplayName}
+              {locationText} • {resource.ownerDisplayName}
             </SheetDescription>
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{RESOURCE_TYPE_LABELS[resource.resourceType]}</Badge>
@@ -1231,17 +1233,8 @@ function ResourceDetailsDrawer({
                   <div className="rounded-md border border-border/60 p-2 col-span-2">
                     <p className="text-muted-foreground">Location</p>
                     <p className="mt-1">
-                      {resource.containerPath}
+                      {locationText}
                     </p>
-                    {(resource.projectName || resource.chatName || resource.notebookName) && (
-                      <p className="mt-1 text-muted-foreground">
-                        {resource.projectName ? `Project: ${resource.projectName}` : ''}
-                        {resource.projectName && resource.chatName ? ' | ' : ''}
-                        {resource.chatName ? `Chat: ${resource.chatName}` : ''}
-                        {(resource.projectName || resource.chatName) && resource.notebookName ? ' | ' : ''}
-                        {resource.notebookName ? `Notebook: ${resource.notebookName}` : ''}
-                      </p>
-                    )}
                   </div>
                   <div className="rounded-md border border-border/60 p-2 col-span-2">
                     <p className="text-muted-foreground">Owner</p>

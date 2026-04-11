@@ -158,9 +158,18 @@ function buildLocationPath(row: Record<string, any>): string {
   const chatName = row.chat_name || null;
   const notebookName = row.notebook_name || null;
 
-  if (notebookName) return `Notebook: ${notebookName}`;
-  if (projectName && chatName) return `Project: ${projectName} -> Chat: ${chatName}`;
-  if (projectName) return `Project: ${projectName}`;
+  if (chatName) return `${chatName} (${projectName || 'Project'})`;
+  if (notebookName) return notebookName;
+  if (projectName) return projectName;
+  return 'Personal';
+}
+
+export function formatResourceLocation(resource: Pick<Resource,
+  'containerPath' | 'projectName' | 'chatName' | 'notebookName'>): string {
+  if (resource.chatName) return `${resource.chatName} (${resource.projectName || 'Project'})`;
+  if (resource.notebookName) return resource.notebookName;
+  if (resource.projectName) return resource.projectName;
+  if (resource.containerPath && resource.containerPath.trim()) return resource.containerPath;
   return 'Personal';
 }
 
