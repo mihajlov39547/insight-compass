@@ -98,6 +98,7 @@ export function NotebooksLanding() {
   const createNotebook = useCreateNotebook();
 
   const [showCreate, setShowCreate] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [createName, setCreateName] = useState('');
   const [createDescription, setCreateDescription] = useState('');
   const [createLanguage, setCreateLanguage] = useState<'en' | 'sr-lat'>('en');
@@ -162,7 +163,17 @@ export function NotebooksLanding() {
   };
 
   const handleDelete = (id: string) => {
-    deleteNotebook.mutate(id, { onSuccess: () => toast.success('Notebook deleted') });
+    setPendingDeleteId(id);
+  };
+
+  const confirmDeleteNotebook = () => {
+    if (!pendingDeleteId) return;
+    deleteNotebook.mutate(pendingDeleteId, {
+      onSuccess: () => {
+        toast.success('Notebook and all its data deleted');
+        setPendingDeleteId(null);
+      },
+    });
   };
 
   if (isLoading) {
