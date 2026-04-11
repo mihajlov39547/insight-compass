@@ -81,7 +81,7 @@ serve(async (req) => {
     const { data: staleRows, error: staleError } = await supabase
       .from("activity_runs")
       .select(
-        "id, workflow_run_id, activity_key, status, attempt_count, max_attempts, retry_backoff_seconds, retry_backoff_multiplier, is_optional, claimed_by, claimed_at, started_at, lease_expires_at"
+        "id, workflow_run_id, activity_key, status, attempt_count, max_attempts, retry_backoff_seconds, retry_backoff_multiplier, is_optional, claimed_by, claimed_at, started_at, lease_expires_at",
       )
       .in("status", ["claimed", "running"])
       .not("lease_expires_at", "is", null)
@@ -112,7 +112,7 @@ serve(async (req) => {
         recovered_count: 0,
         failed_count: 0,
         dry_run: true,
-        stale_activities: stale.map(s => ({
+        stale_activities: stale.map((s) => ({
           id: s.id,
           activity_key: s.activity_key,
           status: s.status,
@@ -178,7 +178,8 @@ serve(async (req) => {
         }
       } else if (row.status === "running" && hasRetryBudget) {
         // Recover stale running → waiting_retry
-        const backoffSeconds = row.retry_backoff_seconds * Math.pow(row.retry_backoff_multiplier, row.attempt_count - 1);
+        const backoffSeconds =
+          row.retry_backoff_seconds * Math.pow(row.retry_backoff_multiplier, row.attempt_count - 1);
         const nextRetryAt = new Date(Date.now() + backoffSeconds * 1000).toISOString();
 
         const { data: updated, error: updateErr } = await supabase
@@ -312,7 +313,16 @@ serve(async (req) => {
                   updated_at: nowIso,
                 })
                 .eq("id", workflowRow.trigger_entity_id)
-                .in("processing_status", ["extracting_metadata", "extracting_content", "detecting_language", "summarizing", "indexing", "chunking", "generating_embeddings", "generating_chunk_questions"]);
+                .in("processing_status", [
+                  "extracting_metadata",
+                  "extracting_content",
+                  "detecting_language",
+                  "summarizing",
+                  "indexing",
+                  "chunking",
+                  "generating_embeddings",
+                  "generating_chunk_questions",
+                ]);
             }
           }
         }
