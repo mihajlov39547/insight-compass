@@ -8,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import type { ItemPermissions } from '@/lib/permissions';
@@ -39,6 +40,7 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
+  const [pendingDeleteChat, setPendingDeleteChat] = useState<DbChat | null>(null);
 
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
@@ -61,10 +63,16 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
   };
 
   const handleDeleteChat = (chat: DbChat) => {
-    deleteChat.mutate({ id: chat.id, projectId: chat.project_id }, {
+    setPendingDeleteChat(chat);
+  };
+
+  const confirmDeleteChat = () => {
+    if (!pendingDeleteChat) return;
+    deleteChat.mutate({ id: pendingDeleteChat.id, projectId: pendingDeleteChat.project_id }, {
       onSuccess: () => {
-        if (selectedChatId === chat.id) setSelectedChatId(null);
-        toast.success('Chat deleted');
+        if (selectedChatId === pendingDeleteChat.id) setSelectedChatId(null);
+        toast.success('Chat and all its data deleted');
+        setPendingDeleteChat(null);
       },
     });
   };
