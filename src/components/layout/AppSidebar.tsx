@@ -21,6 +21,16 @@ import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbP
 import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat } from '@/hooks/useChats';
 import { useNotebooks, useCreateNotebook, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -95,6 +105,8 @@ export function AppSidebar() {
   const [editNbLanguage, setEditNbLanguage] = useState<string>('en');
   const [isImprovingNbDesc, setIsImprovingNbDesc] = useState(false);
   const updateNotebook = useUpdateNotebook();
+  const [pendingDeleteChat, setPendingDeleteChat] = useState<{ id: string; projectId: string; name: string } | null>(null);
+  const [pendingDeleteNotebook, setPendingDeleteNotebook] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (selectedProjectId) {
@@ -292,8 +304,36 @@ export function AppSidebar() {
     archiveNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success('Notebook archived'); } });
   };
 
-  const handleDeleteNotebookSidebar = (id: string) => {
-    deleteNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success('Notebook deleted'); } });
+  const handleDeleteNotebookSidebar = (id: string, name: string) => {
+    setPendingDeleteNotebook({ id, name });
+  };
+
+  const confirmDeleteNotebookSidebar = () => {
+    if (!pendingDeleteNotebook) return;
+    const { id } = pendingDeleteNotebook;
+    deleteNotebook.mutate(id, {
+      onSuccess: () => {
+        if (selectedNotebookId === id) setSelectedNotebookId(null);
+        toast.success('Notebook and all its data deleted');
+        setPendingDeleteNotebook(null);
+      },
+    });
+  };
+
+  const requestDeleteChat = (chat: DbChat) => {
+    setPendingDeleteChat({ id: chat.id, projectId: chat.project_id, name: chat.name });
+  };
+
+  const confirmDeleteChat = () => {
+    if (!pendingDeleteChat) return;
+    const { id, projectId } = pendingDeleteChat;
+    deleteChat.mutate({ id, projectId }, {
+      onSuccess: () => {
+        if (selectedChatId === id) setSelectedChatId(null);
+        toast.success('Chat and all its data deleted');
+        setPendingDeleteChat(null);
+      },
+    });
   };
 
   const navigateTo = (view: typeof activeView) => {
@@ -656,11 +696,7 @@ export function AppSidebar() {
                   onArchive={() => handleArchiveProject(project.id)}
                   onRename={() => handleManageProject(project)}
                   onChatSelect={handleChatSelect}
-                  onDeleteChat={(chatId) => {
-                    deleteChat.mutate({ id: chatId, projectId: project.id }, {
-                      onSuccess: () => { if (selectedChatId === chatId) setSelectedChatId(null); toast.success('Chat deleted'); }
-                    });
-                  }}
+                  onDeleteChat={requestDeleteChat}
                   onRenameChat={(chatId, currentName) => { setRenameChatId(chatId); setRenameChatValue(currentName); }}
                 />
               ))}
@@ -738,7 +774,7 @@ export function AppSidebar() {
                         setActiveView('notebook-documents');
                       }}
                       onArchiveNotebook={() => handleArchiveNotebookSidebar(nb.id)}
-                      onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id)}
+                      onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id, nb.name)}
                     />
                   ))}
                   {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
@@ -905,6 +941,61 @@ export function AppSidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!pendingDeleteChat} onOpenChange={(open) => !open && setPendingDeleteChat(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete chat {pendingDeleteChat?.name ? `"${pendingDeleteChat.name}" ` : ''}and all of its data, including:
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>All messages and conversation history</li>
+                <li>All uploaded documents and files</li>
+                <li>All extracted text, summaries, and processed data</li>
+              </ul>
+              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteChat}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Chat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingDeleteNotebook} onOpenChange={(open) => !open && setPendingDeleteNotebook(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Notebook</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete notebook {pendingDeleteNotebook?.name ? `"${pendingDeleteNotebook.name}" ` : ''}and all of its data, including:
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>All chat messages and history</li>
+                <li>All uploaded documents and files</li>
+                <li>All notes</li>
+                <li>All extracted text, summaries, and processed data</li>
+                <li>All linked resources and transcripts</li>
+                <li>All sharing settings</li>
+              </ul>
+              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteNotebookSidebar}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Notebook
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
       {sharedDialogs}
     </>
@@ -924,7 +1015,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onArchive: () => void;
   onRename: () => void;
   onChatSelect: (chat: DbChat) => void;
-  onDeleteChat: (chatId: string) => void;
+  onDeleteChat: (chat: DbChat) => void;
   onRenameChat: (chatId: string, currentName: string) => void;
 }) {
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
@@ -1005,7 +1096,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <ChatActionsMenuContent permissions={permissions} onRenameChat={() => onRenameChat(chat.id, chat.name)} onManageDocuments={() => handleManageChatDocs(chat)} onDeleteChat={() => onDeleteChat(chat.id)} />
+              <ChatActionsMenuContent permissions={permissions} onRenameChat={() => onRenameChat(chat.id, chat.name)} onManageDocuments={() => handleManageChatDocs(chat)} onDeleteChat={() => onDeleteChat(chat)} />
             </DropdownMenu>
           </div>
         ))}
