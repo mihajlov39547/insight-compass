@@ -534,6 +534,7 @@ export async function extractText(
 
   if (ext === "pdf" || mimeType === "application/pdf") {
     try {
+      const pdfParse = await getPdfParse();
       const result = await pdfParse(Buffer.from(bytes));
       const text = String(result?.text || "");
       const quality = assessTextQuality(text);
