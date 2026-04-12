@@ -202,6 +202,7 @@ export async function extractDocxTextNonAi(bytes: Uint8Array, mimeType: string, 
   return {
     text: result.text,
     method: result.method,
+    error: result.error ?? null,
     quality_score: result.quality.score,
     quality_reason: result.quality.reason,
   };

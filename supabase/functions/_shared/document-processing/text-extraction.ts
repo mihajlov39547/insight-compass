@@ -512,6 +512,7 @@ export interface ExtractTextResult {
   text: string;
   method: string;
   encoding?: string;
+  error?: string | null;
   quality: TextQuality;
 }
 
@@ -571,6 +572,7 @@ export async function extractText(
       text: result.text,
       method: result.method,
       encoding: "utf-8",
+      error: result.error ?? null,
       quality: assessTextQuality(result.text),
     };
   }

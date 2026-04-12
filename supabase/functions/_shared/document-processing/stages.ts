@@ -539,10 +539,11 @@ export async function extractDocxTextStage(
       extractorSelected: extraction.method,
       extractorStatus: status,
       extractedText: extraction.text,
-      warning: extraction.text.trim() ? null : extraction.quality_reason,
+      warning: extraction.text.trim() ? null : (extraction.error || extraction.quality_reason),
       metadataPatch: {
         quality_score: extraction.quality_score,
         quality_reason: extraction.quality_reason,
+        extraction_error: extraction.error ?? null,
       },
     }),
     persistTimeoutMs,
@@ -556,6 +557,7 @@ export async function extractDocxTextStage(
     extracted_text: extraction.text,
     extracted_text_length: extraction.text.length,
     method: extraction.method,
+    extraction_error: extraction.error ?? null,
     quality_score: extraction.quality_score,
     quality_reason: extraction.quality_reason,
   };
