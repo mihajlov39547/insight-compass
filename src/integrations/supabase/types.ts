@@ -1904,12 +1904,12 @@ export type Database = {
           can_rename: boolean
           can_retry: boolean
           can_view_details: boolean
+          chat_id: string
+          chat_name: string
           container_id: string
           container_name: string
           container_path: string
           container_type: string
-          chat_id: string
-          chat_name: string
           detected_language: string
           extension: string
           id: string
@@ -1923,10 +1923,10 @@ export type Database = {
           media_video_id: string
           mime_type: string
           normalized_url: string
-          owner_display_name: string
-          owner_user_id: string
           notebook_id: string
           notebook_name: string
+          owner_display_name: string
+          owner_user_id: string
           page_count: number
           preview_domain: string
           preview_favicon_url: string
@@ -1959,12 +1959,12 @@ export type Database = {
           can_rename: boolean
           can_retry: boolean
           can_view_details: boolean
+          chat_id: string
+          chat_name: string
           container_id: string
           container_name: string
           container_path: string
           container_type: string
-          chat_id: string
-          chat_name: string
           detected_language: string
           extension: string
           id: string
@@ -1978,10 +1978,10 @@ export type Database = {
           media_video_id: string
           mime_type: string
           normalized_url: string
-          owner_display_name: string
-          owner_user_id: string
           notebook_id: string
           notebook_name: string
+          owner_display_name: string
+          owner_user_id: string
           page_count: number
           preview_domain: string
           preview_favicon_url: string
