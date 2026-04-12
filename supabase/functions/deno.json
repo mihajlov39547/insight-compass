@@ -1,7 +1,9 @@
 {
   "imports": {
     "std/": "https://deno.land/std@0.168.0/",
-    "@supabase/": "https://esm.sh/@supabase/"
+    "@supabase/": "https://esm.sh/@supabase/",
+    "https://esm.sh/async@^1.5.2?target=es2022": "npm:async@1.5.2",
+    "https://esm.sh/async@1.5.2?target=es2022": "npm:async@1.5.2"
   },
   "compilerOptions": {
     "lib": ["deno.window"],
