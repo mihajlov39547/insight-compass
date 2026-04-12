@@ -72,7 +72,7 @@ function extractXmlTextNodes(xml: string, tagRegex: RegExp): string {
 }
 
 async function parseOfficeText(bytes: Uint8Array) {
-  const mod = await import("npm:officeparser@6.0.7");
+  const mod = await import("https://esm.sh/officeparser@6.0.7?target=es2022");
   const parseOffice = (mod as any).parseOffice
     || (mod as any).default?.parseOffice
     || (mod as any).default;
