@@ -1,5 +1,14 @@
 // @ts-nocheck
-import pdfParse from "https://esm.sh/pdf-parse@1.1.1?target=es2022";
+// pdf-parse uses fs.readFileSync at import time which crashes Deno edge functions.
+// We use dynamic import() to defer loading until actually needed for PDF extraction.
+let _pdfParse: typeof import("https://esm.sh/pdf-parse@1.1.1?target=es2022").default | null = null;
+async function getPdfParse() {
+  if (!_pdfParse) {
+    const mod = await import("https://esm.sh/pdf-parse@1.1.1?target=es2022");
+    _pdfParse = mod.default;
+  }
+  return _pdfParse;
+}
 import { Buffer } from "node:buffer";
 import { extractDocxRawTextWithMammoth } from "./docx-mammoth.ts";
 
