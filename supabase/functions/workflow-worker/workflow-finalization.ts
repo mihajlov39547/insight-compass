@@ -288,6 +288,16 @@ export async function finalizeWorkflowRunState(
     );
   }
 
+  // Post-finalization: if this is a document workflow that failed,
+  // update the document's processing_status so it doesn't stay stuck.
+  if (finalStatus === "failed") {
+    await syncDocumentStatusOnWorkflowFailure(
+      supabase,
+      workflowRunId,
+      inferFailedReason(state.requiredFailureCount, trigger)
+    );
+  }
+
   return {
     workflow_run_id: workflowRunId,
     previous_status: previousStatus,
@@ -304,4 +314,66 @@ export async function finalizeWorkflowRunState(
         ? "Workflow finalized as completed"
         : "Workflow finalized as failed",
   };
+}
+
+/**
+ * When a document-type workflow fails, update the document's processing_status
+ * to "failed" so the UI doesn't stay stuck in an intermediate processing state.
+ */
+async function syncDocumentStatusOnWorkflowFailure(
+  supabase: SupabaseClient,
+  workflowRunId: string,
+  failureReason: string
+): Promise<void> {
+  try {
+    // Check if this workflow is a document-triggered workflow
+    const { data: workflowRun, error: wrError } = await supabase
+      .from("workflow_runs")
+      .select("trigger_entity_type, trigger_entity_id")
+      .eq("id", workflowRunId)
+      .single();
+
+    if (wrError || !workflowRun) return;
+
+    if (workflowRun.trigger_entity_type !== "document" || !workflowRun.trigger_entity_id) {
+      return;
+    }
+
+    const documentId = workflowRun.trigger_entity_id;
+
+    // Only update if document is still in an intermediate processing state
+    const { data: doc, error: docError } = await supabase
+      .from("documents")
+      .select("processing_status")
+      .eq("id", documentId)
+      .single();
+
+    if (docError || !doc) return;
+
+    const terminalDocStatuses = ["completed", "failed"];
+    if (terminalDocStatuses.includes(doc.processing_status)) return;
+
+    const { error: updateError } = await supabase
+      .from("documents")
+      .update({
+        processing_status: "failed",
+        processing_error: `Workflow failed: ${failureReason}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", documentId);
+
+    if (updateError) {
+      console.warn(
+        `Failed to sync document ${documentId} status on workflow failure: ${updateError.message}`
+      );
+    } else {
+      console.log(
+        `Document ${documentId} processing_status set to 'failed' after workflow failure: ${failureReason}`
+      );
+    }
+  } catch (err) {
+    console.warn(
+      `syncDocumentStatusOnWorkflowFailure error: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
 }
