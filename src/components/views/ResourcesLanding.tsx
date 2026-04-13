@@ -1148,14 +1148,27 @@ function ResourceDetailsDrawer({
   isDeleting: boolean;
 }) {
   const resourceId = resource?.id ?? null;
-  const [detailsTab, setDetailsTab] = useState<'overview' | 'transcript'>('overview');
+  const [detailsTab, setDetailsTab] = useState<'overview' | 'content'>('overview');
   const [transcriptQuery, setTranscriptQuery] = useState('');
-  const showTranscriptTab = resource?.provider === 'youtube' || !!resource?.transcriptStatus;
-  const transcriptPreviewEnabled = !!resource && showTranscriptTab && resource.transcriptStatus === 'ready';
+
+  // Determine resource category
+  const isVideo = resource?.provider === 'youtube' || !!resource?.transcriptStatus;
+  const isDocument = !isVideo && resource?.resourceKind === 'document';
+  const showContentTab = isVideo || isDocument;
+
+  // Video transcript data
+  const transcriptPreviewEnabled = !!resource && isVideo && resource.transcriptStatus === 'ready';
   const { data: transcriptPreviewChunks = [], isLoading: isTranscriptPreviewLoading } = useResourceTranscriptPreview(
-    resourceId,
+    isVideo ? resourceId : null,
     transcriptQuery,
     transcriptPreviewEnabled && open,
+  );
+
+  // Document extracted text data
+  const extractedTextEnabled = !!resource && isDocument && open;
+  const { data: extractedTextResult, isLoading: isExtractedTextLoading } = useResourceExtractedText(
+    isDocument ? resourceId : null,
+    extractedTextEnabled,
   );
 
   useEffect(() => {
@@ -1169,6 +1182,7 @@ function ResourceDetailsDrawer({
   const canFallbackPersonalOpen = resource.containerType === 'personal';
   const canRetryTranscript = resource.provider === 'youtube' && resource.transcriptStatus === 'failed';
   const locationText = formatResourceLocation(resource);
+  const contentTabLabel = isVideo ? 'Transcript' : 'Extracted Text';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -1189,267 +1203,127 @@ function ResourceDetailsDrawer({
 
           <ScrollArea className="flex-1">
             <div className="px-6 py-4">
-              <Tabs value={detailsTab} onValueChange={(value) => setDetailsTab(value as 'overview' | 'transcript')}>
+              <Tabs value={detailsTab} onValueChange={(value) => setDetailsTab(value as 'overview' | 'content')}>
                 <TabsList className="h-8 p-0.5">
                   <TabsTrigger value="overview" className="text-xs h-7 px-3">Overview</TabsTrigger>
-                  {showTranscriptTab && <TabsTrigger value="transcript" className="text-xs h-7 px-3">Transcript</TabsTrigger>}
+                  {showContentTab && (
+                    <TabsTrigger value="content" className="text-xs h-7 px-3">{contentTabLabel}</TabsTrigger>
+                  )}
                 </TabsList>
 
+                {/* ═══ OVERVIEW TAB ═══ */}
                 <TabsContent value="overview" className="mt-3 space-y-5">
-              <section className="space-y-2">
-                <h3 className="text-sm font-medium">Metadata</h3>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Resource ID</p>
-                    <p className="font-mono break-all mt-1">{resource.id}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">File size</p>
-                    <p className="mt-1">{formatFileSize(resource.sizeBytes)}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">MIME type</p>
-                    <p className="mt-1 break-all">{resource.mimeType || 'Unknown'}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Extension</p>
-                    <p className="mt-1">{resource.extension.toUpperCase()}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Source type</p>
-                    <p className="mt-1">{resource.sourceType}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Provider</p>
-                    <p className="mt-1">{formatProvider(resource.provider)}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Uploaded</p>
-                    <p className="mt-1">{formatTimestamp(resource.uploadedAt)}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Last updated</p>
-                    <p className="mt-1">{formatTimestamp(resource.updatedAt)}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2 col-span-2">
-                    <p className="text-muted-foreground">Location</p>
-                    <p className="mt-1">
-                      {locationText}
-                    </p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2 col-span-2">
-                    <p className="text-muted-foreground">Owner</p>
-                    <p className="mt-1">{resource.ownerDisplayName}</p>
-                  </div>
-                  {resource.linkUrl && (
-                    <div className="rounded-md border border-border/60 p-2 col-span-2">
-                      <p className="text-muted-foreground">Original URL</p>
-                      <a
-                        href={resource.linkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 block text-primary underline break-all"
-                      >
-                        {resource.linkUrl}
-                      </a>
+                  {/* Preview / Thumbnail */}
+                  {resource.mediaThumbnailUrl && (
+                    <div className="rounded-md border border-border/60 overflow-hidden">
+                      <img
+                        src={resource.mediaThumbnailUrl}
+                        alt="media thumbnail"
+                        className="w-full h-auto max-h-48 object-cover"
+                        loading="lazy"
+                      />
                     </div>
                   )}
-                  {resource.normalizedUrl && (
-                    <div className="rounded-md border border-border/60 p-2 col-span-2">
-                      <p className="text-muted-foreground">Normalized URL</p>
-                      <p className="mt-1 break-all">{resource.normalizedUrl}</p>
-                    </div>
-                  )}
-                  {resource.previewTitle && (
-                    <div className="rounded-md border border-border/60 p-2 col-span-2">
-                      <p className="text-muted-foreground">Preview title</p>
-                      <p className="mt-1">{resource.previewTitle}</p>
-                    </div>
-                  )}
-                  {(resource.previewDomain || resource.previewFaviconUrl) && (
-                    <div className="rounded-md border border-border/60 p-2 col-span-2">
-                      <p className="text-muted-foreground">Preview domain</p>
-                      <div className="mt-1 flex items-center gap-2 min-w-0">
-                        {resource.previewFaviconUrl && (
-                          <img
-                            src={resource.previewFaviconUrl}
-                            alt="site icon"
-                            className="h-4 w-4 rounded-sm shrink-0"
-                            loading="lazy"
-                          />
-                        )}
-                        <p className="truncate">{resource.previewDomain || 'Unknown domain'}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </section>
 
-              <section className="space-y-2">
-                <h3 className="text-sm font-medium">Processing</h3>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Status</p>
-                    <p className="mt-1">{resource.processingStatus}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Language</p>
-                    <p className="mt-1">{resource.detectedLanguage || 'Unknown'}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Page count</p>
-                    <p className="mt-1">{resource.pageCount ?? 'N/A'}</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 p-2">
-                    <p className="text-muted-foreground">Word count</p>
-                    <p className="mt-1">{resource.wordCount ?? 'N/A'}</p>
-                  </div>
-                  {resource.processingError && (
-                    <div className="rounded-md border border-destructive/20 bg-destructive/5 p-2 col-span-2">
-                      <p className="text-muted-foreground">Processing error</p>
-                      <p className="mt-1 text-destructive break-words">{resource.processingError}</p>
-                    </div>
-                  )}
+                  {/* Summary */}
                   {resource.summary && (
-                    <div className="rounded-md border border-border/60 p-2 col-span-2">
-                      <p className="text-muted-foreground">Summary</p>
-                      <p className="mt-1 whitespace-pre-wrap">{resource.summary}</p>
-                    </div>
+                    <section className="space-y-1.5">
+                      <h3 className="text-sm font-medium">Summary</h3>
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{resource.summary}</p>
+                    </section>
                   )}
-                </div>
-              </section>
 
-              {(resource.mediaVideoId || resource.mediaChannelName || resource.mediaThumbnailUrl || resource.transcriptStatus) && (
-                <section className="space-y-2">
-                  <h3 className="text-sm font-medium">Media</h3>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {resource.mediaVideoId && (
-                      <div className="rounded-md border border-border/60 p-2">
-                        <p className="text-muted-foreground">Video ID</p>
-                        <p className="mt-1 font-mono break-all">{resource.mediaVideoId}</p>
-                      </div>
-                    )}
-                    {resource.mediaChannelName && (
-                      <div className="rounded-md border border-border/60 p-2">
-                        <p className="text-muted-foreground">Channel</p>
-                        <p className="mt-1">{resource.mediaChannelName}</p>
-                      </div>
-                    )}
-                    {resource.mediaDurationSeconds !== null && (
-                      <div className="rounded-md border border-border/60 p-2">
-                        <p className="text-muted-foreground">Duration (seconds)</p>
-                        <p className="mt-1">{resource.mediaDurationSeconds}</p>
-                      </div>
-                    )}
-                    {resource.transcriptStatus && (
-                      <div className="rounded-md border border-border/60 p-2">
-                        <p className="text-muted-foreground">Transcript status</p>
-                        <p className="mt-1">{resource.transcriptStatus}</p>
-                      </div>
-                    )}
-                    {resource.transcriptError && (
-                      <div className="rounded-md border border-destructive/20 bg-destructive/5 p-2 col-span-2">
-                        <p className="text-muted-foreground">Transcript error</p>
-                        <p className="mt-1 text-destructive break-words">{resource.transcriptError}</p>
-                      </div>
-                    )}
-                    {resource.transcriptStatus === 'ready' && (
-                      <div className="rounded-md border border-green-500/20 bg-green-500/5 p-2 col-span-2">
-                        <p className="text-muted-foreground">Transcript</p>
-                        <p className="mt-1 text-green-700">Available</p>
-                      </div>
-                    )}
-                    {resource.mediaThumbnailUrl && (
-                      <div className="rounded-md border border-border/60 p-2 col-span-2">
-                        <p className="text-muted-foreground">Thumbnail</p>
-                        <img
-                          src={resource.mediaThumbnailUrl}
-                          alt="media thumbnail"
-                          className="mt-2 h-24 w-auto rounded-md border border-border/60"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </section>
-              )}
-
-              <section className="space-y-2">
-                <h3 className="text-sm font-medium">Permissions</h3>
-                <div className="grid grid-cols-1 gap-2">
-                  <PermissionRow label="Open" enabled={resource.canOpen} />
-                  <PermissionRow label="View details" enabled={resource.canViewDetails} />
-                  <PermissionRow label="Download" enabled={resource.canDownload} />
-                  <PermissionRow label="Rename" enabled={resource.canRename} />
-                  <PermissionRow label="Delete" enabled={resource.canDelete} />
-                  <PermissionRow label="Retry processing" enabled={resource.canRetry} />
-                </div>
-              </section>
-                </TabsContent>
-
-                {showTranscriptTab && (
-                  <TabsContent value="transcript" className="mt-3 space-y-3">
-                    <div className="rounded-md border border-border/60 p-3 text-xs space-y-1">
-                      <p className="text-muted-foreground">Transcript status</p>
-                      <p className="font-medium">{resource.transcriptStatus || 'none'}</p>
-                      {resource.transcriptError && (
-                        <p className="text-destructive break-words">{resource.transcriptError}</p>
+                  {/* Metadata */}
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-medium">Metadata</h3>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <MetaCell label="Resource ID" value={resource.id} mono />
+                      <MetaCell label="File size" value={formatFileSize(resource.sizeBytes)} />
+                      <MetaCell label="MIME type" value={resource.mimeType || 'Unknown'} breakAll />
+                      <MetaCell label="Extension" value={resource.extension.toUpperCase()} />
+                      <MetaCell label="Source type" value={resource.sourceType} />
+                      <MetaCell label="Provider" value={formatProvider(resource.provider)} />
+                      <MetaCell label="Uploaded" value={formatTimestamp(resource.uploadedAt)} />
+                      <MetaCell label="Last updated" value={formatTimestamp(resource.updatedAt)} />
+                      <MetaCell label="Location" value={locationText} span={2} />
+                      <MetaCell label="Owner" value={resource.ownerDisplayName} span={2} />
+                      {resource.linkUrl && (
+                        <div className="rounded-md border border-border/60 p-2 col-span-2">
+                          <p className="text-muted-foreground">Original URL</p>
+                          <a href={resource.linkUrl} target="_blank" rel="noopener noreferrer"
+                            className="mt-1 block text-primary underline break-all">{resource.linkUrl}</a>
+                        </div>
+                      )}
+                      {resource.previewTitle && <MetaCell label="Preview title" value={resource.previewTitle} span={2} />}
+                      {(resource.previewDomain || resource.previewFaviconUrl) && (
+                        <div className="rounded-md border border-border/60 p-2 col-span-2">
+                          <p className="text-muted-foreground">Preview domain</p>
+                          <div className="mt-1 flex items-center gap-2 min-w-0">
+                            {resource.previewFaviconUrl && (
+                              <img src={resource.previewFaviconUrl} alt="site icon" className="h-4 w-4 rounded-sm shrink-0" loading="lazy" />
+                            )}
+                            <p className="truncate">{resource.previewDomain || 'Unknown domain'}</p>
+                          </div>
+                        </div>
+                      )}
+                      {/* Video-specific metadata in overview */}
+                      {resource.mediaVideoId && <MetaCell label="Video ID" value={resource.mediaVideoId} mono />}
+                      {resource.mediaChannelName && <MetaCell label="Channel" value={resource.mediaChannelName} />}
+                      {resource.mediaDurationSeconds !== null && (
+                        <MetaCell label="Duration" value={`${Math.floor((resource.mediaDurationSeconds || 0) / 60)}m ${(resource.mediaDurationSeconds || 0) % 60}s`} />
                       )}
                     </div>
+                  </section>
 
-                    {resource.transcriptStatus === 'ready' ? (
-                      <>
-                        <div className="space-y-2">
-                          <p className="text-xs text-muted-foreground">Search transcript</p>
-                          <Input
-                            value={transcriptQuery}
-                            onChange={(e) => setTranscriptQuery(e.target.value)}
-                            placeholder="Find a phrase in transcript"
-                            className="h-8 text-sm"
-                          />
+                  {/* Processing */}
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-medium">Processing</h3>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <MetaCell label="Status" value={resource.processingStatus} />
+                      <MetaCell label="Language" value={resource.detectedLanguage || 'Unknown'} />
+                      {resource.pageCount !== null && <MetaCell label="Page count" value={String(resource.pageCount)} />}
+                      {resource.wordCount !== null && <MetaCell label="Word count" value={String(resource.wordCount)} />}
+                      {resource.processingError && (
+                        <div className="rounded-md border border-destructive/20 bg-destructive/5 p-2 col-span-2">
+                          <p className="text-muted-foreground">Processing error</p>
+                          <p className="mt-1 text-destructive break-words">{resource.processingError}</p>
                         </div>
+                      )}
+                    </div>
+                  </section>
 
-                        <div className="space-y-2">
-                          {isTranscriptPreviewLoading ? (
-                            <div className="py-6 flex items-center justify-center">
-                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            </div>
-                          ) : transcriptPreviewChunks.length === 0 ? (
-                            <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground">
-                              No transcript excerpts found.
-                            </div>
-                          ) : (
-                            transcriptPreviewChunks.slice(0, 20).map((chunk) => (
-                              <div key={`${chunk.chunkIndex}-${chunk.chunkText.slice(0, 16)}`} className="rounded-md border border-border/60 p-3 space-y-1">
-                                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                                  <span>Chunk {chunk.chunkIndex + 1}</span>
-                                  <span>{chunk.tokenCount} tokens</span>
-                                </div>
-                                <p className="text-xs whitespace-pre-wrap leading-relaxed">{chunk.chunkText}</p>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </>
-                    ) : resource.transcriptStatus === 'failed' ? (
-                      <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-xs space-y-1.5">
-                        <p className="font-medium text-destructive">Transcript fetch failed</p>
-                        {(resource.transcriptError || resource.processingError) ? (
-                          <p className="text-destructive/90 break-words">{resource.transcriptError || resource.processingError}</p>
-                        ) : (
-                          <p className="text-destructive/70">No additional error details available.</p>
-                        )}
-                        <p className="text-muted-foreground pt-1">Use Retry transcript to queue another attempt.</p>
-                      </div>
-                    ) : resource.transcriptStatus === 'queued' || resource.transcriptStatus === 'running' ? (
-                      <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3 text-xs">
-                        Transcript ingestion is in progress. This tab will populate when processing is complete.
-                      </div>
-                    ) : (
-                      <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground">
-                        Transcript is not available for this resource yet.
-                      </div>
-                    )}
+                  {/* Permissions */}
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-medium">Permissions</h3>
+                    <div className="grid grid-cols-1 gap-2">
+                      <PermissionRow label="Open" enabled={resource.canOpen} />
+                      <PermissionRow label="View details" enabled={resource.canViewDetails} />
+                      <PermissionRow label="Download" enabled={resource.canDownload} />
+                      <PermissionRow label="Rename" enabled={resource.canRename} />
+                      <PermissionRow label="Delete" enabled={resource.canDelete} />
+                      <PermissionRow label="Retry processing" enabled={resource.canRetry} />
+                    </div>
+                  </section>
+                </TabsContent>
+
+                {/* ═══ CONTENT TAB (Transcript / Extracted Text) ═══ */}
+                {showContentTab && (
+                  <TabsContent value="content" className="mt-3 space-y-3">
+                    {isVideo ? (
+                      <VideoContentTab
+                        resource={resource}
+                        transcriptQuery={transcriptQuery}
+                        onTranscriptQueryChange={setTranscriptQuery}
+                        chunks={transcriptPreviewChunks}
+                        isLoading={isTranscriptPreviewLoading}
+                      />
+                    ) : isDocument ? (
+                      <DocumentContentTab
+                        resource={resource}
+                        extractedText={extractedTextResult}
+                        isLoading={isExtractedTextLoading}
+                      />
+                    ) : null}
                   </TabsContent>
                 )}
               </Tabs>
@@ -1483,23 +1357,15 @@ function ResourceDetailsDrawer({
               </Button>
             )}
             {canRetryTranscript && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                onClick={() => onRetryTranscript(resource)}
-                disabled={isRetryingTranscript}
-              >
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRetryTranscript(resource)} disabled={isRetryingTranscript}>
                 <RotateCcw className="h-3.5 w-3.5" /> Retry transcript
               </Button>
             )}
             {resource.canDelete && (
               <Button
-                size="sm"
-                variant="outline"
+                size="sm" variant="outline"
                 className="gap-1.5 text-destructive border-destructive/30 hover:text-destructive"
-                onClick={() => onDelete(resource)}
-                disabled={isDeleting}
+                onClick={() => onDelete(resource)} disabled={isDeleting}
               >
                 <Trash2 className="h-3.5 w-3.5" /> Delete
               </Button>
@@ -1508,5 +1374,203 @@ function ResourceDetailsDrawer({
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/* ── Shared detail cell component ── */
+function MetaCell({ label, value, mono, breakAll, span }: {
+  label: string; value: string; mono?: boolean; breakAll?: boolean; span?: number;
+}) {
+  return (
+    <div className={cn("rounded-md border border-border/60 p-2", span === 2 && "col-span-2")}>
+      <p className="text-muted-foreground">{label}</p>
+      <p className={cn("mt-1", mono && "font-mono break-all", breakAll && "break-all")}>{value}</p>
+    </div>
+  );
+}
+
+/* ── Content status banner ── */
+function ContentStatusBanner({ status, error, type }: { status: string; error?: string | null; type: 'transcript' | 'extraction' }) {
+  const label = type === 'transcript' ? 'Transcript' : 'Extraction';
+  return (
+    <div className="rounded-md border border-border/60 p-3 text-xs space-y-1">
+      <p className="text-muted-foreground">{label} status</p>
+      <p className="font-medium">{status}</p>
+      {error && <p className="text-destructive break-words">{error}</p>}
+    </div>
+  );
+}
+
+/* ── Video Content Tab ── */
+function VideoContentTab({
+  resource, transcriptQuery, onTranscriptQueryChange, chunks, isLoading,
+}: {
+  resource: Resource;
+  transcriptQuery: string;
+  onTranscriptQueryChange: (q: string) => void;
+  chunks: { chunkIndex: number; chunkText: string; tokenCount: number; matchRank: number | null }[];
+  isLoading: boolean;
+}) {
+  return (
+    <>
+      <ContentStatusBanner status={resource.transcriptStatus || 'none'} error={resource.transcriptError} type="transcript" />
+
+      {/* Transcript metadata */}
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        {resource.mediaChannelName && <MetaCell label="Channel" value={resource.mediaChannelName} />}
+        {resource.mediaDurationSeconds !== null && (
+          <MetaCell label="Duration" value={`${Math.floor((resource.mediaDurationSeconds || 0) / 60)}m ${(resource.mediaDurationSeconds || 0) % 60}s`} />
+        )}
+      </div>
+
+      {resource.transcriptStatus === 'ready' ? (
+        <>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Search transcript</p>
+            <Input
+              value={transcriptQuery}
+              onChange={(e) => onTranscriptQueryChange(e.target.value)}
+              placeholder="Find a phrase in transcript"
+              className="h-8 text-sm"
+            />
+          </div>
+          <ContentChunkList chunks={chunks} isLoading={isLoading} emptyMessage="No transcript excerpts found." />
+        </>
+      ) : resource.transcriptStatus === 'failed' ? (
+        <ContentFailedBlock
+          title="Transcript fetch failed"
+          error={resource.transcriptError || resource.processingError}
+          hint="Use Retry transcript to queue another attempt."
+        />
+      ) : resource.transcriptStatus === 'queued' || resource.transcriptStatus === 'running' ? (
+        <ContentProcessingBlock message="Transcript ingestion is in progress. This tab will populate when processing is complete." />
+      ) : (
+        <ContentEmptyBlock message="Transcript is not available for this resource yet." />
+      )}
+    </>
+  );
+}
+
+/* ── Document Content Tab ── */
+function DocumentContentTab({
+  resource, extractedText, isLoading,
+}: {
+  resource: Resource;
+  extractedText: import('@/hooks/useResourceExtractedText').ExtractedTextResult | null | undefined;
+  isLoading: boolean;
+}) {
+  const processingInProgress = ['uploaded', 'extracting_metadata', 'extracting_content', 'detecting_language',
+    'summarizing', 'indexing', 'chunking', 'generating_embeddings', 'generating_chunk_questions',
+    'pending', 'queued', 'claimed', 'running', 'waiting_retry'].includes(resource.processingStatus);
+
+  const extractionStatus = extractedText?.extractorStatus || (extractedText?.extractedText ? 'completed' : resource.processingStatus);
+
+  return (
+    <>
+      <ContentStatusBanner status={extractionStatus} error={resource.processingError} type="extraction" />
+
+      {/* Extraction metadata */}
+      {extractedText && (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <MetaCell label="OCR applied" value={extractedText.ocrUsed ? 'Yes' : 'No'} />
+          {extractedText.extractorSelected && <MetaCell label="Extraction method" value={extractedText.extractorSelected} />}
+          {extractedText.textLength > 0 && <MetaCell label="Text length" value={`${extractedText.textLength.toLocaleString()} chars`} />}
+          {resource.wordCount !== null && <MetaCell label="Word count" value={String(resource.wordCount)} />}
+          {resource.pageCount !== null && <MetaCell label="Page count" value={String(resource.pageCount)} />}
+          {extractedText.qualityReason && <MetaCell label="Quality" value={extractedText.qualityReason} />}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="py-10 flex items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : resource.processingStatus === 'failed' ? (
+        <ContentFailedBlock
+          title="Text extraction failed"
+          error={resource.processingError}
+          hint={resource.canRetry ? "Use Retry to queue another attempt." : undefined}
+        />
+      ) : processingInProgress ? (
+        <ContentProcessingBlock message="Document extraction is in progress. Extracted text will appear here when processing is complete." />
+      ) : extractedText?.extractedText ? (
+        <div className="rounded-md border border-border/60 overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border/60">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <ScanText className="h-3.5 w-3.5" />
+              <span>Extracted text</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground">{extractedText.textLength.toLocaleString()} chars</span>
+          </div>
+          <div className="max-h-[400px] overflow-y-auto p-3">
+            <pre className="text-xs whitespace-pre-wrap leading-relaxed font-sans">{extractedText.extractedText}</pre>
+          </div>
+        </div>
+      ) : (
+        <ContentEmptyBlock message="No extracted text available for this document." />
+      )}
+    </>
+  );
+}
+
+/* ── Shared content state blocks ── */
+function ContentChunkList({ chunks, isLoading, emptyMessage }: {
+  chunks: { chunkIndex: number; chunkText: string; tokenCount: number }[];
+  isLoading: boolean;
+  emptyMessage: string;
+}) {
+  if (isLoading) {
+    return (
+      <div className="py-6 flex items-center justify-center">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  if (chunks.length === 0) {
+    return <ContentEmptyBlock message={emptyMessage} />;
+  }
+  return (
+    <div className="space-y-2">
+      {chunks.slice(0, 20).map((chunk) => (
+        <div key={`${chunk.chunkIndex}-${chunk.chunkText.slice(0, 16)}`} className="rounded-md border border-border/60 p-3 space-y-1">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>Chunk {chunk.chunkIndex + 1}</span>
+            <span>{chunk.tokenCount} tokens</span>
+          </div>
+          <p className="text-xs whitespace-pre-wrap leading-relaxed">{chunk.chunkText}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ContentFailedBlock({ title, error, hint }: { title: string; error?: string | null; hint?: string }) {
+  return (
+    <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-xs space-y-1.5">
+      <p className="font-medium text-destructive">{title}</p>
+      {error ? (
+        <p className="text-destructive/90 break-words">{error}</p>
+      ) : (
+        <p className="text-destructive/70">No additional error details available.</p>
+      )}
+      {hint && <p className="text-muted-foreground pt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function ContentProcessingBlock({ message }: { message: string }) {
+  return (
+    <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3 text-xs flex items-center gap-2">
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600 shrink-0" />
+      <span>{message}</span>
+    </div>
+  );
+}
+
+function ContentEmptyBlock({ message }: { message: string }) {
+  return (
+    <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground">
+      {message}
+    </div>
   );
 }
