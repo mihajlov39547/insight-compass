@@ -33,6 +33,7 @@ import { useAuth } from '@/contexts/useAuth';
 import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { useResourceTranscriptPreview } from '@/hooks/useResourceTranscriptPreview';
+import { useResourceExtractedText } from '@/hooks/useResourceExtractedText';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
   RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName, formatResourceLocation
