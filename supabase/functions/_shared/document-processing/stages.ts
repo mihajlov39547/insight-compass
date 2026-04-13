@@ -544,6 +544,8 @@ export async function extractDocxTextStage(
         quality_score: extraction.quality_score,
         quality_reason: extraction.quality_reason,
         extraction_error: extraction.error ?? null,
+        extraction_error_first_attempt: extraction.diagnostics?.first_attempt_error ?? null,
+        extraction_error_second_attempt: extraction.diagnostics?.second_attempt_error ?? null,
       },
     }),
     persistTimeoutMs,
@@ -558,6 +560,8 @@ export async function extractDocxTextStage(
     extracted_text_length: extraction.text.length,
     method: extraction.method,
     extraction_error: extraction.error ?? null,
+    extraction_error_first_attempt: extraction.diagnostics?.first_attempt_error ?? null,
+    extraction_error_second_attempt: extraction.diagnostics?.second_attempt_error ?? null,
     quality_score: extraction.quality_score,
     quality_reason: extraction.quality_reason,
   };

@@ -364,6 +364,8 @@ export async function documentExtractDocxText(
       buildContextPatch: (result) => ({
         docx_extraction_method: result.method ?? null,
         docx_extraction_error: result.extraction_error ?? null,
+        docx_extraction_error_first_attempt: result.extraction_error_first_attempt ?? null,
+        docx_extraction_error_second_attempt: result.extraction_error_second_attempt ?? null,
         docx_extracted_text_length: result.extracted_text_length ?? null,
         extractor_selected: result.method ?? null,
         extractor_status: result.extraction_status ?? null,

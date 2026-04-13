@@ -11,6 +11,12 @@ export interface DocxMammothResult {
   method: DocxMammothMethod;
   durationMs: number;
   error?: string;
+  diagnostics?: {
+    first_attempt_input: "arrayBuffer";
+    first_attempt_error?: string | null;
+    second_attempt_input: "buffer";
+    second_attempt_error?: string | null;
+  };
 }
 
 export interface DocxMammothOptions {
@@ -60,6 +66,8 @@ export async function extractDocxRawTextWithMammoth(
   );
   const fallbackBufferInput = Buffer.from(bytes);
   let lastError: unknown = null;
+  let firstAttemptErrorMessage: string | null = null;
+  let secondAttemptErrorMessage: string | null = null;
 
   try {
     const firstResult = await runWithTimeout({ arrayBuffer: arrayBufferInput });
@@ -72,12 +80,19 @@ export async function extractDocxRawTextWithMammoth(
   } catch (firstError) {
     lastError = firstError;
     const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
+    firstAttemptErrorMessage = firstMessage;
     if (firstMessage === "DOCX_MAMMOTH_TIMEOUT") {
       return {
         text: "",
         method: "docx_mammoth_timeout",
         durationMs: now() - startedAt,
         error: firstMessage,
+        diagnostics: {
+          first_attempt_input: "arrayBuffer",
+          first_attempt_error: firstAttemptErrorMessage,
+          second_attempt_input: "buffer",
+          second_attempt_error: null,
+        },
       };
     }
   } finally {
@@ -97,12 +112,19 @@ export async function extractDocxRawTextWithMammoth(
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    secondAttemptErrorMessage = message;
     if (message === "DOCX_MAMMOTH_TIMEOUT") {
       return {
         text: "",
         method: "docx_mammoth_timeout",
         durationMs: now() - startedAt,
         error: message,
+        diagnostics: {
+          first_attempt_input: "arrayBuffer",
+          first_attempt_error: firstAttemptErrorMessage,
+          second_attempt_input: "buffer",
+          second_attempt_error: secondAttemptErrorMessage,
+        },
       };
     }
 
@@ -111,6 +133,12 @@ export async function extractDocxRawTextWithMammoth(
       method: "docx_mammoth_error",
       durationMs: now() - startedAt,
       error: message || (lastError instanceof Error ? lastError.message : String(lastError ?? "Unknown DOCX extraction error")),
+      diagnostics: {
+        first_attempt_input: "arrayBuffer",
+        first_attempt_error: firstAttemptErrorMessage,
+        second_attempt_input: "buffer",
+        second_attempt_error: secondAttemptErrorMessage,
+      },
     };
   } finally {
     if (timeoutHandle) {
