@@ -288,6 +288,16 @@ export async function finalizeWorkflowRunState(
     );
   }
 
+  // Post-finalization: if this is a document workflow that failed,
+  // update the document's processing_status so it doesn't stay stuck.
+  if (finalStatus === "failed") {
+    await syncDocumentStatusOnWorkflowFailure(
+      supabase,
+      workflowRunId,
+      inferFailedReason(state.requiredFailureCount, trigger)
+    );
+  }
+
   return {
     workflow_run_id: workflowRunId,
     previous_status: previousStatus,
