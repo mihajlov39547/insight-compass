@@ -54,7 +54,10 @@ export async function extractDocxRawTextWithMammoth(
     ]);
   };
 
-  const arrayBufferInput = bytes.slice().buffer;
+  const arrayBufferInput = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  );
   const fallbackBufferInput = Buffer.from(bytes);
   let lastError: unknown = null;
 
