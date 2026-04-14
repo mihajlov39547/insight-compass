@@ -22,6 +22,7 @@ import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/u
 import { modelOptions } from '@/data/mockData';
 import { toast } from 'sonner';
 import { RetrievalWeightsSection } from '@/components/settings/RetrievalWeightsSection';
+import { supabase } from '@/integrations/supabase/client';
 
 export function SettingsDialog() {
   const { showSettings, setShowSettings } = useApp();
