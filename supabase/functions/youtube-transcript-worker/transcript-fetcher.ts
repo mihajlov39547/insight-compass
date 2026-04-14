@@ -35,6 +35,33 @@ interface StrategyResult {
   meta?: Record<string, string>;
 }
 
+export interface StageDebugEntry {
+  stage: string;
+  pageVariant?: string;
+  status: "skipped" | "failed" | "success";
+  reason?: string;
+  trackCount?: number;
+  chosenLang?: string;
+  chosenKind?: string;
+  httpStatus?: number;
+  innertubeKey?: string | null;
+  innertubeKeySource?: string;
+}
+
+export interface TranscriptDebugPayload {
+  stages: StageDebugEntry[];
+  winningStrategy: string | null;
+  pageVariantsAttempted: string[];
+  pageExtractedInnertubeKey: string | null;
+  envInnertubeKeyPresent: boolean;
+  totalDurationMs: number;
+}
+
+export interface TranscriptFetchResult {
+  transcript: string;
+  debug: TranscriptDebugPayload;
+}
+
 interface PageExtraction {
   innertubeApiKey: string | null;
   clientVersion: string | null;
