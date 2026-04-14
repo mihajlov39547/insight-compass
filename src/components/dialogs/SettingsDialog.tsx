@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, RotateCw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/u
 import { modelOptions } from '@/data/mockData';
 import { toast } from 'sonner';
 import { RetrievalWeightsSection } from '@/components/settings/RetrievalWeightsSection';
+import { supabase } from '@/integrations/supabase/client';
 
 export function SettingsDialog() {
   const { showSettings, setShowSettings } = useApp();
@@ -188,17 +189,20 @@ export function SettingsDialog() {
           </section>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-border">
-          <Button variant="outline" onClick={() => setShowSettings(null)}>
-            Cancel
-          </Button>
-          <Button
-            className="bg-accent hover:bg-accent/90 text-accent-foreground"
-            onClick={handleSave}
-            disabled={saveSettings.isPending}
-          >
-            {saveSettings.isPending ? 'Saving...' : 'Save Changes'}
-          </Button>
+        <div className="flex items-center justify-between gap-2 pt-4 border-t border-border">
+          <RedeployEdgeButton />
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowSettings(null)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={handleSave}
+              disabled={saveSettings.isPending}
+            >
+              {saveSettings.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -256,5 +260,47 @@ function SettingToggle({
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
+  );
+}
+
+const EDGE_FUNCTIONS = [
+  'chat', 'generate-chat-title', 'handle-email-suppression', 'handle-email-unsubscribe',
+  'hybrid-retrieval', 'improve-description', 'improve-notebook', 'improve-prompt',
+  'notebook-scope-check', 'preview-transactional-email', 'process-email-queue',
+  'send-transactional-email', 'tavily-search', 'validation-harness',
+  'workflow-maintenance', 'workflow-start', 'workflow-worker', 'youtube-transcript-worker',
+];
+
+function RedeployEdgeButton() {
+  const [loading, setLoading] = useState(false);
+
+  const handleRedeploy = async () => {
+    setLoading(true);
+    try {
+      const results = await Promise.allSettled(
+        EDGE_FUNCTIONS.map((fn) =>
+          supabase.functions.invoke(fn, { method: 'OPTIONS' as any }).catch(() => ({ ok: true }))
+        )
+      );
+      const ok = results.filter((r) => r.status === 'fulfilled').length;
+      toast.success(`Redeploy pinged ${ok}/${EDGE_FUNCTIONS.length} functions`);
+    } catch {
+      toast.error('Redeploy request failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleRedeploy}
+      disabled={loading}
+      className="gap-1.5 text-muted-foreground"
+    >
+      <RotateCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+      {loading ? 'Pinging…' : 'Redeploy Edge'}
+    </Button>
   );
 }
