@@ -1346,6 +1346,8 @@ function ResourceDetailsDrawer({
                         onTranscriptQueryChange={setTranscriptQuery}
                         chunks={transcriptPreviewChunks}
                         isLoading={isTranscriptPreviewLoading}
+                        debug={transcriptDebug ?? null}
+                      />
                       />
                     ) : isDocument ? (
                       <DocumentContentTab
