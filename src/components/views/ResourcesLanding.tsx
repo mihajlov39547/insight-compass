@@ -34,6 +34,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { useResourceTranscriptPreview } from '@/hooks/useResourceTranscriptPreview';
 import { useResourceExtractedText } from '@/hooks/useResourceExtractedText';
+import { useResourceTranscriptDebug, type TranscriptDebugPayload, type StageDebugEntry } from '@/hooks/useResourceTranscriptDebug';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
   RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName, formatResourceLocation
