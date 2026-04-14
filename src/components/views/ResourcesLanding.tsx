@@ -1189,6 +1189,10 @@ function ResourceDetailsDrawer({
     transcriptQuery,
     transcriptPreviewEnabled && open,
   );
+  const { data: transcriptDebug } = useResourceTranscriptDebug(
+    isVideo ? resourceId : null,
+    !!resource && isVideo && open,
+  );
 
   // Document extracted text data
   const extractedTextEnabled = !!resource && isDocument && open;
