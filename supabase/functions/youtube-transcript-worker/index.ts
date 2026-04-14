@@ -102,13 +102,17 @@ serve(async (req) => {
 
         console.log(`[worker] Processing job=${claimedRow.job_id} videoId=${videoId} url=${claimedRow.normalized_url}`);
 
-        const transcript = await fetchTranscriptForVideo(videoId);
-        const persistedChunkCount = await persistTranscriptChunks(supabase, String(claimedRow.resource_id), transcript);
+        const result = await fetchTranscriptForVideo(videoId);
+        const persistedChunkCount = await persistTranscriptChunks(supabase, String(claimedRow.resource_id), result.transcript);
+
+        // Persist debug metadata on resource_links
+        const debugMeta = { transcript: { debug: result.debug, winning_strategy: result.debug.winningStrategy } };
+        await supabase.from("resource_links").update({ metadata: debugMeta }).eq("id", claimedRow.resource_id);
 
         const { error: completeError } = await supabase.rpc("complete_youtube_transcript_job", {
           p_job_id: claimedRow.job_id,
           p_success: true,
-          p_transcript_text: transcript,
+          p_transcript_text: result.transcript,
           p_error: null,
           p_worker_id: workerId,
           p_chunk_count: persistedChunkCount,
@@ -118,7 +122,15 @@ serve(async (req) => {
         console.log(`[worker] Job ${claimedRow.job_id} succeeded: ${persistedChunkCount} chunks`);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown transcript ingestion error";
+        const debugPayload = (error as any)?.debug || null;
         console.error(`[worker] Job ${claimedRow.job_id} failed: ${message}`);
+
+        // Persist debug metadata on failure too
+        if (debugPayload) {
+          const debugMeta = { transcript: { debug: debugPayload, error: message } };
+          await supabase.from("resource_links").update({ metadata: debugMeta }).eq("id", claimedRow.resource_id).then(() => {});
+        }
+
         await supabase.rpc("complete_youtube_transcript_job", {
           p_job_id: claimedRow.job_id,
           p_success: false,
