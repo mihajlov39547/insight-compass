@@ -35,6 +35,33 @@ interface StrategyResult {
   meta?: Record<string, string>;
 }
 
+export interface StageDebugEntry {
+  stage: string;
+  pageVariant?: string;
+  status: "skipped" | "failed" | "success";
+  reason?: string;
+  trackCount?: number;
+  chosenLang?: string;
+  chosenKind?: string;
+  httpStatus?: number;
+  innertubeKey?: string | null;
+  innertubeKeySource?: string;
+}
+
+export interface TranscriptDebugPayload {
+  stages: StageDebugEntry[];
+  winningStrategy: string | null;
+  pageVariantsAttempted: string[];
+  pageExtractedInnertubeKey: string | null;
+  envInnertubeKeyPresent: boolean;
+  totalDurationMs: number;
+}
+
+export interface TranscriptFetchResult {
+  transcript: string;
+  debug: TranscriptDebugPayload;
+}
+
 interface PageExtraction {
   innertubeApiKey: string | null;
   clientVersion: string | null;
@@ -643,74 +670,101 @@ async function tryEnvKeyInnertube(
 
 export async function fetchTranscriptForVideo(
   videoId: string
-): Promise<string> {
+): Promise<TranscriptFetchResult> {
   console.log(`[transcript] Starting transcript fetch for videoId=${videoId}`);
 
-  const stages: string[] = [];
-  const markStage = (stage: string) => {
-    if (!stages.includes(stage)) stages.push(stage);
-  };
+  const t0 = Date.now();
+  const stageEntries: StageDebugEntry[] = [];
+  const pageVariantsAttempted: string[] = [];
+  let pageExtractedKey: string | null = null;
 
-  // Strategy 1: Legacy timedtext API (fastest, no page scrape)
-  markStage("legacy_timedtext");
-  const legacy = await tryLegacyTimedtextApi(videoId);
-  if (legacy) {
-    console.log(
-      `[transcript] ✅ Success via ${legacy.strategy}, lang=${legacy.language}, len=${legacy.transcript.length}`
-    );
-    return legacy.transcript;
+  function addStage(entry: StageDebugEntry) {
+    stageEntries.push(entry);
   }
 
+  function buildDebug(winner: string | null): TranscriptDebugPayload {
+    return {
+      stages: stageEntries,
+      winningStrategy: winner,
+      pageVariantsAttempted,
+      pageExtractedInnertubeKey: pageExtractedKey,
+      envInnertubeKeyPresent: !!ENV_INNERTUBE_API_KEY,
+      totalDurationMs: Date.now() - t0,
+    };
+  }
+
+  // Strategy 1: Legacy timedtext API (fastest, no page scrape)
+  const legacy = await tryLegacyTimedtextApi(videoId);
+  if (legacy) {
+    addStage({ stage: "legacy_timedtext", status: "success", trackCount: legacy.trackCount, chosenLang: legacy.language });
+    console.log(`[transcript] ✅ Success via ${legacy.strategy}`);
+    return { transcript: legacy.transcript, debug: buildDebug(legacy.strategy) };
+  }
+  addStage({ stage: "legacy_timedtext", status: "failed", reason: "no tracks or empty content" });
+
   // Fetch page HTML once — shared by strategies 2a and 2b
-  markStage("page_fetch");
   const pageVariants = await fetchPageHtmlVariants(videoId);
   if (pageVariants.length === 0) {
-    console.log(`[transcript] ⚠ page fetch failed for all page variants`);
+    addStage({ stage: "page_fetch", status: "failed", reason: "all page variants failed" });
   }
 
   for (const variant of pageVariants) {
-    markStage("page_config_extract");
+    pageVariantsAttempted.push(variant.label);
     const pageConfig = extractPageConfig(variant.html);
+
+    if (pageConfig.innertubeApiKey && !pageExtractedKey) {
+      pageExtractedKey = pageConfig.innertubeApiKey;
+    }
 
     console.log(
       `[transcript] page-config (${variant.label}): key=${pageConfig.innertubeApiKey ? "found" : "missing"}, tracks=${pageConfig.captionTracks.length}`
     );
 
     // Strategy 2a: captionTracks already in page
-    markStage("page_caption_tracks");
     const pageTracks = await tryPageCaptionTracks(pageConfig);
     if (pageTracks) {
-      console.log(
-        `[transcript] ✅ Success via ${pageTracks.strategy}, lang=${pageTracks.language}, trackCount=${pageTracks.trackCount}, len=${pageTracks.transcript.length}`
-      );
-      return pageTracks.transcript;
+      addStage({
+        stage: "page_caption_tracks", pageVariant: variant.label, status: "success",
+        trackCount: pageTracks.trackCount, chosenLang: pageTracks.language,
+        chosenKind: pageTracks.meta?.caption_track_kind,
+      });
+      console.log(`[transcript] ✅ Success via ${pageTracks.strategy}`);
+      return { transcript: pageTracks.transcript, debug: buildDebug(pageTracks.strategy) };
     }
+    addStage({ stage: "page_caption_tracks", pageVariant: variant.label, status: "failed", reason: "no tracks in page or fetch failed", trackCount: pageConfig.captionTracks.length });
 
     // Strategy 2b: page-extracted InnerTube key
-    markStage("innertube_page_key");
     const pageInnertube = await tryPageExtractedInnertube(videoId, pageConfig);
     if (pageInnertube) {
-      console.log(
-        `[transcript] ✅ Success via ${pageInnertube.strategy}, lang=${pageInnertube.language}, trackCount=${pageInnertube.trackCount}, len=${pageInnertube.transcript.length}`
-      );
-      return pageInnertube.transcript;
+      addStage({
+        stage: "innertube_page_key", pageVariant: variant.label, status: "success",
+        trackCount: pageInnertube.trackCount, chosenLang: pageInnertube.language,
+        chosenKind: pageInnertube.meta?.caption_track_kind,
+        innertubeKey: pageConfig.innertubeApiKey, innertubeKeySource: "page_extracted",
+      });
+      console.log(`[transcript] ✅ Success via ${pageInnertube.strategy}`);
+      return { transcript: pageInnertube.transcript, debug: buildDebug(pageInnertube.strategy) };
     }
+    addStage({
+      stage: "innertube_page_key", pageVariant: variant.label, status: "failed",
+      reason: pageConfig.innertubeApiKey ? "player returned no usable tracks" : "no key found in page",
+      innertubeKey: pageConfig.innertubeApiKey, innertubeKeySource: "page_extracted",
+    });
   }
 
   // Strategy 3: env-key InnerTube fallback
-  markStage("innertube_env_key");
   const envInnertube = await tryEnvKeyInnertube(videoId);
   if (envInnertube) {
-    console.log(
-      `[transcript] ✅ Success via ${envInnertube.strategy}, lang=${envInnertube.language}, trackCount=${envInnertube.trackCount}, len=${envInnertube.transcript.length}`
-    );
-    return envInnertube.transcript;
+    addStage({ stage: "innertube_env_key", status: "success", trackCount: envInnertube.trackCount, chosenLang: envInnertube.language, innertubeKeySource: "env_variable" });
+    console.log(`[transcript] ✅ Success via ${envInnertube.strategy}`);
+    return { transcript: envInnertube.transcript, debug: buildDebug(envInnertube.strategy) };
   }
+  addStage({ stage: "innertube_env_key", status: ENV_INNERTUBE_API_KEY ? "failed" : "skipped", reason: ENV_INNERTUBE_API_KEY ? "no usable tracks" : "env key not set", innertubeKeySource: "env_variable" });
 
-  console.log(
-    `[transcript] ❌ All strategies exhausted. Stages attempted: ${stages.join(" → ")}`
-  );
-  throw new Error(
-    `No transcript tracks available for this video (stages: ${stages.join(" → ")})`
-  );
+  const debug = buildDebug(null);
+  const stageNames = stageEntries.map(s => s.stage).join(" → ");
+  console.log(`[transcript] ❌ All strategies exhausted. Stages: ${stageNames}`);
+  const err = new Error(`No transcript tracks available for this video (stages: ${stageNames})`);
+  (err as any).debug = debug;
+  throw err;
 }

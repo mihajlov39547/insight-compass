@@ -34,6 +34,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { useResourceTranscriptPreview } from '@/hooks/useResourceTranscriptPreview';
 import { useResourceExtractedText } from '@/hooks/useResourceExtractedText';
+import { useResourceTranscriptDebug, type TranscriptDebugPayload, type StageDebugEntry } from '@/hooks/useResourceTranscriptDebug';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
   RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName, formatResourceLocation
@@ -1188,6 +1189,10 @@ function ResourceDetailsDrawer({
     transcriptQuery,
     transcriptPreviewEnabled && open,
   );
+  const { data: transcriptDebug } = useResourceTranscriptDebug(
+    isVideo ? resourceId : null,
+    !!resource && isVideo && open,
+  );
 
   // Document extracted text data
   const extractedTextEnabled = !!resource && isDocument && open;
@@ -1341,6 +1346,7 @@ function ResourceDetailsDrawer({
                         onTranscriptQueryChange={setTranscriptQuery}
                         chunks={transcriptPreviewChunks}
                         isLoading={isTranscriptPreviewLoading}
+                        debug={transcriptDebug ?? null}
                       />
                     ) : isDocument ? (
                       <DocumentContentTab
@@ -1426,15 +1432,95 @@ function ContentStatusBanner({ status, error, type }: { status: string; error?: 
   );
 }
 
+/* ── Transcript Debug Section ── */
+function TranscriptDebugSection({ debug }: { debug: TranscriptDebugPayload | null }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!debug) {
+    return (
+      <div className="rounded-md border border-border/40 p-3 text-xs text-muted-foreground">
+        No debug diagnostics available for this transcript attempt.
+      </div>
+    );
+  }
+
+  function maskKey(key: string | null | undefined): string {
+    if (!key) return '—';
+    if (key.length <= 10) return key;
+    return key.slice(0, 6) + '••••' + key.slice(-4);
+  }
+
+  return (
+    <div className="rounded-md border border-border/60 p-3 text-xs space-y-2">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground font-medium w-full text-left"
+      >
+        <ScanText className="h-3.5 w-3.5" />
+        Debug diagnostics
+        <span className="ml-auto text-[10px]">{expanded ? '▲' : '▼'}</span>
+      </button>
+
+      {expanded && (
+        <div className="space-y-2 pt-1">
+          <div className="grid grid-cols-2 gap-1.5">
+            <MetaCell label="Winning strategy" value={debug.winningStrategy || 'none (all failed)'} />
+            <MetaCell label="Duration" value={`${debug.totalDurationMs}ms`} />
+            <MetaCell label="Page variants tried" value={debug.pageVariantsAttempted.length > 0 ? debug.pageVariantsAttempted.join(', ') : 'none'} />
+            <MetaCell label="Env key present" value={debug.envInnertubeKeyPresent ? 'Yes' : 'No'} />
+          </div>
+
+          {debug.pageExtractedInnertubeKey && (
+            <div className="rounded bg-muted/50 p-2 space-y-0.5">
+              <p className="text-muted-foreground">Page-extracted INNERTUBE_API_KEY</p>
+              <p className="font-mono text-[11px] break-all">{debug.pageExtractedInnertubeKey}</p>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <p className="text-muted-foreground font-medium">Stages</p>
+            {debug.stages.map((s, i) => (
+              <div key={i} className="flex items-start gap-2 rounded bg-muted/30 p-1.5">
+                <span className={cn(
+                  'inline-block w-1.5 h-1.5 rounded-full mt-1 shrink-0',
+                  s.status === 'success' ? 'bg-emerald-500' : s.status === 'failed' ? 'bg-destructive' : 'bg-muted-foreground'
+                )} />
+                <div className="min-w-0">
+                  <span className="font-medium">{s.stage}</span>
+                  {s.pageVariant && <span className="text-muted-foreground ml-1">({s.pageVariant})</span>}
+                  <span className={cn('ml-1.5', s.status === 'success' ? 'text-emerald-600' : 'text-muted-foreground')}>
+                    {s.status}
+                  </span>
+                  {s.reason && <p className="text-muted-foreground break-words">{s.reason}</p>}
+                  {s.trackCount !== undefined && <span className="text-muted-foreground ml-1">tracks: {s.trackCount}</span>}
+                  {s.chosenLang && <span className="text-muted-foreground ml-1">lang: {s.chosenLang}</span>}
+                  {s.chosenKind && <span className="text-muted-foreground ml-1">kind: {s.chosenKind}</span>}
+                  {s.innertubeKeySource && (
+                    <span className="text-muted-foreground ml-1">
+                      key: {s.innertubeKeySource === 'page_extracted' ? (s.innertubeKey || '—') : maskKey(s.innertubeKey)}
+                      ({s.innertubeKeySource})
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Video Content Tab ── */
 function VideoContentTab({
-  resource, transcriptQuery, onTranscriptQueryChange, chunks, isLoading,
+  resource, transcriptQuery, onTranscriptQueryChange, chunks, isLoading, debug,
 }: {
   resource: Resource;
   transcriptQuery: string;
   onTranscriptQueryChange: (q: string) => void;
   chunks: { chunkIndex: number; chunkText: string; tokenCount: number; matchRank: number | null }[];
   isLoading: boolean;
+  debug: TranscriptDebugPayload | null;
 }) {
   return (
     <>
@@ -1460,13 +1546,17 @@ function VideoContentTab({
             />
           </div>
           <ContentChunkList chunks={chunks} isLoading={isLoading} emptyMessage="No transcript excerpts found." />
+          <TranscriptDebugSection debug={debug} />
         </>
       ) : resource.transcriptStatus === 'failed' ? (
-        <ContentFailedBlock
-          title="Transcript fetch failed"
-          error={resource.transcriptError || resource.processingError}
-          hint="Use Retry transcript to queue another attempt."
-        />
+        <>
+          <ContentFailedBlock
+            title="Transcript fetch failed"
+            error={resource.transcriptError || resource.processingError}
+            hint="Use Retry transcript to queue another attempt."
+          />
+          <TranscriptDebugSection debug={debug} />
+        </>
       ) : resource.transcriptStatus === 'queued' || resource.transcriptStatus === 'running' ? (
         <ContentProcessingBlock message="Transcript ingestion is in progress. This tab will populate when processing is complete." />
       ) : (
