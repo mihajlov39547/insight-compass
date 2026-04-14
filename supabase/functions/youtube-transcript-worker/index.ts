@@ -48,6 +48,57 @@ function jsonResponse(payload: unknown, status = 200): Response {
   });
 }
 
+async function persistTranscriptDebugMetadata(
+  supabase: any,
+  resourceId: string,
+  debugPayload: unknown,
+  extraTranscriptFields: Record<string, unknown> = {},
+) {
+  if (!debugPayload) return;
+
+  try {
+    const { data: linkRow, error: fetchError } = await supabase
+      .from("resource_links")
+      .select("metadata")
+      .eq("id", resourceId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.warn(`[worker] Could not load resource_links metadata for debug persistence: ${fetchError.message}`);
+      return;
+    }
+
+    const currentMetadata =
+      linkRow && typeof linkRow.metadata === "object" && linkRow.metadata !== null
+        ? linkRow.metadata
+        : {};
+    const currentTranscript =
+      typeof currentMetadata.transcript === "object" && currentMetadata.transcript !== null
+        ? currentMetadata.transcript
+        : {};
+
+    const nextMetadata = {
+      ...currentMetadata,
+      transcript: {
+        ...currentTranscript,
+        ...extraTranscriptFields,
+        debug: debugPayload,
+      },
+    };
+
+    const { error: updateError } = await supabase
+      .from("resource_links")
+      .update({ metadata: nextMetadata })
+      .eq("id", resourceId);
+
+    if (updateError) {
+      console.warn(`[worker] Could not persist transcript debug metadata: ${updateError.message}`);
+    }
+  } catch (metaError) {
+    console.warn(`[worker] Unexpected metadata persistence error: ${metaError}`);
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Main handler                                                       */
 /* ------------------------------------------------------------------ */
@@ -105,10 +156,6 @@ serve(async (req) => {
         const result = await fetchTranscriptForVideo(videoId);
         const persistedChunkCount = await persistTranscriptChunks(supabase, String(claimedRow.resource_id), result.transcript);
 
-        // Persist debug metadata on resource_links
-        const debugMeta = { transcript: { debug: result.debug, winning_strategy: result.debug.winningStrategy } };
-        await supabase.from("resource_links").update({ metadata: debugMeta }).eq("id", claimedRow.resource_id);
-
         const { error: completeError } = await supabase.rpc("complete_youtube_transcript_job", {
           p_job_id: claimedRow.job_id,
           p_success: true,
@@ -118,18 +165,20 @@ serve(async (req) => {
           p_chunk_count: persistedChunkCount,
         });
         if (completeError) throw completeError;
+
+        await persistTranscriptDebugMetadata(
+          supabase,
+          String(claimedRow.resource_id),
+          result.debug,
+          { winning_strategy: result.debug?.winningStrategy ?? null }
+        );
+
         succeeded += 1;
         console.log(`[worker] Job ${claimedRow.job_id} succeeded: ${persistedChunkCount} chunks`);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown transcript ingestion error";
         const debugPayload = (error as any)?.debug || null;
         console.error(`[worker] Job ${claimedRow.job_id} failed: ${message}`);
-
-        // Persist debug metadata on failure too
-        if (debugPayload) {
-          const debugMeta = { transcript: { debug: debugPayload, error: message } };
-          await supabase.from("resource_links").update({ metadata: debugMeta }).eq("id", claimedRow.resource_id).then(() => {});
-        }
 
         await supabase.rpc("complete_youtube_transcript_job", {
           p_job_id: claimedRow.job_id,
@@ -138,6 +187,14 @@ serve(async (req) => {
           p_error: message,
           p_worker_id: workerId,
         });
+
+        await persistTranscriptDebugMetadata(
+          supabase,
+          String(claimedRow.resource_id),
+          debugPayload,
+          { error: message }
+        );
+
         failed += 1;
         errors.push({ jobId: String(claimedRow.job_id), error: message });
       }

@@ -693,6 +693,19 @@ export async function fetchTranscriptForVideo(
     };
   }
 
+  function buildStageSummary(): string {
+    const ordered = [
+      'legacy_timedtext',
+      'page_fetch',
+      'page_config_extract',
+      'page_caption_tracks',
+      'innertube_page_key',
+      'innertube_env_key',
+    ];
+    const seen = new Set(stageEntries.map((s) => s.stage));
+    return ordered.filter((stage) => seen.has(stage)).join(' → ');
+  }
+
   // Strategy 1: Legacy timedtext API (fastest, no page scrape)
   const legacy = await tryLegacyTimedtextApi(videoId);
   if (legacy) {
@@ -706,11 +719,20 @@ export async function fetchTranscriptForVideo(
   const pageVariants = await fetchPageHtmlVariants(videoId);
   if (pageVariants.length === 0) {
     addStage({ stage: "page_fetch", status: "failed", reason: "all page variants failed" });
+  } else {
+    addStage({ stage: "page_fetch", status: "success", reason: `${pageVariants.length} variant(s) fetched` });
   }
 
   for (const variant of pageVariants) {
     pageVariantsAttempted.push(variant.label);
     const pageConfig = extractPageConfig(variant.html);
+    addStage({
+      stage: "page_config_extract",
+      pageVariant: variant.label,
+      status: "success",
+      trackCount: pageConfig.captionTracks.length,
+      reason: pageConfig.innertubeApiKey ? "page key found" : "page key missing",
+    });
 
     if (pageConfig.innertubeApiKey && !pageExtractedKey) {
       pageExtractedKey = pageConfig.innertubeApiKey;
@@ -762,7 +784,7 @@ export async function fetchTranscriptForVideo(
   addStage({ stage: "innertube_env_key", status: ENV_INNERTUBE_API_KEY ? "failed" : "skipped", reason: ENV_INNERTUBE_API_KEY ? "no usable tracks" : "env key not set", innertubeKeySource: "env_variable" });
 
   const debug = buildDebug(null);
-  const stageNames = stageEntries.map(s => s.stage).join(" → ");
+  const stageNames = buildStageSummary();
   console.log(`[transcript] ❌ All strategies exhausted. Stages: ${stageNames}`);
   const err = new Error(`No transcript tracks available for this video (stages: ${stageNames})`);
   (err as any).debug = debug;
