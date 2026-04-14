@@ -189,17 +189,20 @@ export function SettingsDialog() {
           </section>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-border">
-          <Button variant="outline" onClick={() => setShowSettings(null)}>
-            Cancel
-          </Button>
-          <Button
-            className="bg-accent hover:bg-accent/90 text-accent-foreground"
-            onClick={handleSave}
-            disabled={saveSettings.isPending}
-          >
-            {saveSettings.isPending ? 'Saving...' : 'Save Changes'}
-          </Button>
+        <div className="flex items-center justify-between gap-2 pt-4 border-t border-border">
+          <RedeployEdgeButton />
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowSettings(null)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={handleSave}
+              disabled={saveSettings.isPending}
+            >
+              {saveSettings.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
