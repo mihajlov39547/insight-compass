@@ -1348,7 +1348,6 @@ function ResourceDetailsDrawer({
                         isLoading={isTranscriptPreviewLoading}
                         debug={transcriptDebug ?? null}
                       />
-                      />
                     ) : isDocument ? (
                       <DocumentContentTab
                         resource={resource}
