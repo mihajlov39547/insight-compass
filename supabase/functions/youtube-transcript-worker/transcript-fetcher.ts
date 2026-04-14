@@ -42,6 +42,11 @@ interface PageExtraction {
   visitorData: string | null;
 }
 
+interface PageHtmlVariant {
+  label: string;
+  html: string;
+}
+
 /* ------------------------------------------------------------------ */
 /*  HTML entity decoding                                               */
 /* ------------------------------------------------------------------ */
@@ -152,7 +157,7 @@ async function fetchTranscriptFromTrack(
 /*  Page HTML fetching                                                 */
 /* ------------------------------------------------------------------ */
 
-async function fetchPageHtml(videoId: string): Promise<string | null> {
+async function fetchPageHtmlVariants(videoId: string): Promise<PageHtmlVariant[]> {
   const pages = [
     {
       label: "embed",
@@ -181,6 +186,8 @@ async function fetchPageHtml(videoId: string): Promise<string | null> {
     },
   ];
 
+  const variants: PageHtmlVariant[] = [];
+
   for (const page of pages) {
     console.log(`[transcript] page-fetch (${page.label}): GET ${page.url}`);
     try {
@@ -196,7 +203,8 @@ async function fetchPageHtml(videoId: string): Promise<string | null> {
         console.log(
           `[transcript] page-fetch (${page.label}): got ${html.length} bytes`
         );
-        return html;
+        variants.push({ label: page.label, html });
+        continue;
       }
       console.log(
         `[transcript] page-fetch (${page.label}): response too short (${html.length})`
@@ -205,7 +213,8 @@ async function fetchPageHtml(videoId: string): Promise<string | null> {
       console.log(`[transcript] page-fetch (${page.label}): error: ${err}`);
     }
   }
-  return null;
+
+  return variants;
 }
 
 /* ------------------------------------------------------------------ */
@@ -262,7 +271,8 @@ function extractPageConfig(html: string): PageExtraction {
     try {
       const json = JSON.parse(m[1]);
       const tracks =
-        json?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+        json?.captions?.playerCaptionsTracklistRenderer?.captionTracks
+        ?? json?.playerCaptionsTracklistRenderer?.captionTracks;
       if (Array.isArray(tracks) && tracks.length > 0) {
         result.captionTracks = tracks;
         break;
@@ -274,7 +284,7 @@ function extractPageConfig(html: string): PageExtraction {
 
   // Fallback: direct captionTracks extraction
   if (result.captionTracks.length === 0) {
-    const directMatch = html.match(/"captionTracks"\s*:\s*(\[.+?\])/);
+    const directMatch = html.match(/"captionTracks"\s*:\s*(\[.+?\])/s);
     if (directMatch) {
       try {
         const tracks = JSON.parse(directMatch[1]);
@@ -637,9 +647,12 @@ export async function fetchTranscriptForVideo(
   console.log(`[transcript] Starting transcript fetch for videoId=${videoId}`);
 
   const stages: string[] = [];
+  const markStage = (stage: string) => {
+    if (!stages.includes(stage)) stages.push(stage);
+  };
 
   // Strategy 1: Legacy timedtext API (fastest, no page scrape)
-  stages.push("legacy_timedtext");
+  markStage("legacy_timedtext");
   const legacy = await tryLegacyTimedtextApi(videoId);
   if (legacy) {
     console.log(
@@ -649,19 +662,22 @@ export async function fetchTranscriptForVideo(
   }
 
   // Fetch page HTML once — shared by strategies 2a and 2b
-  stages.push("page_fetch");
-  const html = await fetchPageHtml(videoId);
-  if (!html) {
+  markStage("page_fetch");
+  const pageVariants = await fetchPageHtmlVariants(videoId);
+  if (pageVariants.length === 0) {
     console.log(`[transcript] ⚠ page fetch failed for all page variants`);
   }
 
-  let pageConfig: PageExtraction | null = null;
-  if (html) {
-    stages.push("page_config_extract");
-    pageConfig = extractPageConfig(html);
+  for (const variant of pageVariants) {
+    markStage("page_config_extract");
+    const pageConfig = extractPageConfig(variant.html);
+
+    console.log(
+      `[transcript] page-config (${variant.label}): key=${pageConfig.innertubeApiKey ? "found" : "missing"}, tracks=${pageConfig.captionTracks.length}`
+    );
 
     // Strategy 2a: captionTracks already in page
-    stages.push("page_caption_tracks");
+    markStage("page_caption_tracks");
     const pageTracks = await tryPageCaptionTracks(pageConfig);
     if (pageTracks) {
       console.log(
@@ -671,7 +687,7 @@ export async function fetchTranscriptForVideo(
     }
 
     // Strategy 2b: page-extracted InnerTube key
-    stages.push("innertube_page_key");
+    markStage("innertube_page_key");
     const pageInnertube = await tryPageExtractedInnertube(videoId, pageConfig);
     if (pageInnertube) {
       console.log(
@@ -682,7 +698,7 @@ export async function fetchTranscriptForVideo(
   }
 
   // Strategy 3: env-key InnerTube fallback
-  stages.push("innertube_env_key");
+  markStage("innertube_env_key");
   const envInnertube = await tryEnvKeyInnertube(videoId);
   if (envInnertube) {
     console.log(
