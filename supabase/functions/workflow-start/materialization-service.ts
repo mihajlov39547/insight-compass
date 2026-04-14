@@ -206,6 +206,33 @@ async function findIdempotentRun(
   };
 }
 
+async function syncDocumentStatusOnWorkflowStart(
+  supabase: SupabaseClient,
+  request: StartWorkflowRunRequest,
+  nowIso: string
+): Promise<void> {
+  if (request.trigger_entity_type !== "document" || !request.trigger_entity_id) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("documents")
+    .update({
+      processing_status: "queued",
+      processing_error: null,
+      updated_at: nowIso,
+    })
+    .eq("id", request.trigger_entity_id)
+    .neq("processing_status", "completed");
+
+  if (error) {
+    throw new ServiceError(
+      `Failed to sync document retry status: ${error.message}`,
+      500
+    );
+  }
+}
+
 export async function startWorkflowRunMaterialization(
   supabase: SupabaseClient,
   request: StartWorkflowRunRequest,
@@ -385,6 +412,8 @@ export async function startWorkflowRunMaterialization(
         );
       }
     }
+
+    await syncDocumentStatusOnWorkflowStart(supabase, request, nowIso);
 
     return {
       workflow_run_id: workflowRun.id,

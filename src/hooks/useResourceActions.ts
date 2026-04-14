@@ -107,6 +107,28 @@ export function useRetryResourceProcessing() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    onMutate: async (resource: ResourceActionInput) => {
+      await queryClient.cancelQueries({ queryKey: ['resources'] });
+
+      const previousResources = queryClient.getQueriesData<Resource[]>({ queryKey: ['resources'] });
+      const optimisticUpdatedAt = new Date().toISOString();
+
+      for (const [queryKey, queryData] of previousResources) {
+        if (!queryData) continue;
+        queryClient.setQueryData<Resource[]>(queryKey, queryData.map((item) => (
+          item.id === resource.id
+            ? {
+              ...item,
+              processingStatus: 'queued',
+              processingError: null,
+              updatedAt: optimisticUpdatedAt,
+            }
+            : item
+        )));
+      }
+
+      return { previousResources };
+    },
     mutationFn: async (resource: ResourceActionInput) => {
       await startDocumentWorkflow(
         {
@@ -118,6 +140,11 @@ export function useRetryResourceProcessing() {
         'retry',
       );
       return resource;
+    },
+    onError: (_error, _resource, context) => {
+      for (const [queryKey, queryData] of context?.previousResources || []) {
+        queryClient.setQueryData(queryKey, queryData);
+      }
     },
     onSuccess: (resource) => {
       invalidateResourceScopes(queryClient, resource);

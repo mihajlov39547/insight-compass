@@ -197,6 +197,18 @@ export function ResourcesLanding() {
     resourceKind: resource.resourceKind,
   });
 
+  useEffect(() => {
+    if (!selectedResource) return;
+    const next = resources.find((item) => item.id === selectedResource.id) || null;
+    if (!next) {
+      setSelectedResource(null);
+      return;
+    }
+    if (next !== selectedResource) {
+      setSelectedResource(next);
+    }
+  }, [resources, selectedResource]);
+
   const handleDelete = (resource: Resource) => {
     if (!resource.canDelete) return;
     const actionInput = toResourceActionInput(resource);
@@ -212,6 +224,19 @@ export function ResourcesLanding() {
       handleRetryTranscript(resource);
       return;
     }
+
+    const optimisticUpdatedAt = new Date().toISOString();
+    setSelectedResource((prev) => (
+      prev && prev.id === resource.id
+        ? {
+          ...prev,
+          processingStatus: 'queued',
+          processingError: null,
+          updatedAt: optimisticUpdatedAt,
+        }
+        : prev
+    ));
+
     const actionInput = toResourceActionInput(resource);
     retryMutation.mutate(actionInput, {
       onSuccess: () => toast({ title: 'Retry queued', description: `${resource.title} will be processed again.` }),
