@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, RotateCw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
