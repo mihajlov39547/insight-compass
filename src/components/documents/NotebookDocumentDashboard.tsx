@@ -13,6 +13,9 @@ import { useApp } from '@/contexts/useApp';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useDeleteDocument, useRetryProcessing, DbDocument } from '@/hooks/useDocuments';
+import { useResources } from '@/hooks/useResources';
+import { useDeleteResource, useRetryYouTubeTranscriptIngestion, type ResourceActionInput } from '@/hooks/useResourceActions';
+import type { Resource } from '@/lib/resourceClassification';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from './DocumentStatusBadge';
 import { DocumentUsability } from './DocumentUsability';
@@ -23,6 +26,7 @@ import { useDocumentChunkStats } from '@/hooks/useDocumentChunkStats';
 import { useDocumentQuestionStats } from '@/hooks/useDocumentQuestionStats';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { LinkedVideoRow } from './LinkedVideoRow';
 
 const fileIcons: Record<string, any> = {
   pdf: FileText, docx: FileType, doc: FileType, txt: FileIcon,
@@ -62,9 +66,12 @@ export function NotebookDocumentDashboard() {
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
 
   const { data: documents = [], isLoading } = useNotebookDocuments(selectedNotebookId ?? undefined);
+  const { data: resources = [], isLoading: isResourcesLoading } = useResources();
 
   const deleteMutation = useDeleteDocument();
+  const deleteResourceMutation = useDeleteResource();
   const { retry: retryProcessing, isPending: isRetrying } = useRetryProcessing();
+  const retryTranscriptMutation = useRetryYouTubeTranscriptIngestion();
   const [showUpload, setShowUpload] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterStatus>('all');
@@ -78,14 +85,50 @@ export function NotebookDocumentDashboard() {
     });
   };
 
+  const toResourceActionInput = (resource: Resource): ResourceActionInput => ({
+    id: resource.id,
+    title: resource.title,
+    storagePath: resource.storagePath,
+    ownerUserId: resource.ownerUserId,
+    containerType: resource.containerType,
+    containerId: resource.containerId,
+    processingStatus: resource.processingStatus,
+    resourceKind: resource.resourceKind,
+  });
+
+  const handleDeleteResource = (resource: Resource) => {
+    deleteResourceMutation.mutate(toResourceActionInput(resource), {
+      onSuccess: () => toast({ title: `${resource.title} deleted` }),
+      onError: (err: any) => toast({ title: 'Delete failed', description: err.message, variant: 'destructive' }),
+    });
+  };
+
+  const handleRetryTranscript = (resource: Resource) => {
+    if (resource.provider !== 'youtube') return;
+    retryTranscriptMutation.mutate(toResourceActionInput(resource), {
+      onSuccess: () => toast({ title: 'Transcript retry queued', description: 'Transcript ingestion is running again.' }),
+      onError: (err: any) => toast({ title: 'Transcript retry failed', description: err.message, variant: 'destructive' }),
+    });
+  };
+
   const documentIds = documents.map(d => d.id);
   const { data: chunkStatsMap } = useDocumentChunkStats(documentIds);
   const { data: questionStatsMap } = useDocumentQuestionStats(documentIds);
 
-  const totalCount = documents.length;
-  const searchableCount = documents.filter(d => d.processing_status === 'completed').length;
-  const processingCount = documents.filter(d => !['completed', 'failed'].includes(d.processing_status)).length;
-  const failedCount = documents.filter(d => d.processing_status === 'failed').length;
+  const notebookLinkedVideos = resources.filter((r) =>
+    r.provider === 'youtube'
+    && r.sourceType === 'linked'
+    && !!selectedNotebookId
+    && r.notebookId === selectedNotebookId
+  );
+
+  const totalCount = documents.length + notebookLinkedVideos.length;
+  const searchableCount = documents.filter(d => d.processing_status === 'completed').length
+    + notebookLinkedVideos.filter((r) => r.transcriptStatus === 'ready').length;
+  const processingCount = documents.filter(d => !['completed', 'failed'].includes(d.processing_status)).length
+    + notebookLinkedVideos.filter((r) => ['queued', 'running'].includes(r.transcriptStatus || '')).length;
+  const failedCount = documents.filter(d => d.processing_status === 'failed').length
+    + notebookLinkedVideos.filter((r) => r.transcriptStatus === 'failed').length;
 
   const filtered = useMemo(() => {
     let list = [...documents];
@@ -104,6 +147,30 @@ export function NotebookDocumentDashboard() {
       default: return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
   }, [documents, filter, sort, search]);
+
+  const filteredVideos = useMemo(() => {
+    let list = [...notebookLinkedVideos];
+
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter((r) =>
+        r.title.toLowerCase().includes(q)
+        || (r.mediaVideoId || '').toLowerCase().includes(q)
+        || (r.mediaChannelName || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (filter === 'searchable') list = list.filter((r) => r.transcriptStatus === 'ready');
+    else if (filter === 'processing') list = list.filter((r) => ['queued', 'running'].includes(r.transcriptStatus || ''));
+    else if (filter === 'failed') list = list.filter((r) => r.transcriptStatus === 'failed');
+
+    switch (sort) {
+      case 'oldest': return list.sort((a, b) => new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime());
+      case 'name': return list.sort((a, b) => a.title.localeCompare(b.title));
+      case 'status': return list.sort((a, b) => (a.transcriptStatus || '').localeCompare(b.transcriptStatus || ''));
+      default: return list.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+    }
+  }, [notebookLinkedVideos, filter, sort, search]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
@@ -176,23 +243,23 @@ export function NotebookDocumentDashboard() {
       {/* Document list */}
       <ScrollArea className="flex-1">
         <div className="px-6 py-4 space-y-2">
-          {isLoading ? (
+          {isLoading || isResourcesLoading ? (
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
             </div>
-          ) : filtered.length === 0 ? (
+          ) : filtered.length === 0 && filteredVideos.length === 0 ? (
             <div className="text-center py-16">
-              {documents.length > 0 ? (
+              {documents.length > 0 || notebookLinkedVideos.length > 0 ? (
                 <>
                   <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">No documents match your filters</p>
+                  <p className="text-sm text-muted-foreground">No sources match your filters</p>
                 </>
               ) : (
                 <>
                   <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                  <h3 className="text-sm font-medium text-foreground mb-1">No documents yet</h3>
+                  <h3 className="text-sm font-medium text-foreground mb-1">No sources yet</h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
-                    Add documents to this notebook to enable AI-powered search and analysis across your sources.
+                    Add documents or linked videos to this notebook to enable AI-powered search and analysis across your sources.
                   </p>
                   <Button variant="outline" className="gap-2" onClick={() => setShowUpload(true)}>
                     <Upload className="h-4 w-4" /> Upload Documents
@@ -201,20 +268,34 @@ export function NotebookDocumentDashboard() {
               )}
             </div>
           ) : (
-            filtered.map(doc => (
-              <DocumentRow
-                key={doc.id}
-                doc={doc}
-                chunkStats={chunkStatsMap?.get(doc.id)}
-                questionStats={questionStatsMap?.get(doc.id)}
-                isExpanded={expandedId === doc.id}
-                onToggle={() => setExpandedId(expandedId === doc.id ? null : doc.id)}
-                onDelete={() => handleDelete(doc)}
-                onRetry={() => retryProcessing(doc)}
-                isDeleting={deleteMutation.isPending}
-                isRetrying={isRetrying}
-              />
-            ))
+            <>
+              {filtered.map(doc => (
+                <DocumentRow
+                  key={doc.id}
+                  doc={doc}
+                  chunkStats={chunkStatsMap?.get(doc.id)}
+                  questionStats={questionStatsMap?.get(doc.id)}
+                  isExpanded={expandedId === `doc:${doc.id}`}
+                  onToggle={() => setExpandedId(expandedId === `doc:${doc.id}` ? null : `doc:${doc.id}`)}
+                  onDelete={() => handleDelete(doc)}
+                  onRetry={() => retryProcessing(doc)}
+                  isDeleting={deleteMutation.isPending}
+                  isRetrying={isRetrying}
+                />
+              ))}
+              {filteredVideos.map(resource => (
+                <LinkedVideoRow
+                  key={resource.id}
+                  resource={resource}
+                  isExpanded={expandedId === `video:${resource.id}`}
+                  onToggle={() => setExpandedId(expandedId === `video:${resource.id}` ? null : `video:${resource.id}`)}
+                  onDelete={() => handleDeleteResource(resource)}
+                  onRetry={() => handleRetryTranscript(resource)}
+                  isDeleting={deleteResourceMutation.isPending}
+                  isRetrying={retryTranscriptMutation.isPending}
+                />
+              ))}
+            </>
           )}
         </div>
       </ScrollArea>

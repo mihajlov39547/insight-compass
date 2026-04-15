@@ -1,0 +1,341 @@
+import React from 'react';
+import {
+  ChevronDown,
+  ChevronRight,
+  RotateCcw,
+  Trash2,
+  Video,
+  Check,
+  Clock,
+  Loader2,
+  AlertCircle,
+  Zap,
+  Search,
+  Brain,
+  MessageSquareText,
+  HelpCircle,
+  Languages,
+  FileText,
+  FileSearch,
+} from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import type { Resource } from '@/lib/resourceClassification';
+import { useResourceTranscriptDebug } from '@/hooks/useResourceTranscriptDebug';
+import { useResourceTranscriptPipelineStats } from '@/hooks/useResourceTranscriptPipelineStats';
+
+function formatDurationFromMs(ms: number | null | undefined): string {
+  if (ms == null) return '—';
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function mapTranscriptStatus(resource: Resource): 'completed' | 'failed' | 'processing' {
+  if (resource.transcriptStatus === 'ready') return 'completed';
+  if (resource.transcriptStatus === 'failed') return 'failed';
+  return 'processing';
+}
+
+function VideoStatusBadge({ status }: { status: 'completed' | 'failed' | 'processing' }) {
+  if (status === 'completed') {
+    return (
+      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
+        <Search className="h-2.5 w-2.5" /> Searchable
+      </Badge>
+    );
+  }
+
+  if (status === 'failed') {
+    return (
+      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-destructive/10 text-destructive border-destructive/20">
+        <AlertCircle className="h-2.5 w-2.5" /> Failed
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-amber-500/10 text-amber-700 border-amber-500/20">
+      <Loader2 className="h-2.5 w-2.5 animate-spin" /> Processing
+    </Badge>
+  );
+}
+
+function ReadinessCard({
+  label,
+  ready,
+  icon,
+  detail,
+}: {
+  label: string;
+  ready: boolean;
+  icon: React.ReactNode;
+  detail?: string;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs border transition-colors ${
+        ready
+          ? 'bg-green-500/5 border-green-500/20 text-green-700'
+          : 'bg-muted/30 border-border text-muted-foreground'
+      }`}
+    >
+      <div className="shrink-0">{icon}</div>
+      <span className="flex-1">{label}</span>
+      {ready ? <Check className="h-3 w-3 shrink-0" /> : <Clock className="h-3 w-3 shrink-0 opacity-40" />}
+      {detail && <span className="text-[10px] opacity-70">{detail}</span>}
+    </div>
+  );
+}
+
+function MetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-muted-foreground">{label}</p>
+      <p className="text-foreground font-medium truncate" title={value}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+export function LinkedVideoRow({
+  resource,
+  isExpanded,
+  onToggle,
+  onDelete,
+  onRetry,
+  isDeleting,
+  isRetrying,
+}: {
+  resource: Resource;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onDelete: () => void;
+  onRetry: () => void;
+  isDeleting: boolean;
+  isRetrying: boolean;
+}) {
+  const effectiveStatus = mapTranscriptStatus(resource);
+  const { data: debug } = useResourceTranscriptDebug(resource.id, isExpanded || effectiveStatus === 'processing');
+  const { data: stats } = useResourceTranscriptPipelineStats(resource.id, isExpanded || effectiveStatus === 'processing');
+
+  const chunkCount = stats?.chunkCount || 0;
+  const embeddingCount = stats?.embeddingCount || 0;
+  const embeddingCoverage = stats?.embeddingCoverage || 0;
+  const questionCount = stats?.questionCount || 0;
+  const transcriptReady = resource.transcriptStatus === 'ready';
+  const isAIReady = transcriptReady && chunkCount > 0 && embeddingCoverage >= 90;
+
+  const timeline = [
+    {
+      key: 'serpapi_primary',
+      label: 'Fetching transcript',
+      status: debug?.stages?.find((s) => s.stage === 'serpapi_primary')?.status || 'skipped',
+      detail: debug?.stages?.find((s) => s.stage === 'serpapi_primary')?.reason || null,
+    },
+    {
+      key: 'page_probe',
+      label: 'Metadata probe',
+      status: debug?.stages?.find((s) => s.stage === 'page_fetch')?.status || 'skipped',
+      detail: debug?.stages?.find((s) => s.stage === 'page_fetch')?.reason || null,
+    },
+    {
+      key: 'chunking',
+      label: 'Chunking for retrieval',
+      status: chunkCount > 0 ? 'success' : transcriptReady ? 'failed' : 'skipped',
+      detail: chunkCount > 0 ? `${chunkCount} chunks` : null,
+    },
+    {
+      key: 'embeddings',
+      label: 'Generating embeddings',
+      status: embeddingCount > 0 ? 'success' : transcriptReady ? 'failed' : 'skipped',
+      detail: embeddingCount > 0 ? `${embeddingCount}/${chunkCount}` : null,
+    },
+    {
+      key: 'questions',
+      label: 'Generating suggested questions',
+      status: questionCount > 0 ? 'success' : transcriptReady ? 'skipped' : 'skipped',
+      detail: questionCount > 0 ? `${questionCount} questions` : 'optional',
+    },
+    {
+      key: 'finalize',
+      label: 'Finalizing',
+      status: transcriptReady ? 'success' : resource.transcriptStatus === 'failed' ? 'failed' : 'skipped',
+      detail: debug?.totalDurationMs ? formatDurationFromMs(debug.totalDurationMs) : null,
+    },
+  ];
+
+  return (
+    <Collapsible open={isExpanded} onOpenChange={onToggle}>
+      <div className="rounded-lg border border-border bg-card transition-shadow hover:shadow-sm">
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center gap-3 p-3 text-left">
+            <div className={cn('p-2 rounded-md bg-muted shrink-0 text-red-500')}>
+              <Video className="h-4 w-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-medium text-foreground truncate" title={resource.title}>
+                  {resource.title}
+                </p>
+                <VideoStatusBadge status={effectiveStatus} />
+                {isAIReady && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
+                    <Zap className="h-2.5 w-2.5" /> AI ready
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                VIDEO • linked
+                {resource.mediaVideoId ? ` • ${resource.mediaVideoId}` : ''}
+                {resource.mediaChannelName ? ` • ${resource.mediaChannelName}` : ''}
+                {' • '}
+                {new Date(resource.uploadedAt).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {resource.transcriptStatus === 'failed' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-accent"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRetry();
+                  }}
+                  disabled={isRetrying}
+                  title="Retry transcript"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+              {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+            </div>
+          </button>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <div className="px-3 pb-3 pt-0 border-t border-border">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 py-3 text-xs">
+              <MetaItem label="File type" value="VIDEO" />
+              <MetaItem label="Provider" value={resource.provider || 'youtube'} />
+              <MetaItem label="Size" value={`${resource.sizeBytes || 0} B`} />
+              <MetaItem label="Uploaded" value={new Date(resource.uploadedAt).toLocaleString()} />
+              {resource.mediaVideoId && <MetaItem label="Video ID" value={resource.mediaVideoId} />}
+              {resource.mediaChannelName && <MetaItem label="Channel" value={resource.mediaChannelName} />}
+              {resource.detectedLanguage && <MetaItem label="Language" value={resource.detectedLanguage.toUpperCase()} />}
+              <MetaItem label="Transcript status" value={resource.transcriptStatus || 'none'} />
+            </div>
+
+            {resource.processingError && (
+              <div className="text-xs text-destructive bg-destructive/5 rounded p-2 mb-3">
+                <span className="font-medium">Error: </span>
+                {resource.processingError}
+              </div>
+            )}
+
+            {resource.summary && (
+              <div className="mb-3">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Summary</p>
+                <p className="text-xs text-foreground leading-relaxed">{resource.summary}</p>
+              </div>
+            )}
+
+            <div className="space-y-3 pt-2 border-t border-border">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <VideoStatusBadge status={effectiveStatus} />
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                    {formatDurationFromMs(debug?.totalDurationMs ?? null)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Last completed: </span>
+                    <span className="text-foreground">
+                      {timeline.filter((a) => a.status === 'success').slice(-1)[0]?.label || '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Readiness</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <ReadinessCard label="Text extracted" ready={transcriptReady} icon={<FileText className="h-3 w-3" />} />
+                  <ReadinessCard label="Language detected" ready={!!debug?.serpapiLanguageCode} icon={<Languages className="h-3 w-3" />} />
+                  <ReadinessCard label="Summary" ready={!!resource.summary} icon={<FileSearch className="h-3 w-3" />} />
+                  <ReadinessCard label="Keyword search" ready={transcriptReady && chunkCount > 0} icon={<Search className="h-3 w-3" />} />
+                  <ReadinessCard label="Semantic search" ready={embeddingCoverage >= 90 && chunkCount > 0} icon={<Brain className="h-3 w-3" />} detail={chunkCount > 0 ? `${embeddingCoverage}%` : undefined} />
+                  <ReadinessCard label="Hybrid retrieval" ready={transcriptReady && chunkCount > 0} icon={<Zap className="h-3 w-3" />} />
+                  <ReadinessCard label="Grounded chat" ready={transcriptReady && chunkCount > 0} icon={<MessageSquareText className="h-3 w-3" />} />
+                  <ReadinessCard label="Question enrichment" ready={questionCount > 0} icon={<HelpCircle className="h-3 w-3" />} detail={questionCount > 0 ? `${questionCount}` : undefined} />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Metrics</p>
+                <div className="flex flex-wrap gap-3 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Chunks: </span>
+                    <span className="text-foreground font-medium tabular-nums">{chunkCount}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Embeddings: </span>
+                    <span className="text-foreground font-medium tabular-nums">{embeddingCount}/{chunkCount}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Coverage: </span>
+                    <span className="text-foreground font-medium tabular-nums">{embeddingCoverage}%</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Questions: </span>
+                    <span className="text-foreground font-medium tabular-nums">{questionCount}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Activity timeline</p>
+                <div className="space-y-0.5">
+                  {timeline.map((activity) => (
+                    <div key={activity.key} className="flex items-center gap-2 text-[11px]">
+                      {activity.status === 'success' ? (
+                        <Check className="h-3.5 w-3.5 text-green-600" />
+                      ) : activity.status === 'failed' ? (
+                        <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+                      ) : activity.status === 'skipped' ? (
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      ) : (
+                        <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+                      )}
+                      <span className={activity.status === 'failed' ? 'text-destructive' : 'text-foreground'}>{activity.label}</span>
+                      {activity.key === 'questions' && (
+                        <span className="text-[9px] text-muted-foreground/60 italic">optional</span>
+                      )}
+                      <span className="ml-auto text-muted-foreground/50 tabular-nums">{activity.detail || ''}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+}
