@@ -1688,6 +1688,8 @@ function DocumentDebugSection({
 }: {
   debug: import('@/hooks/useResourceExtractedText').DocumentProcessingDebugPayload | null;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   if (!debug) {
     return (
       <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground">
@@ -1697,38 +1699,46 @@ function DocumentDebugSection({
   }
 
   return (
-    <div className="rounded-md border border-border/60 p-3 space-y-3">
-      <div className="flex items-center gap-2 text-xs font-medium text-foreground">
-        <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
+    <div className="rounded-md border border-border/60 p-3 text-xs space-y-2">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground font-medium w-full text-left"
+      >
+        <ScanText className="h-3.5 w-3.5" />
         Debug diagnostics
-      </div>
+        <span className="ml-auto text-[10px]">{expanded ? '▲' : '▼'}</span>
+      </button>
 
-      <div className="grid grid-cols-2 gap-2 text-[11px]">
-        <MetaCell label="File category" value={debug.normalizedFileCategory || 'unknown'} />
-        <MetaCell label="Extractor" value={debug.extractorSelected || 'unknown'} />
-        <MetaCell label="Extractor status" value={debug.extractorStatus || 'unknown'} />
-        <MetaCell label="Last completed stage" value={debug.lastCompletedStage || 'none'} />
-        {debug.qualityScore !== null && <MetaCell label="Quality score" value={String(debug.qualityScore)} />}
-        {debug.qualityReason && <MetaCell label="Quality reason" value={debug.qualityReason} />}
-        {debug.extractedCharCount !== null && <MetaCell label="Extracted chars" value={String(debug.extractedCharCount)} />}
-        {debug.structuralNoiseRatio !== null && <MetaCell label="Structural noise ratio" value={String(debug.structuralNoiseRatio)} />}
-        {debug.structuralNoiseFiltered !== null && <MetaCell label="Structural noise filtered" value={debug.structuralNoiseFiltered ? 'Yes' : 'No'} />}
-        {debug.pdfTextStatus && <MetaCell label="PDF text status" value={debug.pdfTextStatus} />}
-        {debug.inspectionMethod && <MetaCell label="Inspection method" value={debug.inspectionMethod} />}
-        {debug.ocrPdfStatus && <MetaCell label="OCR PDF status" value={debug.ocrPdfStatus} />}
-        {debug.ocrPdfEngine && <MetaCell label="OCR PDF engine" value={debug.ocrPdfEngine} />}
-        {debug.ocrPdfConfidence !== null && <MetaCell label="OCR PDF confidence" value={String(debug.ocrPdfConfidence)} />}
-        {debug.ocrImageStatus && <MetaCell label="OCR image status" value={debug.ocrImageStatus} />}
-        {debug.ocrImageEngine && <MetaCell label="OCR image engine" value={debug.ocrImageEngine} />}
-      </div>
+      {expanded && (
+        <div className="space-y-2 pt-1">
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <MetaCell label="File category" value={debug.normalizedFileCategory || 'unknown'} />
+            <MetaCell label="Extractor" value={debug.extractorSelected || 'unknown'} />
+            <MetaCell label="Extractor status" value={debug.extractorStatus || 'unknown'} />
+            <MetaCell label="Last completed stage" value={debug.lastCompletedStage || 'none'} />
+            {debug.qualityScore !== null && <MetaCell label="Quality score" value={String(debug.qualityScore)} />}
+            {debug.qualityReason && <MetaCell label="Quality reason" value={debug.qualityReason} />}
+            {debug.extractedCharCount !== null && <MetaCell label="Extracted chars" value={String(debug.extractedCharCount)} />}
+            {debug.structuralNoiseRatio !== null && <MetaCell label="Structural noise ratio" value={String(debug.structuralNoiseRatio)} />}
+            {debug.structuralNoiseFiltered !== null && <MetaCell label="Structural noise filtered" value={debug.structuralNoiseFiltered ? 'Yes' : 'No'} />}
+            {debug.pdfTextStatus && <MetaCell label="PDF text status" value={debug.pdfTextStatus} />}
+            {debug.inspectionMethod && <MetaCell label="Inspection method" value={debug.inspectionMethod} />}
+            {debug.ocrPdfStatus && <MetaCell label="OCR PDF status" value={debug.ocrPdfStatus} />}
+            {debug.ocrPdfEngine && <MetaCell label="OCR PDF engine" value={debug.ocrPdfEngine} />}
+            {debug.ocrPdfConfidence !== null && <MetaCell label="OCR PDF confidence" value={String(debug.ocrPdfConfidence)} />}
+            {debug.ocrImageStatus && <MetaCell label="OCR image status" value={debug.ocrImageStatus} />}
+            {debug.ocrImageEngine && <MetaCell label="OCR image engine" value={debug.ocrImageEngine} />}
+          </div>
 
-      {(debug.extractionWarnings || debug.inspectionWarning || debug.ocrPdfWarning || debug.ocrImageWarning) && (
-        <div className="space-y-1 text-[11px]">
-          <p className="text-muted-foreground font-medium">Warnings</p>
-          {debug.extractionWarnings && <p className="text-muted-foreground break-words">• {debug.extractionWarnings}</p>}
-          {debug.inspectionWarning && <p className="text-muted-foreground break-words">• {debug.inspectionWarning}</p>}
-          {debug.ocrPdfWarning && <p className="text-muted-foreground break-words">• {debug.ocrPdfWarning}</p>}
-          {debug.ocrImageWarning && <p className="text-muted-foreground break-words">• {debug.ocrImageWarning}</p>}
+          {(debug.extractionWarnings || debug.inspectionWarning || debug.ocrPdfWarning || debug.ocrImageWarning) && (
+            <div className="space-y-1 text-[11px]">
+              <p className="text-muted-foreground font-medium">Warnings</p>
+              {debug.extractionWarnings && <p className="text-muted-foreground break-words">• {debug.extractionWarnings}</p>}
+              {debug.inspectionWarning && <p className="text-muted-foreground break-words">• {debug.inspectionWarning}</p>}
+              {debug.ocrPdfWarning && <p className="text-muted-foreground break-words">• {debug.ocrPdfWarning}</p>}
+              {debug.ocrImageWarning && <p className="text-muted-foreground break-words">• {debug.ocrImageWarning}</p>}
+            </div>
+          )}
         </div>
       )}
     </div>
