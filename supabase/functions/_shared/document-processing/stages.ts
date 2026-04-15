@@ -287,6 +287,31 @@ export async function ocrPdfStage(
     };
   }
 
+  async function persistPdfCheckpoint(
+    result: Record<string, unknown>,
+    extractorSelected = "pdf_ocr_stage"
+  ): Promise<void> {
+    const text = typeof result.extracted_text === "string" ? result.extracted_text : "";
+    const status = typeof result.ocr_status === "string" ? result.ocr_status : "UNKNOWN";
+    const warning = typeof result.warning === "string" ? result.warning : null;
+
+    await persistExtractionCheckpoint(supabase, doc, {
+      stageKey: "document.ocr_pdf",
+      extractorSelected,
+      extractorStatus: status,
+      extractedText: text,
+      warning,
+      ocrUsed: status === "COMPLETED" || status === "FAILED" || status === "UNAVAILABLE",
+      metadataPatch: {
+        pdf_text_status: result.pdf_text_status ?? null,
+        ocr_pdf_status: result.ocr_status ?? null,
+        ocr_pdf_engine: result.ocr_engine ?? null,
+        ocr_pdf_confidence: result.ocr_confidence ?? null,
+        ocr_pdf_warning: warning,
+      },
+    });
+  }
+
   try {
     const inspection = await inspectPdfTextLayerStage(supabase, documentId);
     const pdfTextStatus = String(inspection.pdf_text_status ?? "LIKELY_SCANNED");
@@ -295,7 +320,7 @@ export async function ocrPdfStage(
       const bytes = await downloadDocumentSource(supabase, doc);
       const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
 
-      return {
+      const result = {
         document_id: documentId,
         pdf_text_status: pdfTextStatus,
         ocr_status: "NOT_REQUIRED",
@@ -306,9 +331,31 @@ export async function ocrPdfStage(
         page_count: inspection.page_count ?? null,
         warning: null,
       };
+      await persistPdfCheckpoint(result, "pdf_text_layer");
+      return result;
     }
 
     const bytes = await downloadDocumentSource(supabase, doc);
+
+    // Safety fallback: if inspection misclassified a selectable-text PDF as scanned,
+    // recover by trying parser extraction before OCR.
+    const parserFallback = await extractText(bytes, doc.mime_type, doc.file_name);
+    if (parserFallback.text.trim().length > 0) {
+      const result = {
+        document_id: documentId,
+        pdf_text_status: "HAS_SELECTABLE_TEXT",
+        ocr_status: "NOT_REQUIRED",
+        ocr_engine: "pdf_text_layer_fallback",
+        ocr_confidence: parserFallback.quality.score,
+        extracted_text: parserFallback.text,
+        extracted_text_length: parserFallback.text.length,
+        page_count: inspection.page_count ?? null,
+        warning: "Inspection classified PDF as likely scanned, parser fallback recovered selectable text",
+      };
+      await persistPdfCheckpoint(result, "pdf_text_layer_fallback");
+      return result;
+    }
+
     const tesseractPdfOcr = await runPdfOcrViaTesseract(bytes, {
       languages: Deno.env.get("DOCUMENT_OCR_LANGS"),
       maxPages: Number(Deno.env.get("DOCUMENT_OCR_MAX_PDF_PAGES") || 8),
@@ -316,7 +363,7 @@ export async function ocrPdfStage(
     });
 
     if (tesseractPdfOcr.text.trim().length > 0) {
-      return {
+      const result = {
         document_id: documentId,
         pdf_text_status: pdfTextStatus,
         ocr_status: "COMPLETED",
@@ -333,6 +380,8 @@ export async function ocrPdfStage(
         ocr_primary_path: "tesseract.js",
         ocr_fallback_used: false,
       };
+      await persistPdfCheckpoint(result, "tesseract.js_pdf_ocr");
+      return result;
     }
 
     const externalServiceUrl = Deno.env.get("PDF_OCR_SERVICE_URL") || Deno.env.get("NON_AI_OCR_SERVICE_URL");
@@ -345,7 +394,7 @@ export async function ocrPdfStage(
     );
 
     if (externalPdfOcr.text.trim().length > 0) {
-      return {
+      const result = {
         document_id: documentId,
         pdf_text_status: pdfTextStatus,
         ocr_status: "COMPLETED",
@@ -364,10 +413,12 @@ export async function ocrPdfStage(
           externalPdfOcr.warning,
         ].filter(Boolean).join(" | "),
       };
+      await persistPdfCheckpoint(result, "external_pdf_ocr");
+      return result;
     }
 
     // Edge runtime cannot reliably rasterize PDF pages for local OCR; keep explicit partial-deferred output.
-    return {
+    const unavailableResult = {
       document_id: documentId,
       pdf_text_status: pdfTextStatus,
       ocr_status: "UNAVAILABLE",
@@ -389,9 +440,11 @@ export async function ocrPdfStage(
           "Scanned-PDF OCR requires successful PDF rasterization in Edge runtime or external fallback",
         ].filter(Boolean).join(" | "),
     };
+      await persistPdfCheckpoint(unavailableResult, "pdf_ocr_unavailable");
+      return unavailableResult;
   } catch (error) {
     const warning = error instanceof Error ? error.message : String(error);
-    return {
+      const failedResult = {
       document_id: documentId,
       pdf_text_status: "LIKELY_SCANNED",
       ocr_status: "FAILED",
@@ -403,6 +456,12 @@ export async function ocrPdfStage(
       ocr_fallback_used: false,
       warning: `PDF OCR stage failed safely: ${warning}`,
     };
+    try {
+      await persistPdfCheckpoint(failedResult, "pdf_ocr_failed");
+    } catch {
+      // Best-effort persistence only.
+    }
+    return failedResult;
   }
 }
 

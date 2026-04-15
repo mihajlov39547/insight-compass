@@ -61,6 +61,19 @@ export function useResourceExtractedText(documentId: string | null, enabled = tr
         const n = Number(value);
         return Number.isFinite(n) ? n : null;
       };
+      const toWarningText = (value: unknown): string | null => {
+        if (typeof value === 'string') {
+          const v = value.trim();
+          return v.length > 0 ? v : null;
+        }
+        if (Array.isArray(value)) {
+          const parts = value
+            .map((v) => String(v ?? '').trim())
+            .filter((v) => v.length > 0);
+          return parts.length > 0 ? parts.join(' | ') : null;
+        }
+        return null;
+      };
 
       const debug: DocumentProcessingDebugPayload = {
         normalizedFileCategory: meta.file_type_category || null,
@@ -70,19 +83,19 @@ export function useResourceExtractedText(documentId: string | null, enabled = tr
         qualityScore: toNumber(meta.quality_score),
         qualityReason: meta.quality_reason || null,
         extractedCharCount: toNumber(meta.extracted_char_count),
-        extractionWarnings: meta.extraction_warnings || null,
+        extractionWarnings: toWarningText(meta.extraction_warnings),
         structuralNoiseFiltered: typeof meta.structural_noise_filtered === 'boolean' ? meta.structural_noise_filtered : null,
         structuralNoiseRatio: toNumber(meta.structural_noise_ratio),
         pdfTextStatus: meta.pdf_text_status || null,
         inspectionMethod: meta.inspection_method || null,
-        inspectionWarning: meta.inspection_warning || null,
+        inspectionWarning: toWarningText(meta.inspection_warning),
         ocrPdfStatus: meta.ocr_pdf_status || null,
         ocrPdfEngine: meta.ocr_pdf_engine || null,
         ocrPdfConfidence: toNumber(meta.ocr_pdf_confidence),
-        ocrPdfWarning: meta.ocr_pdf_warning || null,
+        ocrPdfWarning: toWarningText(meta.ocr_pdf_warning),
         ocrImageStatus: meta.ocr_image_status || null,
         ocrImageEngine: meta.ocr_image_engine || null,
-        ocrImageWarning: meta.ocr_image_warning || null,
+        ocrImageWarning: toWarningText(meta.ocr_image_warning),
       };
 
       return {
