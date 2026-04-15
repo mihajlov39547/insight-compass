@@ -627,6 +627,92 @@ export type Database = {
         }
         Relationships: []
       }
+      link_transcript_chunk_questions: {
+        Row: {
+          chunk_id: string
+          created_at: string
+          embedding: string | null
+          embedding_version: string | null
+          generation_model: string | null
+          id: string
+          is_grounded: boolean
+          metadata_json: Json
+          notebook_id: string | null
+          position: number
+          project_id: string | null
+          question_text: string
+          resource_link_id: string
+          search_vector: unknown
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chunk_id: string
+          created_at?: string
+          embedding?: string | null
+          embedding_version?: string | null
+          generation_model?: string | null
+          id?: string
+          is_grounded?: boolean
+          metadata_json?: Json
+          notebook_id?: string | null
+          position?: number
+          project_id?: string | null
+          question_text: string
+          resource_link_id: string
+          search_vector?: unknown
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chunk_id?: string
+          created_at?: string
+          embedding?: string | null
+          embedding_version?: string | null
+          generation_model?: string | null
+          id?: string
+          is_grounded?: boolean
+          metadata_json?: Json
+          notebook_id?: string | null
+          position?: number
+          project_id?: string | null
+          question_text?: string
+          resource_link_id?: string
+          search_vector?: unknown
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "link_transcript_chunk_questions_chunk_id_fkey"
+            columns: ["chunk_id"]
+            isOneToOne: false
+            referencedRelation: "link_transcript_chunks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "link_transcript_chunk_questions_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "link_transcript_chunk_questions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "link_transcript_chunk_questions_resource_link_id_fkey"
+            columns: ["resource_link_id"]
+            isOneToOne: false
+            referencedRelation: "resource_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       link_transcript_chunks: {
         Row: {
           chunk_index: number
@@ -2116,6 +2202,30 @@ export type Database = {
           rank: number
           snippet: string
           summary: string
+        }[]
+      }
+      search_link_transcript_chunk_questions: {
+        Args: {
+          filter_notebook_id?: string
+          filter_project_id?: string
+          match_count?: number
+          query_embedding: string
+          similarity_threshold?: number
+        }
+        Returns: {
+          chunk_id: string
+          chunk_index: number
+          chunk_text: string
+          media_video_id: string
+          normalized_url: string
+          notebook_id: string
+          project_id: string
+          question_id: string
+          question_text: string
+          resource_id: string
+          resource_title: string
+          similarity: number
+          transcript_status: string
         }[]
       }
       search_link_transcript_chunks: {
