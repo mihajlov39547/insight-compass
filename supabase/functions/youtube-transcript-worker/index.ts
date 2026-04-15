@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { fetchTranscriptForVideo } from "./transcript-fetcher.ts";
 import { persistTranscriptChunks } from "./chunk-persistence.ts";
+import { generateDocumentSummary } from "../_shared/document-processing/summarization.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -120,6 +121,27 @@ function providerFromLastStage(debugPayload: any): "serpapi" | "internal_fallbac
   return "internal_fallback";
 }
 
+async function buildTranscriptSummary(
+  title: string,
+  transcriptText: string,
+  language: string | null,
+): Promise<{ summary: string | null; model: string | null; warning: string | null }> {
+  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")?.trim() || null;
+  const result = await generateDocumentSummary(
+    title || "YouTube Transcript",
+    transcriptText,
+    language,
+    null,
+    lovableApiKey,
+  );
+
+  return {
+    summary: result.summary || null,
+    model: result.model || null,
+    warning: result.warning || null,
+  };
+}
+
 async function persistVideoTitleMetadata(
   supabase: any,
   resourceId: string,
@@ -234,6 +256,23 @@ serve(async (req) => {
             last_provider_error: null,
             question_count: transcriptStats.questionCount,
             embedded_question_count: transcriptStats.embeddedQuestionCount,
+          }
+        );
+
+        const summaryResult = await buildTranscriptSummary(
+          result.videoTitle ?? "YouTube Transcript",
+          result.transcript,
+          result.debug?.serpapiLanguageCode ?? null,
+        );
+
+        await persistTranscriptDebugMetadata(
+          supabase,
+          String(claimedRow.resource_id),
+          result.debug,
+          {
+            summary: summaryResult.summary,
+            summary_model: summaryResult.model,
+            summary_warning: summaryResult.warning,
           }
         );
 
