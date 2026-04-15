@@ -2,11 +2,12 @@
  * YouTube transcript fetching with multi-strategy discovery.
  *
  * Strategy order:
- * 1. Legacy timedtext list API (fast, no page scrape)
- * 2. Page scrape — extract captionTracks + INNERTUBE_API_KEY from HTML
- *    2a. Use captionTracks directly if found in page data
- *    2b. Use page-extracted INNERTUBE_API_KEY to call InnerTube player API
- * 3. Env-key InnerTube fallback (uses INNERTUBE_API_KEY from env if set)
+ * 1. SerpApi YouTube Video Transcript API (primary)
+ * 2. Legacy timedtext list API (fast, no page scrape)
+ * 3. Page scrape — extract captionTracks + INNERTUBE_API_KEY from HTML
+ *    3a. Use captionTracks directly if found in page data
+ *    3b. Use page-extracted INNERTUBE_API_KEY to call InnerTube player API
+ * 4. Env-key InnerTube fallback (uses INNERTUBE_API_KEY from env if set)
  */
 
 // @ts-nocheck
@@ -54,6 +55,10 @@ export interface TranscriptDebugPayload {
   pageVariantsAttempted: string[];
   pageExtractedInnertubeKey: string | null;
   envInnertubeKeyPresent: boolean;
+  serpapiAttempted: boolean;
+  serpapiSearchId: string | null;
+  serpapiLanguageCode: string | null;
+  serpapiError: string | null;
   totalDurationMs: number;
 }
 
@@ -72,6 +77,165 @@ interface PageExtraction {
 interface PageHtmlVariant {
   label: string;
   html: string;
+}
+
+interface SerpApiAttemptResult {
+  attempted: boolean;
+  httpStatus?: number;
+  reason?: string;
+  searchId: string | null;
+  languageCode: string | null;
+  result: StrategyResult | null;
+}
+
+const SERPAPI_KEY = Deno.env.get("SERPAPI_KEY")?.trim() || "";
+const SERPAPI_ENDPOINT = "https://serpapi.com/search.json";
+const SERPAPI_DEFAULT_LANGUAGE = Deno.env.get("YT_TRANSCRIPT_SERPAPI_LANGUAGE_CODE")?.trim() || "en";
+const SERPAPI_TRANSCRIPT_TYPE = Deno.env.get("YT_TRANSCRIPT_SERPAPI_TYPE")?.trim() || "";
+const SERPAPI_NO_CACHE = (Deno.env.get("YT_TRANSCRIPT_SERPAPI_NO_CACHE") || "false").trim().toLowerCase() === "true";
+
+/* ------------------------------------------------------------------ */
+/*  Strategy 0: SerpApi YouTube Transcript API (primary)              */
+/* ------------------------------------------------------------------ */
+
+async function trySerpApiTranscript(videoId: string): Promise<SerpApiAttemptResult> {
+  if (!SERPAPI_KEY) {
+    return {
+      attempted: false,
+      reason: "serpapi_missing_key",
+      searchId: null,
+      languageCode: null,
+      result: null,
+    };
+  }
+
+  const params = new URLSearchParams({
+    engine: "youtube_video_transcript",
+    v: videoId,
+    api_key: SERPAPI_KEY,
+    language_code: SERPAPI_DEFAULT_LANGUAGE,
+  });
+
+  if (SERPAPI_TRANSCRIPT_TYPE) {
+    params.set("type", SERPAPI_TRANSCRIPT_TYPE);
+  }
+  if (SERPAPI_NO_CACHE) {
+    params.set("no_cache", "true");
+  }
+
+  const url = `${SERPAPI_ENDPOINT}?${params.toString()}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    console.log("[transcript] Strategy 0 (serpapi): requesting youtube_video_transcript");
+
+    const resp = await fetch(url, {
+      headers: { "User-Agent": WORKER_USER_AGENT },
+      signal: controller.signal,
+    });
+
+    if (!resp.ok) {
+      return {
+        attempted: true,
+        httpStatus: resp.status,
+        reason: `serpapi_http_error_${resp.status}`,
+        searchId: null,
+        languageCode: null,
+        result: null,
+      };
+    }
+
+    let payload: any;
+    try {
+      payload = await resp.json();
+    } catch {
+      return {
+        attempted: true,
+        httpStatus: resp.status,
+        reason: "serpapi_parse_error",
+        searchId: null,
+        languageCode: null,
+        result: null,
+      };
+    }
+
+    const searchStatus = payload?.search_metadata?.status;
+    const searchId = payload?.search_metadata?.id ?? null;
+    const languageCode =
+      payload?.search_parameters?.language_code
+      ?? payload?.transcript_language
+      ?? SERPAPI_DEFAULT_LANGUAGE
+      ?? null;
+
+    if (typeof searchStatus === "string" && searchStatus.toLowerCase() === "error") {
+      return {
+        attempted: true,
+        httpStatus: resp.status,
+        reason: "serpapi_processing_error",
+        searchId,
+        languageCode,
+        result: null,
+      };
+    }
+
+    const transcriptRows = Array.isArray(payload?.transcript) ? payload.transcript : [];
+    const snippets = transcriptRows
+      .map((row: any) => (typeof row?.snippet === "string" ? row.snippet.trim() : ""))
+      .filter((snippet: string) => snippet.length > 0);
+
+    if (snippets.length === 0) {
+      return {
+        attempted: true,
+        httpStatus: resp.status,
+        reason: "serpapi_no_transcript",
+        searchId,
+        languageCode,
+        result: null,
+      };
+    }
+
+    const transcript = snippets.join("\n\n").trim();
+    if (!transcript) {
+      return {
+        attempted: true,
+        httpStatus: resp.status,
+        reason: "serpapi_no_transcript",
+        searchId,
+        languageCode,
+        result: null,
+      };
+    }
+
+    return {
+      attempted: true,
+      httpStatus: resp.status,
+      reason: "ok",
+      searchId,
+      languageCode,
+      result: {
+        transcript,
+        strategy: "serpapi_youtube_video_transcript",
+        language: languageCode || "en",
+        trackCount: snippets.length,
+        meta: {
+          provider: "serpapi",
+          search_id: searchId || "",
+        },
+      },
+    };
+  } catch (err) {
+    const isAbort = err instanceof DOMException && err.name === "AbortError";
+    return {
+      attempted: true,
+      reason: isAbort ? "serpapi_timeout" : "serpapi_request_error",
+      searchId: null,
+      languageCode: null,
+      result: null,
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -677,6 +841,10 @@ export async function fetchTranscriptForVideo(
   const stageEntries: StageDebugEntry[] = [];
   const pageVariantsAttempted: string[] = [];
   let pageExtractedKey: string | null = null;
+  let serpapiAttempted = false;
+  let serpapiSearchId: string | null = null;
+  let serpapiLanguageCode: string | null = null;
+  let serpapiError: string | null = null;
 
   function addStage(entry: StageDebugEntry) {
     stageEntries.push(entry);
@@ -689,12 +857,17 @@ export async function fetchTranscriptForVideo(
       pageVariantsAttempted,
       pageExtractedInnertubeKey: pageExtractedKey,
       envInnertubeKeyPresent: !!ENV_INNERTUBE_API_KEY,
+      serpapiAttempted,
+      serpapiSearchId,
+      serpapiLanguageCode,
+      serpapiError,
       totalDurationMs: Date.now() - t0,
     };
   }
 
   function buildStageSummary(): string {
     const ordered = [
+      'serpapi_primary',
       'legacy_timedtext',
       'page_fetch',
       'page_config_extract',
@@ -705,6 +878,33 @@ export async function fetchTranscriptForVideo(
     const seen = new Set(stageEntries.map((s) => s.stage));
     return ordered.filter((stage) => seen.has(stage)).join(' → ');
   }
+
+  // Strategy 0: SerpApi primary provider
+  const serpapi = await trySerpApiTranscript(videoId);
+  serpapiAttempted = serpapi.attempted;
+  serpapiSearchId = serpapi.searchId;
+  serpapiLanguageCode = serpapi.languageCode;
+  serpapiError = serpapi.reason && serpapi.reason !== "ok" ? serpapi.reason : null;
+
+  if (serpapi.result) {
+    addStage({
+      stage: "serpapi_primary",
+      status: "success",
+      reason: "serpapi transcript fetched",
+      httpStatus: serpapi.httpStatus,
+      trackCount: serpapi.result.trackCount,
+      chosenLang: serpapi.result.language,
+    });
+    console.log(`[transcript] ✅ Success via ${serpapi.result.strategy}`);
+    return { transcript: serpapi.result.transcript, debug: buildDebug(serpapi.result.strategy) };
+  }
+
+  addStage({
+    stage: "serpapi_primary",
+    status: serpapi.attempted ? "failed" : "skipped",
+    reason: serpapi.reason || (serpapi.attempted ? "serpapi_unknown_error" : "serpapi_missing_key"),
+    httpStatus: serpapi.httpStatus,
+  });
 
   // Strategy 1: Legacy timedtext API (fastest, no page scrape)
   const legacy = await tryLegacyTimedtextApi(videoId);

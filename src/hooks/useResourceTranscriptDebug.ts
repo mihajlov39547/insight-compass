@@ -20,6 +20,10 @@ export interface TranscriptDebugPayload {
   pageVariantsAttempted: string[];
   pageExtractedInnertubeKey: string | null;
   envInnertubeKeyPresent: boolean;
+  serpapiAttempted?: boolean;
+  serpapiSearchId?: string | null;
+  serpapiLanguageCode?: string | null;
+  serpapiError?: string | null;
   totalDurationMs: number;
 }
 

@@ -54,7 +54,8 @@ async function persistTranscriptDebugMetadata(
   debugPayload: unknown,
   extraTranscriptFields: Record<string, unknown> = {},
 ) {
-  if (!debugPayload) return;
+  const hasExtraFields = Object.keys(extraTranscriptFields).length > 0;
+  if (!debugPayload && !hasExtraFields) return;
 
   try {
     const { data: linkRow, error: fetchError } = await supabase
@@ -97,6 +98,22 @@ async function persistTranscriptDebugMetadata(
   } catch (metaError) {
     console.warn(`[worker] Unexpected metadata persistence error: ${metaError}`);
   }
+}
+
+function providerFromWinningStrategy(winningStrategy: string | null | undefined): "serpapi" | "internal_fallback" {
+  if (typeof winningStrategy === "string" && winningStrategy.startsWith("serpapi_")) {
+    return "serpapi";
+  }
+  return "internal_fallback";
+}
+
+function providerFromLastStage(debugPayload: any): "serpapi" | "internal_fallback" {
+  const stages = Array.isArray(debugPayload?.stages) ? debugPayload.stages : [];
+  const lastStage = stages.length > 0 ? stages[stages.length - 1]?.stage : null;
+  if (typeof lastStage === "string" && lastStage.startsWith("serpapi")) {
+    return "serpapi";
+  }
+  return "internal_fallback";
 }
 
 /* ------------------------------------------------------------------ */
@@ -170,7 +187,12 @@ serve(async (req) => {
           supabase,
           String(claimedRow.resource_id),
           result.debug,
-          { winning_strategy: result.debug?.winningStrategy ?? null }
+          {
+            provider: providerFromWinningStrategy(result.debug?.winningStrategy ?? null),
+            winning_strategy: result.debug?.winningStrategy ?? null,
+            provider_attempted: providerFromWinningStrategy(result.debug?.winningStrategy ?? null),
+            last_provider_error: null,
+          }
         );
 
         succeeded += 1;
@@ -192,7 +214,12 @@ serve(async (req) => {
           supabase,
           String(claimedRow.resource_id),
           debugPayload,
-          { error: message }
+          {
+            provider: providerFromLastStage(debugPayload),
+            provider_attempted: providerFromLastStage(debugPayload),
+            last_provider_error: message,
+            error: message,
+          }
         );
 
         failed += 1;

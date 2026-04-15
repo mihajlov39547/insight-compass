@@ -1468,7 +1468,17 @@ function TranscriptDebugSection({ debug }: { debug: TranscriptDebugPayload | nul
             <MetaCell label="Duration" value={`${debug.totalDurationMs}ms`} />
             <MetaCell label="Page variants tried" value={debug.pageVariantsAttempted.length > 0 ? debug.pageVariantsAttempted.join(', ') : 'none'} />
             <MetaCell label="Env key present" value={debug.envInnertubeKeyPresent ? 'Yes' : 'No'} />
+            <MetaCell label="SerpApi attempted" value={debug.serpapiAttempted ? 'Yes' : 'No'} />
+            <MetaCell label="SerpApi language" value={debug.serpapiLanguageCode || 'Unknown'} />
+            {debug.serpapiSearchId && <MetaCell label="SerpApi search id" value={debug.serpapiSearchId} mono />}
           </div>
+
+          {debug.serpapiError && (
+            <div className="rounded bg-muted/50 p-2 space-y-0.5">
+              <p className="text-muted-foreground">SerpApi error</p>
+              <p className="text-[11px] break-all">{debug.serpapiError}</p>
+            </div>
+          )}
 
           {debug.pageExtractedInnertubeKey && (
             <div className="rounded bg-muted/50 p-2 space-y-0.5">
