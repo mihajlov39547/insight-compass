@@ -1644,30 +1644,94 @@ function DocumentContentTab({
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       ) : resource.processingStatus === 'failed' ? (
-        <ContentFailedBlock
-          title="Text extraction failed"
-          error={resource.processingError}
-          hint={resource.canRetry ? "Use Retry to queue another attempt." : undefined}
-        />
+        <>
+          <ContentFailedBlock
+            title="Text extraction failed"
+            error={resource.processingError}
+            hint={resource.canRetry ? "Use Retry to queue another attempt." : undefined}
+          />
+          <DocumentDebugSection debug={extractedText?.debug ?? null} />
+        </>
       ) : processingInProgress ? (
-        <ContentProcessingBlock message="Document extraction is in progress. Extracted text will appear here when processing is complete." />
+        <>
+          <ContentProcessingBlock message="Document extraction is in progress. Extracted text will appear here when processing is complete." />
+          <DocumentDebugSection debug={extractedText?.debug ?? null} />
+        </>
       ) : extractedText?.extractedText ? (
-        <div className="rounded-md border border-border/60 overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border/60">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <ScanText className="h-3.5 w-3.5" />
-              <span>Extracted text</span>
+        <>
+          <div className="rounded-md border border-border/60 overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border/60">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <ScanText className="h-3.5 w-3.5" />
+                <span>Extracted text</span>
+              </div>
+              <span className="text-[10px] text-muted-foreground">{extractedText.textLength.toLocaleString()} chars</span>
             </div>
-            <span className="text-[10px] text-muted-foreground">{extractedText.textLength.toLocaleString()} chars</span>
+            <div className="max-h-[400px] overflow-y-auto p-3">
+              <pre className="text-xs whitespace-pre-wrap leading-relaxed font-sans">{extractedText.extractedText}</pre>
+            </div>
           </div>
-          <div className="max-h-[400px] overflow-y-auto p-3">
-            <pre className="text-xs whitespace-pre-wrap leading-relaxed font-sans">{extractedText.extractedText}</pre>
-          </div>
-        </div>
+          <DocumentDebugSection debug={extractedText?.debug ?? null} />
+        </>
       ) : (
-        <ContentEmptyBlock message="No extracted text available for this document." />
+        <>
+          <ContentEmptyBlock message="No extracted text available for this document." />
+          <DocumentDebugSection debug={extractedText?.debug ?? null} />
+        </>
       )}
     </>
+  );
+}
+
+function DocumentDebugSection({
+  debug,
+}: {
+  debug: import('@/hooks/useResourceExtractedText').DocumentProcessingDebugPayload | null;
+}) {
+  if (!debug) {
+    return (
+      <div className="rounded-md border border-border/60 p-3 text-xs text-muted-foreground">
+        No debug diagnostics available for this extraction attempt.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-border/60 p-3 space-y-3">
+      <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+        <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
+        Debug diagnostics
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-[11px]">
+        <MetaCell label="File category" value={debug.normalizedFileCategory || 'unknown'} />
+        <MetaCell label="Extractor" value={debug.extractorSelected || 'unknown'} />
+        <MetaCell label="Extractor status" value={debug.extractorStatus || 'unknown'} />
+        <MetaCell label="Last completed stage" value={debug.lastCompletedStage || 'none'} />
+        {debug.qualityScore !== null && <MetaCell label="Quality score" value={String(debug.qualityScore)} />}
+        {debug.qualityReason && <MetaCell label="Quality reason" value={debug.qualityReason} />}
+        {debug.extractedCharCount !== null && <MetaCell label="Extracted chars" value={String(debug.extractedCharCount)} />}
+        {debug.structuralNoiseRatio !== null && <MetaCell label="Structural noise ratio" value={String(debug.structuralNoiseRatio)} />}
+        {debug.structuralNoiseFiltered !== null && <MetaCell label="Structural noise filtered" value={debug.structuralNoiseFiltered ? 'Yes' : 'No'} />}
+        {debug.pdfTextStatus && <MetaCell label="PDF text status" value={debug.pdfTextStatus} />}
+        {debug.inspectionMethod && <MetaCell label="Inspection method" value={debug.inspectionMethod} />}
+        {debug.ocrPdfStatus && <MetaCell label="OCR PDF status" value={debug.ocrPdfStatus} />}
+        {debug.ocrPdfEngine && <MetaCell label="OCR PDF engine" value={debug.ocrPdfEngine} />}
+        {debug.ocrPdfConfidence !== null && <MetaCell label="OCR PDF confidence" value={String(debug.ocrPdfConfidence)} />}
+        {debug.ocrImageStatus && <MetaCell label="OCR image status" value={debug.ocrImageStatus} />}
+        {debug.ocrImageEngine && <MetaCell label="OCR image engine" value={debug.ocrImageEngine} />}
+      </div>
+
+      {(debug.extractionWarnings || debug.inspectionWarning || debug.ocrPdfWarning || debug.ocrImageWarning) && (
+        <div className="space-y-1 text-[11px]">
+          <p className="text-muted-foreground font-medium">Warnings</p>
+          {debug.extractionWarnings && <p className="text-muted-foreground break-words">• {debug.extractionWarnings}</p>}
+          {debug.inspectionWarning && <p className="text-muted-foreground break-words">• {debug.inspectionWarning}</p>}
+          {debug.ocrPdfWarning && <p className="text-muted-foreground break-words">• {debug.ocrPdfWarning}</p>}
+          {debug.ocrImageWarning && <p className="text-muted-foreground break-words">• {debug.ocrImageWarning}</p>}
+        </div>
+      )}
+    </div>
   );
 }
 

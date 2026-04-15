@@ -229,29 +229,45 @@ export async function inspectPdfTextLayerStage(
     };
   }
 
-  const bytes = await downloadDocumentSource(supabase, doc);
-  const detailed = await inspectPdfTextLayerDetailed(bytes, {
-    minCharsPerPage: Number(Deno.env.get("DOCUMENT_PDF_TEXT_MIN_CHARS_PER_PAGE") || 20),
-    maxPages: Number(Deno.env.get("DOCUMENT_PDF_INSPECTION_MAX_PAGES") || 50),
-  });
+  try {
+    const bytes = await downloadDocumentSource(supabase, doc);
+    const detailed = await inspectPdfTextLayerDetailed(bytes, {
+      minCharsPerPage: Number(Deno.env.get("DOCUMENT_PDF_TEXT_MIN_CHARS_PER_PAGE") || 20),
+      maxPages: Number(Deno.env.get("DOCUMENT_PDF_INSPECTION_MAX_PAGES") || 50),
+    });
 
-  const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
-  const extractionSuggestsText = extraction.quality.readable && extraction.text.trim().length >= 50;
-  const hasSelectableText = detailed.has_selectable_text || extractionSuggestsText;
-  const pdfTextStatus = hasSelectableText ? "HAS_SELECTABLE_TEXT" : "LIKELY_SCANNED";
+    const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
+    const extractionSuggestsText = extraction.quality.readable && extraction.text.trim().length >= 50;
+    const hasSelectableText = detailed.has_selectable_text || extractionSuggestsText;
+    const pdfTextStatus = hasSelectableText ? "HAS_SELECTABLE_TEXT" : "LIKELY_SCANNED";
 
-  return {
-    document_id: documentId,
-    pdf_text_status: pdfTextStatus,
-    page_count: detailed.page_count || doc.page_count || null,
-    has_selectable_text: hasSelectableText,
-    inspection_method: extraction.method,
-    inspection_quality_score: extraction.quality.score,
-    inspection_quality_reason: extraction.quality.reason,
-    pages_with_text_count: detailed.pages_with_text_count,
-    pages_without_text_count: detailed.pages_without_text_count,
-    inspection_warning: detailed.warning ?? null,
-  };
+    return {
+      document_id: documentId,
+      pdf_text_status: pdfTextStatus,
+      page_count: detailed.page_count || doc.page_count || null,
+      has_selectable_text: hasSelectableText,
+      inspection_method: extraction.method,
+      inspection_quality_score: extraction.quality.score,
+      inspection_quality_reason: extraction.quality.reason,
+      pages_with_text_count: detailed.pages_with_text_count,
+      pages_without_text_count: detailed.pages_without_text_count,
+      inspection_warning: detailed.warning ?? null,
+    };
+  } catch (error) {
+    const warning = error instanceof Error ? error.message : String(error);
+    return {
+      document_id: documentId,
+      pdf_text_status: "LIKELY_SCANNED",
+      page_count: doc.page_count ?? null,
+      has_selectable_text: false,
+      inspection_method: "inspection_error",
+      inspection_quality_score: 0,
+      inspection_quality_reason: "PDF inspection failed; falling back to OCR path",
+      pages_with_text_count: 0,
+      pages_without_text_count: doc.page_count ?? 0,
+      inspection_warning: warning,
+    };
+  }
 }
 
 export async function ocrPdfStage(
@@ -271,107 +287,123 @@ export async function ocrPdfStage(
     };
   }
 
-  const inspection = await inspectPdfTextLayerStage(supabase, documentId);
-  const pdfTextStatus = String(inspection.pdf_text_status ?? "LIKELY_SCANNED");
+  try {
+    const inspection = await inspectPdfTextLayerStage(supabase, documentId);
+    const pdfTextStatus = String(inspection.pdf_text_status ?? "LIKELY_SCANNED");
 
-  if (pdfTextStatus === "HAS_SELECTABLE_TEXT") {
+    if (pdfTextStatus === "HAS_SELECTABLE_TEXT") {
+      const bytes = await downloadDocumentSource(supabase, doc);
+      const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
+
+      return {
+        document_id: documentId,
+        pdf_text_status: pdfTextStatus,
+        ocr_status: "NOT_REQUIRED",
+        ocr_engine: "pdf_text_layer",
+        ocr_confidence: extraction.quality.score,
+        extracted_text: extraction.text,
+        extracted_text_length: extraction.text.length,
+        page_count: inspection.page_count ?? null,
+        warning: null,
+      };
+    }
+
     const bytes = await downloadDocumentSource(supabase, doc);
-    const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
+    const tesseractPdfOcr = await runPdfOcrViaTesseract(bytes, {
+      languages: Deno.env.get("DOCUMENT_OCR_LANGS"),
+      maxPages: Number(Deno.env.get("DOCUMENT_OCR_MAX_PDF_PAGES") || 8),
+      scale: Number(Deno.env.get("DOCUMENT_OCR_PDF_SCALE") || 1.8),
+    });
 
+    if (tesseractPdfOcr.text.trim().length > 0) {
+      return {
+        document_id: documentId,
+        pdf_text_status: pdfTextStatus,
+        ocr_status: "COMPLETED",
+        ocr_engine: tesseractPdfOcr.engine,
+        ocr_model: tesseractPdfOcr.model ?? null,
+        ocr_confidence: tesseractPdfOcr.confidence,
+        extracted_text: tesseractPdfOcr.text,
+        extracted_text_length: tesseractPdfOcr.text.length,
+        page_count: tesseractPdfOcr.page_count ?? inspection.page_count ?? null,
+        processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
+        processed_page_numbers: tesseractPdfOcr.processed_page_numbers ?? null,
+        ocr_languages: tesseractPdfOcr.languages ?? null,
+        warning: tesseractPdfOcr.warning ?? null,
+        ocr_primary_path: "tesseract.js",
+        ocr_fallback_used: false,
+      };
+    }
+
+    const externalServiceUrl = Deno.env.get("PDF_OCR_SERVICE_URL") || Deno.env.get("NON_AI_OCR_SERVICE_URL");
+    const externalServiceToken = Deno.env.get("PDF_OCR_SERVICE_TOKEN") || Deno.env.get("NON_AI_OCR_SERVICE_TOKEN");
+
+    const externalPdfOcr = await runPdfOcrViaExternalService(
+      bytes,
+      externalServiceUrl,
+      externalServiceToken
+    );
+
+    if (externalPdfOcr.text.trim().length > 0) {
+      return {
+        document_id: documentId,
+        pdf_text_status: pdfTextStatus,
+        ocr_status: "COMPLETED",
+        ocr_engine: externalPdfOcr.engine,
+        ocr_model: externalPdfOcr.model ?? null,
+        ocr_confidence: externalPdfOcr.confidence,
+        extracted_text: externalPdfOcr.text,
+        extracted_text_length: externalPdfOcr.text.length,
+        page_count: inspection.page_count ?? null,
+        ocr_languages: tesseractPdfOcr.languages ?? null,
+        ocr_primary_path: "tesseract.js",
+        ocr_fallback_used: true,
+        warning: [
+          "Used external OCR fallback after Tesseract path produced no text",
+          tesseractPdfOcr.warning,
+          externalPdfOcr.warning,
+        ].filter(Boolean).join(" | "),
+      };
+    }
+
+    // Edge runtime cannot reliably rasterize PDF pages for local OCR; keep explicit partial-deferred output.
     return {
       document_id: documentId,
       pdf_text_status: pdfTextStatus,
-      ocr_status: "NOT_REQUIRED",
-      ocr_engine: "pdf_text_layer",
-      ocr_confidence: extraction.quality.score,
-      extracted_text: extraction.text,
-      extracted_text_length: extraction.text.length,
-      page_count: inspection.page_count ?? null,
-      warning: null,
-    };
-  }
-
-  const bytes = await downloadDocumentSource(supabase, doc);
-  const tesseractPdfOcr = await runPdfOcrViaTesseract(bytes, {
-    languages: Deno.env.get("DOCUMENT_OCR_LANGS"),
-    maxPages: Number(Deno.env.get("DOCUMENT_OCR_MAX_PDF_PAGES") || 8),
-    scale: Number(Deno.env.get("DOCUMENT_OCR_PDF_SCALE") || 1.8),
-  });
-
-  if (tesseractPdfOcr.text.trim().length > 0) {
-    return {
-      document_id: documentId,
-      pdf_text_status: pdfTextStatus,
-      ocr_status: "COMPLETED",
-      ocr_engine: tesseractPdfOcr.engine,
-      ocr_model: tesseractPdfOcr.model ?? null,
-      ocr_confidence: tesseractPdfOcr.confidence,
-      extracted_text: tesseractPdfOcr.text,
-      extracted_text_length: tesseractPdfOcr.text.length,
-      page_count: tesseractPdfOcr.page_count ?? inspection.page_count ?? null,
-      processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
-      processed_page_numbers: tesseractPdfOcr.processed_page_numbers ?? null,
-      ocr_languages: tesseractPdfOcr.languages ?? null,
-      warning: tesseractPdfOcr.warning ?? null,
-      ocr_primary_path: "tesseract.js",
-      ocr_fallback_used: false,
-    };
-  }
-
-  const externalServiceUrl = Deno.env.get("PDF_OCR_SERVICE_URL") || Deno.env.get("NON_AI_OCR_SERVICE_URL");
-  const externalServiceToken = Deno.env.get("PDF_OCR_SERVICE_TOKEN") || Deno.env.get("NON_AI_OCR_SERVICE_TOKEN");
-
-  const externalPdfOcr = await runPdfOcrViaExternalService(
-    bytes,
-    externalServiceUrl,
-    externalServiceToken
-  );
-
-  if (externalPdfOcr.text.trim().length > 0) {
-    return {
-      document_id: documentId,
-      pdf_text_status: pdfTextStatus,
-      ocr_status: "COMPLETED",
+      ocr_status: "UNAVAILABLE",
       ocr_engine: externalPdfOcr.engine,
       ocr_model: externalPdfOcr.model ?? null,
       ocr_confidence: externalPdfOcr.confidence,
-      extracted_text: externalPdfOcr.text,
-      extracted_text_length: externalPdfOcr.text.length,
+      extracted_text: "",
+      extracted_text_length: 0,
       page_count: inspection.page_count ?? null,
+      processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
+      processed_page_numbers: tesseractPdfOcr.processed_page_numbers ?? null,
       ocr_languages: tesseractPdfOcr.languages ?? null,
       ocr_primary_path: "tesseract.js",
-      ocr_fallback_used: true,
-      warning: [
-        "Used external OCR fallback after Tesseract path produced no text",
-        tesseractPdfOcr.warning,
-        externalPdfOcr.warning,
-      ].filter(Boolean).join(" | "),
+      ocr_fallback_used: false,
+      warning:
+        [
+          tesseractPdfOcr.warning,
+          externalPdfOcr.warning,
+          "Scanned-PDF OCR requires successful PDF rasterization in Edge runtime or external fallback",
+        ].filter(Boolean).join(" | "),
+    };
+  } catch (error) {
+    const warning = error instanceof Error ? error.message : String(error);
+    return {
+      document_id: documentId,
+      pdf_text_status: "LIKELY_SCANNED",
+      ocr_status: "FAILED",
+      ocr_engine: "tesseract.js",
+      extracted_text: "",
+      extracted_text_length: 0,
+      page_count: doc.page_count ?? null,
+      ocr_primary_path: "tesseract.js",
+      ocr_fallback_used: false,
+      warning: `PDF OCR stage failed safely: ${warning}`,
     };
   }
-
-  // Edge runtime cannot reliably rasterize PDF pages for local OCR; keep explicit partial-deferred output.
-  return {
-    document_id: documentId,
-    pdf_text_status: pdfTextStatus,
-    ocr_status: "UNAVAILABLE",
-    ocr_engine: externalPdfOcr.engine,
-    ocr_model: externalPdfOcr.model ?? null,
-    ocr_confidence: externalPdfOcr.confidence,
-    extracted_text: "",
-    extracted_text_length: 0,
-    page_count: inspection.page_count ?? null,
-    processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
-    processed_page_numbers: tesseractPdfOcr.processed_page_numbers ?? null,
-    ocr_languages: tesseractPdfOcr.languages ?? null,
-    ocr_primary_path: "tesseract.js",
-    ocr_fallback_used: false,
-    warning:
-      [
-        tesseractPdfOcr.warning,
-        externalPdfOcr.warning,
-        "Scanned-PDF OCR requires successful PDF rasterization in Edge runtime or external fallback",
-      ].filter(Boolean).join(" | "),
-  };
 }
 
 export async function ocrImageStage(
@@ -470,32 +502,63 @@ export async function extractPdfTextStage(
     };
   }
 
-  const bytes = await downloadDocumentSource(supabase, doc);
-  const extraction = await extractPdfTextNonAi(bytes, doc.mime_type, doc.file_name);
-  const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+  try {
+    const bytes = await downloadDocumentSource(supabase, doc);
+    const extraction = await extractPdfTextNonAi(bytes, doc.mime_type, doc.file_name);
+    const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
 
-  await persistExtractionCheckpoint(supabase, doc, {
-    stageKey: "document.extract_pdf_text",
-    extractorSelected: extraction.method,
-    extractorStatus: status,
-    extractedText: extraction.text,
-    warning: extraction.text.trim() ? null : extraction.quality_reason,
-    metadataPatch: {
+    await persistExtractionCheckpoint(supabase, doc, {
+      stageKey: "document.extract_pdf_text",
+      extractorSelected: extraction.method,
+      extractorStatus: status,
+      extractedText: extraction.text,
+      warning: extraction.text.trim() ? null : extraction.quality_reason,
+      metadataPatch: {
+        quality_score: extraction.quality_score,
+        quality_reason: extraction.quality_reason,
+        pdf_text_status: status === "EMPTY" ? "LIKELY_SCANNED" : "HAS_SELECTABLE_TEXT",
+      },
+    });
+
+    return {
+      document_id: documentId,
+      extraction_status: status,
+      extracted_text: extraction.text,
+      extracted_text_length: extraction.text.length,
+      method: extraction.method,
       quality_score: extraction.quality_score,
       quality_reason: extraction.quality_reason,
-      pdf_text_status: status === "EMPTY" ? "LIKELY_SCANNED" : "HAS_SELECTABLE_TEXT",
-    },
-  });
+    };
+  } catch (error) {
+    const warning = error instanceof Error ? error.message : String(error);
 
-  return {
-    document_id: documentId,
-    extraction_status: status,
-    extracted_text: extraction.text,
-    extracted_text_length: extraction.text.length,
-    method: extraction.method,
-    quality_score: extraction.quality_score,
-    quality_reason: extraction.quality_reason,
-  };
+    try {
+      await persistExtractionCheckpoint(supabase, doc, {
+        stageKey: "document.extract_pdf_text",
+        extractorSelected: "pdf-parse_error",
+        extractorStatus: "FAILED",
+        extractedText: "",
+        warning,
+        metadataPatch: {
+          quality_score: 0,
+          quality_reason: "PDF extraction stage failed; OCR fallback should be used",
+          pdf_text_status: "LIKELY_SCANNED",
+        },
+      });
+    } catch {
+      // Best-effort checkpoint persistence only.
+    }
+
+    return {
+      document_id: documentId,
+      extraction_status: "FAILED",
+      extracted_text: "",
+      extracted_text_length: 0,
+      method: "pdf-parse_error",
+      quality_score: 0,
+      quality_reason: warning,
+    };
+  }
 }
 
 export async function extractDocxTextStage(

@@ -9,6 +9,30 @@ export interface ExtractedTextResult {
   qualityReason: string | null;
   lastCompletedStage: string | null;
   textLength: number;
+  debug: DocumentProcessingDebugPayload | null;
+}
+
+export interface DocumentProcessingDebugPayload {
+  normalizedFileCategory: string | null;
+  extractorSelected: string | null;
+  extractorStatus: string | null;
+  lastCompletedStage: string | null;
+  qualityScore: number | null;
+  qualityReason: string | null;
+  extractedCharCount: number | null;
+  extractionWarnings: string | null;
+  structuralNoiseFiltered: boolean | null;
+  structuralNoiseRatio: number | null;
+  pdfTextStatus: string | null;
+  inspectionMethod: string | null;
+  inspectionWarning: string | null;
+  ocrPdfStatus: string | null;
+  ocrPdfEngine: string | null;
+  ocrPdfConfidence: number | null;
+  ocrPdfWarning: string | null;
+  ocrImageStatus: string | null;
+  ocrImageEngine: string | null;
+  ocrImageWarning: string | null;
 }
 
 /**
@@ -33,6 +57,33 @@ export function useResourceExtractedText(documentId: string | null, enabled = tr
 
       const meta = (data.metadata_json as Record<string, any>) || {};
       const text = data.extracted_text || null;
+      const toNumber = (value: unknown): number | null => {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+      };
+
+      const debug: DocumentProcessingDebugPayload = {
+        normalizedFileCategory: meta.file_type_category || null,
+        extractorSelected: meta.extractor_selected || null,
+        extractorStatus: meta.extractor_status || null,
+        lastCompletedStage: meta.last_completed_stage || null,
+        qualityScore: toNumber(meta.quality_score),
+        qualityReason: meta.quality_reason || null,
+        extractedCharCount: toNumber(meta.extracted_char_count),
+        extractionWarnings: meta.extraction_warnings || null,
+        structuralNoiseFiltered: typeof meta.structural_noise_filtered === 'boolean' ? meta.structural_noise_filtered : null,
+        structuralNoiseRatio: toNumber(meta.structural_noise_ratio),
+        pdfTextStatus: meta.pdf_text_status || null,
+        inspectionMethod: meta.inspection_method || null,
+        inspectionWarning: meta.inspection_warning || null,
+        ocrPdfStatus: meta.ocr_pdf_status || null,
+        ocrPdfEngine: meta.ocr_pdf_engine || null,
+        ocrPdfConfidence: toNumber(meta.ocr_pdf_confidence),
+        ocrPdfWarning: meta.ocr_pdf_warning || null,
+        ocrImageStatus: meta.ocr_image_status || null,
+        ocrImageEngine: meta.ocr_image_engine || null,
+        ocrImageWarning: meta.ocr_image_warning || null,
+      };
 
       return {
         extractedText: text,
@@ -42,6 +93,7 @@ export function useResourceExtractedText(documentId: string | null, enabled = tr
         qualityReason: meta.quality_reason || null,
         lastCompletedStage: meta.last_completed_stage || null,
         textLength: text ? text.length : 0,
+        debug,
       };
     },
     staleTime: 30_000,
