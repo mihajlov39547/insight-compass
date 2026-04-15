@@ -3,7 +3,7 @@ import {
   Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
   Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
-  FileUp, ArrowUp
+  FileUp, ArrowUp, Video, RotateCcw
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -26,6 +26,9 @@ import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDeleteNotebookNote, DbNotebookNote } from '@/hooks/useNotebookNotes';
 import { useNotebookMessages, useNotebookAIChat, useDeleteNotebookMessagePair } from '@/hooks/useNotebookChat';
 import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
+import { useResources } from '@/hooks/useResources';
+import { useDeleteResource, useRetryYouTubeTranscriptIngestion, type ResourceActionInput } from '@/hooks/useResourceActions';
+import type { Resource } from '@/lib/resourceClassification';
 import { useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge';
@@ -62,6 +65,26 @@ function NotebookSourceStatus({ doc }: { doc: DbDocument }) {
   );
 }
 
+function NotebookVideoSourceStatus({ resource }: { resource: Resource }) {
+  const status = resource.transcriptStatus || 'none';
+  const tone = status === 'ready' ? 'completed' : status === 'failed' ? 'failed' : 'processing';
+
+  const display = tone === 'completed'
+    ? 'completed'
+    : tone === 'failed'
+      ? 'failed'
+      : status === 'running'
+        ? 'generating_embeddings'
+        : 'extracting_content';
+
+  return (
+    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+      <DocumentStatusBadge status={display} />
+      <span className="text-[10px] text-muted-foreground">• transcript {status}</span>
+    </div>
+  );
+}
+
 export function NotebookWorkspace() {
   const { selectedNotebookId, setShowShare } = useApp();
   const queryClient = useQueryClient();
@@ -71,9 +94,12 @@ export function NotebookWorkspace() {
   const updateNotebook = useUpdateNotebook();
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
   const { data: documents = [] } = useNotebookDocuments(selectedNotebookId ?? undefined);
+  const { data: resources = [] } = useResources();
   const { data: notes = [] } = useNotebookNotes(selectedNotebookId ?? undefined);
   const { data: messages = [], isLoading: messagesLoading } = useNotebookMessages(selectedNotebookId ?? undefined);
   const deleteDocument = useDeleteDocument();
+  const deleteResource = useDeleteResource();
+  const retryTranscript = useRetryYouTubeTranscriptIngestion();
   const createNote = useCreateNotebookNote();
   const updateNote = useUpdateNotebookNote();
   const deleteNote = useDeleteNotebookNote();
@@ -96,8 +122,30 @@ export function NotebookWorkspace() {
   const [isChatNearBottom, setIsChatNearBottom] = useState(true);
   const [showChatScrollTop, setShowChatScrollTop] = useState(false);
 
-  const hasSources = documents.length > 0;
+  const linkedVideos = useMemo(() => {
+    if (!selectedNotebookId) return [] as Resource[];
+    return resources.filter((r) =>
+      r.provider === 'youtube'
+      && r.sourceType === 'linked'
+      && r.notebookId === selectedNotebookId
+    );
+  }, [resources, selectedNotebookId]);
+
+  const hasSources = documents.length > 0 || linkedVideos.length > 0;
   const enabledDocs = documents.filter((d: any) => d.notebook_enabled !== false);
+  const enabledVideoSources = linkedVideos.filter((v) => v.transcriptStatus === 'ready');
+  const enabledSourceCount = enabledDocs.length + enabledVideoSources.length;
+
+  const toResourceActionInput = (resource: Resource): ResourceActionInput => ({
+    id: resource.id,
+    title: resource.title,
+    storagePath: resource.storagePath,
+    ownerUserId: resource.ownerUserId,
+    containerType: resource.containerType,
+    containerId: resource.containerId,
+    processingStatus: resource.processingStatus,
+    resourceKind: resource.resourceKind,
+  });
 
   const previousUserMessage = useMemo(() => {
     const userMsgs = messages.filter(m => m.role === 'user');
@@ -445,13 +493,13 @@ export function NotebookWorkspace() {
               )}
             </div>
             <ScrollArea className="flex-1">
-              {documents.length === 0 ? (
+              {documents.length === 0 && linkedVideos.length === 0 ? (
                 <div className="p-4 text-center">
                   <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
                     <FileText className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <p className="text-sm font-medium text-foreground mb-1">No sources yet</p>
-                  <p className="text-xs text-muted-foreground mb-3">Upload documents to start asking questions</p>
+                  <p className="text-xs text-muted-foreground mb-3">Upload documents or attach videos to start asking questions</p>
                   {permissions.canUploadDocuments && (
                     <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => setShowUpload(true)}>
                       <Upload className="h-3 w-3" /> Upload
@@ -494,6 +542,41 @@ export function NotebookWorkspace() {
                           <Button
                             variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
                             onClick={() => deleteDocument.mutate(doc)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {linkedVideos.map((video) => {
+                    const isTranscriptReady = video.transcriptStatus === 'ready';
+                    return (
+                      <div key={video.id} className={cn(
+                        "flex items-start gap-2 p-2 rounded-lg transition-colors",
+                        isTranscriptReady ? "bg-card" : "bg-muted/50"
+                      )}>
+                        <Video className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{video.title}</p>
+                          <NotebookVideoSourceStatus resource={video} />
+                        </div>
+                        {video.transcriptStatus === 'failed' && permissions.canManageDocumentState && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-accent"
+                            onClick={() => retryTranscript.mutate(toResourceActionInput(video))}
+                            title="Retry transcript"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {permissions.canDeleteDocuments && (
+                          <Button
+                            variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => deleteResource.mutate(toResourceActionInput(video))}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -627,7 +710,7 @@ export function NotebookWorkspace() {
                     variant="notebook"
                     footerLeft={
                       <span className="text-xs text-muted-foreground">
-                        {enabledDocs.length} source{enabledDocs.length !== 1 ? 's' : ''} enabled
+                        {enabledSourceCount} source{enabledSourceCount !== 1 ? 's' : ''} enabled
                       </span>
                     }
                   />
