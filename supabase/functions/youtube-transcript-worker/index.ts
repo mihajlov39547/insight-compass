@@ -152,14 +152,45 @@ async function persistVideoTitleMetadata(
   const subtitle = typeof rawSubtitle === "string" ? rawSubtitle.trim() : "";
   if (!title && !subtitle) return;
 
+  const { data: currentRow, error: currentError } = await supabase
+    .from("resource_links")
+    .select("title, preview_title, media_channel_name, url, media_video_id")
+    .eq("id", resourceId)
+    .maybeSingle();
+
+  if (currentError) {
+    console.warn(`[worker] Could not load current title metadata: ${currentError.message}`);
+  }
+
+  const currentTitle = (currentRow?.title || "").trim();
+  const currentPreviewTitle = (currentRow?.preview_title || "").trim();
+  const currentSubtitle = (currentRow?.media_channel_name || "").trim();
+  const currentUrl = (currentRow?.url || "").trim();
+  const currentVideoId = (currentRow?.media_video_id || "").trim();
+
+  const isGenericTitle = (value: string): boolean => {
+    if (!value) return true;
+    if (/^youtube$/i.test(value)) return true;
+    if (/^youtube video\s+[\w-]+$/i.test(value)) return true;
+    if (value === currentUrl) return true;
+    if (currentVideoId && value === `YouTube video ${currentVideoId}`) return true;
+    if (/^https?:\/\/www\.youtube\.com\/watch\?v=/i.test(value)) return true;
+    return false;
+  };
+
+  const canReplaceTitle = isGenericTitle(currentTitle) || isGenericTitle(currentPreviewTitle);
+  const canReplaceSubtitle = !currentSubtitle || /^youtube$/i.test(currentSubtitle);
+
   const updatePayload: Record<string, unknown> = {};
-  if (title) {
+  if (title && canReplaceTitle) {
     updatePayload.title = title;
     updatePayload.preview_title = title;
   }
-  if (subtitle) {
+  if (subtitle && canReplaceSubtitle) {
     updatePayload.media_channel_name = subtitle;
   }
+
+  if (Object.keys(updatePayload).length === 0) return;
 
   const { error } = await supabase
     .from("resource_links")
