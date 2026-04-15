@@ -114,6 +114,73 @@ function resolveDocumentId(input: HandlerExecutionInput): string | null {
   return null;
 }
 
+async function buildNormalizeRawInput(
+  supabase: any,
+  workflowRunId: string,
+  rawInput: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const existingText = typeof rawInput.extracted_text === "string"
+    ? rawInput.extracted_text.trim()
+    : typeof rawInput.text === "string"
+      ? rawInput.text.trim()
+      : "";
+
+  if (existingText.length > 0) {
+    return rawInput;
+  }
+
+  const { data, error } = await supabase
+    .from("activity_runs")
+    .select("activity_key, status, output_payload")
+    .eq("workflow_run_id", workflowRunId)
+    .eq("status", "completed")
+    .not("output_payload", "is", null);
+
+  if (error || !Array.isArray(data) || data.length === 0) {
+    return rawInput;
+  }
+
+  const candidates = new Map<string, Record<string, unknown>>();
+  for (const row of data) {
+    const key = typeof row.activity_key === "string" ? row.activity_key : "";
+    const output = toObject(row.output_payload);
+    if (key) candidates.set(key, output);
+  }
+
+  const preferredKeys = [
+    "document.extract_pdf_text",
+    "document.ocr_pdf",
+    "document.extract_docx_text",
+    "document.extract_doc_text",
+    "document.extract_spreadsheet_text",
+    "document.extract_presentation_text",
+    "document.extract_email_text",
+    "document.extract_plain_text_like_content",
+    "document.extract_text_fallback",
+  ];
+
+  for (const key of preferredKeys) {
+    const output = candidates.get(key);
+    if (!output) continue;
+
+    const outputText = typeof output.extracted_text === "string"
+      ? output.extracted_text
+      : typeof output.text === "string"
+        ? output.text
+        : "";
+
+    if (outputText.trim().length > 0) {
+      return {
+        ...rawInput,
+        extracted_text: outputText,
+        warning: rawInput.warning ?? output.warning ?? null,
+      };
+    }
+  }
+
+  return rawInput;
+}
+
 function createServiceRoleClient() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -579,8 +646,14 @@ export async function documentNormalizeTechnicalAnalysisOutput(
     input,
     "document.normalize_technical_analysis_output",
     "DOCUMENT_NORMALIZE_TECHNICAL_ANALYSIS_OUTPUT_FAILED",
-    (supabase, documentId) =>
-      normalizeTechnicalAnalysisOutputStage(supabase, documentId, rawInput),
+    async (supabase, documentId) => {
+      const hydratedRawInput = await buildNormalizeRawInput(
+        supabase,
+        input.workflow_run_id,
+        rawInput
+      );
+      return normalizeTechnicalAnalysisOutputStage(supabase, documentId, hydratedRawInput);
+    },
     {
       buildContextPatch: (result) => ({
         normalized_text_length: result.normalized_text_length ?? null,
