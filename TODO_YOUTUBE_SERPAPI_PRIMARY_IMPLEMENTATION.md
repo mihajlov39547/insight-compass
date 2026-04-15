@@ -39,6 +39,10 @@ Additional requested refinement completed:
    - transcript chunk question generation
    - transcript chunk question embeddings
 7. Transcript question semantic search function added for later/ongoing chat retrieval usage.
+8. Exact YouTube metadata enrichment now includes:
+   - title via oEmbed/page fallback
+   - subtitle/channel via oEmbed (`author_name`)
+   - subtitle surfaced in resources overview row and details channel field.
 
 Open next step:
 

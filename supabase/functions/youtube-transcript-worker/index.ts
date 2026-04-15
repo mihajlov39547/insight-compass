@@ -124,16 +124,24 @@ async function persistVideoTitleMetadata(
   supabase: any,
   resourceId: string,
   rawTitle: string | null | undefined,
+  rawSubtitle?: string | null | undefined,
 ) {
   const title = typeof rawTitle === "string" ? rawTitle.trim() : "";
-  if (!title) return;
+  const subtitle = typeof rawSubtitle === "string" ? rawSubtitle.trim() : "";
+  if (!title && !subtitle) return;
+
+  const updatePayload: Record<string, unknown> = {};
+  if (title) {
+    updatePayload.title = title;
+    updatePayload.preview_title = title;
+  }
+  if (subtitle) {
+    updatePayload.media_channel_name = subtitle;
+  }
 
   const { error } = await supabase
     .from("resource_links")
-    .update({
-      title,
-      preview_title: title,
-    })
+    .update(updatePayload)
     .eq("id", resourceId);
 
   if (error) {
@@ -212,6 +220,7 @@ serve(async (req) => {
           supabase,
           String(claimedRow.resource_id),
           result.videoTitle ?? result.debug?.youtubeTitle ?? null,
+          result.videoSubtitle ?? result.debug?.youtubeSubtitle ?? null,
         );
 
         await persistTranscriptDebugMetadata(
@@ -259,6 +268,7 @@ serve(async (req) => {
           supabase,
           String(claimedRow.resource_id),
           debugPayload?.youtubeTitle ?? null,
+          debugPayload?.youtubeSubtitle ?? null,
         );
 
         failed += 1;

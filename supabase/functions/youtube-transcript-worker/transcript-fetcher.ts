@@ -60,6 +60,7 @@ export interface TranscriptDebugPayload {
   serpapiLanguageCode: string | null;
   serpapiError: string | null;
   youtubeTitle: string | null;
+  youtubeSubtitle: string | null;
   totalDurationMs: number;
 }
 
@@ -67,6 +68,7 @@ export interface TranscriptFetchResult {
   transcript: string;
   debug: TranscriptDebugPayload;
   videoTitle?: string | null;
+  videoSubtitle?: string | null;
 }
 
 interface PageExtraction {
@@ -75,6 +77,11 @@ interface PageExtraction {
   captionTracks: CaptionTrack[];
   visitorData: string | null;
   videoTitle: string | null;
+}
+
+interface OEmbedMetadata {
+  title: string | null;
+  subtitle: string | null;
 }
 
 interface PageHtmlVariant {
@@ -96,6 +103,29 @@ const SERPAPI_ENDPOINT = "https://serpapi.com/search.json";
 const SERPAPI_DEFAULT_LANGUAGE = Deno.env.get("YT_TRANSCRIPT_SERPAPI_LANGUAGE_CODE")?.trim() || "en";
 const SERPAPI_TRANSCRIPT_TYPE = Deno.env.get("YT_TRANSCRIPT_SERPAPI_TYPE")?.trim() || "";
 const SERPAPI_NO_CACHE = (Deno.env.get("YT_TRANSCRIPT_SERPAPI_NO_CACHE") || "false").trim().toLowerCase() === "true";
+
+async function tryFetchYouTubeOEmbedMetadata(videoId: string): Promise<OEmbedMetadata> {
+  try {
+    const url = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`;
+    const resp = await fetch(url, {
+      headers: { "User-Agent": WORKER_USER_AGENT },
+    });
+    if (!resp.ok) {
+      return { title: null, subtitle: null };
+    }
+
+    const payload = await resp.json();
+    const title = typeof payload?.title === "string" ? payload.title.trim() : "";
+    const author = typeof payload?.author_name === "string" ? payload.author_name.trim() : "";
+
+    return {
+      title: title || null,
+      subtitle: author || null,
+    };
+  } catch {
+    return { title: null, subtitle: null };
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /*  Strategy 0: SerpApi YouTube Transcript API (primary)              */
@@ -441,6 +471,10 @@ function extractPageConfig(html: string): PageExtraction {
       const cleaned = decode(titleMatch[1]);
       result.videoTitle = cleaned?.replace(/\s*-\s*YouTube\s*$/i, "") ?? null;
     }
+  }
+
+  if (result.videoTitle && /^youtube$/i.test(result.videoTitle.trim())) {
+    result.videoTitle = null;
   }
 
   // Extract INNERTUBE_API_KEY
@@ -869,6 +903,7 @@ export async function fetchTranscriptForVideo(
   let serpapiLanguageCode: string | null = null;
   let serpapiError: string | null = null;
   let videoTitle: string | null = null;
+  let videoSubtitle: string | null = null;
 
   function addStage(entry: StageDebugEntry) {
     stageEntries.push(entry);
@@ -886,9 +921,15 @@ export async function fetchTranscriptForVideo(
       serpapiLanguageCode,
       serpapiError,
       youtubeTitle: videoTitle,
+      youtubeSubtitle: videoSubtitle,
       totalDurationMs: Date.now() - t0,
     };
   }
+
+  // Non-blocking oEmbed metadata fetch for exact title/channel.
+  const oembed = await tryFetchYouTubeOEmbedMetadata(videoId);
+  if (oembed.title) videoTitle = oembed.title;
+  if (oembed.subtitle) videoSubtitle = oembed.subtitle;
 
   function buildStageSummary(): string {
     const ordered = [
@@ -963,6 +1004,7 @@ export async function fetchTranscriptForVideo(
       transcript: serpapi.result.transcript,
       debug: buildDebug(serpapi.result.strategy),
       videoTitle,
+      videoSubtitle,
     };
   }
 

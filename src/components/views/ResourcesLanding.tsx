@@ -755,6 +755,11 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
           <p className="text-sm font-medium text-foreground truncate" title={resource.title}>
             {truncateFileName(resource.title)}
           </p>
+          {resource.mediaChannelName && resource.mediaChannelName.trim().toLowerCase() !== 'youtube' && (
+            <p className="text-[11px] text-muted-foreground truncate" title={resource.mediaChannelName}>
+              {resource.mediaChannelName}
+            </p>
+          )}
           {isLinkedResource ? (
             <div className="mt-1 space-y-1">
               <div className="flex items-center gap-1.5 min-w-0">
