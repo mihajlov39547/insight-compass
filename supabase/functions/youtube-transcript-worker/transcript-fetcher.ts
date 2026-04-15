@@ -59,12 +59,14 @@ export interface TranscriptDebugPayload {
   serpapiSearchId: string | null;
   serpapiLanguageCode: string | null;
   serpapiError: string | null;
+  youtubeTitle: string | null;
   totalDurationMs: number;
 }
 
 export interface TranscriptFetchResult {
   transcript: string;
   debug: TranscriptDebugPayload;
+  videoTitle?: string | null;
 }
 
 interface PageExtraction {
@@ -72,6 +74,7 @@ interface PageExtraction {
   clientVersion: string | null;
   captionTracks: CaptionTrack[];
   visitorData: string | null;
+  videoTitle: string | null;
 }
 
 interface PageHtmlVariant {
@@ -418,7 +421,27 @@ function extractPageConfig(html: string): PageExtraction {
     clientVersion: null,
     captionTracks: [],
     visitorData: null,
+    videoTitle: null,
   };
+
+  const decode = (value: string | null): string | null => {
+    if (!value) return null;
+    const normalized = decodeHtmlEntities(value).trim();
+    return normalized.length > 0 ? normalized : null;
+  };
+
+  const ogTitleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
+  if (ogTitleMatch) {
+    result.videoTitle = decode(ogTitleMatch[1]);
+  }
+
+  if (!result.videoTitle) {
+    const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
+    if (titleMatch) {
+      const cleaned = decode(titleMatch[1]);
+      result.videoTitle = cleaned?.replace(/\s*-\s*YouTube\s*$/i, "") ?? null;
+    }
+  }
 
   // Extract INNERTUBE_API_KEY
   const keyPatterns = [
@@ -845,6 +868,7 @@ export async function fetchTranscriptForVideo(
   let serpapiSearchId: string | null = null;
   let serpapiLanguageCode: string | null = null;
   let serpapiError: string | null = null;
+  let videoTitle: string | null = null;
 
   function addStage(entry: StageDebugEntry) {
     stageEntries.push(entry);
@@ -861,6 +885,7 @@ export async function fetchTranscriptForVideo(
       serpapiSearchId,
       serpapiLanguageCode,
       serpapiError,
+      youtubeTitle: videoTitle,
       totalDurationMs: Date.now() - t0,
     };
   }
@@ -868,12 +893,8 @@ export async function fetchTranscriptForVideo(
   function buildStageSummary(): string {
     const ordered = [
       'serpapi_primary',
-      'legacy_timedtext',
       'page_fetch',
       'page_config_extract',
-      'page_caption_tracks',
-      'innertube_page_key',
-      'innertube_env_key',
     ];
     const seen = new Set(stageEntries.map((s) => s.stage));
     return ordered.filter((stage) => seen.has(stage)).join(' → ');
@@ -896,26 +917,17 @@ export async function fetchTranscriptForVideo(
       chosenLang: serpapi.result.language,
     });
     console.log(`[transcript] ✅ Success via ${serpapi.result.strategy}`);
-    return { transcript: serpapi.result.transcript, debug: buildDebug(serpapi.result.strategy) };
+  } else {
+    addStage({
+      stage: "serpapi_primary",
+      status: serpapi.attempted ? "failed" : "skipped",
+      reason: serpapi.reason || (serpapi.attempted ? "serpapi_unknown_error" : "serpapi_missing_key"),
+      httpStatus: serpapi.httpStatus,
+    });
   }
 
-  addStage({
-    stage: "serpapi_primary",
-    status: serpapi.attempted ? "failed" : "skipped",
-    reason: serpapi.reason || (serpapi.attempted ? "serpapi_unknown_error" : "serpapi_missing_key"),
-    httpStatus: serpapi.httpStatus,
-  });
-
-  // Strategy 1: Legacy timedtext API (fastest, no page scrape)
-  const legacy = await tryLegacyTimedtextApi(videoId);
-  if (legacy) {
-    addStage({ stage: "legacy_timedtext", status: "success", trackCount: legacy.trackCount, chosenLang: legacy.language });
-    console.log(`[transcript] ✅ Success via ${legacy.strategy}`);
-    return { transcript: legacy.transcript, debug: buildDebug(legacy.strategy) };
-  }
-  addStage({ stage: "legacy_timedtext", status: "failed", reason: "no tracks or empty content" });
-
-  // Fetch page HTML once — shared by strategies 2a and 2b
+  // Non-blocking metadata probe (title + page-extracted InnerTube key).
+  // This should never fail the pipeline.
   const pageVariants = await fetchPageHtmlVariants(videoId);
   if (pageVariants.length === 0) {
     addStage({ stage: "page_fetch", status: "failed", reason: "all page variants failed" });
@@ -937,51 +949,22 @@ export async function fetchTranscriptForVideo(
     if (pageConfig.innertubeApiKey && !pageExtractedKey) {
       pageExtractedKey = pageConfig.innertubeApiKey;
     }
+    if (pageConfig.videoTitle && !videoTitle) {
+      videoTitle = pageConfig.videoTitle;
+    }
 
     console.log(
       `[transcript] page-config (${variant.label}): key=${pageConfig.innertubeApiKey ? "found" : "missing"}, tracks=${pageConfig.captionTracks.length}`
     );
-
-    // Strategy 2a: captionTracks already in page
-    const pageTracks = await tryPageCaptionTracks(pageConfig);
-    if (pageTracks) {
-      addStage({
-        stage: "page_caption_tracks", pageVariant: variant.label, status: "success",
-        trackCount: pageTracks.trackCount, chosenLang: pageTracks.language,
-        chosenKind: pageTracks.meta?.caption_track_kind,
-      });
-      console.log(`[transcript] ✅ Success via ${pageTracks.strategy}`);
-      return { transcript: pageTracks.transcript, debug: buildDebug(pageTracks.strategy) };
-    }
-    addStage({ stage: "page_caption_tracks", pageVariant: variant.label, status: "failed", reason: "no tracks in page or fetch failed", trackCount: pageConfig.captionTracks.length });
-
-    // Strategy 2b: page-extracted InnerTube key
-    const pageInnertube = await tryPageExtractedInnertube(videoId, pageConfig);
-    if (pageInnertube) {
-      addStage({
-        stage: "innertube_page_key", pageVariant: variant.label, status: "success",
-        trackCount: pageInnertube.trackCount, chosenLang: pageInnertube.language,
-        chosenKind: pageInnertube.meta?.caption_track_kind,
-        innertubeKey: pageConfig.innertubeApiKey, innertubeKeySource: "page_extracted",
-      });
-      console.log(`[transcript] ✅ Success via ${pageInnertube.strategy}`);
-      return { transcript: pageInnertube.transcript, debug: buildDebug(pageInnertube.strategy) };
-    }
-    addStage({
-      stage: "innertube_page_key", pageVariant: variant.label, status: "failed",
-      reason: pageConfig.innertubeApiKey ? "player returned no usable tracks" : "no key found in page",
-      innertubeKey: pageConfig.innertubeApiKey, innertubeKeySource: "page_extracted",
-    });
   }
 
-  // Strategy 3: env-key InnerTube fallback
-  const envInnertube = await tryEnvKeyInnertube(videoId);
-  if (envInnertube) {
-    addStage({ stage: "innertube_env_key", status: "success", trackCount: envInnertube.trackCount, chosenLang: envInnertube.language, innertubeKeySource: "env_variable" });
-    console.log(`[transcript] ✅ Success via ${envInnertube.strategy}`);
-    return { transcript: envInnertube.transcript, debug: buildDebug(envInnertube.strategy) };
+  if (serpapi.result) {
+    return {
+      transcript: serpapi.result.transcript,
+      debug: buildDebug(serpapi.result.strategy),
+      videoTitle,
+    };
   }
-  addStage({ stage: "innertube_env_key", status: ENV_INNERTUBE_API_KEY ? "failed" : "skipped", reason: ENV_INNERTUBE_API_KEY ? "no usable tracks" : "env key not set", innertubeKeySource: "env_variable" });
 
   const debug = buildDebug(null);
   const stageNames = buildStageSummary();

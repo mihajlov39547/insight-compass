@@ -1,5 +1,41 @@
 # YouTube Transcript via SerpApi — Primary Provider Implementation TODO
 
+## Progress Update (2026-04-15)
+
+Completed:
+
+1. Phase 1 implemented:
+   - SerpApi transcript strategy added as primary in `transcript-fetcher.ts`.
+   - `SERPAPI_KEY` is used from Deno secrets.
+   - Transcript parsing from SerpApi `transcript[]` snippets implemented.
+   - SerpApi error taxonomy and timeout handling added.
+2. Phase 2 implemented:
+   - SerpApi is attempted first in runtime flow.
+   - Failure stage summary includes `serpapi_primary`.
+3. Phase 3 implemented:
+   - Worker persists provider markers in `metadata.transcript`:
+     - `provider`
+     - `provider_attempted`
+     - `winning_strategy`
+     - `last_provider_error`
+   - Metadata merge safety preserved.
+4. Phase 4 implemented:
+   - Transcript tab debug section shows SerpApi diagnostics:
+     - attempted
+     - search id
+     - language
+     - error
+
+Additional requested refinement completed:
+
+1. Legacy transcript retrieval fallbacks were removed from the active pipeline.
+2. Existing page/Innertube-key probing remains as non-blocking metadata enrichment after SerpApi attempt.
+3. Exact YouTube title is extracted from page metadata and persisted back to resource (`title` + `preview_title`) when available.
+
+Open next step:
+
+1. Phase 5 docs/runbook updates are still pending.
+
 ## Goal
 
 Make SerpApi the primary transcript source for YouTube resources, while keeping current internal scraping strategies as controlled fallback paths.

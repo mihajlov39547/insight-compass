@@ -108,12 +108,37 @@ function providerFromWinningStrategy(winningStrategy: string | null | undefined)
 }
 
 function providerFromLastStage(debugPayload: any): "serpapi" | "internal_fallback" {
+  if (debugPayload?.serpapiAttempted) {
+    return "serpapi";
+  }
+
   const stages = Array.isArray(debugPayload?.stages) ? debugPayload.stages : [];
   const lastStage = stages.length > 0 ? stages[stages.length - 1]?.stage : null;
   if (typeof lastStage === "string" && lastStage.startsWith("serpapi")) {
     return "serpapi";
   }
   return "internal_fallback";
+}
+
+async function persistVideoTitleMetadata(
+  supabase: any,
+  resourceId: string,
+  rawTitle: string | null | undefined,
+) {
+  const title = typeof rawTitle === "string" ? rawTitle.trim() : "";
+  if (!title) return;
+
+  const { error } = await supabase
+    .from("resource_links")
+    .update({
+      title,
+      preview_title: title,
+    })
+    .eq("id", resourceId);
+
+  if (error) {
+    console.warn(`[worker] Could not persist YouTube title metadata: ${error.message}`);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -183,6 +208,12 @@ serve(async (req) => {
         });
         if (completeError) throw completeError;
 
+        await persistVideoTitleMetadata(
+          supabase,
+          String(claimedRow.resource_id),
+          result.videoTitle ?? result.debug?.youtubeTitle ?? null,
+        );
+
         await persistTranscriptDebugMetadata(
           supabase,
           String(claimedRow.resource_id),
@@ -220,6 +251,12 @@ serve(async (req) => {
             last_provider_error: message,
             error: message,
           }
+        );
+
+        await persistVideoTitleMetadata(
+          supabase,
+          String(claimedRow.resource_id),
+          debugPayload?.youtubeTitle ?? null,
         );
 
         failed += 1;
