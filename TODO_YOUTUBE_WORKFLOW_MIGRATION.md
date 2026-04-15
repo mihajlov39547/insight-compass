@@ -8,6 +8,8 @@ Implemented already in current monolith path:
 3. Transcript chunk questions and question embeddings are persisted.
 4. Hybrid retrieval includes transcript chunk-question semantic search.
 5. Transcript debug diagnostics are surfaced in UI.
+6. Project/Notebook Manage documents views include linked YouTube video entries with document-like cards.
+7. Linked video cards show readiness, metrics, and pipeline timeline (with current placeholders where needed).
 
 Remaining focus of this file:
 1. Move this already-working monolith pipeline into workflow engine orchestration.
@@ -43,6 +45,26 @@ This TODO focuses on convergence to a unified workflow architecture.
 4. Transcript chunks, chunk-questions, and question embeddings are available for retrieval
 5. Chat grounding behavior is consistent between document and YouTube transcript sources
 6. Legacy queue worker path is removed or retained only as explicit fallback with clear boundary
+7. Manage documents UX keeps parity for videos and documents (same discoverability and similar status detail depth)
+
+---
+
+## Migration Reminder — Preserve Current UI Contracts
+
+When migrating to workflow engine, do not regress current source-management UX:
+
+1. Keep linked YouTube videos visible in:
+   - project Manage documents
+   - notebook Manage documents
+2. Keep document-like cards for videos:
+   - status badge
+   - readiness section
+   - metrics section
+   - activity timeline section
+3. Replace timeline placeholders with workflow-native activity data once available.
+4. Maintain existing retry/delete affordances for linked videos in these views.
+5. Preserve card-level summary/title/channel visibility for linked videos.
+6. Ensure filtering/sorting/search includes videos and documents consistently.
 
 ---
 
@@ -180,10 +202,15 @@ Expose workflow-native processing insight for YouTube resources in product UI an
    - failure rate by activity key
    - median processing duration
 5. Add alerting thresholds and SLOs for YouTube processing
+6. Wire workflow activity runs into linked-video cards in Manage documents views
+7. Remove timeline placeholders only after workflow data is available in UI payloads
+8. Verify parity behavior in both project and notebook scopes
 
 ### Acceptance criteria
 - User can understand where a YouTube resource is stuck
 - Ops can diagnose and recover without direct DB for common failures
+- Manage documents keeps linked video visibility and card parity after migration
+- Linked video timelines are workflow-backed (no placeholder-only state for migrated path)
 
 ---
 
@@ -221,6 +248,8 @@ Safely migrate existing YouTube resources and roll out with minimal disruption.
 - [x] Question embeddings implemented for transcript questions
 - [x] Hybrid retrieval includes transcript questions with tuned ranking
 - [ ] UI shows workflow-native stage visibility for YouTube resources
+- [ ] Project Manage documents includes workflow-backed linked-video cards
+- [ ] Notebook Manage documents includes workflow-backed linked-video cards
 - [ ] Legacy queue-worker path removed or fallback-only
 - [ ] Migration/backfill completed and verified
 
