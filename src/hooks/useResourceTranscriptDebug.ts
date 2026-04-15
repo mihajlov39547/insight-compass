@@ -41,6 +41,10 @@ export function useResourceTranscriptDebug(resourceId: string | null, enabled = 
       const meta = data.metadata as Record<string, any> | null;
       return (meta?.transcript?.debug as TranscriptDebugPayload) || null;
     },
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: enabled && !!resourceId ? 5000 : false,
+    refetchIntervalInBackground: false,
   });
 }

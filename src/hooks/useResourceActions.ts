@@ -245,6 +245,11 @@ export function useRetryYouTubeTranscriptIngestion() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    onMutate: async (resource: ResourceActionInput) => {
+      // Clear stale debug (often null) before a new transcript attempt starts.
+      await queryClient.cancelQueries({ queryKey: ['resource-transcript-debug', resource.id] });
+      queryClient.invalidateQueries({ queryKey: ['resource-transcript-debug', resource.id] });
+    },
     mutationFn: async (resource: ResourceActionInput) => {
       const { error } = await supabase.rpc('enqueue_youtube_transcript_job' as any, {
         p_resource_id: resource.id,
@@ -257,6 +262,7 @@ export function useRetryYouTubeTranscriptIngestion() {
     },
     onSuccess: (resource) => {
       invalidateResourceScopes(queryClient, resource);
+      queryClient.invalidateQueries({ queryKey: ['resource-transcript-debug', resource.id] });
     },
   });
 }
