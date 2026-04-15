@@ -8,17 +8,17 @@ export interface TranscriptPreviewChunk {
   matchRank: number | null;
 }
 
-export function useResourceTranscriptPreview(resourceId: string | null, query: string, enabled = true) {
+export function useResourceTranscriptPreview(resourceId: string | null, enabled = true) {
   return useQuery({
-    queryKey: ['resource-transcript-preview', resourceId, query],
+    queryKey: ['resource-transcript-preview', resourceId],
     enabled: enabled && !!resourceId,
     queryFn: async (): Promise<TranscriptPreviewChunk[]> => {
       if (!resourceId) return [];
 
       const { data, error } = await supabase.rpc('get_link_transcript_preview' as any, {
         p_resource_id: resourceId,
-        p_limit: 50,
-        p_query: query.trim() ? query.trim() : null,
+        p_limit: 1000,
+        p_query: null,
       });
 
       if (error) throw error;

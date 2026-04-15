@@ -1175,7 +1175,6 @@ function ResourceDetailsDrawer({
 }) {
   const resourceId = resource?.id ?? null;
   const [detailsTab, setDetailsTab] = useState<'overview' | 'content'>('overview');
-  const [transcriptQuery, setTranscriptQuery] = useState('');
 
   // Determine resource category
   const isVideo = resource?.provider === 'youtube' || !!resource?.transcriptStatus;
@@ -1186,7 +1185,6 @@ function ResourceDetailsDrawer({
   const transcriptPreviewEnabled = !!resource && isVideo && resource.transcriptStatus === 'ready';
   const { data: transcriptPreviewChunks = [], isLoading: isTranscriptPreviewLoading } = useResourceTranscriptPreview(
     isVideo ? resourceId : null,
-    transcriptQuery,
     transcriptPreviewEnabled && open,
   );
   const { data: transcriptDebug } = useResourceTranscriptDebug(
@@ -1203,7 +1201,6 @@ function ResourceDetailsDrawer({
 
   useEffect(() => {
     setDetailsTab('overview');
-    setTranscriptQuery('');
   }, [resourceId, open]);
 
   if (!resource) return null;
@@ -1342,8 +1339,6 @@ function ResourceDetailsDrawer({
                     {isVideo ? (
                       <VideoContentTab
                         resource={resource}
-                        transcriptQuery={transcriptQuery}
-                        onTranscriptQueryChange={setTranscriptQuery}
                         chunks={transcriptPreviewChunks}
                         isLoading={isTranscriptPreviewLoading}
                         debug={transcriptDebug ?? null}
@@ -1465,7 +1460,7 @@ function TranscriptDebugSection({ debug }: { debug: TranscriptDebugPayload | nul
         <div className="space-y-2 pt-1">
           <div className="grid grid-cols-2 gap-1.5">
             <MetaCell label="Winning strategy" value={debug.winningStrategy || 'none (all failed)'} />
-            <MetaCell label="Duration" value={`${debug.totalDurationMs}ms`} />
+            <MetaCell label="Processing duration" value={`${debug.totalDurationMs}ms`} />
             <MetaCell label="Page variants tried" value={debug.pageVariantsAttempted.length > 0 ? debug.pageVariantsAttempted.join(', ') : 'none'} />
             <MetaCell label="Env key present" value={debug.envInnertubeKeyPresent ? 'Yes' : 'No'} />
             <MetaCell label="SerpApi attempted" value={debug.serpapiAttempted ? 'Yes' : 'No'} />
@@ -1523,15 +1518,20 @@ function TranscriptDebugSection({ debug }: { debug: TranscriptDebugPayload | nul
 
 /* ── Video Content Tab ── */
 function VideoContentTab({
-  resource, transcriptQuery, onTranscriptQueryChange, chunks, isLoading, debug,
+  resource, chunks, isLoading, debug,
 }: {
   resource: Resource;
-  transcriptQuery: string;
-  onTranscriptQueryChange: (q: string) => void;
   chunks: { chunkIndex: number; chunkText: string; tokenCount: number; matchRank: number | null }[];
   isLoading: boolean;
   debug: TranscriptDebugPayload | null;
 }) {
+  const transcriptText = chunks
+    .slice()
+    .sort((a, b) => a.chunkIndex - b.chunkIndex)
+    .map((chunk) => chunk.chunkText)
+    .join('\n\n')
+    .trim();
+
   return (
     <>
       <ContentStatusBanner status={resource.transcriptStatus || 'none'} error={resource.transcriptError} type="transcript" />
@@ -1546,16 +1546,7 @@ function VideoContentTab({
 
       {resource.transcriptStatus === 'ready' ? (
         <>
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Search transcript</p>
-            <Input
-              value={transcriptQuery}
-              onChange={(e) => onTranscriptQueryChange(e.target.value)}
-              placeholder="Find a phrase in transcript"
-              className="h-8 text-sm"
-            />
-          </div>
-          <ContentChunkList chunks={chunks} isLoading={isLoading} emptyMessage="No transcript excerpts found." />
+          <ContentTranscriptBlock transcriptText={transcriptText} isLoading={isLoading} emptyMessage="No transcript text available." />
           <TranscriptDebugSection debug={debug} />
         </>
       ) : resource.transcriptStatus === 'failed' ? (
@@ -1573,6 +1564,43 @@ function VideoContentTab({
         <ContentEmptyBlock message="Transcript is not available for this resource yet." />
       )}
     </>
+  );
+}
+
+function ContentTranscriptBlock({
+  transcriptText,
+  isLoading,
+  emptyMessage,
+}: {
+  transcriptText: string;
+  isLoading: boolean;
+  emptyMessage: string;
+}) {
+  if (isLoading) {
+    return (
+      <div className="py-6 flex items-center justify-center">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!transcriptText) {
+    return <ContentEmptyBlock message={emptyMessage} />;
+  }
+
+  return (
+    <div className="rounded-md border border-border/60 overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border/60">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <ScanText className="h-3.5 w-3.5" />
+          <span>Transcript text</span>
+        </div>
+        <span className="text-[10px] text-muted-foreground">{transcriptText.length.toLocaleString()} chars</span>
+      </div>
+      <div className="max-h-[400px] overflow-y-auto p-3">
+        <pre className="text-xs whitespace-pre-wrap leading-relaxed font-sans">{transcriptText}</pre>
+      </div>
+    </div>
   );
 }
 

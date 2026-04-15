@@ -31,6 +31,14 @@ Additional requested refinement completed:
 1. Legacy transcript retrieval fallbacks were removed from the active pipeline.
 2. Existing page/Innertube-key probing remains as non-blocking metadata enrichment after SerpApi attempt.
 3. Exact YouTube title is extracted from page metadata and persisted back to resource (`title` + `preview_title`) when available.
+4. Transcript UI now shows full transcript text (complete view) instead of chunk cards.
+5. Debug label clarified to processing duration to avoid confusion with media duration.
+6. Monolith transcript post-processing now includes:
+   - transcript chunk generation
+   - transcript chunk embeddings
+   - transcript chunk question generation
+   - transcript chunk question embeddings
+7. Transcript question semantic search function added for later/ongoing chat retrieval usage.
 
 Open next step:
 

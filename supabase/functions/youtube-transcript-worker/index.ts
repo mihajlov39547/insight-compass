@@ -196,7 +196,7 @@ serve(async (req) => {
         console.log(`[worker] Processing job=${claimedRow.job_id} videoId=${videoId} url=${claimedRow.normalized_url}`);
 
         const result = await fetchTranscriptForVideo(videoId);
-        const persistedChunkCount = await persistTranscriptChunks(supabase, String(claimedRow.resource_id), result.transcript);
+        const transcriptStats = await persistTranscriptChunks(supabase, String(claimedRow.resource_id), result.transcript);
 
         const { error: completeError } = await supabase.rpc("complete_youtube_transcript_job", {
           p_job_id: claimedRow.job_id,
@@ -204,7 +204,7 @@ serve(async (req) => {
           p_transcript_text: result.transcript,
           p_error: null,
           p_worker_id: workerId,
-          p_chunk_count: persistedChunkCount,
+          p_chunk_count: transcriptStats.chunkCount,
         });
         if (completeError) throw completeError;
 
@@ -223,11 +223,13 @@ serve(async (req) => {
             winning_strategy: result.debug?.winningStrategy ?? null,
             provider_attempted: providerFromWinningStrategy(result.debug?.winningStrategy ?? null),
             last_provider_error: null,
+            question_count: transcriptStats.questionCount,
+            embedded_question_count: transcriptStats.embeddedQuestionCount,
           }
         );
 
         succeeded += 1;
-        console.log(`[worker] Job ${claimedRow.job_id} succeeded: ${persistedChunkCount} chunks`);
+        console.log(`[worker] Job ${claimedRow.job_id} succeeded: ${transcriptStats.chunkCount} chunks, ${transcriptStats.questionCount} questions`);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown transcript ingestion error";
         const debugPayload = (error as any)?.debug || null;
