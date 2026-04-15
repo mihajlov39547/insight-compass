@@ -346,6 +346,7 @@ export async function ocrPdfStage(
       warning,
       ocrUsed: status === "COMPLETED" || status === "FAILED" || status === "UNAVAILABLE",
       metadataPatch: {
+        pipeline_decision_version: "pdf-parser-first-v2",
         pdf_text_status: result.pdf_text_status ?? null,
         ocr_pdf_status: result.ocr_status ?? null,
         ocr_pdf_engine: result.ocr_engine ?? null,
@@ -362,38 +363,43 @@ export async function ocrPdfStage(
   }
 
   try {
+    const bytes = await downloadDocumentSource(supabase, doc);
+
+    // Strict parser-first path: native extraction decides first,
+    // inspection only enriches diagnostics/routing reason.
+    const native = await extractText(bytes, doc.mime_type, doc.file_name);
+    const nativeTextLength = native.text.trim().length;
+    const nativeUsable = native.quality.readable && nativeTextLength >= 50;
+
     const inspection = await inspectPdfTextLayerStage(supabase, documentId);
-    const pdfTextStatus = String(inspection.pdf_text_status ?? "LIKELY_SCANNED");
+    const inspectionStatus = String(inspection.inspection_status ?? "UNKNOWN");
+    const inspectionPdfTextStatus = String(inspection.pdf_text_status ?? "LIKELY_SCANNED");
+    const pdfTextStatus = nativeUsable ? "HAS_SELECTABLE_TEXT" : inspectionPdfTextStatus;
 
-    if (pdfTextStatus === "HAS_SELECTABLE_TEXT") {
-      const bytes = await downloadDocumentSource(supabase, doc);
-      const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
-
+    if (nativeUsable) {
       const result = {
         document_id: documentId,
-        pdf_text_status: pdfTextStatus,
+        pdf_text_status: "HAS_SELECTABLE_TEXT",
         ocr_status: "NOT_REQUIRED",
         ocr_engine: "pdf_text_layer",
-        ocr_confidence: extraction.quality.score,
-        extracted_text: extraction.text,
-        extracted_text_length: extraction.text.length,
+        ocr_confidence: native.quality.score,
+        extracted_text: native.text,
+        extracted_text_length: native.text.length,
         page_count: inspection.page_count ?? null,
         warning: null,
-        inspection_status: inspection.inspection_status ?? null,
-        parser_fallback_attempted: inspection.parser_fallback_attempted ?? false,
-        parser_text_length: extraction.text.trim().length,
-        parser_text_usable: extraction.quality.readable && extraction.text.trim().length >= 50,
+        inspection_status: inspectionStatus,
+        parser_fallback_attempted: true,
+        parser_text_length: nativeTextLength,
+        parser_text_usable: true,
         ocr_routing_reason: "native_text_path_selected",
       };
       await persistPdfCheckpoint(result, "pdf_text_layer");
       return result;
     }
 
-    const bytes = await downloadDocumentSource(supabase, doc);
-
     // Safety fallback: if inspection misclassified a selectable-text PDF as scanned,
     // recover by trying parser extraction before OCR.
-    const parserFallback = await extractText(bytes, doc.mime_type, doc.file_name);
+    const parserFallback = native;
     const parserFallbackUsable = parserFallback.quality.readable && parserFallback.text.trim().length >= 50;
     if (parserFallbackUsable) {
       const result = {
@@ -406,7 +412,7 @@ export async function ocrPdfStage(
         extracted_text_length: parserFallback.text.length,
         page_count: inspection.page_count ?? null,
         warning: "Inspection classified PDF as likely scanned, parser fallback recovered selectable text",
-        inspection_status: inspection.inspection_status ?? null,
+        inspection_status: inspectionStatus,
         parser_fallback_attempted: true,
         parser_text_length: parserFallback.text.trim().length,
         parser_text_usable: true,
@@ -439,7 +445,7 @@ export async function ocrPdfStage(
         warning: tesseractPdfOcr.warning ?? null,
         ocr_primary_path: "tesseract.js",
         ocr_fallback_used: false,
-        inspection_status: inspection.inspection_status ?? null,
+        inspection_status: inspectionStatus,
         parser_fallback_attempted: true,
         parser_text_length: parserFallback.text.trim().length,
         parser_text_usable: false,
@@ -477,7 +483,7 @@ export async function ocrPdfStage(
           tesseractPdfOcr.warning,
           externalPdfOcr.warning,
         ].filter(Boolean).join(" | "),
-        inspection_status: inspection.inspection_status ?? null,
+        inspection_status: inspectionStatus,
         parser_fallback_attempted: true,
         parser_text_length: parserFallback.text.trim().length,
         parser_text_usable: false,
@@ -509,7 +515,7 @@ export async function ocrPdfStage(
           externalPdfOcr.warning,
           "Scanned-PDF OCR requires successful PDF rasterization in Edge runtime or external fallback",
         ].filter(Boolean).join(" | "),
-      inspection_status: inspection.inspection_status ?? null,
+      inspection_status: inspectionStatus,
       parser_fallback_attempted: true,
       parser_text_length: parserFallback.text.trim().length,
       parser_text_usable: false,
