@@ -1,13 +1,9 @@
 /**
- * YouTube transcript fetching with multi-strategy discovery.
+ * YouTube transcript fetching (SerpApi primary) with non-blocking metadata probes.
  *
  * Strategy order:
  * 1. SerpApi YouTube Video Transcript API (primary)
- * 2. Legacy timedtext list API (fast, no page scrape)
- * 3. Page scrape — extract captionTracks + INNERTUBE_API_KEY from HTML
- *    3a. Use captionTracks directly if found in page data
- *    3b. Use page-extracted INNERTUBE_API_KEY to call InnerTube player API
- * 4. Env-key InnerTube fallback (uses INNERTUBE_API_KEY from env if set)
+ * 2. Page metadata probe — extract title + INNERTUBE_API_KEY from HTML (non-blocking)
  */
 
 // @ts-nocheck
@@ -19,14 +15,6 @@ const WORKER_USER_AGENT = "insight-compass-transcript-worker/1.0";
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
-
-interface CaptionTrack {
-  baseUrl: string;
-  languageCode: string;
-  kind?: string;
-  name?: { simpleText?: string };
-  vssId?: string;
-}
 
 interface StrategyResult {
   transcript: string;
@@ -74,7 +62,7 @@ export interface TranscriptFetchResult {
 interface PageExtraction {
   innertubeApiKey: string | null;
   clientVersion: string | null;
-  captionTracks: CaptionTrack[];
+  captionTrackCount: number;
   visitorData: string | null;
   videoTitle: string | null;
 }
@@ -101,7 +89,7 @@ interface SerpApiAttemptResult {
 const SERPAPI_KEY = Deno.env.get("SERPAPI_KEY")?.trim() || "";
 const SERPAPI_ENDPOINT = "https://serpapi.com/search.json";
 const SERPAPI_DEFAULT_LANGUAGE = Deno.env.get("YT_TRANSCRIPT_SERPAPI_LANGUAGE_CODE")?.trim() || "en";
-const SERPAPI_TRANSCRIPT_TYPE = Deno.env.get("YT_TRANSCRIPT_SERPAPI_TYPE")?.trim() || "";
+const SERPAPI_TRANSCRIPT_TYPE = Deno.env.get("YT_TRANSCRIPT_SERPAPI_TYPE")?.trim() || "asr";
 const SERPAPI_NO_CACHE = (Deno.env.get("YT_TRANSCRIPT_SERPAPI_NO_CACHE") || "false").trim().toLowerCase() === "true";
 
 async function tryFetchYouTubeOEmbedMetadata(videoId: string): Promise<OEmbedMetadata> {
@@ -288,96 +276,6 @@ export function decodeHtmlEntities(value: string): string {
 }
 
 /* ------------------------------------------------------------------ */
-/*  XML text extraction                                                */
-/* ------------------------------------------------------------------ */
-
-export function extractTextLines(xml: string): string[] {
-  const lines: string[] = [];
-  const regex = /<text[^>]*>([\s\S]*?)<\/text>/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(xml)) !== null) {
-    const decoded = decodeHtmlEntities(match[1])
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (decoded) lines.push(decoded);
-  }
-  return lines;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Caption track selection                                            */
-/* ------------------------------------------------------------------ */
-
-function pickBestTrack(tracks: CaptionTrack[]): CaptionTrack | null {
-  if (tracks.length === 0) return null;
-
-  // Prefer manual English captions
-  const manualEn = tracks.find(
-    (t) => t.languageCode === "en" && (!t.kind || t.kind !== "asr")
-  );
-  if (manualEn) return manualEn;
-
-  // Any manual caption
-  const manual = tracks.find((t) => !t.kind || t.kind !== "asr");
-  if (manual) return manual;
-
-  // Auto-generated English
-  const autoEn = tracks.find(
-    (t) => t.languageCode === "en" && t.kind === "asr"
-  );
-  if (autoEn) return autoEn;
-
-  // First available
-  return tracks[0];
-}
-
-function logTracks(label: string, tracks: CaptionTrack[]) {
-  const languages = tracks.map(
-    (t) => `${t.languageCode}${t.kind === "asr" ? "(auto)" : ""}`
-  );
-  console.log(`[transcript] ${label}: languages=[${languages.join(", ")}]`);
-}
-
-/* ------------------------------------------------------------------ */
-/*  Fetch transcript XML from a caption track                          */
-/* ------------------------------------------------------------------ */
-
-async function fetchTranscriptFromTrack(
-  track: CaptionTrack,
-  label: string
-): Promise<{ lines: string[]; url: string } | null> {
-  const baseUrl = track.baseUrl.replace(/\\u0026/g, "&");
-  const urls = [baseUrl + "&fmt=srv3", baseUrl];
-
-  for (const url of urls) {
-    try {
-      console.log(
-        `[transcript] ${label}: fetching transcript from ${url.substring(0, 120)}...`
-      );
-      const resp = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT },
-      });
-      if (!resp.ok) {
-        console.log(
-          `[transcript] ${label}: transcript endpoint returned ${resp.status}`
-        );
-        continue;
-      }
-      const xml = await resp.text();
-      const lines = extractTextLines(xml);
-      if (lines.length > 0) {
-        console.log(`[transcript] ${label}: extracted ${lines.length} text lines`);
-        return { lines, url };
-      }
-    } catch (err) {
-      console.log(`[transcript] ${label}: fetch error: ${err}`);
-    }
-  }
-  return null;
-}
-
-/* ------------------------------------------------------------------ */
 /*  Page HTML fetching                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -449,7 +347,7 @@ function extractPageConfig(html: string): PageExtraction {
   const result: PageExtraction = {
     innertubeApiKey: null,
     clientVersion: null,
-    captionTracks: [],
+    captionTrackCount: 0,
     visitorData: null,
     videoTitle: null,
   };
@@ -508,382 +406,19 @@ function extractPageConfig(html: string): PageExtraction {
   const visitorMatch = html.match(/"visitorData"\s*:\s*"([^"]+)"/);
   if (visitorMatch) result.visitorData = visitorMatch[1];
 
-  // Extract captionTracks from ytInitialPlayerResponse
-  const playerPatterns = [
-    /ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var|<\/script>)/s,
-    /"captions"\s*:\s*(\{"playerCaptionsTracklistRenderer".+?\})\s*,\s*"videoDetails"/s,
-  ];
-  for (const pat of playerPatterns) {
-    const m = html.match(pat);
-    if (!m) continue;
-    try {
-      const json = JSON.parse(m[1]);
-      const tracks =
-        json?.captions?.playerCaptionsTracklistRenderer?.captionTracks
-        ?? json?.playerCaptionsTracklistRenderer?.captionTracks;
-      if (Array.isArray(tracks) && tracks.length > 0) {
-        result.captionTracks = tracks;
-        break;
-      }
-    } catch {
-      // continue
-    }
-  }
-
-  // Fallback: direct captionTracks extraction
-  if (result.captionTracks.length === 0) {
-    const directMatch = html.match(/"captionTracks"\s*:\s*(\[.+?\])/s);
-    if (directMatch) {
-      try {
-        const tracks = JSON.parse(directMatch[1]);
-        if (Array.isArray(tracks) && tracks.length > 0) {
-          result.captionTracks = tracks;
-        }
-      } catch {
-        // ignore
-      }
-    }
+  const captionTracksMatch = html.match(/"captionTracks"\s*:\s*\[/s);
+  if (captionTracksMatch) {
+    result.captionTrackCount = 1;
   }
 
   console.log(
-    `[transcript] page-config: key=${result.innertubeApiKey ? "found" : "missing"}, clientVersion=${result.clientVersion ?? "missing"}, captionTracks=${result.captionTracks.length}, visitorData=${result.visitorData ? "found" : "missing"}`
+    `[transcript] page-config: key=${result.innertubeApiKey ? "found" : "missing"}, clientVersion=${result.clientVersion ?? "missing"}, captionTrackCount=${result.captionTrackCount}, visitorData=${result.visitorData ? "found" : "missing"}`
   );
 
   return result;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Strategy 1: Legacy timedtext list API                              */
-/* ------------------------------------------------------------------ */
-
-function pickLanguageFromListXml(xml: string): string | null {
-  const languages: string[] = [];
-  const regex = /lang_code="([^"]+)"/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(xml)) !== null) {
-    languages.push(match[1]);
-  }
-  if (languages.length === 0) return null;
-  const preferred = ["en", "en-US", "en-GB"];
-  for (const candidate of preferred) {
-    if (languages.includes(candidate)) return candidate;
-  }
-  return languages[0];
-}
-
-async function tryLegacyTimedtextApi(
-  videoId: string
-): Promise<StrategyResult | null> {
-  const listUrl = `https://video.google.com/timedtext?type=list&v=${encodeURIComponent(videoId)}`;
-  console.log(`[transcript] Strategy 1 (legacy): fetching timedtext list`);
-
-  const listResp = await fetch(listUrl, {
-    headers: { "User-Agent": WORKER_USER_AGENT },
-  });
-  if (!listResp.ok) {
-    console.log(`[transcript] Strategy 1: list endpoint returned ${listResp.status}`);
-    return null;
-  }
-
-  const listXml = await listResp.text();
-  if (!listXml || listXml.trim().length === 0) {
-    console.log(`[transcript] Strategy 1: empty response`);
-    return null;
-  }
-
-  const language = pickLanguageFromListXml(listXml);
-  if (!language) {
-    console.log(`[transcript] Strategy 1: no lang_code found`);
-    return null;
-  }
-
-  console.log(`[transcript] Strategy 1: found language=${language}`);
-
-  const endpoints = [
-    `https://video.google.com/timedtext?v=${encodeURIComponent(videoId)}&lang=${encodeURIComponent(language)}`,
-    `https://video.google.com/timedtext?v=${encodeURIComponent(videoId)}&lang=${encodeURIComponent(language)}&fmt=srv3`,
-  ];
-
-  for (const endpoint of endpoints) {
-    const resp = await fetch(endpoint, {
-      headers: { "User-Agent": WORKER_USER_AGENT },
-    });
-    if (!resp.ok) continue;
-    const xml = await resp.text();
-    const lines = extractTextLines(xml);
-    if (lines.length > 0) {
-      return {
-        transcript: lines.join("\n"),
-        strategy: "legacy_timedtext",
-        language,
-        trackCount: 1,
-        meta: { caption_strategy: "legacy_timedtext", innertube_key_source: "n/a" },
-      };
-    }
-  }
-
-  console.log(`[transcript] Strategy 1: tracks found but content empty`);
-  return null;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Strategy 2a: Use captionTracks already in page HTML                */
-/* ------------------------------------------------------------------ */
-
-async function tryPageCaptionTracks(
-  pageConfig: PageExtraction
-): Promise<StrategyResult | null> {
-  const tracks = pageConfig.captionTracks;
-  if (tracks.length === 0) return null;
-
-  console.log(`[transcript] Strategy 2a (page captionTracks): ${tracks.length} tracks`);
-  logTracks("Strategy 2a", tracks);
-
-  const chosen = pickBestTrack(tracks);
-  if (!chosen) return null;
-
-  const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
-  console.log(
-    `[transcript] Strategy 2a: chose ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`
-  );
-
-  const result = await fetchTranscriptFromTrack(chosen, "Strategy 2a");
-  if (!result) {
-    console.log(`[transcript] Strategy 2a: content extraction failed`);
-    return null;
-  }
-
-  return {
-    transcript: result.lines.join("\n"),
-    strategy: "page_caption_tracks",
-    language: chosen.languageCode,
-    trackCount: tracks.length,
-    meta: {
-      caption_strategy: "page_caption_tracks",
-      caption_track_kind: chosen.kind ?? "manual",
-      caption_language: chosen.languageCode,
-      innertube_key_source: "n/a",
-    },
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/*  Strategy 2b: Page-extracted InnerTube key → player API             */
-/* ------------------------------------------------------------------ */
-
-async function tryPageExtractedInnertube(
-  videoId: string,
-  pageConfig: PageExtraction
-): Promise<StrategyResult | null> {
-  if (!pageConfig.innertubeApiKey) {
-    console.log(`[transcript] Strategy 2b: no INNERTUBE_API_KEY found in page`);
-    return null;
-  }
-
-  const apiKey = pageConfig.innertubeApiKey;
-  const clientVersion = pageConfig.clientVersion || "2.20240313.05.00";
-
-  const clients = [
-    {
-      label: "WEB",
-      clientName: "WEB",
-      clientVersion,
-    },
-    {
-      label: "EMBEDDED",
-      clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-      clientVersion: "2.0",
-    },
-  ];
-
-  for (const client of clients) {
-    console.log(
-      `[transcript] Strategy 2b (page-key/${client.label}): calling InnerTube player API`
-    );
-
-    try {
-      const apiUrl = `https://www.youtube.com/youtubei/v1/player?key=${apiKey}&prettyPrint=false`;
-      const body: any = {
-        context: {
-          client: {
-            hl: "en",
-            gl: "US",
-            clientName: client.clientName,
-            clientVersion: client.clientVersion,
-          },
-        },
-        videoId,
-      };
-      if (pageConfig.visitorData) {
-        body.context.client.visitorData = pageConfig.visitorData;
-      }
-
-      const resp = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": USER_AGENT,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!resp.ok) {
-        console.log(
-          `[transcript] Strategy 2b (${client.label}): InnerTube returned ${resp.status}`
-        );
-        continue;
-      }
-
-      const data = await resp.json();
-      const tracks: CaptionTrack[] =
-        data?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
-      console.log(
-        `[transcript] Strategy 2b (${client.label}): found ${tracks.length} caption tracks`
-      );
-
-      if (tracks.length === 0) continue;
-
-      logTracks(`Strategy 2b (${client.label})`, tracks);
-      const chosen = pickBestTrack(tracks);
-      if (!chosen) continue;
-
-      const trackLabel = chosen.name?.simpleText ?? chosen.languageCode;
-      console.log(
-        `[transcript] Strategy 2b (${client.label}): chose ${trackLabel} (lang=${chosen.languageCode}, kind=${chosen.kind ?? "manual"})`
-      );
-
-      const result = await fetchTranscriptFromTrack(
-        chosen,
-        `Strategy 2b (${client.label})`
-      );
-      if (!result) continue;
-
-      return {
-        transcript: result.lines.join("\n"),
-        strategy: `innertube_page_key_${client.label.toLowerCase()}`,
-        language: chosen.languageCode,
-        trackCount: tracks.length,
-        meta: {
-          caption_strategy: `innertube_page_key_${client.label.toLowerCase()}`,
-          caption_track_kind: chosen.kind ?? "manual",
-          caption_language: chosen.languageCode,
-          innertube_key_source: "page_extracted",
-          innertube_client: client.clientName,
-        },
-      };
-    } catch (err) {
-      console.log(
-        `[transcript] Strategy 2b (${client.label}): error: ${err}`
-      );
-    }
-  }
-
-  return null;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Strategy 3: Env-key InnerTube fallback                             */
-/* ------------------------------------------------------------------ */
-
 const ENV_INNERTUBE_API_KEY = Deno.env.get("INNERTUBE_API_KEY")?.trim() || "";
-
-async function tryEnvKeyInnertube(
-  videoId: string
-): Promise<StrategyResult | null> {
-  if (!ENV_INNERTUBE_API_KEY) {
-    console.log(
-      "[transcript] Strategy 3 (env-key): INNERTUBE_API_KEY env not set; skipping"
-    );
-    return null;
-  }
-
-  const clients = [
-    {
-      label: "EMBEDDED",
-      clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-      clientVersion: "2.0",
-    },
-    {
-      label: "WEB",
-      clientName: "WEB",
-      clientVersion: "2.20240313.05.00",
-    },
-  ];
-
-  for (const client of clients) {
-    console.log(
-      `[transcript] Strategy 3 (env-key/${client.label}): calling InnerTube player API`
-    );
-
-    try {
-      const apiUrl = `https://www.youtube.com/youtubei/v1/player?key=${ENV_INNERTUBE_API_KEY}&prettyPrint=false`;
-      const resp = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": USER_AGENT,
-        },
-        body: JSON.stringify({
-          context: {
-            client: {
-              hl: "en",
-              gl: "US",
-              clientName: client.clientName,
-              clientVersion: client.clientVersion,
-            },
-          },
-          videoId,
-        }),
-      });
-
-      if (!resp.ok) {
-        console.log(
-          `[transcript] Strategy 3 (${client.label}): InnerTube returned ${resp.status}`
-        );
-        continue;
-      }
-
-      const data = await resp.json();
-      const tracks: CaptionTrack[] =
-        data?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
-      console.log(
-        `[transcript] Strategy 3 (${client.label}): found ${tracks.length} tracks`
-      );
-
-      if (tracks.length === 0) continue;
-
-      logTracks(`Strategy 3 (${client.label})`, tracks);
-      const chosen = pickBestTrack(tracks);
-      if (!chosen) continue;
-
-      const result = await fetchTranscriptFromTrack(
-        chosen,
-        `Strategy 3 (${client.label})`
-      );
-      if (!result) continue;
-
-      return {
-        transcript: result.lines.join("\n"),
-        strategy: `innertube_env_key_${client.label.toLowerCase()}`,
-        language: chosen.languageCode,
-        trackCount: tracks.length,
-        meta: {
-          caption_strategy: `innertube_env_key_${client.label.toLowerCase()}`,
-          caption_track_kind: chosen.kind ?? "manual",
-          caption_language: chosen.languageCode,
-          innertube_key_source: "env_variable",
-          innertube_client: client.clientName,
-        },
-      };
-    } catch (err) {
-      console.log(
-        `[transcript] Strategy 3 (${client.label}): error: ${err}`
-      );
-    }
-  }
-
-  return null;
-}
 
 /* ------------------------------------------------------------------ */
 /*  Public API                                                         */
@@ -983,7 +518,7 @@ export async function fetchTranscriptForVideo(
       stage: "page_config_extract",
       pageVariant: variant.label,
       status: "success",
-      trackCount: pageConfig.captionTracks.length,
+      trackCount: pageConfig.captionTrackCount,
       reason: pageConfig.innertubeApiKey ? "page key found" : "page key missing",
     });
 
@@ -995,7 +530,7 @@ export async function fetchTranscriptForVideo(
     }
 
     console.log(
-      `[transcript] page-config (${variant.label}): key=${pageConfig.innertubeApiKey ? "found" : "missing"}, tracks=${pageConfig.captionTracks.length}`
+      `[transcript] page-config (${variant.label}): key=${pageConfig.innertubeApiKey ? "found" : "missing"}, captionTrackCount=${pageConfig.captionTrackCount}`
     );
   }
 

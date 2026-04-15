@@ -1,5 +1,18 @@
 # YouTube Processing Workflow Migration — Implementation TODO
 
+## Progress Update (2026-04-15)
+
+Implemented already in current monolith path:
+1. Transcript fetch primary provider switched to SerpApi.
+2. Transcript chunks and chunk embeddings are persisted.
+3. Transcript chunk questions and question embeddings are persisted.
+4. Hybrid retrieval includes transcript chunk-question semantic search.
+5. Transcript debug diagnostics are surfaced in UI.
+
+Remaining focus of this file:
+1. Move this already-working monolith pipeline into workflow engine orchestration.
+2. Decommission legacy queue-worker path after migration stabilization.
+
 ## Scope
 
 Migrate YouTube processing from the current queue + standalone worker model into the platform workflow engine used for documents, then clean up legacy paths, and reach document-parity retrieval quality (including chunk-question generation + question embeddings).
@@ -12,10 +25,10 @@ Current YouTube processing is functional but separate from document workflow orc
 
 1. Link adapter marks YouTube resources and enqueues transcript jobs
 2. `youtube_transcript_jobs` + `youtube-transcript-worker` handle claim/run/complete
-3. Transcript text is fetched from YouTube timedtext endpoints
+3. Transcript text is fetched from SerpApi (primary)
 4. Transcript chunks and embeddings are persisted in `link_transcript_chunks`
 5. Retrieval includes transcript chunks via `search_link_transcript_chunks`
-6. Transcript chunk-question generation and question embeddings are not yet implemented
+6. Transcript chunk-question generation and question embeddings are implemented
 7. Lifecycle and observability differ from document activity-run model
 
 This TODO focuses on convergence to a unified workflow architecture.
@@ -204,9 +217,9 @@ Safely migrate existing YouTube resources and roll out with minimal disruption.
 
 - [ ] Workflow definition for YouTube created and active
 - [ ] YouTube processing triggered via workflow-start
-- [ ] Transcript chunk question generation implemented
-- [ ] Question embeddings implemented for transcript questions
-- [ ] Hybrid retrieval includes transcript questions with tuned ranking
+- [x] Transcript chunk question generation implemented
+- [x] Question embeddings implemented for transcript questions
+- [x] Hybrid retrieval includes transcript questions with tuned ranking
 - [ ] UI shows workflow-native stage visibility for YouTube resources
 - [ ] Legacy queue-worker path removed or fallback-only
 - [ ] Migration/backfill completed and verified
