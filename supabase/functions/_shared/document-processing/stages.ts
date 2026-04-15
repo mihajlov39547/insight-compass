@@ -252,21 +252,64 @@ export async function inspectPdfTextLayerStage(
       pages_with_text_count: detailed.pages_with_text_count,
       pages_without_text_count: detailed.pages_without_text_count,
       inspection_warning: detailed.warning ?? null,
+      inspection_status: "COMPLETED",
+      parser_fallback_attempted: false,
+      parser_text_length: extraction.text.trim().length,
+      parser_text_usable: extractionSuggestsText,
+      ocr_routing_reason: hasSelectableText
+        ? "inspection_or_parser_found_usable_text"
+        : "no_usable_native_text_detected",
     };
   } catch (error) {
     const warning = error instanceof Error ? error.message : String(error);
-    return {
-      document_id: documentId,
-      pdf_text_status: "LIKELY_SCANNED",
-      page_count: doc.page_count ?? null,
-      has_selectable_text: false,
-      inspection_method: "inspection_error",
-      inspection_quality_score: 0,
-      inspection_quality_reason: "PDF inspection failed; falling back to OCR path",
-      pages_with_text_count: 0,
-      pages_without_text_count: doc.page_count ?? 0,
-      inspection_warning: warning,
-    };
+
+    // Best-effort parser fallback even when detailed inspection fails.
+    // This avoids misrouting born-digital PDFs into OCR-only paths.
+    try {
+      const bytes = await downloadDocumentSource(supabase, doc);
+      const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
+      const fallbackHasText = extraction.quality.readable && extraction.text.trim().length >= 50;
+
+      return {
+        document_id: documentId,
+        pdf_text_status: fallbackHasText ? "HAS_SELECTABLE_TEXT" : "LIKELY_SCANNED",
+        page_count: doc.page_count ?? null,
+        has_selectable_text: fallbackHasText,
+        inspection_method: fallbackHasText ? `${extraction.method}_fallback_after_inspection_error` : "inspection_error",
+        inspection_quality_score: extraction.quality.score,
+        inspection_quality_reason: fallbackHasText
+          ? "Inspection failed but native parser extracted readable text"
+          : "PDF inspection failed; falling back to OCR path",
+        pages_with_text_count: fallbackHasText ? 1 : 0,
+        pages_without_text_count: doc.page_count ?? 0,
+        inspection_warning: warning,
+        inspection_status: "FAILED_FALLBACK_APPLIED",
+        parser_fallback_attempted: true,
+        parser_text_length: extraction.text.trim().length,
+        parser_text_usable: fallbackHasText,
+        ocr_routing_reason: fallbackHasText
+          ? "inspection_failed_parser_recovered_usable_text"
+          : "inspection_failed_parser_empty_or_unusable",
+      };
+    } catch {
+      return {
+        document_id: documentId,
+        pdf_text_status: "LIKELY_SCANNED",
+        page_count: doc.page_count ?? null,
+        has_selectable_text: false,
+        inspection_method: "inspection_error",
+        inspection_quality_score: 0,
+        inspection_quality_reason: "PDF inspection failed; falling back to OCR path",
+        pages_with_text_count: 0,
+        pages_without_text_count: doc.page_count ?? 0,
+        inspection_warning: warning,
+        inspection_status: "FAILED",
+        parser_fallback_attempted: true,
+        parser_text_length: 0,
+        parser_text_usable: false,
+        ocr_routing_reason: "inspection_and_parser_failed",
+      };
+    }
   }
 }
 
@@ -308,6 +351,12 @@ export async function ocrPdfStage(
         ocr_pdf_engine: result.ocr_engine ?? null,
         ocr_pdf_confidence: result.ocr_confidence ?? null,
         ocr_pdf_warning: warning,
+        inspection_status: result.inspection_status ?? null,
+        parser_fallback_attempted: result.parser_fallback_attempted ?? null,
+        parser_text_length: result.parser_text_length ?? null,
+        parser_text_usable: result.parser_text_usable ?? null,
+        ocr_routing_reason: result.ocr_routing_reason ?? null,
+        final_failure_reason: result.final_failure_reason ?? null,
       },
     });
   }
@@ -330,6 +379,11 @@ export async function ocrPdfStage(
         extracted_text_length: extraction.text.length,
         page_count: inspection.page_count ?? null,
         warning: null,
+        inspection_status: inspection.inspection_status ?? null,
+        parser_fallback_attempted: inspection.parser_fallback_attempted ?? false,
+        parser_text_length: extraction.text.trim().length,
+        parser_text_usable: extraction.quality.readable && extraction.text.trim().length >= 50,
+        ocr_routing_reason: "native_text_path_selected",
       };
       await persistPdfCheckpoint(result, "pdf_text_layer");
       return result;
@@ -340,7 +394,8 @@ export async function ocrPdfStage(
     // Safety fallback: if inspection misclassified a selectable-text PDF as scanned,
     // recover by trying parser extraction before OCR.
     const parserFallback = await extractText(bytes, doc.mime_type, doc.file_name);
-    if (parserFallback.text.trim().length > 0) {
+    const parserFallbackUsable = parserFallback.quality.readable && parserFallback.text.trim().length >= 50;
+    if (parserFallbackUsable) {
       const result = {
         document_id: documentId,
         pdf_text_status: "HAS_SELECTABLE_TEXT",
@@ -351,6 +406,11 @@ export async function ocrPdfStage(
         extracted_text_length: parserFallback.text.length,
         page_count: inspection.page_count ?? null,
         warning: "Inspection classified PDF as likely scanned, parser fallback recovered selectable text",
+        inspection_status: inspection.inspection_status ?? null,
+        parser_fallback_attempted: true,
+        parser_text_length: parserFallback.text.trim().length,
+        parser_text_usable: true,
+        ocr_routing_reason: "inspection_likely_scanned_but_parser_recovered_text",
       };
       await persistPdfCheckpoint(result, "pdf_text_layer_fallback");
       return result;
@@ -379,6 +439,11 @@ export async function ocrPdfStage(
         warning: tesseractPdfOcr.warning ?? null,
         ocr_primary_path: "tesseract.js",
         ocr_fallback_used: false,
+        inspection_status: inspection.inspection_status ?? null,
+        parser_fallback_attempted: true,
+        parser_text_length: parserFallback.text.trim().length,
+        parser_text_usable: false,
+        ocr_routing_reason: "native_text_unusable_routed_to_tesseract",
       };
       await persistPdfCheckpoint(result, "tesseract.js_pdf_ocr");
       return result;
@@ -412,6 +477,11 @@ export async function ocrPdfStage(
           tesseractPdfOcr.warning,
           externalPdfOcr.warning,
         ].filter(Boolean).join(" | "),
+        inspection_status: inspection.inspection_status ?? null,
+        parser_fallback_attempted: true,
+        parser_text_length: parserFallback.text.trim().length,
+        parser_text_usable: false,
+        ocr_routing_reason: "tesseract_empty_routed_to_external_ocr",
       };
       await persistPdfCheckpoint(result, "external_pdf_ocr");
       return result;
@@ -439,6 +509,12 @@ export async function ocrPdfStage(
           externalPdfOcr.warning,
           "Scanned-PDF OCR requires successful PDF rasterization in Edge runtime or external fallback",
         ].filter(Boolean).join(" | "),
+      inspection_status: inspection.inspection_status ?? null,
+      parser_fallback_attempted: true,
+      parser_text_length: parserFallback.text.trim().length,
+      parser_text_usable: false,
+      ocr_routing_reason: "native_and_ocr_unavailable",
+      final_failure_reason: "no_extracted_content_after_native_and_ocr_attempts",
     };
       await persistPdfCheckpoint(unavailableResult, "pdf_ocr_unavailable");
       return unavailableResult;
@@ -455,6 +531,12 @@ export async function ocrPdfStage(
       ocr_primary_path: "tesseract.js",
       ocr_fallback_used: false,
       warning: `PDF OCR stage failed safely: ${warning}`,
+      inspection_status: "FAILED",
+      parser_fallback_attempted: true,
+      parser_text_length: 0,
+      parser_text_usable: false,
+      ocr_routing_reason: "ocr_stage_exception",
+      final_failure_reason: "ocr_stage_exception",
     };
     try {
       await persistPdfCheckpoint(failedResult, "pdf_ocr_failed");
@@ -994,6 +1076,7 @@ export async function normalizeTechnicalAnalysisOutputStage(
 ): Promise<Record<string, unknown>> {
   const doc = await loadDocumentRow(supabase, documentId);
   const analysis = await loadDocumentAnalysisRow(supabase, documentId);
+  const analysisMeta = toObject(analysis?.metadata_json);
 
   const normalized = normalizeTechnicalAnalysisOutput(
     {
@@ -1007,23 +1090,39 @@ export async function normalizeTechnicalAnalysisOutputStage(
   const fileCategory = normalizeDocumentCategory(doc);
   const normalizedText = String(normalized.normalized_extracted_text ?? "").trim();
 
-  if (!normalizedText && fileCategory !== "image") {
+  const normalizedChars = Number(normalized.normalized_text_length ?? normalizedText.length ?? 0);
+  const normalizedRows = Number(normalized.line_count ?? 0);
+
+  if ((
+    !normalizedText ||
+    !Number.isFinite(normalizedChars) || normalizedChars <= 0 ||
+    !Number.isFinite(normalizedRows) || normalizedRows <= 0
+  ) && fileCategory !== "image") {
     throw new DocumentStageError("Normalized extraction output is empty", {
       code: "EXTRACTION_EMPTY_OUTPUT",
       classification: "terminal",
       details: {
         document_id: documentId,
         file_category: fileCategory,
+        normalized_chars: normalizedChars,
+        normalized_rows: normalizedRows,
+        ocr_pdf_status: analysisMeta.ocr_pdf_status ?? null,
+        ocr_routing_reason: analysisMeta.ocr_routing_reason ?? null,
+        final_failure_reason: "no_extracted_content_after_all_attempts",
       },
     });
   }
 
+  const warningText = typeof normalized.warning === "string" && normalized.warning.trim()
+    ? normalized.warning
+    : null;
+
   await persistExtractionCheckpoint(supabase, doc, {
     stageKey: "document.normalize_technical_analysis_output",
     extractorSelected: "normalized_output",
-    extractorStatus: normalizedText ? "COMPLETED" : "EMPTY_ALLOWED",
+    extractorStatus: "COMPLETED",
     extractedText: normalizedText,
-    warning: typeof normalized.warning === "string" ? normalized.warning : null,
+    warning: warningText,
     metadataPatch: {
       normalized_text_length: normalized.normalized_text_length,
       normalized_word_count: normalized.word_count,
