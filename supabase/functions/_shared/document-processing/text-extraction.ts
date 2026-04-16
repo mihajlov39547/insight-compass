@@ -1,7 +1,27 @@
 // @ts-nocheck
-// pdf-parse uses fs.readFileSync at import time which crashes Deno edge functions.
-// We use dynamic import() to defer loading until actually needed for PDF extraction.
-let _pdfParse: typeof import("https://esm.sh/pdf-parse@1.1.1?target=es2022").default | null = null;
+
+// ─── unpdf: Active PDF text-extraction strategy ────────────────────────
+// unpdf is the primary/active PDF extraction path used by the workflow.
+let _unpdfMod: any = null;
+async function getUnpdf() {
+  if (!_unpdfMod) {
+    _unpdfMod = await import("https://esm.sh/unpdf@0.12.1?target=es2022");
+  }
+  return _unpdfMod;
+}
+
+// ─── Legacy pdf-parse: DISABLED ────────────────────────────────────────
+// The pdf-parse library was previously the active PDF extraction strategy.
+// It is preserved here for potential future re-enablement but is NOT used
+// by the current workflow. To re-enable:
+//   1. Set ENABLE_LEGACY_PDF_PARSER = true
+//   2. Update the PDF branch in extractText() to call extractPdfTextLegacyDisabled()
+//   3. Verify pdf-parse still works in the Deno Edge runtime
+const ENABLE_LEGACY_PDF_PARSER = false;
+
+import { Buffer } from "node:buffer";
+
+let _pdfParse: any = null;
 async function getPdfParse() {
   if (!_pdfParse) {
     const mod = await import("https://esm.sh/pdf-parse@1.1.1?target=es2022");
@@ -9,7 +29,98 @@ async function getPdfParse() {
   }
   return _pdfParse;
 }
-import { Buffer } from "node:buffer";
+
+/**
+ * LEGACY/DISABLED: PDF extraction via pdf-parse.
+ * Preserved for future re-enablement. Not called by the active workflow.
+ * See ENABLE_LEGACY_PDF_PARSER flag above.
+ */
+async function extractPdfTextLegacyDisabled(
+  bytes: Uint8Array
+): Promise<ExtractTextResult> {
+  if (!ENABLE_LEGACY_PDF_PARSER) {
+    throw new Error("Legacy pdf-parse extraction is disabled. Use unpdf instead.");
+  }
+  try {
+    const pdfParse = await getPdfParse();
+    const result = await pdfParse(Buffer.from(bytes));
+    const text = String(result?.text || "");
+    const quality = assessTextQuality(text);
+    if (quality.readable) {
+      return { text, method: "pdf-parse", quality };
+    }
+    return { text, method: "pdf-parse_low_quality", quality };
+  } catch (e) {
+    console.warn("pdf-parse extraction failed:", e);
+    return { text: "", method: "pdf-parse_error", quality: assessTextQuality("") };
+  }
+}
+
+// ─── unpdf extraction helper ───────────────────────────────────────────
+
+/**
+ * Extract text from a PDF using unpdf (active strategy).
+ *
+ * Returns:
+ *   method: "unpdf" | "unpdf_low_quality" | "unpdf_error"
+ *   quality: standard TextQuality assessment
+ *   diagnostics: optional metadata about the extraction
+ */
+async function extractPdfTextWithUnpdf(
+  bytes: Uint8Array
+): Promise<ExtractTextResult> {
+  try {
+    const unpdf = await getUnpdf();
+    const { text: rawText, totalPages } = await unpdf.extractText(
+      bytes,
+      { mergePages: true }
+    );
+
+    const text = typeof rawText === "string"
+      ? rawText
+      : Array.isArray(rawText)
+        ? rawText.join("\n\n")
+        : String(rawText ?? "");
+
+    const quality = assessTextQuality(text);
+    const diagnostics: Record<string, unknown> = {
+      active_pdf_strategy: "unpdf",
+      pdf_total_pages: totalPages ?? null,
+      pdf_text_length: text.length,
+      pdf_text_usable: quality.readable,
+    };
+
+    if (quality.readable) {
+      return { text, method: "unpdf", quality, diagnostics };
+    }
+
+    return {
+      text,
+      method: text.trim().length > 0 ? "unpdf_low_quality" : "unpdf_error",
+      quality,
+      diagnostics: {
+        ...diagnostics,
+        pdf_extraction_method: text.trim().length > 0 ? "unpdf_low_quality" : "unpdf_error",
+      },
+    };
+  } catch (e) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    console.warn("[pdf-extraction] unpdf extraction failed:", errorMsg);
+    return {
+      text: "",
+      method: "unpdf_error",
+      error: errorMsg,
+      quality: assessTextQuality(""),
+      diagnostics: {
+        active_pdf_strategy: "unpdf",
+        pdf_text_length: 0,
+        pdf_text_usable: false,
+        pdf_extraction_method: "unpdf_error",
+        unpdf_error: errorMsg,
+      },
+    };
+  }
+}
 import { extractDocxRawTextWithMammoth } from "./docx-mammoth.ts";
 
 // ─── Windows-1251 Decoder (Serbian Cyrillic) ───────────────────────────
@@ -535,19 +646,9 @@ export async function extractText(
   }
 
   if (ext === "pdf" || mimeType === "application/pdf") {
-    try {
-      const pdfParse = await getPdfParse();
-      const result = await pdfParse(Buffer.from(bytes));
-      const text = String(result?.text || "");
-      const quality = assessTextQuality(text);
-      if (quality.readable) {
-        return { text, method: "pdf-parse", quality };
-      }
-      return { text, method: "pdf-parse_low_quality", quality };
-    } catch (e) {
-      console.warn("pdf-parse extraction failed:", e);
-      return { text: "", method: "pdf-parse_error", quality: assessTextQuality("") };
-    }
+    // Active strategy: unpdf (see extractPdfTextWithUnpdf above)
+    // Legacy pdf-parse is preserved but disabled (see extractPdfTextLegacyDisabled above)
+    return await extractPdfTextWithUnpdf(bytes);
   }
 
   if (ext === "doc" || mimeType === "application/msword") {
