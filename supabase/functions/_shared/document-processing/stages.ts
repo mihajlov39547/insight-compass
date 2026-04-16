@@ -346,7 +346,8 @@ export async function ocrPdfStage(
       warning,
       ocrUsed: status === "COMPLETED" || status === "FAILED" || status === "UNAVAILABLE",
       metadataPatch: {
-        pipeline_decision_version: "pdf-parser-first-v2",
+        pipeline_decision_version: "unpdf-first-v1",
+        active_pdf_strategy: "unpdf",
         pdf_text_status: result.pdf_text_status ?? null,
         ocr_pdf_status: result.ocr_status ?? null,
         ocr_pdf_engine: result.ocr_engine ?? null,
