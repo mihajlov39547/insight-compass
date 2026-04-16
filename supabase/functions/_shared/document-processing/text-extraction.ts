@@ -646,19 +646,9 @@ export async function extractText(
   }
 
   if (ext === "pdf" || mimeType === "application/pdf") {
-    try {
-      const pdfParse = await getPdfParse();
-      const result = await pdfParse(Buffer.from(bytes));
-      const text = String(result?.text || "");
-      const quality = assessTextQuality(text);
-      if (quality.readable) {
-        return { text, method: "pdf-parse", quality };
-      }
-      return { text, method: "pdf-parse_low_quality", quality };
-    } catch (e) {
-      console.warn("pdf-parse extraction failed:", e);
-      return { text: "", method: "pdf-parse_error", quality: assessTextQuality("") };
-    }
+    // Active strategy: unpdf (see extractPdfTextWithUnpdf above)
+    // Legacy pdf-parse is preserved but disabled (see extractPdfTextLegacyDisabled above)
+    return await extractPdfTextWithUnpdf(bytes);
   }
 
   if (ext === "doc" || mimeType === "application/msword") {
