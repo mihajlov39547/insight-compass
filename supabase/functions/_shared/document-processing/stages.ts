@@ -213,6 +213,11 @@ export async function detectFileTypeStage(
   };
 }
 
+// NOTE: This stage is retained for diagnostics/enrichment only.
+// It is NOT the primary routing decision-maker for PDF extraction.
+// The active routing decision is made by unpdf native extraction
+// in ocrPdfStage(). Inspection results may supplement metadata but
+// should not override the unpdf extraction result.
 export async function inspectPdfTextLayerStage(
   supabase: SupabaseClient,
   documentId: string
@@ -346,19 +351,16 @@ export async function ocrPdfStage(
       warning,
       ocrUsed: status === "COMPLETED" || status === "FAILED" || status === "UNAVAILABLE",
       metadataPatch: {
-        pipeline_decision_version: "unpdf-first-v1",
+        pipeline_decision_version: "unpdf-first-v2",
         active_pdf_strategy: "unpdf",
         pdf_text_status: result.pdf_text_status ?? null,
         ocr_pdf_status: result.ocr_status ?? null,
         ocr_pdf_engine: result.ocr_engine ?? null,
         ocr_pdf_confidence: result.ocr_confidence ?? null,
         ocr_pdf_warning: warning,
-        inspection_status: result.inspection_status ?? null,
-        parser_fallback_attempted: result.parser_fallback_attempted ?? null,
-        parser_text_length: result.parser_text_length ?? null,
-        parser_text_usable: result.parser_text_usable ?? null,
         ocr_routing_reason: result.ocr_routing_reason ?? null,
         final_failure_reason: result.final_failure_reason ?? null,
+        inspection_used_for_diagnostics: result.inspection_used_for_diagnostics ?? false,
       },
     });
   }
@@ -366,62 +368,56 @@ export async function ocrPdfStage(
   try {
     const bytes = await downloadDocumentSource(supabase, doc);
 
-    // Strict parser-first path: native extraction decides first,
-    // inspection only enriches diagnostics/routing reason.
+    // ── Step 1: unpdf native extraction is the primary decision point ──
+    // The PDF branch in extractText() calls extractPdfTextWithUnpdf()
+    // which uses the real two-step unpdf API.
     const native = await extractText(bytes, doc.mime_type, doc.file_name);
     const nativeTextLength = native.text.trim().length;
     const nativeUsable = native.quality.readable && nativeTextLength >= 50;
 
-    const inspection = await inspectPdfTextLayerStage(supabase, documentId);
-    const inspectionStatus = String(inspection.inspection_status ?? "UNKNOWN");
-    const inspectionPdfTextStatus = String(inspection.pdf_text_status ?? "LIKELY_SCANNED");
-    const pdfTextStatus = nativeUsable ? "HAS_SELECTABLE_TEXT" : inspectionPdfTextStatus;
-
     if (nativeUsable) {
+      // Born-digital PDF with readable text — skip OCR entirely
       const result = {
         document_id: documentId,
         pdf_text_status: "HAS_SELECTABLE_TEXT",
         ocr_status: "NOT_REQUIRED",
-        ocr_engine: "pdf_text_layer",
+        ocr_engine: "unpdf_native",
         ocr_confidence: native.quality.score,
         extracted_text: native.text,
         extracted_text_length: native.text.length,
-        page_count: inspection.page_count ?? null,
+        page_count: doc.page_count ?? null,
         warning: null,
-        inspection_status: inspectionStatus,
-        parser_fallback_attempted: true,
-        parser_text_length: nativeTextLength,
-        parser_text_usable: true,
-        ocr_routing_reason: "native_text_path_selected",
+        ocr_routing_reason: "unpdf_native_text_usable",
+        inspection_used_for_diagnostics: false,
       };
-      await persistPdfCheckpoint(result, "pdf_text_layer");
+      await persistPdfCheckpoint(result, "unpdf_native");
       return result;
     }
 
-    // Safety fallback: if inspection misclassified a selectable-text PDF as scanned,
-    // recover by trying parser extraction before OCR.
-    const parserFallback = native;
-    const parserFallbackUsable = parserFallback.quality.readable && parserFallback.text.trim().length >= 50;
-    if (parserFallbackUsable) {
-      const result = {
-        document_id: documentId,
-        pdf_text_status: "HAS_SELECTABLE_TEXT",
-        ocr_status: "NOT_REQUIRED",
-        ocr_engine: "pdf_text_layer_fallback",
-        ocr_confidence: parserFallback.quality.score,
-        extracted_text: parserFallback.text,
-        extracted_text_length: parserFallback.text.length,
-        page_count: inspection.page_count ?? null,
-        warning: "Inspection classified PDF as likely scanned, parser fallback recovered selectable text",
-        inspection_status: inspectionStatus,
-        parser_fallback_attempted: true,
-        parser_text_length: parserFallback.text.trim().length,
-        parser_text_usable: true,
-        ocr_routing_reason: "inspection_likely_scanned_but_parser_recovered_text",
+    // ── Step 2: Native extraction was empty or unusable — try OCR ──
+    // Optionally run inspection for diagnostics only (not routing authority)
+    let inspectionDiagnostics: Record<string, unknown> = {};
+    try {
+      const inspection = await inspectPdfTextLayerStage(supabase, documentId);
+      inspectionDiagnostics = {
+        inspection_used_for_diagnostics: true,
+        inspection_pdf_text_status: inspection.pdf_text_status ?? null,
+        inspection_pages_with_text: inspection.pages_with_text_count ?? null,
+        inspection_page_count: inspection.page_count ?? null,
       };
-      await persistPdfCheckpoint(result, "pdf_text_layer_fallback");
-      return result;
+    } catch {
+      inspectionDiagnostics = { inspection_used_for_diagnostics: false, inspection_error: "inspection_failed" };
     }
+
+    // Determine clear routing reason based on unpdf result
+    const ocrRoutingReason = nativeTextLength === 0
+      ? "unpdf_returned_empty_text"
+      : "unpdf_returned_unusable_text";
+
+    // Determine pdf_text_status based on actual evidence, not assumptions
+    const pdfTextStatus = nativeTextLength > 0
+      ? "NATIVE_EXTRACTION_LOW_QUALITY"
+      : "NATIVE_EXTRACTION_EMPTY";
 
     const tesseractPdfOcr = await runPdfOcrViaTesseract(bytes, {
       languages: Deno.env.get("DOCUMENT_OCR_LANGS"),
@@ -439,23 +435,23 @@ export async function ocrPdfStage(
         ocr_confidence: tesseractPdfOcr.confidence,
         extracted_text: tesseractPdfOcr.text,
         extracted_text_length: tesseractPdfOcr.text.length,
-        page_count: tesseractPdfOcr.page_count ?? inspection.page_count ?? null,
+        page_count: tesseractPdfOcr.page_count ?? doc.page_count ?? null,
         processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
         processed_page_numbers: tesseractPdfOcr.processed_page_numbers ?? null,
         ocr_languages: tesseractPdfOcr.languages ?? null,
         warning: tesseractPdfOcr.warning ?? null,
         ocr_primary_path: "tesseract.js",
         ocr_fallback_used: false,
-        inspection_status: inspectionStatus,
-        parser_fallback_attempted: true,
-        parser_text_length: parserFallback.text.trim().length,
-        parser_text_usable: false,
-        ocr_routing_reason: "native_text_unusable_routed_to_tesseract",
+        ocr_routing_reason: ocrRoutingReason,
+        native_text_length: nativeTextLength,
+        native_method: native.method,
+        ...inspectionDiagnostics,
       };
       await persistPdfCheckpoint(result, "tesseract.js_pdf_ocr");
       return result;
     }
 
+    // ── Step 3: Tesseract empty — try external OCR service ──
     const externalServiceUrl = Deno.env.get("PDF_OCR_SERVICE_URL") || Deno.env.get("NON_AI_OCR_SERVICE_URL");
     const externalServiceToken = Deno.env.get("PDF_OCR_SERVICE_TOKEN") || Deno.env.get("NON_AI_OCR_SERVICE_TOKEN");
 
@@ -475,7 +471,7 @@ export async function ocrPdfStage(
         ocr_confidence: externalPdfOcr.confidence,
         extracted_text: externalPdfOcr.text,
         extracted_text_length: externalPdfOcr.text.length,
-        page_count: inspection.page_count ?? null,
+        page_count: doc.page_count ?? null,
         ocr_languages: tesseractPdfOcr.languages ?? null,
         ocr_primary_path: "tesseract.js",
         ocr_fallback_used: true,
@@ -484,17 +480,17 @@ export async function ocrPdfStage(
           tesseractPdfOcr.warning,
           externalPdfOcr.warning,
         ].filter(Boolean).join(" | "),
-        inspection_status: inspectionStatus,
-        parser_fallback_attempted: true,
-        parser_text_length: parserFallback.text.trim().length,
-        parser_text_usable: false,
         ocr_routing_reason: "tesseract_empty_routed_to_external_ocr",
+        native_text_length: nativeTextLength,
+        native_method: native.method,
+        ...inspectionDiagnostics,
       };
       await persistPdfCheckpoint(result, "external_pdf_ocr");
       return result;
     }
 
-    // Edge runtime cannot reliably rasterize PDF pages for local OCR; keep explicit partial-deferred output.
+    // ── Step 4: All extraction paths exhausted — no usable text ──
+    // Do NOT use LIKELY_SCANNED; report exactly what happened.
     const unavailableResult = {
       document_id: documentId,
       pdf_text_status: pdfTextStatus,
@@ -504,7 +500,7 @@ export async function ocrPdfStage(
       ocr_confidence: externalPdfOcr.confidence,
       extracted_text: "",
       extracted_text_length: 0,
-      page_count: inspection.page_count ?? null,
+      page_count: doc.page_count ?? null,
       processed_page_count: tesseractPdfOcr.processed_page_count ?? null,
       processed_page_numbers: tesseractPdfOcr.processed_page_numbers ?? null,
       ocr_languages: tesseractPdfOcr.languages ?? null,
@@ -514,22 +510,21 @@ export async function ocrPdfStage(
         [
           tesseractPdfOcr.warning,
           externalPdfOcr.warning,
-          "Scanned-PDF OCR requires successful PDF rasterization in Edge runtime or external fallback",
+          "All PDF extraction paths exhausted (unpdf + tesseract + external OCR)",
         ].filter(Boolean).join(" | "),
-      inspection_status: inspectionStatus,
-      parser_fallback_attempted: true,
-      parser_text_length: parserFallback.text.trim().length,
-      parser_text_usable: false,
-      ocr_routing_reason: "native_and_ocr_unavailable",
+      ocr_routing_reason: ocrRoutingReason,
+      native_text_length: nativeTextLength,
+      native_method: native.method,
       final_failure_reason: "no_extracted_content_after_native_and_ocr_attempts",
+      ...inspectionDiagnostics,
     };
-      await persistPdfCheckpoint(unavailableResult, "pdf_ocr_unavailable");
-      return unavailableResult;
+    await persistPdfCheckpoint(unavailableResult, "pdf_ocr_unavailable");
+    return unavailableResult;
   } catch (error) {
     const warning = error instanceof Error ? error.message : String(error);
-      const failedResult = {
+    const failedResult = {
       document_id: documentId,
-      pdf_text_status: "LIKELY_SCANNED",
+      pdf_text_status: "OCR_STAGE_EXCEPTION",
       ocr_status: "FAILED",
       ocr_engine: "tesseract.js",
       extracted_text: "",
@@ -538,10 +533,6 @@ export async function ocrPdfStage(
       ocr_primary_path: "tesseract.js",
       ocr_fallback_used: false,
       warning: `PDF OCR stage failed safely: ${warning}`,
-      inspection_status: "FAILED",
-      parser_fallback_attempted: true,
-      parser_text_length: 0,
-      parser_text_usable: false,
       ocr_routing_reason: "ocr_stage_exception",
       final_failure_reason: "ocr_stage_exception",
     };
@@ -652,23 +643,40 @@ export async function extractPdfTextStage(
 
   try {
     const bytes = await downloadDocumentSource(supabase, doc);
-    const extraction = await extractPdfTextNonAi(bytes, doc.mime_type, doc.file_name);
-    const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+
+    // Active strategy: unpdf via extractText(). The PDF branch inside
+    // extractText() calls extractPdfTextWithUnpdf() which uses the real
+    // two-step unpdf API (getDocumentProxy → extractText).
+    const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
+    const textLen = extraction.text.trim().length;
+    const usable = extraction.quality.readable && textLen >= 20;
+    const status = usable ? "COMPLETED" : (textLen > 0 ? "LOW_QUALITY" : "EMPTY");
+
+    // Determine a clear pdf_text_status:
+    // - "HAS_SELECTABLE_TEXT" when native extraction produced usable text
+    // - "NATIVE_EXTRACTION_EMPTY" when unpdf returned nothing (not automatically "scanned")
+    // - "NATIVE_EXTRACTION_LOW_QUALITY" when text exists but quality is poor
+    const pdfTextStatus = usable
+      ? "HAS_SELECTABLE_TEXT"
+      : textLen > 0
+        ? "NATIVE_EXTRACTION_LOW_QUALITY"
+        : "NATIVE_EXTRACTION_EMPTY";
 
     await persistExtractionCheckpoint(supabase, doc, {
       stageKey: "document.extract_pdf_text",
       extractorSelected: extraction.method,
       extractorStatus: status,
       extractedText: extraction.text,
-      warning: extraction.text.trim() ? null : extraction.quality_reason,
+      warning: usable ? null : (extraction.quality.reason || "native extraction not usable"),
       metadataPatch: {
         active_pdf_strategy: "unpdf",
         pdf_extraction_method: extraction.method,
-        quality_score: extraction.quality_score,
-        quality_reason: extraction.quality_reason,
-        pdf_text_status: status === "EMPTY" ? "LIKELY_SCANNED" : "HAS_SELECTABLE_TEXT",
-        pdf_text_length: extraction.text.length,
-        pdf_text_usable: status === "COMPLETED",
+        quality_score: extraction.quality.score,
+        quality_reason: extraction.quality.reason,
+        pdf_text_status: pdfTextStatus,
+        pdf_text_length: textLen,
+        pdf_text_usable: usable,
+        ...(extraction.diagnostics ?? {}),
       },
     });
 
@@ -676,11 +684,12 @@ export async function extractPdfTextStage(
       document_id: documentId,
       extraction_status: status,
       extracted_text: extraction.text,
-      extracted_text_length: extraction.text.length,
+      extracted_text_length: textLen,
       method: extraction.method,
       active_pdf_strategy: "unpdf",
-      quality_score: extraction.quality_score,
-      quality_reason: extraction.quality_reason,
+      pdf_text_status: pdfTextStatus,
+      quality_score: extraction.quality.score,
+      quality_reason: extraction.quality.reason,
     };
   } catch (error) {
     const warning = error instanceof Error ? error.message : String(error);
@@ -696,8 +705,8 @@ export async function extractPdfTextStage(
           active_pdf_strategy: "unpdf",
           pdf_extraction_method: "unpdf_error",
           quality_score: 0,
-          quality_reason: "PDF extraction via unpdf failed; OCR fallback should be used",
-          pdf_text_status: "LIKELY_SCANNED",
+          quality_reason: warning,
+          pdf_text_status: "NATIVE_EXTRACTION_FAILED",
           pdf_text_length: 0,
           pdf_text_usable: false,
         },
@@ -713,6 +722,7 @@ export async function extractPdfTextStage(
       extracted_text_length: 0,
       method: "unpdf_error",
       active_pdf_strategy: "unpdf",
+      pdf_text_status: "NATIVE_EXTRACTION_FAILED",
       quality_score: 0,
       quality_reason: warning,
     };
