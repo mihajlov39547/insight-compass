@@ -652,23 +652,40 @@ export async function extractPdfTextStage(
 
   try {
     const bytes = await downloadDocumentSource(supabase, doc);
-    const extraction = await extractPdfTextNonAi(bytes, doc.mime_type, doc.file_name);
-    const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+
+    // Active strategy: unpdf via extractText(). The PDF branch inside
+    // extractText() calls extractPdfTextWithUnpdf() which uses the real
+    // two-step unpdf API (getDocumentProxy → extractText).
+    const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
+    const textLen = extraction.text.trim().length;
+    const usable = extraction.quality.readable && textLen >= 20;
+    const status = usable ? "COMPLETED" : (textLen > 0 ? "LOW_QUALITY" : "EMPTY");
+
+    // Determine a clear pdf_text_status:
+    // - "HAS_SELECTABLE_TEXT" when native extraction produced usable text
+    // - "NATIVE_EXTRACTION_EMPTY" when unpdf returned nothing (not automatically "scanned")
+    // - "NATIVE_EXTRACTION_LOW_QUALITY" when text exists but quality is poor
+    const pdfTextStatus = usable
+      ? "HAS_SELECTABLE_TEXT"
+      : textLen > 0
+        ? "NATIVE_EXTRACTION_LOW_QUALITY"
+        : "NATIVE_EXTRACTION_EMPTY";
 
     await persistExtractionCheckpoint(supabase, doc, {
       stageKey: "document.extract_pdf_text",
       extractorSelected: extraction.method,
       extractorStatus: status,
       extractedText: extraction.text,
-      warning: extraction.text.trim() ? null : extraction.quality_reason,
+      warning: usable ? null : (extraction.quality.reason || "native extraction not usable"),
       metadataPatch: {
         active_pdf_strategy: "unpdf",
         pdf_extraction_method: extraction.method,
-        quality_score: extraction.quality_score,
-        quality_reason: extraction.quality_reason,
-        pdf_text_status: status === "EMPTY" ? "LIKELY_SCANNED" : "HAS_SELECTABLE_TEXT",
-        pdf_text_length: extraction.text.length,
-        pdf_text_usable: status === "COMPLETED",
+        quality_score: extraction.quality.score,
+        quality_reason: extraction.quality.reason,
+        pdf_text_status: pdfTextStatus,
+        pdf_text_length: textLen,
+        pdf_text_usable: usable,
+        ...(extraction.diagnostics ?? {}),
       },
     });
 
@@ -676,11 +693,12 @@ export async function extractPdfTextStage(
       document_id: documentId,
       extraction_status: status,
       extracted_text: extraction.text,
-      extracted_text_length: extraction.text.length,
+      extracted_text_length: textLen,
       method: extraction.method,
       active_pdf_strategy: "unpdf",
-      quality_score: extraction.quality_score,
-      quality_reason: extraction.quality_reason,
+      pdf_text_status: pdfTextStatus,
+      quality_score: extraction.quality.score,
+      quality_reason: extraction.quality.reason,
     };
   } catch (error) {
     const warning = error instanceof Error ? error.message : String(error);
@@ -696,8 +714,8 @@ export async function extractPdfTextStage(
           active_pdf_strategy: "unpdf",
           pdf_extraction_method: "unpdf_error",
           quality_score: 0,
-          quality_reason: "PDF extraction via unpdf failed; OCR fallback should be used",
-          pdf_text_status: "LIKELY_SCANNED",
+          quality_reason: warning,
+          pdf_text_status: "NATIVE_EXTRACTION_FAILED",
           pdf_text_length: 0,
           pdf_text_usable: false,
         },
@@ -713,6 +731,7 @@ export async function extractPdfTextStage(
       extracted_text_length: 0,
       method: "unpdf_error",
       active_pdf_strategy: "unpdf",
+      pdf_text_status: "NATIVE_EXTRACTION_FAILED",
       quality_score: 0,
       quality_reason: warning,
     };

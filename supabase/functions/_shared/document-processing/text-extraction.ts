@@ -61,33 +61,42 @@ async function extractPdfTextLegacyDisabled(
 /**
  * Extract text from a PDF using unpdf (active strategy).
  *
+ * Uses the documented two-step unpdf API:
+ *   1. getDocumentProxy(data) – creates a PDF document proxy from raw bytes
+ *   2. extractText(pdf, { mergePages: true }) – extracts text from the proxy
+ *
  * Returns:
  *   method: "unpdf" | "unpdf_low_quality" | "unpdf_error"
  *   quality: standard TextQuality assessment
- *   diagnostics: optional metadata about the extraction
+ *   diagnostics: metadata about the extraction
  */
 async function extractPdfTextWithUnpdf(
   bytes: Uint8Array
 ): Promise<ExtractTextResult> {
   try {
-    const unpdf = await getUnpdf();
-    const { text: rawText, totalPages } = await unpdf.extractText(
-      bytes,
-      { mergePages: true }
-    );
+    const { getDocumentProxy, extractText: unpdfExtractText } = await getUnpdf();
+
+    // Step 1: Create PDF document proxy from raw bytes
+    const pdf = await getDocumentProxy(new Uint8Array(bytes));
+
+    // Step 2: Extract text from the proxy
+    const { text: rawText, totalPages } = await unpdfExtractText(pdf, { mergePages: true });
 
     const text = typeof rawText === "string"
-      ? rawText
+      ? rawText.trim()
       : Array.isArray(rawText)
-        ? rawText.join("\n\n")
-        : String(rawText ?? "");
+        ? rawText.join("\n\n").trim()
+        : String(rawText ?? "").trim();
 
     const quality = assessTextQuality(text);
     const diagnostics: Record<string, unknown> = {
       active_pdf_strategy: "unpdf",
+      pdf_extraction_method: quality.readable ? "unpdf" : (text.length > 0 ? "unpdf_low_quality" : "unpdf_error"),
       pdf_total_pages: totalPages ?? null,
       pdf_text_length: text.length,
       pdf_text_usable: quality.readable,
+      quality_score: quality.score,
+      quality_reason: quality.reason,
     };
 
     if (quality.readable) {
@@ -96,12 +105,9 @@ async function extractPdfTextWithUnpdf(
 
     return {
       text,
-      method: text.trim().length > 0 ? "unpdf_low_quality" : "unpdf_error",
+      method: text.length > 0 ? "unpdf_low_quality" : "unpdf_error",
       quality,
-      diagnostics: {
-        ...diagnostics,
-        pdf_extraction_method: text.trim().length > 0 ? "unpdf_low_quality" : "unpdf_error",
-      },
+      diagnostics,
     };
   } catch (e) {
     const errorMsg = e instanceof Error ? e.message : String(e);
@@ -113,9 +119,9 @@ async function extractPdfTextWithUnpdf(
       quality: assessTextQuality(""),
       diagnostics: {
         active_pdf_strategy: "unpdf",
+        pdf_extraction_method: "unpdf_error",
         pdf_text_length: 0,
         pdf_text_usable: false,
-        pdf_extraction_method: "unpdf_error",
         unpdf_error: errorMsg,
       },
     };
