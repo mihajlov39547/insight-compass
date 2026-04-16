@@ -661,9 +661,13 @@ export async function extractPdfTextStage(
       extractedText: extraction.text,
       warning: extraction.text.trim() ? null : extraction.quality_reason,
       metadataPatch: {
+        active_pdf_strategy: "unpdf",
+        pdf_extraction_method: extraction.method,
         quality_score: extraction.quality_score,
         quality_reason: extraction.quality_reason,
         pdf_text_status: status === "EMPTY" ? "LIKELY_SCANNED" : "HAS_SELECTABLE_TEXT",
+        pdf_text_length: extraction.text.length,
+        pdf_text_usable: status === "COMPLETED",
       },
     });
 
@@ -673,6 +677,7 @@ export async function extractPdfTextStage(
       extracted_text: extraction.text,
       extracted_text_length: extraction.text.length,
       method: extraction.method,
+      active_pdf_strategy: "unpdf",
       quality_score: extraction.quality_score,
       quality_reason: extraction.quality_reason,
     };
@@ -682,14 +687,18 @@ export async function extractPdfTextStage(
     try {
       await persistExtractionCheckpoint(supabase, doc, {
         stageKey: "document.extract_pdf_text",
-        extractorSelected: "pdf-parse_error",
+        extractorSelected: "unpdf_error",
         extractorStatus: "FAILED",
         extractedText: "",
         warning,
         metadataPatch: {
+          active_pdf_strategy: "unpdf",
+          pdf_extraction_method: "unpdf_error",
           quality_score: 0,
-          quality_reason: "PDF extraction stage failed; OCR fallback should be used",
+          quality_reason: "PDF extraction via unpdf failed; OCR fallback should be used",
           pdf_text_status: "LIKELY_SCANNED",
+          pdf_text_length: 0,
+          pdf_text_usable: false,
         },
       });
     } catch {
@@ -701,7 +710,8 @@ export async function extractPdfTextStage(
       extraction_status: "FAILED",
       extracted_text: "",
       extracted_text_length: 0,
-      method: "pdf-parse_error",
+      method: "unpdf_error",
+      active_pdf_strategy: "unpdf",
       quality_score: 0,
       quality_reason: warning,
     };
