@@ -213,6 +213,11 @@ export async function detectFileTypeStage(
   };
 }
 
+// NOTE: This stage is retained for diagnostics/enrichment only.
+// It is NOT the primary routing decision-maker for PDF extraction.
+// The active routing decision is made by unpdf native extraction
+// in ocrPdfStage(). Inspection results may supplement metadata but
+// should not override the unpdf extraction result.
 export async function inspectPdfTextLayerStage(
   supabase: SupabaseClient,
   documentId: string
