@@ -664,7 +664,7 @@ export function NotebookWorkspace() {
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                 </div>
-                                <span>Thinking…</span>
+                                <span>Working…</span>
                               </div>
                             )}
                           </div>

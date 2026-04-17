@@ -11,6 +11,7 @@ import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/servi
 import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
+import { runTavilyResearch, researchSourcesToUnified, type ResearchModel } from '@/services/research/tavilyResearch';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const TITLE_URL = getFunctionUrl('/functions/v1/generate-chat-title');
@@ -24,6 +25,8 @@ interface UseAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
+  augmentationMode?: 'none' | 'web_search' | 'research';
+  researchModel?: ResearchModel;
 }
 
 interface UnifiedSource {
@@ -127,7 +130,87 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
 
       qc.invalidateQueries({ queryKey: ['messages', chatId] });
 
-      // 2. Retrieve grounding context (documents + optional web)
+      // 1b. RESEARCH MODE — short-circuit normal RAG/LLM path.
+      if (options?.augmentationMode === 'research') {
+        const researchResult = await runTavilyResearch({
+          input: content,
+          model: options.researchModel ?? 'auto',
+          onEvent: (evt) => {
+            if (evt.type === 'content_delta') {
+              setStreamingContent((prev) => (prev ?? '') + evt.text);
+            }
+          },
+        });
+
+        if (researchResult.errored && !researchResult.finalText) {
+          throw new Error(researchResult.errorMessage || 'Research failed');
+        }
+
+        const webSources = researchSourcesToUnified(researchResult.sources).map((s) => ({
+          ...s,
+          type: 'web' as const,
+        }));
+
+        const researchSourceMetadata: AssistantSourceMetadata = {
+          documentSources: [],
+          webSearchResponse: null,
+          webSearchResponseId: null,
+          webSources,
+          combinedSources: webSources,
+          responseLength,
+        };
+
+        await supabase.from('messages').insert({
+          chat_id: chatId,
+          user_id: user.id,
+          role: 'assistant',
+          content: researchResult.finalText,
+          sources: {
+            ...researchSourceMetadata,
+            augmentationMode: 'research',
+            researchProvider: 'tavily',
+            researchModel: options.researchModel ?? 'auto',
+          } as any,
+          model_id: `tavily-research:${options.researchModel ?? 'auto'}`,
+        });
+
+        await supabase
+          .from('chats')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', chatId);
+
+        if (chatName === 'New Chat' && researchResult.finalText) {
+          fetch(TITLE_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({
+              userMessage: content,
+              assistantMessage: researchResult.finalText,
+            }),
+          })
+            .then((r) => r.json())
+            .then(async (data) => {
+              if (data.title) {
+                await supabase
+                  .from('chats')
+                  .update({ name: data.title, updated_at: new Date().toISOString() })
+                  .eq('id', chatId);
+                qc.invalidateQueries({ queryKey: ['chats'] });
+                qc.invalidateQueries({ queryKey: ['allChats'] });
+              }
+            })
+            .catch((e) => console.warn('Auto-rename failed:', e.message));
+        }
+
+        qc.invalidateQueries({ queryKey: ['messages', chatId] });
+        qc.invalidateQueries({ queryKey: ['chats'] });
+        qc.invalidateQueries({ queryKey: ['allChats'] });
+        return;
+      }
+
       const docPromise = projectId
         ? hybridRetrieve({
             query: content,
