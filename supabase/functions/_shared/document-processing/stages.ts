@@ -336,7 +336,7 @@ export async function ocrPdfStage(
     // which uses the real two-step unpdf API.
     const native = await extractText(bytes, doc.mime_type, doc.file_name);
     const nativeTextLength = native.text.trim().length;
-    const nativeUsable = native.quality.readable && nativeTextLength >= 50;
+    const nativeUsable = native.quality.readable && nativeTextLength >= PDF_NATIVE_USABLE_MIN_CHARS;
 
     if (nativeUsable) {
       // Born-digital PDF with readable text — skip OCR entirely
@@ -612,7 +612,7 @@ export async function extractPdfTextStage(
     // two-step unpdf API (getDocumentProxy → extractText).
     const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
     const textLen = extraction.text.trim().length;
-    const usable = extraction.quality.readable && textLen >= 20;
+    const usable = extraction.quality.readable && textLen >= PDF_NATIVE_USABLE_MIN_CHARS;
     const status = usable ? "COMPLETED" : (textLen > 0 ? "LOW_QUALITY" : "EMPTY");
 
     // Determine a clear pdf_text_status:
