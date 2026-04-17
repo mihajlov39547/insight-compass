@@ -142,8 +142,11 @@ export function ChatWorkspace() {
     );
   }
 
+  const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research'>('none');
+
   const handleSend = (payload: ChatSendPayload, modelId?: string) => {
     clearError();
+    setActiveMode(payload.options.augmentationMode ?? 'none');
     sendMessage(payload.text, modelId, payload.options);
   };
 
@@ -194,7 +197,7 @@ export function ChatWorkspace() {
                         <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                         <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
-                      <span>Thinking...</span>
+                      <span>{activeMode === 'research' ? 'Researching the web…' : 'Thinking...'}</span>
                     </div>
                   )}
                 </div>
