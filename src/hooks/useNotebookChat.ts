@@ -9,6 +9,7 @@ import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
+import { runTavilyResearch, researchSourcesToUnified, type ResearchModel } from '@/services/research/tavilyResearch';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const SCOPE_CHECK_URL = getFunctionUrl('/functions/v1/notebook-scope-check');
@@ -50,6 +51,8 @@ interface UseNotebookAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
+  augmentationMode?: 'none' | 'web_search' | 'research';
+  researchModel?: ResearchModel;
 }
 
 interface NotebookSourceMetadata {
