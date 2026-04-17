@@ -2,6 +2,12 @@
 
 // ─── unpdf: Active PDF text-extraction strategy ────────────────────────
 // unpdf is the primary/active PDF extraction path used by the workflow.
+//
+// Shared usability threshold for native PDF text extraction. Used by
+// BOTH extractPdfTextStage() and ocrPdfStage() to make a consistent
+// "native text is good enough — skip OCR" decision.
+export const PDF_NATIVE_USABLE_MIN_CHARS = 50;
+
 let _unpdfMod: any = null;
 async function getUnpdf() {
   if (!_unpdfMod) {
@@ -89,9 +95,24 @@ async function extractPdfTextWithUnpdf(
         : String(rawText ?? "").trim();
 
     const quality = assessTextQuality(text);
+
+    // Three distinct outcomes (no exception):
+    //   - "unpdf"             : readable text extracted
+    //   - "unpdf_low_quality" : text exists but quality is poor
+    //   - "unpdf_empty"       : extraction succeeded but produced no text
+    // Exception path (catch block) is the only one that returns "unpdf_error".
+    let method: "unpdf" | "unpdf_low_quality" | "unpdf_empty" | "unpdf_error";
+    if (quality.readable) {
+      method = "unpdf";
+    } else if (text.length > 0) {
+      method = "unpdf_low_quality";
+    } else {
+      method = "unpdf_empty";
+    }
+
     const diagnostics: Record<string, unknown> = {
       active_pdf_strategy: "unpdf",
-      pdf_extraction_method: quality.readable ? "unpdf" : (text.length > 0 ? "unpdf_low_quality" : "unpdf_error"),
+      pdf_extraction_method: method,
       pdf_total_pages: totalPages ?? null,
       pdf_text_length: text.length,
       pdf_text_usable: quality.readable,
@@ -99,19 +120,10 @@ async function extractPdfTextWithUnpdf(
       quality_reason: quality.reason,
     };
 
-    if (quality.readable) {
-      return { text, method: "unpdf", quality, diagnostics };
-    }
-
-    return {
-      text,
-      method: text.length > 0 ? "unpdf_low_quality" : "unpdf_error",
-      quality,
-      diagnostics,
-    };
+    return { text, method, quality, diagnostics };
   } catch (e) {
     const errorMsg = e instanceof Error ? e.message : String(e);
-    console.warn("[pdf-extraction] unpdf extraction failed:", errorMsg);
+    console.warn("[pdf-extraction] unpdf extraction threw:", errorMsg);
     return {
       text: "",
       method: "unpdf_error",
