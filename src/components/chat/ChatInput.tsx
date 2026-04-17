@@ -271,8 +271,11 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
             )}
 
             <div className="relative px-3 pt-2 pb-1">
-              {variant === 'project' && promptOptions.useWebSearch && (
+              {promptOptions.augmentationMode === 'web_search' && (
                 <Globe className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              )}
+              {promptOptions.augmentationMode === 'research' && (
+                <Telescope className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
               )}
               <Textarea
                 ref={textareaRef}
@@ -282,10 +285,16 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 onKeyDown={handleKeyDown}
-                placeholder={isGenerating ? "Waiting for response..." : "Ask a question about your documents..."}
+                placeholder={
+                  isGenerating
+                    ? 'Waiting for response...'
+                    : promptOptions.augmentationMode === 'research'
+                      ? 'Ask a deep research question…'
+                      : 'Ask a question about your documents...'
+                }
                 className={cn(
-                  "w-full h-auto min-h-0 resize-none border-0 bg-transparent py-2 px-2 leading-5 transition-[height] duration-150 focus-visible:ring-0 focus-visible:ring-offset-0",
-                  variant === 'project' && promptOptions.useWebSearch ? "pl-9" : "pl-2"
+                  'w-full h-auto min-h-0 resize-none border-0 bg-transparent py-2 px-2 leading-5 transition-[height] duration-150 focus-visible:ring-0 focus-visible:ring-offset-0',
+                  promptOptions.augmentationMode !== 'none' ? 'pl-9' : 'pl-2'
                 )}
                 rows={1}
                 disabled={isGenerating}
@@ -294,29 +303,60 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
 
             <div className="flex items-center justify-between gap-2 border-t border-border/70 px-3 py-2 min-w-0 flex-nowrap">
               <div className="shrink-0 flex items-center">
-                {variant === 'project' ? (
-                  <Popover open={configOpen} onOpenChange={setConfigOpen}>
-                    <PopoverTrigger asChild>
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8 rounded-lg border-border/80">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent align="start" className="w-72 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Enable web search for this prompt</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Applies only to the next message.</p>
+                <Popover open={configOpen} onOpenChange={setConfigOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className={cn(
+                        'h-8 w-8 rounded-lg border-border/80',
+                        promptOptions.augmentationMode !== 'none' && 'border-accent text-accent'
+                      )}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-80 p-3 space-y-3">
+                    {variant === 'project' && (
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                            <Globe className="h-3.5 w-3.5" /> Enable web search
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Add a quick web result snippet to ground this prompt.
+                          </p>
                         </div>
                         <Switch
-                          checked={promptOptions.useWebSearch}
-                          onCheckedChange={(checked) => setPromptOptions((prev) => ({ ...prev, useWebSearch: checked }))}
+                          checked={promptOptions.augmentationMode === 'web_search'}
+                          onCheckedChange={(checked) => setAugmentation(checked ? 'web_search' : 'none')}
                         />
                       </div>
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <span className="w-8 h-8 inline-block" />
-                )}
+                    )}
+
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                          <Telescope className="h-3.5 w-3.5" /> Research
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Run deep web research with Tavily for this prompt. Slower, more thorough.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={promptOptions.augmentationMode === 'research'}
+                        onCheckedChange={(checked) => setAugmentation(checked ? 'research' : 'none')}
+                      />
+                    </div>
+
+                    {promptOptions.augmentationMode !== 'none' && (
+                      <p className="text-[10px] text-muted-foreground border-t border-border/60 pt-2">
+                        Applies only to the next message.
+                      </p>
+                    )}
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="shrink-0 flex flex-col items-end gap-1">
