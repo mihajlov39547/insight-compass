@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon } from 'lucide-react';
+import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon, Telescope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -12,8 +12,14 @@ import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+export type PromptAugmentationMode = 'none' | 'web_search' | 'research';
+
 export interface ChatPromptOptions {
+  /** Legacy convenience flag — true iff augmentationMode === 'web_search'. */
   useWebSearch: boolean;
+  augmentationMode: PromptAugmentationMode;
+  /** Tavily research model. Defaults to 'auto'. */
+  researchModel?: 'mini' | 'pro' | 'auto';
 }
 
 export interface PastedImage {
@@ -48,7 +54,11 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
   const [isImproving, setIsImproving] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
-  const [promptOptions, setPromptOptions] = useState<ChatPromptOptions>({ useWebSearch: false });
+  const [promptOptions, setPromptOptions] = useState<ChatPromptOptions>({
+    useWebSearch: false,
+    augmentationMode: 'none',
+    researchModel: 'auto',
+  });
   const [attachedImages, setAttachedImages] = useState<PastedImage[]>([]);
   const { setShowDocuments, setDocumentScope, selectedChatId } = useApp();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -131,9 +141,17 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       );
       setMessage('');
       setAttachedImages([]);
-      setPromptOptions({ useWebSearch: false });
+      setPromptOptions({ useWebSearch: false, augmentationMode: 'none', researchModel: 'auto' });
     }
   };
+
+  const setAugmentation = useCallback((mode: PromptAugmentationMode) => {
+    setPromptOptions((prev) => ({
+      ...prev,
+      augmentationMode: mode,
+      useWebSearch: mode === 'web_search',
+    }));
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
