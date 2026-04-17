@@ -115,6 +115,43 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       });
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
 
+      // 1b. RESEARCH MODE — bypass scope check + RAG. Tavily Research is an explicit external action.
+      if (options?.augmentationMode === 'research') {
+        const researchResult = await runTavilyResearch({
+          input: content,
+          model: options.researchModel ?? 'auto',
+          onEvent: (evt) => {
+            if (evt.type === 'content_delta') {
+              setStreamingContent((prev) => (prev ?? '') + evt.text);
+            }
+          },
+        });
+
+        if (researchResult.errored && !researchResult.finalText) {
+          throw new Error(researchResult.errorMessage || 'Research failed');
+        }
+
+        const webSources = researchSourcesToUnified(researchResult.sources);
+
+        await (supabase.from('notebook_messages' as any) as any).insert({
+          notebook_id: notebookId,
+          user_id: user.id,
+          role: 'assistant',
+          content: researchResult.finalText,
+          model_id: `tavily-research:${options.researchModel ?? 'auto'}`,
+          sources: {
+            items: webSources,
+            responseLength,
+            augmentationMode: 'research',
+            researchProvider: 'tavily',
+            researchModel: options.researchModel ?? 'auto',
+          } as any,
+        });
+
+        qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
+        return;
+      }
+
       // 2. Run notebook scope check (Stage 1 — fast classification)
       let scopeAlignment = 'aligned';
       let scopeReason = '';
