@@ -11,6 +11,7 @@ import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/servi
 import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
+import { runTavilyResearch, researchSourcesToUnified, type ResearchModel } from '@/services/research/tavilyResearch';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const TITLE_URL = getFunctionUrl('/functions/v1/generate-chat-title');
@@ -24,6 +25,8 @@ interface UseAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
+  augmentationMode?: 'none' | 'web_search' | 'research';
+  researchModel?: ResearchModel;
 }
 
 interface UnifiedSource {
