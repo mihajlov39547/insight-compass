@@ -26,6 +26,7 @@ export function ChatWorkspace() {
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research'>('none');
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
@@ -141,8 +142,6 @@ export function ChatWorkspace() {
       </div>
     );
   }
-
-  const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research'>('none');
 
   const handleSend = (payload: ChatSendPayload, modelId?: string) => {
     clearError();
