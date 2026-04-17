@@ -10,6 +10,7 @@ import {
   normalizeForSearch,
   categorizeFile,
   assessTextQuality,
+  PDF_NATIVE_USABLE_MIN_CHARS,
 } from "./text-extraction.ts";
 import { chunkText, estimateTokenCount } from "./chunking.ts";
 import { generateEmbeddingsLocal, localEmbedding } from "./embeddings.ts";
@@ -213,11 +214,15 @@ export async function detectFileTypeStage(
   };
 }
 
-// NOTE: This stage is retained for diagnostics/enrichment only.
-// It is NOT the primary routing decision-maker for PDF extraction.
-// The active routing decision is made by unpdf native extraction
-// in ocrPdfStage(). Inspection results may supplement metadata but
-// should not override the unpdf extraction result.
+// NOTE: This stage is STRICTLY DIAGNOSTIC.
+// It does NOT decide PDF routing and does NOT classify a PDF as scanned.
+// The active routing decision is made by unpdf native extraction in
+// ocrPdfStage(). Inspection results are surfaced under inspection_*
+// fields and `pdf_text_status` is intentionally limited to neutral,
+// diagnostic-only labels here:
+//   "INSPECTION_HAS_TEXT_LAYER", "INSPECTION_NO_TEXT_LAYER",
+//   "INSPECTION_FAILED", "NOT_PDF".
+// LIKELY_SCANNED is no longer emitted by this stage as a routing signal.
 export async function inspectPdfTextLayerStage(
   supabase: SupabaseClient,
   documentId: string
@@ -231,6 +236,7 @@ export async function inspectPdfTextLayerStage(
       pdf_text_status: "NOT_PDF",
       page_count: doc.page_count ?? null,
       has_selectable_text: false,
+      inspection_used_for_diagnostics: true,
     };
   }
 
@@ -241,80 +247,37 @@ export async function inspectPdfTextLayerStage(
       maxPages: Number(Deno.env.get("DOCUMENT_PDF_INSPECTION_MAX_PAGES") || 50),
     });
 
-    const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
-    const extractionSuggestsText = extraction.quality.readable && extraction.text.trim().length >= 50;
-    const hasSelectableText = detailed.has_selectable_text || extractionSuggestsText;
-    const pdfTextStatus = hasSelectableText ? "HAS_SELECTABLE_TEXT" : "LIKELY_SCANNED";
+    const hasSelectableText = detailed.has_selectable_text === true;
 
     return {
       document_id: documentId,
-      pdf_text_status: pdfTextStatus,
+      // Diagnostic-only: never claim "LIKELY_SCANNED" — that conclusion
+      // belongs to the OCR/native-extraction routing pipeline, not to
+      // PDF.js text-layer inspection alone.
+      pdf_text_status: hasSelectableText
+        ? "INSPECTION_HAS_TEXT_LAYER"
+        : "INSPECTION_NO_TEXT_LAYER",
       page_count: detailed.page_count || doc.page_count || null,
       has_selectable_text: hasSelectableText,
-      inspection_method: extraction.method,
-      inspection_quality_score: extraction.quality.score,
-      inspection_quality_reason: extraction.quality.reason,
       pages_with_text_count: detailed.pages_with_text_count,
       pages_without_text_count: detailed.pages_without_text_count,
       inspection_warning: detailed.warning ?? null,
       inspection_status: "COMPLETED",
-      parser_fallback_attempted: false,
-      parser_text_length: extraction.text.trim().length,
-      parser_text_usable: extractionSuggestsText,
-      ocr_routing_reason: hasSelectableText
-        ? "inspection_or_parser_found_usable_text"
-        : "no_usable_native_text_detected",
+      inspection_used_for_diagnostics: true,
     };
   } catch (error) {
     const warning = error instanceof Error ? error.message : String(error);
-
-    // Best-effort parser fallback even when detailed inspection fails.
-    // This avoids misrouting born-digital PDFs into OCR-only paths.
-    try {
-      const bytes = await downloadDocumentSource(supabase, doc);
-      const extraction = await extractText(bytes, doc.mime_type, doc.file_name);
-      const fallbackHasText = extraction.quality.readable && extraction.text.trim().length >= 50;
-
-      return {
-        document_id: documentId,
-        pdf_text_status: fallbackHasText ? "HAS_SELECTABLE_TEXT" : "LIKELY_SCANNED",
-        page_count: doc.page_count ?? null,
-        has_selectable_text: fallbackHasText,
-        inspection_method: fallbackHasText ? `${extraction.method}_fallback_after_inspection_error` : "inspection_error",
-        inspection_quality_score: extraction.quality.score,
-        inspection_quality_reason: fallbackHasText
-          ? "Inspection failed but native parser extracted readable text"
-          : "PDF inspection failed; falling back to OCR path",
-        pages_with_text_count: fallbackHasText ? 1 : 0,
-        pages_without_text_count: doc.page_count ?? 0,
-        inspection_warning: warning,
-        inspection_status: "FAILED_FALLBACK_APPLIED",
-        parser_fallback_attempted: true,
-        parser_text_length: extraction.text.trim().length,
-        parser_text_usable: fallbackHasText,
-        ocr_routing_reason: fallbackHasText
-          ? "inspection_failed_parser_recovered_usable_text"
-          : "inspection_failed_parser_empty_or_unusable",
-      };
-    } catch {
-      return {
-        document_id: documentId,
-        pdf_text_status: "LIKELY_SCANNED",
-        page_count: doc.page_count ?? null,
-        has_selectable_text: false,
-        inspection_method: "inspection_error",
-        inspection_quality_score: 0,
-        inspection_quality_reason: "PDF inspection failed; falling back to OCR path",
-        pages_with_text_count: 0,
-        pages_without_text_count: doc.page_count ?? 0,
-        inspection_warning: warning,
-        inspection_status: "FAILED",
-        parser_fallback_attempted: true,
-        parser_text_length: 0,
-        parser_text_usable: false,
-        ocr_routing_reason: "inspection_and_parser_failed",
-      };
-    }
+    return {
+      document_id: documentId,
+      pdf_text_status: "INSPECTION_FAILED",
+      page_count: doc.page_count ?? null,
+      has_selectable_text: false,
+      pages_with_text_count: 0,
+      pages_without_text_count: doc.page_count ?? 0,
+      inspection_warning: warning,
+      inspection_status: "FAILED",
+      inspection_used_for_diagnostics: true,
+    };
   }
 }
 
