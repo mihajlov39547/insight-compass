@@ -9,6 +9,10 @@ import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/services/web-search';
 import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
+import {
+  WebSearchTraceBuilder,
+  type WebSearchTraceState,
+} from '@/services/web-search/webSearchTrace';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
 import {
@@ -101,6 +105,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
   const [error, setError] = useState<string | null>(null);
   const [failedPrompt, setFailedPrompt] = useState<{ content: string; modelId: string; options?: MessageOptions; webSearchResponse?: WebSearchResponse | null } | null>(null);
   const [researchTrace, setResearchTrace] = useState<ResearchTraceState | null>(null);
+  const [webSearchTrace, setWebSearchTrace] = useState<WebSearchTraceState | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions, cachedWebSearchResponse?: WebSearchResponse | null) => {
     if (!user || !chatId || isGenerating) return;
@@ -117,6 +122,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
     setIsGenerating(true);
     setStreamingContent('');
     setResearchTrace(null);
+    setWebSearchTrace(null);
     let resolvedWebSearchResponse: WebSearchResponse | null = cachedWebSearchResponse ?? null;
 
     try {
@@ -230,6 +236,13 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
           })
         : Promise.resolve([]);
 
+      // Build a lightweight trace for the web-search flow so the UI can show
+      // staged progress (Searching → Found sources → Preparing answer → Complete).
+      const wsTraceBuilder = options?.useWebSearch
+        ? new WebSearchTraceBuilder((state) => setWebSearchTrace(state))
+        : null;
+      if (wsTraceBuilder) wsTraceBuilder.start();
+
       const webPromise = options?.useWebSearch
         ? (cachedWebSearchResponse
             ? Promise.resolve(cachedWebSearchResponse)
@@ -254,9 +267,16 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
             })),
             responseTime: webResponseRaw.responseTime,
             requestId: webResponseRaw.requestId,
+            answer: webResponseRaw.answer ?? null,
+            rawProviderResponse: webResponseRaw.rawProviderResponse,
           }
         : null;
       resolvedWebSearchResponse = savedWebSearchResponse;
+
+      if (wsTraceBuilder) {
+        wsTraceBuilder.results(savedWebSearchResponse);
+        wsTraceBuilder.preparingAnswer();
+      }
 
       // Persist web search response to dedicated table and capture ID
       let webSearchResponseId: string | null = null;
@@ -394,13 +414,29 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         }
       }
 
-      // 6. Persist assistant message with sources
+      // Mark trace done before persisting so the saved snapshot reflects completion.
+      if (wsTraceBuilder) wsTraceBuilder.done();
+      const finalWebSearchTrace = wsTraceBuilder ? wsTraceBuilder.snapshot() : null;
+
+      // 6. Persist assistant message with sources (+ optional web search trace metadata)
+      const persistedSourcesPayload = finalWebSearchTrace
+        ? ({
+            ...assistantSourceMetadata,
+            augmentationMode: 'web_search',
+            webSearchProvider: 'tavily',
+            tavilyAnswer: savedWebSearchResponse?.answer ?? null,
+            includeAnswer: 'advanced',
+            searchDepth: 'basic',
+            webSearchTrace: finalWebSearchTrace,
+          } as any)
+        : (assistantSourceMetadata as any);
+
       await supabase.from('messages').insert({
         chat_id: chatId,
         user_id: user.id,
         role: 'assistant',
         content: fullContent,
-        sources: assistantSourceMetadata as any,
+        sources: persistedSourcesPayload,
         model_id: resolvedModel,
       });
 
@@ -450,6 +486,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       setIsGenerating(false);
       setStreamingContent(null);
       setResearchTrace(null);
+      setWebSearchTrace(null);
     }
   }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
@@ -464,5 +501,5 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
     setFailedPrompt(null);
   }, []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace, webSearchTrace };
 }

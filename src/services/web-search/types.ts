@@ -14,5 +14,7 @@ export interface WebSearchResponse {
   results: WebSearchResult[];
   responseTime?: number;
   requestId?: string;
+  /** Tavily's advanced answer string when include_answer is enabled. */
+  answer?: string | null;
   rawProviderResponse?: Record<string, unknown>;
 }

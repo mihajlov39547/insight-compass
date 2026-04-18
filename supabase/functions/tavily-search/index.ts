@@ -8,7 +8,8 @@ const corsHeaders = {
 };
 
 const SEARCH_DEPTH = "basic" as const;
-const MAX_RESULTS = 3;
+const INCLUDE_ANSWER = "advanced" as const;
+const INCLUDE_FAVICON = true;
 const MAX_QUERY_LENGTH = 500;
 const TAVILY_API_URL = "https://api.tavily.com/search";
 
@@ -74,10 +75,11 @@ serve(async (req) => {
       );
     }
 
-    // Keep payload constants centralized for easy future extension.
+    // Tavily request configuration. Defer to Tavily defaults for max_results.
     const searchConfig = {
       search_depth: SEARCH_DEPTH,
-      max_results: MAX_RESULTS,
+      include_answer: INCLUDE_ANSWER,
+      include_favicon: INCLUDE_FAVICON,
     };
 
     const upstream = await fetch(TAVILY_API_URL, {
@@ -104,22 +106,21 @@ serve(async (req) => {
     const data = await upstream.json().catch(() => ({}));
     const rawResults: TavilyResult[] = Array.isArray(data?.results) ? data.results : [];
 
-    const results: NormalizedResult[] = rawResults
-      .slice(0, MAX_RESULTS)
-      .map((r) => ({
-        title: typeof r?.title === "string" ? r.title : "",
-        url: typeof r?.url === "string" ? r.url : "",
-        content: typeof r?.content === "string" ? r.content : "",
-        score: typeof r?.score === "number" ? r.score : 0,
-        favicon: typeof r?.favicon === "string" ? r.favicon : null,
-      }));
+    const results: NormalizedResult[] = rawResults.map((r) => ({
+      title: typeof r?.title === "string" ? r.title : "",
+      url: typeof r?.url === "string" ? r.url : "",
+      content: typeof r?.content === "string" ? r.content : "",
+      score: typeof r?.score === "number" ? r.score : 0,
+      favicon: typeof r?.favicon === "string" ? r.favicon : null,
+    }));
 
     return new Response(
       JSON.stringify({
         provider: "tavily",
         query: rawQuery,
         searchDepth: SEARCH_DEPTH,
-        maxResults: MAX_RESULTS,
+        includeAnswer: INCLUDE_ANSWER,
+        includeFavicon: INCLUDE_FAVICON,
         results,
         responseTime: typeof data?.response_time === "number" ? data.response_time : 0,
         requestId: typeof data?.request_id === "string" ? data.request_id : null,

@@ -19,7 +19,7 @@ interface TavilyEdgeResponse {
   answer?: string | null;
   followUpQuestions?: string[] | null;
   images?: unknown[];
-  rawResponse?: Record<string, unknown>;
+  rawResponse?: Record<string, unknown> & { answer?: string | null };
 }
 
 export class TavilyWebSearchService implements IWebSearchService {
@@ -43,13 +43,25 @@ export class TavilyWebSearchService implements IWebSearchService {
       favicon: typeof item?.favicon === 'string' ? item.favicon : undefined,
     }));
 
+    const answer =
+      typeof safeData.answer === 'string'
+        ? safeData.answer
+        : typeof (safeData.rawResponse as Record<string, unknown> | undefined)?.answer === 'string'
+          ? ((safeData.rawResponse as Record<string, unknown>).answer as string)
+          : null;
+
     return {
       provider: 'tavily',
       query: typeof safeData.query === 'string' ? safeData.query : query,
       results,
       responseTime: typeof safeData.responseTime === 'number' ? safeData.responseTime : undefined,
       requestId: typeof safeData.requestId === 'string' ? safeData.requestId : undefined,
-      rawProviderResponse: safeData.rawResponse ?? safeData as unknown as Record<string, unknown>,
+      answer,
+      // Preserve the full upstream payload (including `answer`, `images`, etc.) so
+      // downstream features (web search trace, persistence) can read Tavily's
+      // advanced answer without making a second request.
+      rawProviderResponse:
+        safeData.rawResponse ?? (safeData as unknown as Record<string, unknown>),
     };
   }
 }

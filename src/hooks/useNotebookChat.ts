@@ -15,6 +15,12 @@ import {
   type ResearchModel,
   type ResearchTraceState,
 } from '@/services/research/tavilyResearch';
+import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/services/web-search';
+import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
+import {
+  WebSearchTraceBuilder,
+  type WebSearchTraceState,
+} from '@/services/web-search/webSearchTrace';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const SCOPE_CHECK_URL = getFunctionUrl('/functions/v1/notebook-scope-check');
@@ -95,6 +101,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [researchTrace, setResearchTrace] = useState<ResearchTraceState | null>(null);
+  const [webSearchTrace, setWebSearchTrace] = useState<WebSearchTraceState | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions) => {
     if (!user || !notebookId || isGenerating) return;
@@ -109,17 +116,21 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
     setIsGenerating(true);
     setStreamingContent('');
     setResearchTrace(null);
+    setWebSearchTrace(null);
 
     try {
       // 1. Persist user message
-      await (supabase.from('notebook_messages' as any) as any).insert({
-        notebook_id: notebookId,
-        user_id: user.id,
-        role: 'user',
-        content,
-        model_id: resolvedModel,
-        sources: [],
-      });
+      const { data: insertedUserMessage } = await (supabase.from('notebook_messages' as any) as any)
+        .insert({
+          notebook_id: notebookId,
+          user_id: user.id,
+          role: 'user',
+          content,
+          model_id: resolvedModel,
+          sources: [],
+        })
+        .select('id')
+        .single();
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
 
       // 1b. RESEARCH MODE — bypass scope check + RAG. Tavily Research is an explicit external action.
@@ -217,8 +228,78 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         return;
       }
 
-      // 3. Retrieve notebook doc context (Stage 2)
-      const { sources, contextForAI } = await retrieveNotebookDocContext(notebookId, content);
+      // 3. Retrieve notebook doc context (Stage 2) + optional web search (parallel).
+      const wsTraceBuilder = options?.useWebSearch
+        ? new WebSearchTraceBuilder((state) => setWebSearchTrace(state))
+        : null;
+      if (wsTraceBuilder) wsTraceBuilder.start();
+
+      const docTaskPromise = retrieveNotebookDocContext(notebookId, content);
+      const webPromise: Promise<WebSearchResponse | null> = options?.useWebSearch
+        ? searchWeb(content).catch((err) => {
+            console.warn('Notebook web search failed:', err);
+            return null;
+          })
+        : Promise.resolve(null);
+
+      const [{ sources, contextForAI }, webResponseRaw] = await Promise.all([
+        docTaskPromise,
+        webPromise,
+      ]);
+
+      const savedWebSearchResponse: WebSearchResponse | null = webResponseRaw
+        ? {
+            provider: webResponseRaw.provider,
+            query: webResponseRaw.query,
+            results: (webResponseRaw.results || []).map((r: WebSearchResult) => ({
+              title: r.title,
+              url: r.url,
+              content: r.content,
+              score: r.score,
+              favicon: r.favicon,
+            })),
+            responseTime: webResponseRaw.responseTime,
+            requestId: webResponseRaw.requestId,
+            answer: webResponseRaw.answer ?? null,
+            rawProviderResponse: webResponseRaw.rawProviderResponse,
+          }
+        : null;
+
+      if (wsTraceBuilder) {
+        wsTraceBuilder.results(savedWebSearchResponse);
+        wsTraceBuilder.preparingAnswer();
+      }
+
+      // Persist web search response to dedicated table (best-effort).
+      if (options?.useWebSearch && savedWebSearchResponse && insertedUserMessage?.id) {
+        const rawProvider =
+          savedWebSearchResponse.rawProviderResponse ??
+          (savedWebSearchResponse as unknown as Record<string, unknown>);
+        try {
+          await persistWebSearchResponse({
+            userId: user.id,
+            projectId: null,
+            chatId: null,
+            messageId: insertedUserMessage.id,
+            query: content,
+            normalizedResponse: savedWebSearchResponse,
+            rawResponse: rawProvider,
+          });
+        } catch (err) {
+          console.warn('Notebook web search persistence failed:', err);
+        }
+      }
+
+      const webContext = savedWebSearchResponse?.results
+        ? savedWebSearchResponse.results.map((r, idx) => ({
+            id: `web-${idx}`,
+            title: r.title,
+            url: r.url,
+            content: r.content,
+            score: r.score,
+            favicon: r.favicon,
+          }))
+        : [];
 
       // 4. Load history (trimmed by retrieval depth)
       const { data: history } = await (supabase.from('notebook_messages' as any) as any)
@@ -236,7 +317,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         ? '\n\nIMPORTANT: The user\'s question is only partially related to this notebook\'s topic. Answer ONLY using this notebook\'s sources. Do not use general knowledge. Start your response with a brief note that you\'re answering strictly from the notebook\'s sources.'
         : '';
 
-      // 5. Call AI
+      // 5. Call AI (notebookScope ON unless web search is enabled — web grounding overrides scope-only mode)
       const projectDesc = (notebookDescription || `Notebook: ${notebookName || 'Untitled'}`) + partialWarning;
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
@@ -249,7 +330,8 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           projectDescription: projectDesc,
           model: resolvedModel,
           documentContext: contextForAI,
-          notebookScope: true,
+          webContext,
+          notebookScope: !options?.useWebSearch,
           responseLength,
           messageOptions: options ?? { useWebSearch: false },
         }),
@@ -289,6 +371,37 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         }
       }
 
+      // Mark trace done before persistence so the saved snapshot reflects completion.
+      if (wsTraceBuilder) wsTraceBuilder.done();
+      const finalWebSearchTrace = wsTraceBuilder ? wsTraceBuilder.snapshot() : null;
+
+      // Merge web sources into the items list so they render in SourceAttribution.
+      const webItems = savedWebSearchResponse?.results
+        ? savedWebSearchResponse.results.map((r, idx) => ({
+            id: `web-${idx}`,
+            type: 'web' as const,
+            title: r.title || 'Web result',
+            snippet: (r.content || '').slice(0, 250),
+            relevance: Math.max(0, Math.min(1, typeof r.score === 'number' ? r.score : 0.5)),
+            url: r.url,
+            favicon: r.favicon ?? null,
+            score: typeof r.score === 'number' ? r.score : undefined,
+          }))
+        : [];
+
+      const persistedSourcesPayload: any = {
+        items: [...(sources.length > 0 ? sources : []), ...webItems],
+        responseLength,
+      };
+      if (finalWebSearchTrace) {
+        persistedSourcesPayload.augmentationMode = 'web_search';
+        persistedSourcesPayload.webSearchProvider = 'tavily';
+        persistedSourcesPayload.tavilyAnswer = savedWebSearchResponse?.answer ?? null;
+        persistedSourcesPayload.includeAnswer = 'advanced';
+        persistedSourcesPayload.searchDepth = 'basic';
+        persistedSourcesPayload.webSearchTrace = finalWebSearchTrace;
+      }
+
       // 6. Persist assistant message
       await (supabase.from('notebook_messages' as any) as any).insert({
         notebook_id: notebookId,
@@ -296,10 +409,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         role: 'assistant',
         content: fullContent,
         model_id: resolvedModel,
-        sources: {
-          items: sources.length > 0 ? sources : [],
-          responseLength,
-        } as NotebookSourceMetadata,
+        sources: persistedSourcesPayload,
       });
 
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
@@ -364,12 +474,13 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       setIsGenerating(false);
       setStreamingContent(null);
       setResearchTrace(null);
+      setWebSearchTrace(null);
     }
   }, [user, notebookId, notebookName, notebookDescription, isGenerating, qc, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace };
 }
 
 export function useDeleteNotebookMessagePair() {
