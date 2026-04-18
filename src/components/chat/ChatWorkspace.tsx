@@ -16,6 +16,7 @@ import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
 import { Badge } from '@/components/ui/badge';
 import { ResearchTrace } from './ResearchTrace';
+import { WebSearchTrace } from './WebSearchTrace';
 import type { ChatSendPayload } from './ChatInput';
 
 export function ChatWorkspace() {
@@ -36,7 +37,7 @@ export function ChatWorkspace() {
   const { data: myRole } = useItemRole(selectedProjectId, 'project');
   const permissions = getItemPermissions(myRole);
 
-  const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace } = useAIChat({
+  const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace, webSearchTrace } = useAIChat({
     chatId: selectedChatId ?? '',
     chatName: selectedChat?.name,
     projectId: selectedProjectId ?? undefined,
@@ -190,6 +191,9 @@ export function ChatWorkspace() {
                 {activeMode === 'research' && researchTrace && (
                   <ResearchTrace trace={researchTrace} isLive defaultExpanded />
                 )}
+                {activeMode === 'web_search' && webSearchTrace && (
+                  <WebSearchTrace trace={webSearchTrace} isLive defaultExpanded />
+                )}
                 <div className="chat-bubble-assistant">
                   {streamingContent ? (
                     <div className="text-sm leading-relaxed whitespace-pre-wrap">{streamingContent}</div>
@@ -200,7 +204,7 @@ export function ChatWorkspace() {
                         <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                         <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
-                      <span>{activeMode === 'research' ? 'Researching the web…' : 'Thinking...'}</span>
+                      <span>{activeMode === 'research' ? 'Researching the web…' : activeMode === 'web_search' ? 'Searching the web…' : 'Thinking...'}</span>
                     </div>
                   )}
                 </div>

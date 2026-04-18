@@ -318,22 +318,20 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="start" className="w-80 p-3 space-y-3">
-                    {variant === 'project' && (
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                            <Globe className="h-3.5 w-3.5" /> Enable web search
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Add a quick web result snippet to ground this prompt.
-                          </p>
-                        </div>
-                        <Switch
-                          checked={promptOptions.augmentationMode === 'web_search'}
-                          onCheckedChange={(checked) => setAugmentation(checked ? 'web_search' : 'none')}
-                        />
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                          <Globe className="h-3.5 w-3.5" /> Enable web search
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Add quick web result snippets to ground this prompt.
+                        </p>
                       </div>
-                    )}
+                      <Switch
+                        checked={promptOptions.augmentationMode === 'web_search'}
+                        onCheckedChange={(checked) => setAugmentation(checked ? 'web_search' : 'none')}
+                      />
+                    </div>
 
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">

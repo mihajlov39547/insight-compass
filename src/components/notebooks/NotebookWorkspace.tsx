@@ -39,7 +39,9 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { ResearchTrace } from '@/components/chat/ResearchTrace';
+import { WebSearchTrace } from '@/components/chat/WebSearchTrace';
 import type { ResearchTraceState } from '@/services/research/tavilyResearch';
+import type { WebSearchTraceState } from '@/services/web-search/webSearchTrace';
 import { supabase } from '@/integrations/supabase/client';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
@@ -107,7 +109,7 @@ export function NotebookWorkspace() {
   const deleteNote = useDeleteNotebookNote();
   const { mutate: deleteMessagePair } = useDeleteNotebookMessagePair();
 
-  const { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace } = useNotebookAIChat({
+  const { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace } = useNotebookAIChat({
     notebookId: selectedNotebookId ?? '',
     notebookName: notebook?.name,
     notebookDescription: notebook?.description,
@@ -660,6 +662,9 @@ export function NotebookWorkspace() {
                           {activeMode === 'research' && researchTrace && (
                             <ResearchTrace trace={researchTrace} isLive defaultExpanded />
                           )}
+                          {activeMode === 'web_search' && webSearchTrace && (
+                            <WebSearchTrace trace={webSearchTrace} isLive defaultExpanded />
+                          )}
                           <div className="chat-bubble-assistant">
                             {streamingContent ? (
                               <div className="text-sm leading-relaxed whitespace-pre-wrap">{streamingContent}</div>
@@ -670,7 +675,7 @@ export function NotebookWorkspace() {
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                 </div>
-                                <span>{activeMode === 'research' ? 'Researching the web…' : 'Working…'}</span>
+                                <span>{activeMode === 'research' ? 'Researching the web…' : activeMode === 'web_search' ? 'Searching the web…' : 'Working…'}</span>
                               </div>
                             )}
                           </div>

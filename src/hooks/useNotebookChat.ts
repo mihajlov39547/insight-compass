@@ -474,12 +474,13 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       setIsGenerating(false);
       setStreamingContent(null);
       setResearchTrace(null);
+      setWebSearchTrace(null);
     }
   }, [user, notebookId, notebookName, notebookDescription, isGenerating, qc, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace };
 }
 
 export function useDeleteNotebookMessagePair() {
