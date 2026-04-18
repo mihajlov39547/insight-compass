@@ -9,7 +9,12 @@ import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
-import { runTavilyResearch, researchSourcesToUnified, type ResearchModel } from '@/services/research/tavilyResearch';
+import {
+  runTavilyResearch,
+  researchSourcesToUnified,
+  type ResearchModel,
+  type ResearchTraceState,
+} from '@/services/research/tavilyResearch';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const SCOPE_CHECK_URL = getFunctionUrl('/functions/v1/notebook-scope-check');
@@ -89,6 +94,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [researchTrace, setResearchTrace] = useState<ResearchTraceState | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions) => {
     if (!user || !notebookId || isGenerating) return;
@@ -102,6 +108,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
     setError(null);
     setIsGenerating(true);
     setStreamingContent('');
+    setResearchTrace(null);
 
     try {
       // 1. Persist user message
@@ -125,6 +132,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
               setStreamingContent((prev) => (prev ?? '') + evt.text);
             }
           },
+          onTrace: (state) => setResearchTrace(state),
         });
 
         if (researchResult.errored && !researchResult.finalText) {
@@ -145,6 +153,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
             augmentationMode: 'research',
             researchProvider: 'tavily',
             researchModel: options.researchModel ?? 'auto',
+            researchTrace: researchResult.trace,
           } as any,
         });
 
@@ -354,12 +363,13 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
     } finally {
       setIsGenerating(false);
       setStreamingContent(null);
+      setResearchTrace(null);
     }
   }, [user, notebookId, notebookName, notebookDescription, isGenerating, qc, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace };
 }
 
 export function useDeleteNotebookMessagePair() {
