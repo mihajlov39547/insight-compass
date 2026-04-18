@@ -11,7 +11,12 @@ import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/servi
 import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
-import { runTavilyResearch, researchSourcesToUnified, type ResearchModel } from '@/services/research/tavilyResearch';
+import {
+  runTavilyResearch,
+  researchSourcesToUnified,
+  type ResearchModel,
+  type ResearchTraceState,
+} from '@/services/research/tavilyResearch';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const TITLE_URL = getFunctionUrl('/functions/v1/generate-chat-title');
@@ -95,6 +100,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [failedPrompt, setFailedPrompt] = useState<{ content: string; modelId: string; options?: MessageOptions; webSearchResponse?: WebSearchResponse | null } | null>(null);
+  const [researchTrace, setResearchTrace] = useState<ResearchTraceState | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions, cachedWebSearchResponse?: WebSearchResponse | null) => {
     if (!user || !chatId || isGenerating) return;
@@ -110,6 +116,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
     setFailedPrompt(null);
     setIsGenerating(true);
     setStreamingContent('');
+    setResearchTrace(null);
     let resolvedWebSearchResponse: WebSearchResponse | null = cachedWebSearchResponse ?? null;
 
     try {
@@ -140,6 +147,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
               setStreamingContent((prev) => (prev ?? '') + evt.text);
             }
           },
+          onTrace: (state) => setResearchTrace(state),
         });
 
         if (researchResult.errored && !researchResult.finalText) {
@@ -170,6 +178,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
             augmentationMode: 'research',
             researchProvider: 'tavily',
             researchModel: options.researchModel ?? 'auto',
+            researchTrace: researchResult.trace,
           } as any,
           model_id: `tavily-research:${options.researchModel ?? 'auto'}`,
         });
@@ -440,6 +449,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
     } finally {
       setIsGenerating(false);
       setStreamingContent(null);
+      setResearchTrace(null);
     }
   }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
@@ -454,5 +464,5 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
     setFailedPrompt(null);
   }, []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace };
 }
