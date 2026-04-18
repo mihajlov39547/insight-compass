@@ -101,6 +101,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [researchTrace, setResearchTrace] = useState<ResearchTraceState | null>(null);
+  const [webSearchTrace, setWebSearchTrace] = useState<WebSearchTraceState | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions) => {
     if (!user || !notebookId || isGenerating) return;
@@ -115,6 +116,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
     setIsGenerating(true);
     setStreamingContent('');
     setResearchTrace(null);
+    setWebSearchTrace(null);
 
     try {
       // 1. Persist user message
