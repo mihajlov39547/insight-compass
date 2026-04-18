@@ -884,6 +884,13 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
     return null;
   })();
 
+  const persistedResearchTrace: ResearchTraceState | null = (() => {
+    if (!rawSources || typeof rawSources !== 'object' || Array.isArray(rawSources)) return null;
+    const t = (rawSources as any).researchTrace;
+    if (!t || typeof t !== 'object' || !Array.isArray(t.events)) return null;
+    return t as ResearchTraceState;
+  })();
+
   return (
     <div className={cn("flex gap-3 animate-fade-in", isUser ? "flex-row-reverse" : "flex-row")}>
       <Avatar className={cn("h-8 w-8 shrink-0", isUser ? "bg-primary" : "bg-gradient-to-br from-accent to-accent/70")}>
@@ -896,6 +903,10 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
           {isUser ? <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div> : <MarkdownContent content={message.content} />}
         </div>
 
+        {/* Persisted research trace */}
+        {!isUser && persistedResearchTrace && (
+          <ResearchTrace trace={persistedResearchTrace} />
+        )}
         {/* Sources */}
         {!isUser && sourceItems.length > 0 && (
           <SourceAttribution
