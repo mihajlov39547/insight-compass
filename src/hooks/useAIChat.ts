@@ -414,13 +414,29 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         }
       }
 
-      // 6. Persist assistant message with sources
+      // Mark trace done before persisting so the saved snapshot reflects completion.
+      if (wsTraceBuilder) wsTraceBuilder.done();
+      const finalWebSearchTrace = wsTraceBuilder ? wsTraceBuilder.snapshot() : null;
+
+      // 6. Persist assistant message with sources (+ optional web search trace metadata)
+      const persistedSourcesPayload = finalWebSearchTrace
+        ? ({
+            ...assistantSourceMetadata,
+            augmentationMode: 'web_search',
+            webSearchProvider: 'tavily',
+            tavilyAnswer: savedWebSearchResponse?.answer ?? null,
+            includeAnswer: 'advanced',
+            searchDepth: 'basic',
+            webSearchTrace: finalWebSearchTrace,
+          } as any)
+        : (assistantSourceMetadata as any);
+
       await supabase.from('messages').insert({
         chat_id: chatId,
         user_id: user.id,
         role: 'assistant',
         content: fullContent,
-        sources: assistantSourceMetadata as any,
+        sources: persistedSourcesPayload,
         model_id: resolvedModel,
       });
 
@@ -470,6 +486,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       setIsGenerating(false);
       setStreamingContent(null);
       setResearchTrace(null);
+      setWebSearchTrace(null);
     }
   }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
@@ -484,5 +501,5 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
     setFailedPrompt(null);
   }, []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace, webSearchTrace };
 }
