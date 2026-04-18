@@ -371,6 +371,37 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         }
       }
 
+      // Mark trace done before persistence so the saved snapshot reflects completion.
+      if (wsTraceBuilder) wsTraceBuilder.done();
+      const finalWebSearchTrace = wsTraceBuilder ? wsTraceBuilder.snapshot() : null;
+
+      // Merge web sources into the items list so they render in SourceAttribution.
+      const webItems = savedWebSearchResponse?.results
+        ? savedWebSearchResponse.results.map((r, idx) => ({
+            id: `web-${idx}`,
+            type: 'web' as const,
+            title: r.title || 'Web result',
+            snippet: (r.content || '').slice(0, 250),
+            relevance: Math.max(0, Math.min(1, typeof r.score === 'number' ? r.score : 0.5)),
+            url: r.url,
+            favicon: r.favicon ?? null,
+            score: typeof r.score === 'number' ? r.score : undefined,
+          }))
+        : [];
+
+      const persistedSourcesPayload: any = {
+        items: [...(sources.length > 0 ? sources : []), ...webItems],
+        responseLength,
+      };
+      if (finalWebSearchTrace) {
+        persistedSourcesPayload.augmentationMode = 'web_search';
+        persistedSourcesPayload.webSearchProvider = 'tavily';
+        persistedSourcesPayload.tavilyAnswer = savedWebSearchResponse?.answer ?? null;
+        persistedSourcesPayload.includeAnswer = 'advanced';
+        persistedSourcesPayload.searchDepth = 'basic';
+        persistedSourcesPayload.webSearchTrace = finalWebSearchTrace;
+      }
+
       // 6. Persist assistant message
       await (supabase.from('notebook_messages' as any) as any).insert({
         notebook_id: notebookId,
@@ -378,10 +409,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         role: 'assistant',
         content: fullContent,
         model_id: resolvedModel,
-        sources: {
-          items: sources.length > 0 ? sources : [],
-          responseLength,
-        } as NotebookSourceMetadata,
+        sources: persistedSourcesPayload,
       });
 
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
