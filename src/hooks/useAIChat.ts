@@ -9,6 +9,10 @@ import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/services/web-search';
 import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
+import {
+  WebSearchTraceBuilder,
+  type WebSearchTraceState,
+} from '@/services/web-search/webSearchTrace';
 import { getResponseLengthConfig, normalizeResponseLength } from '@/lib/ai/responseLength';
 import type { ResponseLengthStrategy } from '@/lib/ai/responseLength';
 import {
@@ -101,6 +105,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
   const [error, setError] = useState<string | null>(null);
   const [failedPrompt, setFailedPrompt] = useState<{ content: string; modelId: string; options?: MessageOptions; webSearchResponse?: WebSearchResponse | null } | null>(null);
   const [researchTrace, setResearchTrace] = useState<ResearchTraceState | null>(null);
+  const [webSearchTrace, setWebSearchTrace] = useState<WebSearchTraceState | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions, cachedWebSearchResponse?: WebSearchResponse | null) => {
     if (!user || !chatId || isGenerating) return;
@@ -117,6 +122,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
     setIsGenerating(true);
     setStreamingContent('');
     setResearchTrace(null);
+    setWebSearchTrace(null);
     let resolvedWebSearchResponse: WebSearchResponse | null = cachedWebSearchResponse ?? null;
 
     try {
