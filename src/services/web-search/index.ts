@@ -19,3 +19,13 @@ export type { WebSearchProvider, WebSearchResponse, WebSearchResult } from './ty
 export type { IWebSearchService } from './provider';
 export { persistWebSearchResponse } from './persistWebSearch';
 export type { PersistWebSearchParams, PersistedWebSearch } from './persistWebSearch';
+export {
+  WebSearchTraceBuilder,
+  toWebSearchSourcePreviews,
+} from './webSearchTrace';
+export type {
+  WebSearchPhase,
+  WebSearchTraceEvent,
+  WebSearchTraceState,
+  WebSearchSourcePreview,
+} from './webSearchTrace';
