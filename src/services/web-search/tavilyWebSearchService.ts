@@ -19,7 +19,7 @@ interface TavilyEdgeResponse {
   answer?: string | null;
   followUpQuestions?: string[] | null;
   images?: unknown[];
-  rawResponse?: Record<string, unknown>;
+  rawResponse?: Record<string, unknown> & { answer?: string | null };
 }
 
 export class TavilyWebSearchService implements IWebSearchService {
