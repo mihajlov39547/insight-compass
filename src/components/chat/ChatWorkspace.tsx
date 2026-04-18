@@ -15,6 +15,7 @@ import { ProjectChatGrid } from '@/components/dashboard/ProjectChatGrid';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
 import { Badge } from '@/components/ui/badge';
+import { ResearchTrace } from './ResearchTrace';
 import type { ChatSendPayload } from './ChatInput';
 
 export function ChatWorkspace() {
@@ -35,7 +36,7 @@ export function ChatWorkspace() {
   const { data: myRole } = useItemRole(selectedProjectId, 'project');
   const permissions = getItemPermissions(myRole);
 
-  const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt } = useAIChat({
+  const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace } = useAIChat({
     chatId: selectedChatId ?? '',
     chatName: selectedChat?.name,
     projectId: selectedProjectId ?? undefined,
@@ -186,6 +187,9 @@ export function ChatWorkspace() {
                 </AvatarFallback>
               </Avatar>
               <div className="max-w-[75%] space-y-2">
+                {activeMode === 'research' && researchTrace && (
+                  <ResearchTrace trace={researchTrace} isLive defaultExpanded />
+                )}
                 <div className="chat-bubble-assistant">
                   {streamingContent ? (
                     <div className="text-sm leading-relaxed whitespace-pre-wrap">{streamingContent}</div>

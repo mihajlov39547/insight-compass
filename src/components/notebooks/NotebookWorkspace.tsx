@@ -38,6 +38,8 @@ import { modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
+import { ResearchTrace } from '@/components/chat/ResearchTrace';
+import type { ResearchTraceState } from '@/services/research/tavilyResearch';
 import { supabase } from '@/integrations/supabase/client';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
@@ -105,11 +107,12 @@ export function NotebookWorkspace() {
   const deleteNote = useDeleteNotebookNote();
   const { mutate: deleteMessagePair } = useDeleteNotebookMessagePair();
 
-  const { sendMessage, isGenerating, streamingContent, error, clearError } = useNotebookAIChat({
+  const { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace } = useNotebookAIChat({
     notebookId: selectedNotebookId ?? '',
     notebookName: notebook?.name,
     notebookDescription: notebook?.description,
   });
+  const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research'>('none');
 
   const [showUpload, setShowUpload] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
@@ -653,7 +656,10 @@ export function NotebookWorkspace() {
                             <Sparkles className="h-4 w-4" />
                           </AvatarFallback>
                         </Avatar>
-                        <div className="max-w-[75%]">
+                        <div className="max-w-[75%] space-y-2">
+                          {activeMode === 'research' && researchTrace && (
+                            <ResearchTrace trace={researchTrace} isLive defaultExpanded />
+                          )}
                           <div className="chat-bubble-assistant">
                             {streamingContent ? (
                               <div className="text-sm leading-relaxed whitespace-pre-wrap">{streamingContent}</div>
@@ -664,7 +670,7 @@ export function NotebookWorkspace() {
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                 </div>
-                                <span>Working…</span>
+                                <span>{activeMode === 'research' ? 'Researching the web…' : 'Working…'}</span>
                               </div>
                             )}
                           </div>
@@ -702,6 +708,7 @@ export function NotebookWorkspace() {
                 {permissions.canSendMessages ? (
                   <ChatInput
                     onSend={(payload, modelId) => {
+                      setActiveMode(payload.options.augmentationMode ?? 'none');
                       sendMessage(payload.text, modelId, payload.options);
                     }}
                     isGenerating={isGenerating}
@@ -877,6 +884,13 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
     return null;
   })();
 
+  const persistedResearchTrace: ResearchTraceState | null = (() => {
+    if (!rawSources || typeof rawSources !== 'object' || Array.isArray(rawSources)) return null;
+    const t = (rawSources as any).researchTrace;
+    if (!t || typeof t !== 'object' || !Array.isArray(t.events)) return null;
+    return t as ResearchTraceState;
+  })();
+
   return (
     <div className={cn("flex gap-3 animate-fade-in", isUser ? "flex-row-reverse" : "flex-row")}>
       <Avatar className={cn("h-8 w-8 shrink-0", isUser ? "bg-primary" : "bg-gradient-to-br from-accent to-accent/70")}>
@@ -889,6 +903,10 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
           {isUser ? <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div> : <MarkdownContent content={message.content} />}
         </div>
 
+        {/* Persisted research trace */}
+        {!isUser && persistedResearchTrace && (
+          <ResearchTrace trace={persistedResearchTrace} />
+        )}
         {/* Sources */}
         {!isUser && sourceItems.length > 0 && (
           <SourceAttribution
