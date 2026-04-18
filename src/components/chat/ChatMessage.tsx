@@ -6,6 +6,8 @@ import { Message, modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { MarkdownContent } from './MarkdownContent';
 import { SourceAttribution, SourceItem } from './SourceAttribution';
+import { ResearchTrace } from './ResearchTrace';
+import type { ResearchTraceState } from '@/services/research/tavilyResearch';
 import { useApp } from '@/contexts/useApp';
 
 interface ChatMessageProps {
@@ -49,6 +51,14 @@ export function ChatMessage({ message, onRetry, onDeletePair }: ChatMessageProps
   };
 
   const responseLengthLabel = getResponseLengthLabel(message.sources);
+
+  const persistedResearchTrace: ResearchTraceState | null = (() => {
+    const raw = message.sources as any;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const t = raw.researchTrace;
+    if (!t || typeof t !== 'object' || !Array.isArray(t.events)) return null;
+    return t as ResearchTraceState;
+  })();
 
   const handleCopyMarkdown = async () => {
     try {
@@ -104,6 +114,11 @@ export function ChatMessage({ message, onRetry, onDeletePair }: ChatMessageProps
         )}>
           {isUser ? <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div> : <MarkdownContent content={message.content} />}
         </div>
+
+        {/* Persisted research trace */}
+        {!isUser && persistedResearchTrace && (
+          <ResearchTrace trace={persistedResearchTrace} />
+        )}
 
         {/* Sources */}
         {!isUser && sourceItems.length > 0 && (
