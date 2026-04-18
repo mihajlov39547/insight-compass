@@ -49,7 +49,11 @@ export class TavilyWebSearchService implements IWebSearchService {
       results,
       responseTime: typeof safeData.responseTime === 'number' ? safeData.responseTime : undefined,
       requestId: typeof safeData.requestId === 'string' ? safeData.requestId : undefined,
-      rawProviderResponse: safeData.rawResponse ?? safeData as unknown as Record<string, unknown>,
+      // Preserve the full upstream payload (including `answer`, `images`, etc.) so
+      // downstream features (web search trace, persistence) can read Tavily's
+      // advanced answer without making a second request.
+      rawProviderResponse:
+        safeData.rawResponse ?? (safeData as unknown as Record<string, unknown>),
     };
   }
 }
