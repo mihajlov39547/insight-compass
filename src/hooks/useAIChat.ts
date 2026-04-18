@@ -236,6 +236,13 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
           })
         : Promise.resolve([]);
 
+      // Build a lightweight trace for the web-search flow so the UI can show
+      // staged progress (Searching → Found sources → Preparing answer → Complete).
+      const wsTraceBuilder = options?.useWebSearch
+        ? new WebSearchTraceBuilder((state) => setWebSearchTrace(state))
+        : null;
+      if (wsTraceBuilder) wsTraceBuilder.start();
+
       const webPromise = options?.useWebSearch
         ? (cachedWebSearchResponse
             ? Promise.resolve(cachedWebSearchResponse)
@@ -260,9 +267,16 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
             })),
             responseTime: webResponseRaw.responseTime,
             requestId: webResponseRaw.requestId,
+            answer: webResponseRaw.answer ?? null,
+            rawProviderResponse: webResponseRaw.rawProviderResponse,
           }
         : null;
       resolvedWebSearchResponse = savedWebSearchResponse;
+
+      if (wsTraceBuilder) {
+        wsTraceBuilder.results(savedWebSearchResponse);
+        wsTraceBuilder.preparingAnswer();
+      }
 
       // Persist web search response to dedicated table and capture ID
       let webSearchResponseId: string | null = null;
