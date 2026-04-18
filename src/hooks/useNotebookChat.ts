@@ -15,6 +15,12 @@ import {
   type ResearchModel,
   type ResearchTraceState,
 } from '@/services/research/tavilyResearch';
+import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/services/web-search';
+import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
+import {
+  WebSearchTraceBuilder,
+  type WebSearchTraceState,
+} from '@/services/web-search/webSearchTrace';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const SCOPE_CHECK_URL = getFunctionUrl('/functions/v1/notebook-scope-check');
