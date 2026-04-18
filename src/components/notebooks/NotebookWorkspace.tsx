@@ -38,6 +38,8 @@ import { modelOptions } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
+import { ResearchTrace } from '@/components/chat/ResearchTrace';
+import type { ResearchTraceState } from '@/services/research/tavilyResearch';
 import { supabase } from '@/integrations/supabase/client';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
@@ -105,11 +107,12 @@ export function NotebookWorkspace() {
   const deleteNote = useDeleteNotebookNote();
   const { mutate: deleteMessagePair } = useDeleteNotebookMessagePair();
 
-  const { sendMessage, isGenerating, streamingContent, error, clearError } = useNotebookAIChat({
+  const { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace } = useNotebookAIChat({
     notebookId: selectedNotebookId ?? '',
     notebookName: notebook?.name,
     notebookDescription: notebook?.description,
   });
+  const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research'>('none');
 
   const [showUpload, setShowUpload] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
@@ -653,7 +656,10 @@ export function NotebookWorkspace() {
                             <Sparkles className="h-4 w-4" />
                           </AvatarFallback>
                         </Avatar>
-                        <div className="max-w-[75%]">
+                        <div className="max-w-[75%] space-y-2">
+                          {activeMode === 'research' && researchTrace && (
+                            <ResearchTrace trace={researchTrace} isLive defaultExpanded />
+                          )}
                           <div className="chat-bubble-assistant">
                             {streamingContent ? (
                               <div className="text-sm leading-relaxed whitespace-pre-wrap">{streamingContent}</div>
@@ -664,7 +670,7 @@ export function NotebookWorkspace() {
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                 </div>
-                                <span>Working…</span>
+                                <span>{activeMode === 'research' ? 'Researching the web…' : 'Working…'}</span>
                               </div>
                             )}
                           </div>
@@ -702,6 +708,7 @@ export function NotebookWorkspace() {
                 {permissions.canSendMessages ? (
                   <ChatInput
                     onSend={(payload, modelId) => {
+                      setActiveMode(payload.options.augmentationMode ?? 'none');
                       sendMessage(payload.text, modelId, payload.options);
                     }}
                     isGenerating={isGenerating}
