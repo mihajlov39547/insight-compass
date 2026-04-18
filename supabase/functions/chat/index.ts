@@ -10,13 +10,13 @@ const corsHeaders = {
 const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 
 const VALID_MODELS = new Set([
-  "google/gemini-3-flash-preview",
-  "google/gemini-3.1-pro-preview",
-  "google/gemini-2.5-pro",
+  "gemma-4-26b-a4b-it",
+  "gemma-4-31b-it",
   "google/gemini-2.5-flash",
   "google/gemini-2.5-flash-lite",
+  "google/gemini-2.5-pro",
+  "google/gemini-3-flash-preview",
   "openai/gpt-5-mini",
-  "openai/gpt-5-nano",
 ]);
 
 interface DocumentContext {
@@ -83,10 +83,14 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const resolvedModel = (model && VALID_MODELS.has(model)) ? model : DEFAULT_MODEL;
+    const requestedModel = typeof model === "string" ? model.trim() : "";
+    const resolvedModel = !requestedModel || requestedModel === "auto"
+      ? DEFAULT_MODEL
+      : (VALID_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL);
     const responseLengthConfig = getResponseLengthConfig(responseLength);
     console.log("[chat:length] resolved", {
       incoming: responseLength ?? null,
+      requestedModel: requestedModel || null,
       strategy: responseLengthConfig.strategy,
       maxOutputTokens: responseLengthConfig.maxOutputTokens,
       model: resolvedModel,

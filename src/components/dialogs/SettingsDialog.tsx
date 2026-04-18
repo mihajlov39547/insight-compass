@@ -33,7 +33,11 @@ export function SettingsDialog() {
 
   useEffect(() => {
     if (showSettings && settings) {
-      setLocal({ ...settings });
+      const hasPreferredModel = modelOptions.some((m) => m.id === settings.preferred_model);
+      setLocal({
+        ...settings,
+        preferred_model: hasPreferredModel ? settings.preferred_model : 'auto',
+      });
     }
   }, [showSettings, settings]);
 

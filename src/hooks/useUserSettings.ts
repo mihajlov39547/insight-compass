@@ -25,7 +25,7 @@ const DEFAULTS: GeneralSettings = {
   retrieval_depth: 'Medium',
   cite_sources: true,
   auto_summarize: true,
-  preferred_model: 'google/gemini-3-flash-preview',
+  preferred_model: 'auto',
   show_suggested_prompts: true,
   enable_answer_formatting: true,
   layout_preference: 'comfortable',
