@@ -16,9 +16,11 @@ interface ChatMessageProps {
   message: Message;
   onRetry?: () => void;
   onDeletePair?: (id: string) => void;
+  onExtract?: (selections: Array<{ url: string; title?: string | null; favicon?: string | null }>, question: string | null) => void | Promise<void>;
+  isExtracting?: boolean;
 }
 
-export function ChatMessage({ message, onRetry, onDeletePair }: ChatMessageProps) {
+export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtracting }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const { setActiveView, setSelectedProjectId } = useApp();
   const [copied, setCopied] = React.useState(false);
@@ -137,7 +139,12 @@ export function ChatMessage({ message, onRetry, onDeletePair }: ChatMessageProps
 
         {/* Sources */}
         {!isUser && sourceItems.length > 0 && (
-          <SourceAttribution sources={sourceItems} onSourceClick={handleSourceClick} />
+          <SourceAttribution
+            sources={sourceItems}
+            onSourceClick={handleSourceClick}
+            onExtract={onExtract}
+            isExtracting={isExtracting}
+          />
         )}
 
         {/* Timestamp + AI indicator */}
