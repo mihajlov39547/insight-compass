@@ -130,6 +130,11 @@ export function ChatMessage({ message, onRetry, onDeletePair }: ChatMessageProps
           <ResearchTrace trace={persistedResearchTrace} />
         )}
 
+        {/* Persisted web search trace */}
+        {!isUser && !persistedResearchTrace && persistedWebSearchTrace && (
+          <WebSearchTrace trace={persistedWebSearchTrace} />
+        )}
+
         {/* Sources */}
         {!isUser && sourceItems.length > 0 && (
           <SourceAttribution sources={sourceItems} onSourceClick={handleSourceClick} />
