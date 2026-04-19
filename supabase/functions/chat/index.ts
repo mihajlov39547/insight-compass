@@ -10,13 +10,15 @@ const corsHeaders = {
 const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 
 const VALID_MODELS = new Set([
-  "gemma-4-26b-a4b-it",
-  "gemma-4-31b-it",
   "google/gemini-2.5-flash",
   "google/gemini-2.5-flash-lite",
   "google/gemini-2.5-pro",
   "google/gemini-3-flash-preview",
+  "google/gemini-3.1-pro-preview",
+  "openai/gpt-5",
   "openai/gpt-5-mini",
+  "openai/gpt-5-nano",
+  "openai/gpt-5.2",
 ]);
 
 interface DocumentContext {
