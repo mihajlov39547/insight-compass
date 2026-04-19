@@ -62,6 +62,14 @@ export function ChatMessage({ message, onRetry, onDeletePair }: ChatMessageProps
     return t as ResearchTraceState;
   })();
 
+  const persistedWebSearchTrace: WebSearchTraceState | null = (() => {
+    const raw = message.sources as any;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const t = raw.webSearchTrace;
+    if (!t || typeof t !== 'object' || !Array.isArray(t.events)) return null;
+    return t as WebSearchTraceState;
+  })();
+
   const handleCopyMarkdown = async () => {
     try {
       await navigator.clipboard.writeText(message.content);
