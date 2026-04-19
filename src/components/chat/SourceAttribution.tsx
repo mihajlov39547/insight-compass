@@ -51,15 +51,16 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
   const [questionDraft, setQuestionDraft] = useState('');
   const [questionOpen, setQuestionOpen] = useState(false);
 
-  if (!sources || sources.length === 0) return null;
-
-  // Group by document (or url for web).
-  const grouped = new Map<string, SourceItem[]>();
-  for (const s of sources) {
-    const key = s.type === 'web' ? (s.url || s.id) : (s.documentId || s.id);
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)!.push(s);
-  }
+  // Group by document (or url for web). Memoized so hooks below don't depend on a fresh Map each render.
+  const grouped = useMemo(() => {
+    const map = new Map<string, SourceItem[]>();
+    for (const s of sources ?? []) {
+      const key = s.type === 'web' ? (s.url || s.id) : (s.documentId || s.id);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(s);
+    }
+    return map;
+  }, [sources]);
 
   const extractCandidates = useMemo(() => {
     // Only web sources are extract-eligible. One entry per unique URL.
