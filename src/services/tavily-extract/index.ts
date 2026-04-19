@@ -107,11 +107,18 @@ export function formatExtractMarkdown(
       } catch {
         domain = '';
       }
-      const headline = `Source ${i + 1}: ${displayTitle}${domain ? ` — ${domain}` : ''}`;
       const content = (r.raw_content || '').trim();
-      const safeContent = content.length > 0 ? content : '_No readable content extracted._';
-      // Use <details> so long extracts collapse cleanly.
-      lines.push(`<details>\n<summary>${headline}</summary>\n\n${safeContent}\n\n</details>`);
+      const MAX_PER_SOURCE = 2400;
+      const truncated = content.length > MAX_PER_SOURCE;
+      const display = truncated ? `${content.slice(0, MAX_PER_SOURCE)}…` : content;
+      const safeContent = display.length > 0 ? display : '_No readable content extracted._';
+      lines.push(`#### Source ${i + 1}: ${displayTitle}${domain ? ` — ${domain}` : ''}`);
+      lines.push('');
+      lines.push(safeContent);
+      if (truncated) {
+        lines.push('');
+        lines.push(`_Truncated. View original: ${r.url}_`);
+      }
       lines.push('');
     }
   }
