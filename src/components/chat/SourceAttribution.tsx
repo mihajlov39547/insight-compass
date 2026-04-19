@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
-import { FileText, ChevronDown, ChevronRight, ExternalLink, Globe } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { FileText, ChevronDown, ChevronRight, ExternalLink, Globe, ScanText, X, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -22,27 +26,121 @@ export interface SourceItem {
   score?: number;
 }
 
+export interface ExtractSelection {
+  url: string;
+  title?: string | null;
+  favicon?: string | null;
+}
+
 interface SourceAttributionProps {
   sources: SourceItem[];
   onSourceClick?: (source: SourceItem) => void;
+  /**
+   * When provided, enables a "Select to extract" mode that lets users pick one
+   * or more web sources and trigger Tavily Extract. Only web sources can be
+   * selected (extract works on URLs).
+   */
+  onExtract?: (selections: ExtractSelection[], question: string | null) => void | Promise<void>;
+  isExtracting?: boolean;
 }
 
-export function SourceAttribution({ sources, onSourceClick }: SourceAttributionProps) {
+export function SourceAttribution({ sources, onSourceClick, onExtract, isExtracting }: SourceAttributionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
+  const [questionDraft, setQuestionDraft] = useState('');
+  const [questionOpen, setQuestionOpen] = useState(false);
+
+  // Group by document (or url for web). Memoized so hooks below don't depend on a fresh Map each render.
+  const grouped = useMemo(() => {
+    const map = new Map<string, SourceItem[]>();
+    for (const s of sources ?? []) {
+      const key = s.type === 'web' ? (s.url || s.id) : (s.documentId || s.id);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(s);
+    }
+    return map;
+  }, [sources]);
+
+  const extractCandidates = useMemo(() => {
+    // Only web sources are extract-eligible. One entry per unique URL.
+    const seen = new Set<string>();
+    const out: ExtractSelection[] = [];
+    for (const s of sources) {
+      const isWeb = s.type === 'web' || (!!s.url && !s.documentId);
+      if (!isWeb) continue;
+      const url = s.url?.trim();
+      if (!url || seen.has(url)) continue;
+      seen.add(url);
+      out.push({ url, title: s.title, favicon: s.favicon ?? null });
+    }
+    return out;
+  }, [sources]);
+
+  const extractEnabled = !!onExtract && extractCandidates.length > 0;
+
+  const toggleSelect = (url: string) => {
+    setSelectedUrls((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedUrls(new Set(extractCandidates.map((c) => c.url)));
+  };
+
+  const clearSelection = () => {
+    setSelectedUrls(new Set());
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedUrls(new Set());
+    setQuestionDraft('');
+    setQuestionOpen(false);
+  };
+
+  const runExtract = async (withQuestion: boolean) => {
+    if (!onExtract || selectedUrls.size === 0) return;
+    const selections = extractCandidates.filter((c) => selectedUrls.has(c.url));
+    const q = withQuestion ? questionDraft.trim() : '';
+    setQuestionOpen(false);
+    await onExtract(selections, q.length > 0 ? q : null);
+    exitSelectMode();
+  };
 
   if (!sources || sources.length === 0) return null;
 
-  // Group by document
-  const grouped = new Map<string, SourceItem[]>();
-  for (const s of sources) {
-    const key = s.type === 'web' ? (s.url || s.id) : (s.documentId || s.id);
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)!.push(s);
-  }
-
   return (
     <div className="space-y-1.5 px-1 animate-fade-in">
-      <p className="text-xs font-medium text-muted-foreground">Sources used</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground">Sources used</p>
+        {extractEnabled && (
+          selectMode ? (
+            <button
+              type="button"
+              onClick={exitSelectMode}
+              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+              aria-label="Cancel selection"
+            >
+              <X className="h-3 w-3" /> Cancel
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setSelectMode(true)}
+              className="inline-flex items-center gap-1 text-[10px] text-accent hover:underline"
+              aria-label="Select sources to extract"
+            >
+              <ScanText className="h-3 w-3" /> Select to extract
+            </button>
+          )
+        )}
+      </div>
+
       <div className="space-y-1">
         {Array.from(grouped.entries()).map(([docId, items]) => {
           const primary = items[0];
@@ -59,13 +157,37 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
             }
           })() : null;
 
+          const url = primary.url?.trim() || '';
+          const isExtractable = selectMode && isWeb && !!url;
+          const isSelected = isExtractable && selectedUrls.has(url);
+
           return (
             <Collapsible key={docId} open={isExpanded} onOpenChange={(open) => setExpandedId(open ? docId : null)}>
-              <div className="rounded-lg border border-border/60 bg-muted/30 overflow-hidden">
+              <div className={cn(
+                "rounded-lg border overflow-hidden transition-colors",
+                isSelected ? "border-accent/60 bg-accent/5" : "border-border/60 bg-muted/30"
+              )}>
                 <div className="flex items-center gap-1.5">
+                  {selectMode && (
+                    <div className="pl-2 py-1.5">
+                      {isExtractable ? (
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleSelect(url)}
+                          aria-label={`Select ${displayTitle}`}
+                          className="h-3.5 w-3.5"
+                        />
+                      ) : (
+                        <div className="h-3.5 w-3.5 rounded-sm border border-dashed border-muted-foreground/40" title="Not extractable" />
+                      )}
+                    </div>
+                  )}
                   {hasSnippet && (
                     <CollapsibleTrigger asChild>
-                      <button className="p-1.5 hover:bg-muted/60 rounded-l-lg transition-colors text-muted-foreground">
+                      <button className={cn(
+                        "p-1.5 hover:bg-muted/60 transition-colors text-muted-foreground",
+                        !selectMode && "rounded-l-lg"
+                      )}>
                         {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                       </button>
                     </CollapsibleTrigger>
@@ -73,9 +195,14 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
                   <button
                     className={cn(
                       "flex-1 flex items-center gap-2 py-1.5 pr-2 text-left transition-colors hover:bg-muted/60",
-                      !hasSnippet && "pl-2 rounded-l-lg"
+                      !hasSnippet && !selectMode && "pl-2 rounded-l-lg",
+                      !hasSnippet && selectMode && "pl-2"
                     )}
                     onClick={() => {
+                      if (selectMode && isExtractable) {
+                        toggleSelect(url);
+                        return;
+                      }
                       if (isWeb && primary.url) {
                         window.open(primary.url, '_blank', 'noopener,noreferrer');
                         return;
@@ -110,7 +237,7 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
                     <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 h-4 font-normal">
                       {Math.round(primary.relevance * 100)}%
                     </Badge>
-                    {(isWeb || onSourceClick) && (
+                    {!selectMode && (isWeb || onSourceClick) && (
                       <ExternalLink className="h-3 w-3 text-muted-foreground/50 shrink-0" />
                     )}
                   </button>
@@ -156,6 +283,85 @@ export function SourceAttribution({ sources, onSourceClick }: SourceAttributionP
           );
         })}
       </div>
+
+      {selectMode && (
+        <div className="flex items-center flex-wrap gap-2 pt-1.5 px-1 animate-fade-in border-t border-border/40 mt-1">
+          <span className="text-[10px] text-muted-foreground">
+            {selectedUrls.size} of {extractCandidates.length} selected
+          </span>
+          <button
+            type="button"
+            onClick={selectedUrls.size === extractCandidates.length ? clearSelection : selectAll}
+            className="text-[10px] text-accent hover:underline"
+            disabled={isExtracting}
+          >
+            {selectedUrls.size === extractCandidates.length ? 'Clear' : 'Select all'}
+          </button>
+          <div className="ml-auto flex items-center gap-1.5">
+            <Popover open={questionOpen} onOpenChange={setQuestionOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[10px] gap-1"
+                  disabled={selectedUrls.size === 0 || isExtracting}
+                >
+                  Extract + ask
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3" align="end">
+                <div className="space-y-2">
+                  <p className="text-xs font-medium">Optional follow-up question</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Tavily will extract the selected sources and an AI will answer using only that content.
+                  </p>
+                  <Input
+                    autoFocus
+                    placeholder="e.g. What are the main takeaways?"
+                    value={questionDraft}
+                    onChange={(e) => setQuestionDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && questionDraft.trim()) {
+                        e.preventDefault();
+                        runExtract(true);
+                      }
+                    }}
+                    className="h-8 text-xs"
+                    maxLength={1000}
+                  />
+                  <div className="flex justify-end gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-[10px]"
+                      onClick={() => setQuestionOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7 text-[10px] bg-accent text-accent-foreground hover:bg-accent/90"
+                      onClick={() => runExtract(true)}
+                      disabled={!questionDraft.trim() || isExtracting}
+                    >
+                      Run
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button
+              size="sm"
+              className="h-7 text-[10px] bg-accent text-accent-foreground hover:bg-accent/90 gap-1"
+              onClick={() => runExtract(false)}
+              disabled={selectedUrls.size === 0 || isExtracting}
+            >
+              {isExtracting ? <Loader2 className="h-3 w-3 animate-spin" /> : <ScanText className="h-3 w-3" />}
+              {isExtracting ? 'Extracting…' : 'Extract'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

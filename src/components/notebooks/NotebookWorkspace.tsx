@@ -45,6 +45,8 @@ import type { WebSearchTraceState } from '@/services/web-search/webSearchTrace';
 import { supabase } from '@/integrations/supabase/client';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
+import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
+import type { ExtractSelection } from '@/components/chat/SourceAttribution';
 
 function NotebookSourceStatus({ doc }: { doc: DbDocument }) {
   const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
@@ -867,12 +869,14 @@ export function NotebookWorkspace() {
 }
 
 /* --- Notebook Chat Message --- */
-function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair }: {
+function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting }: {
   message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
   canSaveToNotes: boolean;
   onDeletePair?: (id: string) => void;
+  onExtract?: (selections: ExtractSelection[], question: string | null) => void | Promise<void>;
+  isExtracting?: boolean;
 }) {
   const isUser = message.role === 'user';
   const modelName = message.model_id ? modelOptions.find(m => m.id === message.model_id)?.name ?? message.model_id.split('/').pop() : null;
@@ -939,6 +943,8 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
               favicon: s.favicon ?? null,
               score: s.score,
             }))}
+            onExtract={onExtract}
+            isExtracting={isExtracting}
           />
         )}
 
