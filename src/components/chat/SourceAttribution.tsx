@@ -112,6 +112,8 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
     exitSelectMode();
   };
 
+  if (!sources || sources.length === 0) return null;
+
   return (
     <div className="space-y-1.5 px-1 animate-fade-in">
       <div className="flex items-center justify-between gap-2">
