@@ -17,6 +17,7 @@ import { getItemPermissions } from '@/lib/permissions';
 import { Badge } from '@/components/ui/badge';
 import { ResearchTrace } from './ResearchTrace';
 import { WebSearchTrace } from './WebSearchTrace';
+import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import type { ChatSendPayload } from './ChatInput';
 
 export function ChatWorkspace() {
@@ -43,6 +44,8 @@ export function ChatWorkspace() {
     projectId: selectedProjectId ?? undefined,
     projectDescription: selectedProject?.description,
   });
+
+  const { runExtract, extractingMessageId } = useExtractFollowUp();
 
   const previousUserMessage = useMemo(() => {
     const userMsgs = messages.filter(m => m.role === 'user');
@@ -169,14 +172,22 @@ export function ChatWorkspace() {
             />
           ) : (
             messages.map((message) => (
-              <ChatMessage key={message.id} message={{
-                id: message.id,
-                role: message.role,
-                content: message.content,
-                sources: message.sources || [],
-                timestamp: message.created_at,
-                modelId: message.model_id ?? undefined,
-              }} onDeletePair={(id) => selectedChatId && deleteMessagePair({ messageId: id, chatId: selectedChatId })} />
+              <ChatMessage
+                key={message.id}
+                message={{
+                  id: message.id,
+                  role: message.role,
+                  content: message.content,
+                  sources: message.sources || [],
+                  timestamp: message.created_at,
+                  modelId: message.model_id ?? undefined,
+                }}
+                onDeletePair={(id) => selectedChatId && deleteMessagePair({ messageId: id, chatId: selectedChatId })}
+                onExtract={selectedChatId && message.role === 'assistant'
+                  ? (selections, question) => runExtract({ kind: 'chat', chatId: selectedChatId }, message.id, selections, question)
+                  : undefined}
+                isExtracting={extractingMessageId === message.id}
+              />
             ))
           )}
 
