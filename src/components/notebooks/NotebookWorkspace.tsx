@@ -896,6 +896,13 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
     return t as ResearchTraceState;
   })();
 
+  const persistedWebSearchTrace: WebSearchTraceState | null = (() => {
+    if (!rawSources || typeof rawSources !== 'object' || Array.isArray(rawSources)) return null;
+    const t = (rawSources as any).webSearchTrace;
+    if (!t || typeof t !== 'object' || !Array.isArray(t.events)) return null;
+    return t as WebSearchTraceState;
+  })();
+
   return (
     <div className={cn("flex gap-3 animate-fade-in", isUser ? "flex-row-reverse" : "flex-row")}>
       <Avatar className={cn("h-8 w-8 shrink-0", isUser ? "bg-primary" : "bg-gradient-to-br from-accent to-accent/70")}>
@@ -911,6 +918,10 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
         {/* Persisted research trace */}
         {!isUser && persistedResearchTrace && (
           <ResearchTrace trace={persistedResearchTrace} />
+        )}
+        {/* Persisted web search trace */}
+        {!isUser && !persistedResearchTrace && persistedWebSearchTrace && (
+          <WebSearchTrace trace={persistedWebSearchTrace} />
         )}
         {/* Sources */}
         {!isUser && sourceItems.length > 0 && (
