@@ -189,6 +189,13 @@ Guidelines:
 - Help users think through problems and explore ideas
 - Ground claims only in the provided sources and avoid unsupported assertions
 
+Source citation rules (STRICT):
+- Do NOT include a "References", "References — ...", "Sources", or "Sources used" section in the answer body
+- Do NOT add a numbered or bulleted list of URLs at the end of the answer
+- Do NOT print raw URLs as a bibliography
+- Sources are rendered separately in a dedicated UI box below the answer — never duplicate them in the text
+- You MAY mention a source name inline (e.g. "according to Document X") when it aids clarity, but never as a trailing list
+
 Final answer-shaping instruction (baseline, not an absolute lock):
 - ${responseLengthConfig.instruction}`;
 
