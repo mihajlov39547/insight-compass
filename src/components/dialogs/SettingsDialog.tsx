@@ -18,8 +18,8 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/contexts/useApp';
+import { modelOptions } from '@/config/modelOptions';
 import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/useUserSettings';
-import { modelOptions } from '@/data/mockData';
 import { toast } from 'sonner';
 import { RetrievalWeightsSection } from '@/components/settings/RetrievalWeightsSection';
 import { supabase } from '@/integrations/supabase/client';

@@ -34,7 +34,7 @@ import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialo
 import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge';
 import { deriveDocumentStatusPresentation, useDocumentProcessingStatus } from '@/hooks/useDocumentProcessingStatus';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
-import { modelOptions } from '@/data/mockData';
+import { modelOptions } from '@/config/modelOptions';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';

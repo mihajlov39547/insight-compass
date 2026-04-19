@@ -59,14 +59,3 @@ export const mockNotifications: Notification[] = [
     createdAt: '2024-01-10T12:00:00Z',
   },
 ];
-
-// Available AI model options reported by Lovable
-export const modelOptions = [
-  { id: 'auto', name: 'Auto (recommended)', description: 'Uses default model' },
-  { id: 'google/gemini-2.5-flash', name: 'gemini-2.5-flash', description: '1 call' },
-  { id: 'google/gemini-2.5-flash-lite', name: 'gemini-2.5-flash-lite', description: '846 calls' },
-  { id: 'google/gemini-2.5-pro', name: 'gemini-2.5-pro', description: '2 calls' },
-  { id: 'google/gemini-3-flash-preview', name: 'gemini-3-flash-preview', description: '22 calls' },
-];
-
-export const DEFAULT_MODEL_ID = 'auto';

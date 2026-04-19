@@ -51,6 +51,8 @@ export const CHAT_MODEL_ALLOWLIST = [
   TASK_MODEL_CONFIG.chat_default,
   "google/gemini-2.5-flash",
   "google/gemini-2.5-flash-lite",
+  // Keep available for explicit user selection in picker; not used as routed default.
+  "openai/gpt-5-mini",
 ];
 
 export function getModelForTask(task: ModelTask): string {

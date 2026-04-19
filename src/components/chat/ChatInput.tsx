@@ -7,8 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { modelOptions, DEFAULT_MODEL_ID } from '@/config/modelOptions';
 import { useApp } from '@/contexts/useApp';
-import { modelOptions, DEFAULT_MODEL_ID } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
