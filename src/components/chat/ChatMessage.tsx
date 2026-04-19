@@ -7,7 +7,9 @@ import { cn } from '@/lib/utils';
 import { MarkdownContent } from './MarkdownContent';
 import { SourceAttribution, SourceItem } from './SourceAttribution';
 import { ResearchTrace } from './ResearchTrace';
+import { WebSearchTrace } from './WebSearchTrace';
 import type { ResearchTraceState } from '@/services/research/tavilyResearch';
+import type { WebSearchTraceState } from '@/services/web-search/webSearchTrace';
 import { useApp } from '@/contexts/useApp';
 
 interface ChatMessageProps {
