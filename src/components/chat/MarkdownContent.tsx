@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+import { sanitizeAssistantAnswerForDisplay } from '@/lib/ai/sanitizeAnswer';
 
 interface MarkdownContentProps {
   content: string;
@@ -8,6 +9,7 @@ interface MarkdownContentProps {
 }
 
 export function MarkdownContent({ content, className }: MarkdownContentProps) {
+  const sanitized = sanitizeAssistantAnswerForDisplay(content);
   return (
     <div className={cn("prose-chat text-sm leading-relaxed", className)}>
       <ReactMarkdown
@@ -52,7 +54,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
           td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
         }}
       >
-        {content}
+        {sanitized}
       </ReactMarkdown>
     </div>
   );
