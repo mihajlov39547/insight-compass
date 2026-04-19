@@ -4,12 +4,13 @@
 // - Optionally accepts a follow-up question
 // - Calls Tavily /extract (basic depth, markdown format, favicon on)
 // - When a question is provided, also runs a quick LLM synthesis with
-//   google/gemini-3-flash-preview (Lovable AI Gateway) using the extracted
+//   google/gemini-2.5-flash (Lovable AI Gateway) using the extracted
 //   content as grounding.
 //
 // Returns a normalized payload that the client persists into a chat message.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getModelForTask } from "../_shared/ai/task-model-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,7 +20,7 @@ const corsHeaders = {
 
 const TAVILY_EXTRACT_URL = "https://api.tavily.com/extract";
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const SYNTHESIS_MODEL = "google/gemini-3-flash-preview";
+const SYNTHESIS_MODEL = getModelForTask("extract_synthesis");
 
 const MAX_URLS = 10;
 const MAX_QUESTION_LENGTH = 1000;

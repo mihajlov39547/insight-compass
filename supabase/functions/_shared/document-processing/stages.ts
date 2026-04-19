@@ -15,6 +15,7 @@ import {
 import { chunkText, estimateTokenCount } from "./chunking.ts";
 import { generateEmbeddingsLocal, localEmbedding } from "./embeddings.ts";
 import { generateDocumentSummary } from "./summarization.ts";
+import { getModelForTask } from "../ai/task-model-config.ts";
 import {
   runImageOcrViaTesseract,
   runPdfOcrViaTesseract,
@@ -1941,6 +1942,7 @@ export async function generateChunkQuestionsStage(
 
   const QUESTION_BATCH_SIZE = 5;
   const allQuestionRows: any[] = [];
+  const questionGenerationModel = getModelForTask("question_generation");
 
   for (let batchStart = 0; batchStart < chunkRows.length; batchStart += QUESTION_BATCH_SIZE) {
     const batch = chunkRows.slice(batchStart, batchStart + QUESTION_BATCH_SIZE);
@@ -1955,7 +1957,7 @@ export async function generateChunkQuestionsStage(
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "google/gemini-2.5-flash-lite",
+              model: questionGenerationModel,
               messages: [
                 {
                   role: "system",
@@ -1998,7 +2000,7 @@ export async function generateChunkQuestionsStage(
               question_text: questionText.trim(),
               position: idx + 1,
               embedding: JSON.stringify(localEmbedding(questionText)),
-              generation_model: "google/gemini-2.5-flash-lite",
+              generation_model: questionGenerationModel,
               embedding_version: "local-hash-v1",
               is_grounded: true,
             }));

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { getModelForTask } from "../ai/task-model-config.ts";
 
 export interface SummaryGenerationResult {
   summary: string | null;
@@ -11,9 +12,10 @@ export async function generateDocumentSummary(
   effectiveText: string,
   language: string | null,
   script: string | null,
-  lovableApiKey?: string | null
+  lovableApiKey?: string | null,
+  quality: "fast" | "rich" = "fast"
 ): Promise<SummaryGenerationResult> {
-  const model = "google/gemini-2.5-flash-lite";
+  const model = getModelForTask(quality === "rich" ? "summarization_rich" : "summarization_fast");
 
   if (!lovableApiKey) {
     return {

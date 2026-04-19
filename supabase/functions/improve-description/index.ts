@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getModelForTask } from "../_shared/ai/task-model-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -78,7 +79,7 @@ Rules:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
+          model: getModelForTask("project_description"),
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: `Improve this project description based on the following context:\n\n${context}` },

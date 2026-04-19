@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getModelForTask } from "../_shared/ai/task-model-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,7 +54,7 @@ Rules:
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
+          model: getModelForTask("notebook_metadata"),
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: `Improve this notebook description based on the following context:\n\n${context}` },
@@ -87,7 +88,7 @@ Rules:
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "openai/gpt-5-mini",
+        model: getModelForTask("notebook_metadata"),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Improve this notebook's title and description based on context:\n\n${context}` },

@@ -63,13 +63,10 @@ export const mockNotifications: Notification[] = [
 // Available AI model options reported by Lovable
 export const modelOptions = [
   { id: 'auto', name: 'Auto (recommended)', description: 'Uses default model' },
-  { id: 'gemma-4-26b-a4b-it', name: 'gemma-4-26b-a4b-it', description: 'New' },
-  { id: 'gemma-4-31b-it', name: 'gemma-4-31b-it', description: 'New' },
   { id: 'google/gemini-2.5-flash', name: 'gemini-2.5-flash', description: '1 call' },
   { id: 'google/gemini-2.5-flash-lite', name: 'gemini-2.5-flash-lite', description: '846 calls' },
   { id: 'google/gemini-2.5-pro', name: 'gemini-2.5-pro', description: '2 calls' },
   { id: 'google/gemini-3-flash-preview', name: 'gemini-3-flash-preview', description: '22 calls' },
-  { id: 'openai/gpt-5-mini', name: 'gpt-5-mini', description: '1 call' },
 ];
 
 export const DEFAULT_MODEL_ID = 'auto';

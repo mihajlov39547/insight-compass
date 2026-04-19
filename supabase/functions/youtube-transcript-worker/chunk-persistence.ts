@@ -3,6 +3,7 @@
  */
 import { chunkText, estimateTokenCount } from "../_shared/document-processing/chunking.ts";
 import { generateEmbeddingsLocal, localEmbedding } from "../_shared/document-processing/embeddings.ts";
+import { getModelForTask } from "../_shared/ai/task-model-config.ts";
 
 interface TranscriptPersistenceStats {
   chunkCount: number;
@@ -33,6 +34,7 @@ function buildTranscriptQuestionsLocal(chunkText: string): string[] {
 }
 
 async function buildTranscriptQuestionsAI(chunkText: string, lovableApiKey: string): Promise<string[]> {
+  const transcriptQuestionModel = getModelForTask("transcript_question_generation");
   const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -40,7 +42,7 @@ async function buildTranscriptQuestionsAI(chunkText: string, lovableApiKey: stri
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash-lite",
+      model: transcriptQuestionModel,
       messages: [
         {
           role: "system",
@@ -103,6 +105,7 @@ export async function persistTranscriptChunks(
   resourceId: string,
   transcript: string
 ): Promise<TranscriptPersistenceStats> {
+  const transcriptQuestionModel = getModelForTask("transcript_question_generation");
   const { data: linkRow, error: linkError } = await supabase
     .from("resource_links")
     .select("id, user_id, project_id, notebook_id")
@@ -212,7 +215,7 @@ export async function persistTranscriptChunks(
         question_text: questionText,
         position: idx + 1,
         embedding,
-        generation_model: lovableApiKey ? "google/gemini-2.5-flash-lite" : "local-template-v1",
+        generation_model: lovableApiKey ? transcriptQuestionModel : "local-template-v1",
         embedding_version: "local-hash-v1",
         is_grounded: true,
         metadata_json: {

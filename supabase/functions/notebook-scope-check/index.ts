@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getModelForTask } from "../_shared/ai/task-model-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,7 +56,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: getModelForTask("scope_check"),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userQuestion },

@@ -1,5 +1,10 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  CHAT_MODEL_ALLOWLIST,
+  DEFAULT_CHAT_MODEL,
+  resolveModelForTask,
+} from "../_shared/ai/task-model-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,19 +12,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+const DEFAULT_MODEL = DEFAULT_CHAT_MODEL;
 
-const VALID_MODELS = new Set([
-  "google/gemini-2.5-flash",
-  "google/gemini-2.5-flash-lite",
-  "google/gemini-2.5-pro",
-  "google/gemini-3-flash-preview",
-  "google/gemini-3.1-pro-preview",
-  "openai/gpt-5",
-  "openai/gpt-5-mini",
-  "openai/gpt-5-nano",
-  "openai/gpt-5.2",
-]);
+const VALID_MODELS = new Set(CHAT_MODEL_ALLOWLIST);
 
 interface DocumentContext {
   id: string;
@@ -85,14 +80,22 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    const docs = Array.isArray(documentContext) ? (documentContext as DocumentContext[]) : [];
+    const web = Array.isArray(webContext) ? (webContext as WebContextItem[]) : [];
+
+    const autoTask = (notebookScope || docs.length > 0 || (!notebookScope && web.length > 0))
+      ? "chat_grounded"
+      : "chat_default";
+
     const requestedModel = typeof model === "string" ? model.trim() : "";
     const resolvedModel = !requestedModel || requestedModel === "auto"
-      ? DEFAULT_MODEL
+      ? resolveModelForTask(autoTask)
       : (VALID_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL);
     const responseLengthConfig = getResponseLengthConfig(responseLength);
     console.log("[chat:length] resolved", {
       incoming: responseLength ?? null,
       requestedModel: requestedModel || null,
+      autoTask,
       strategy: responseLengthConfig.strategy,
       maxOutputTokens: responseLengthConfig.maxOutputTokens,
       model: resolvedModel,
@@ -100,7 +103,6 @@ serve(async (req) => {
 
     // Build document grounding section
     let documentGrounding = "";
-    const docs = (documentContext ?? []) as DocumentContext[];
     if (docs.length > 0) {
       const docSections = docs.map((doc, i) => {
         let section = `[Document ${i + 1}: ${doc.fileName}]`;
@@ -150,7 +152,6 @@ If the user asks about available sources or documents, tell them no sources are 
     // Build optional web grounding section (project chat only)
     let webGrounding = "";
     if (!notebookScope) {
-      const web = (webContext ?? []) as WebContextItem[];
       if (web.length > 0) {
         const webSections = web.map((item, i) => {
           const title = item.title || `Web result ${i + 1}`;
