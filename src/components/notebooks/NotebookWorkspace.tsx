@@ -943,6 +943,8 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
               favicon: s.favicon ?? null,
               score: s.score,
             }))}
+            onExtract={onExtract}
+            isExtracting={isExtracting}
           />
         )}
 
