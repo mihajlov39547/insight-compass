@@ -45,6 +45,8 @@ import type { WebSearchTraceState } from '@/services/web-search/webSearchTrace';
 import { supabase } from '@/integrations/supabase/client';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
+import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
+import type { ExtractSelection } from '@/components/chat/SourceAttribution';
 
 function NotebookSourceStatus({ doc }: { doc: DbDocument }) {
   const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
