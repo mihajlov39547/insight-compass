@@ -7,7 +7,9 @@ import { cn } from '@/lib/utils';
 import { MarkdownContent } from './MarkdownContent';
 import { SourceAttribution, SourceItem } from './SourceAttribution';
 import { ResearchTrace } from './ResearchTrace';
+import { WebSearchTrace } from './WebSearchTrace';
 import type { ResearchTraceState } from '@/services/research/tavilyResearch';
+import type { WebSearchTraceState } from '@/services/web-search/webSearchTrace';
 import { useApp } from '@/contexts/useApp';
 
 interface ChatMessageProps {
@@ -58,6 +60,14 @@ export function ChatMessage({ message, onRetry, onDeletePair }: ChatMessageProps
     const t = raw.researchTrace;
     if (!t || typeof t !== 'object' || !Array.isArray(t.events)) return null;
     return t as ResearchTraceState;
+  })();
+
+  const persistedWebSearchTrace: WebSearchTraceState | null = (() => {
+    const raw = message.sources as any;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const t = raw.webSearchTrace;
+    if (!t || typeof t !== 'object' || !Array.isArray(t.events)) return null;
+    return t as WebSearchTraceState;
   })();
 
   const handleCopyMarkdown = async () => {
@@ -118,6 +128,11 @@ export function ChatMessage({ message, onRetry, onDeletePair }: ChatMessageProps
         {/* Persisted research trace */}
         {!isUser && persistedResearchTrace && (
           <ResearchTrace trace={persistedResearchTrace} />
+        )}
+
+        {/* Persisted web search trace */}
+        {!isUser && !persistedResearchTrace && persistedWebSearchTrace && (
+          <WebSearchTrace trace={persistedWebSearchTrace} />
         )}
 
         {/* Sources */}
