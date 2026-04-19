@@ -869,12 +869,14 @@ export function NotebookWorkspace() {
 }
 
 /* --- Notebook Chat Message --- */
-function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair }: {
+function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting }: {
   message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
   canSaveToNotes: boolean;
   onDeletePair?: (id: string) => void;
+  onExtract?: (selections: ExtractSelection[], question: string | null) => void | Promise<void>;
+  isExtracting?: boolean;
 }) {
   const isUser = message.role === 'user';
   const modelName = message.model_id ? modelOptions.find(m => m.id === message.model_id)?.name ?? message.model_id.split('/').pop() : null;
