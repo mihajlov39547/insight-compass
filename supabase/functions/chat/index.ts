@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import {
   CHAT_MODEL_ALLOWLIST,
   DEFAULT_CHAT_MODEL,
+  resolveModelDecision,
   resolveModelForTask,
 } from "../_shared/ai/task-model-config.ts";
 
@@ -33,6 +34,42 @@ interface WebContextItem {
 }
 
 type ResponseLengthStrategy = "concise" | "standard" | "detailed";
+
+function estimatePromptComplexity(prompt: string): "low" | "medium" | "high" {
+  const lower = prompt.toLowerCase();
+  const highSignals = [
+    "compare",
+    "tradeoff",
+    "analy",
+    "reason",
+    "derive",
+    "prove",
+    "root cause",
+    "architecture",
+    "multi-step",
+    "synthesize",
+  ];
+  const mediumSignals = ["explain", "summarize", "outline", "plan", "evaluate"];
+
+  const highHits = highSignals.filter((token) => lower.includes(token)).length;
+  const mediumHits = mediumSignals.filter((token) => lower.includes(token)).length;
+
+  if (highHits >= 2 || prompt.length >= 1400) return "high";
+  if (highHits >= 1 || mediumHits >= 1 || prompt.length >= 420) return "medium";
+  return "low";
+}
+
+function requiresStructuredOutput(prompt: string): boolean {
+  const lower = prompt.toLowerCase();
+  return (
+    lower.includes("json") ||
+    lower.includes("schema") ||
+    lower.includes("table") ||
+    lower.includes("csv") ||
+    lower.includes("yaml") ||
+    lower.includes("xml")
+  );
+}
 
 function normalizeResponseLength(value: unknown): ResponseLengthStrategy {
   const normalized = typeof value === "string" ? value.trim().toLowerCase() : "standard";
@@ -82,20 +119,49 @@ serve(async (req) => {
 
     const docs = Array.isArray(documentContext) ? (documentContext as DocumentContext[]) : [];
     const web = Array.isArray(webContext) ? (webContext as WebContextItem[]) : [];
+    const chatMessages = Array.isArray(messages) ? messages : [];
+
+    const latestUserPrompt = [...chatMessages]
+      .reverse()
+      .find((m: any) => m && m.role === "user" && typeof m.content === "string")?.content ?? "";
+
+    const promptLength = latestUserPrompt.length;
+    const docContextLength = docs.reduce((sum, d) => sum + (d.summary?.length || 0) + (d.excerpt?.length || 0), 0);
+    const webContextLength = web.reduce((sum, w) => sum + (w.content?.length || 0), 0);
+    const contextLength = docContextLength + webContextLength;
+    const sourceCount = docs.length + web.length;
 
     const autoTask = (notebookScope || docs.length > 0 || (!notebookScope && web.length > 0))
       ? "chat_grounded"
       : "chat_default";
 
     const requestedModel = typeof model === "string" ? model.trim() : "";
+    const autoDecision = resolveModelDecision(autoTask, {
+      promptLength,
+      contextLength,
+      sourceCount,
+      complexity: estimatePromptComplexity(latestUserPrompt),
+      isUserFacing: true,
+      requiresStructuredOutput: requiresStructuredOutput(latestUserPrompt),
+      latencySensitive: normalizeResponseLength(responseLength) === "concise",
+      costSensitive: normalizeResponseLength(responseLength) === "standard",
+    });
     const resolvedModel = !requestedModel || requestedModel === "auto"
-      ? resolveModelForTask(autoTask)
+      ? resolveModelForTask(autoTask, autoDecision.normalizedContext)
       : (VALID_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL);
     const responseLengthConfig = getResponseLengthConfig(responseLength);
     console.log("[chat:length] resolved", {
       incoming: responseLength ?? null,
       requestedModel: requestedModel || null,
       autoTask,
+      autoResolution: requestedModel && requestedModel !== "auto"
+        ? null
+        : {
+            model: autoDecision.model,
+            reason: autoDecision.reason,
+            rules: autoDecision.appliedRules,
+            context: autoDecision.normalizedContext,
+          },
       strategy: responseLengthConfig.strategy,
       maxOutputTokens: responseLengthConfig.maxOutputTokens,
       model: resolvedModel,
