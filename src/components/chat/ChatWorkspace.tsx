@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { ResearchTrace } from './ResearchTrace';
 import { WebSearchTrace } from './WebSearchTrace';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
+import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
 import type { ChatSendPayload } from './ChatInput';
 
 export function ChatWorkspace() {
@@ -46,6 +47,8 @@ export function ChatWorkspace() {
   });
 
   const { runExtract, extractingMessageId } = useExtractFollowUp();
+  const { runCrawl, crawlingMessageId } = useCrawlFollowUp();
+  const [crawlingUrl, setCrawlingUrl] = useState<string | null>(null);
 
   const previousUserMessage = useMemo(() => {
     const userMsgs = messages.filter(m => m.role === 'user');
@@ -187,6 +190,18 @@ export function ChatWorkspace() {
                   ? (selections, question) => runExtract({ kind: 'chat', chatId: selectedChatId }, message.id, selections, question)
                   : undefined}
                 isExtracting={extractingMessageId === message.id}
+                onCrawl={selectedChatId && message.role === 'assistant'
+                  ? async (selection, instructions) => {
+                      setCrawlingUrl(selection.url);
+                      try {
+                        await runCrawl({ kind: 'chat', chatId: selectedChatId }, message.id, selection, instructions);
+                      } finally {
+                        setCrawlingUrl(null);
+                      }
+                    }
+                  : undefined}
+                isCrawling={crawlingMessageId === message.id}
+                crawlingUrl={crawlingMessageId === message.id ? crawlingUrl : null}
               />
             ))
           )}
