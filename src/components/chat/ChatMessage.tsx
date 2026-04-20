@@ -13,7 +13,7 @@ import { WebSearchTrace } from './WebSearchTrace';
 import type { ResearchTraceState } from '@/services/research/tavilyResearch';
 import type { WebSearchTraceState } from '@/services/web-search/webSearchTrace';
 import type { ExtractDepth } from '@/services/tavily-extract';
-import type { ExtractSelection } from './SourceAttribution';
+import type { ExtractSelection, CrawlSelectionInput } from './SourceAttribution';
 import { useApp } from '@/contexts/useApp';
 
 interface ChatMessageProps {
@@ -22,9 +22,12 @@ interface ChatMessageProps {
   onDeletePair?: (id: string) => void;
   onExtract?: (selections: ExtractSelection[], question: string | null, depth?: ExtractDepth) => void | Promise<void>;
   isExtracting?: boolean;
+  onCrawl?: (selection: CrawlSelectionInput, instructions: string | null) => void | Promise<void>;
+  isCrawling?: boolean;
+  crawlingUrl?: string | null;
 }
 
-export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtracting }: ChatMessageProps) {
+export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const { setActiveView, setSelectedProjectId } = useApp();
   const [copied, setCopied] = React.useState(false);
