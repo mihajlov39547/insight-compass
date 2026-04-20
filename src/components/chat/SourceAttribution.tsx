@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FileText, ChevronDown, ChevronRight, ExternalLink, Globe, ScanText, X, Loader2 } from 'lucide-react';
+import { FileText, ChevronDown, ChevronRight, ExternalLink, Globe, ScanText, X, Loader2, Network } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -32,6 +32,12 @@ export interface ExtractSelection {
   favicon?: string | null;
 }
 
+export interface CrawlSelectionInput {
+  url: string;
+  title?: string | null;
+  favicon?: string | null;
+}
+
 interface SourceAttributionProps {
   sources: SourceItem[];
   onSourceClick?: (source: SourceItem) => void;
@@ -42,6 +48,14 @@ interface SourceAttributionProps {
    */
   onExtract?: (selections: ExtractSelection[], question: string | null) => void | Promise<void>;
   isExtracting?: boolean;
+  /**
+   * When provided, renders a per-source "Crawl" button on web sources. Crawl
+   * always operates on a single URL and supports optional natural-language
+   * instructions. Triggers Tavily Crawl.
+   */
+  onCrawl?: (selection: CrawlSelectionInput, instructions: string | null) => void | Promise<void>;
+  isCrawling?: boolean;
+  crawlingUrl?: string | null;
 }
 
 export function SourceAttribution({ sources, onSourceClick, onExtract, isExtracting }: SourceAttributionProps) {
