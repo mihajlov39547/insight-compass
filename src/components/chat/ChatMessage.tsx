@@ -128,7 +128,7 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
   };
 
   // Map sources to SourceItem format
-  const sourceItems: SourceItem[] = extractSourceEntries(message.sources).map((s: any, i: number) => ({
+  const allSourceItems: SourceItem[] = extractSourceEntries(message.sources).map((s: any, i: number) => ({
     id: s.id || `src-${i}`,
     type: s.type === 'web' || (!!s.url && !s.documentId) ? 'web' : 'document',
     documentId: s.documentId || s.id || `src-${i}`,
@@ -145,6 +145,17 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
     matchType: s.matchType,
     matchedQuestionText: s.matchedQuestionText ?? null,
   }));
+
+  // For research responses (web sources already ordered by Tavily relevance),
+  // cap at top 5 so we don't overwhelm the UI with 30+ items. Document
+  // sources, if any, are kept intact.
+  const isResearchResponse = !!persistedResearchTrace;
+  const sourceItems: SourceItem[] = isResearchResponse
+    ? [
+        ...allSourceItems.filter((s) => s.type !== 'web'),
+        ...allSourceItems.filter((s) => s.type === 'web').slice(0, 5),
+      ]
+    : allSourceItems;
 
   return (
     <div className={cn(
