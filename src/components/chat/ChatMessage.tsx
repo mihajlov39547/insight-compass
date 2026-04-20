@@ -1,7 +1,8 @@
 import React from 'react';
-import { User, Sparkles, Bot, Copy, Check, Trash2 } from 'lucide-react';
+import { User, Sparkles, Bot, Copy, Check, Trash2, Layers, Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { modelOptions } from '@/config/modelOptions';
 import { Message } from '@/data/mockData';
 import { cn } from '@/lib/utils';
@@ -11,13 +12,15 @@ import { ResearchTrace } from './ResearchTrace';
 import { WebSearchTrace } from './WebSearchTrace';
 import type { ResearchTraceState } from '@/services/research/tavilyResearch';
 import type { WebSearchTraceState } from '@/services/web-search/webSearchTrace';
+import type { ExtractDepth } from '@/services/tavily-extract';
+import type { ExtractSelection } from './SourceAttribution';
 import { useApp } from '@/contexts/useApp';
 
 interface ChatMessageProps {
   message: Message;
   onRetry?: () => void;
   onDeletePair?: (id: string) => void;
-  onExtract?: (selections: Array<{ url: string; title?: string | null; favicon?: string | null }>, question: string | null) => void | Promise<void>;
+  onExtract?: (selections: ExtractSelection[], question: string | null, depth?: ExtractDepth) => void | Promise<void>;
   isExtracting?: boolean;
 }
 
@@ -25,6 +28,7 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
   const isUser = message.role === 'user';
   const { setActiveView, setSelectedProjectId } = useApp();
   const [copied, setCopied] = React.useState(false);
+  const [reExtractRequested, setReExtractRequested] = React.useState(false);
   const modelName = message.modelId 
     ? modelOptions.find(m => m.id === message.modelId)?.name ?? message.modelId.split('/').pop()
     : null;
@@ -72,6 +76,46 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
     if (!t || typeof t !== 'object' || !Array.isArray(t.events)) return null;
     return t as WebSearchTraceState;
   })();
+
+  // Detect if this assistant message is itself a Tavily Extract result, and
+  // surface the depth + original selections so we can offer a one-click
+  // "Re-extract with deeper depth" when the original was 'basic'.
+  const extractMeta: {
+    depth: ExtractDepth;
+    selections: ExtractSelection[];
+    question: string | null;
+  } | null = (() => {
+    const raw = message.sources as any;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    if (raw.augmentationMode !== 'extract') return null;
+    const ex = raw.extract;
+    if (!ex || typeof ex !== 'object') return null;
+    const depth: ExtractDepth = ex.extractDepth === 'advanced' ? 'advanced' : 'basic';
+    const items: ExtractSelection[] = Array.isArray(raw.items)
+      ? raw.items
+          .filter((it: any) => it && typeof it.url === 'string' && it.url.length > 0)
+          .map((it: any) => ({ url: it.url, title: it.title ?? null, favicon: it.favicon ?? null }))
+      : [];
+    if (items.length === 0) return null;
+    return { depth, selections: items, question: typeof ex.query === 'string' ? ex.query : null };
+  })();
+
+  const canDeepReExtract =
+    !!extractMeta &&
+    extractMeta.depth === 'basic' &&
+    !!onExtract &&
+    !reExtractRequested;
+
+  const handleDeepReExtract = async () => {
+    if (!extractMeta || !onExtract) return;
+    setReExtractRequested(true);
+    try {
+      await onExtract(extractMeta.selections, extractMeta.question, 'advanced');
+    } catch {
+      // Allow retry on failure
+      setReExtractRequested(false);
+    }
+  };
 
   const handleCopyMarkdown = async () => {
     try {
@@ -143,9 +187,31 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
           <SourceAttribution
             sources={sourceItems}
             onSourceClick={handleSourceClick}
-            onExtract={onExtract}
+            onExtract={onExtract ? (sels, q) => onExtract(sels, q, 'basic') : undefined}
             isExtracting={isExtracting}
           />
+        )}
+
+        {/* One-click deeper re-extract for thin/basic extracts */}
+        {!isUser && canDeepReExtract && (
+          <div className="px-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleDeepReExtract}
+              disabled={isExtracting}
+              className="h-7 text-[10px] gap-1.5"
+              title="Re-runs Tavily Extract on the same sources with extract_depth=advanced for richer content."
+            >
+              {isExtracting ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Layers className="h-3 w-3" />
+              )}
+              {isExtracting ? 'Re-extracting…' : 'Re-extract with deeper depth'}
+            </Button>
+          </div>
         )}
 
         {/* Timestamp + AI indicator */}

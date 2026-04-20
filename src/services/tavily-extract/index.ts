@@ -15,11 +15,14 @@ export interface ExtractFailedItem {
   error: string;
 }
 
+export type ExtractDepth = 'basic' | 'advanced';
+
 export interface ExtractResponse {
   provider: 'tavily';
   augmentationMode: 'extract';
   query: string | null;
   urls: string[];
+  extract_depth: ExtractDepth;
   results: ExtractSourceItem[];
   failed_results: ExtractFailedItem[];
   response_time: number | null;
@@ -32,6 +35,7 @@ export interface ExtractResponse {
 export interface RunTavilyExtractInput {
   urls: string[];
   query?: string | null;
+  extract_depth?: ExtractDepth;
 }
 
 const EXTRACT_URL = getFunctionUrl('/functions/v1/tavily-extract');
@@ -46,6 +50,7 @@ export async function runTavilyExtract(input: RunTavilyExtractInput): Promise<Ex
     body: JSON.stringify({
       urls: input.urls,
       query: input.query ?? null,
+      extract_depth: input.extract_depth ?? 'basic',
     }),
   });
 
@@ -73,10 +78,11 @@ export function formatExtractMarkdown(
 
   const lines: string[] = [];
   const total = result.results.length;
+  const depthSuffix = result.extract_depth === 'advanced' ? ' · deep extract' : '';
   const headerLabel =
     total === 0
-      ? 'Extract returned no readable content'
-      : `Extracted from ${total} source${total === 1 ? '' : 's'}`;
+      ? `Extract returned no readable content${depthSuffix}`
+      : `Extracted from ${total} source${total === 1 ? '' : 's'}${depthSuffix}`;
   lines.push(`**${headerLabel}**`);
 
   if (result.query) {
