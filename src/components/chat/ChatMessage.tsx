@@ -203,6 +203,9 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
             onSourceClick={handleSourceClick}
             onExtract={onExtract ? (sels, q) => onExtract(sels, q, 'basic') : undefined}
             isExtracting={isExtracting}
+            onCrawl={onCrawl}
+            isCrawling={isCrawling}
+            crawlingUrl={crawlingUrl}
           />
         )}
 
