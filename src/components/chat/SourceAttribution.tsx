@@ -58,12 +58,14 @@ interface SourceAttributionProps {
   crawlingUrl?: string | null;
 }
 
-export function SourceAttribution({ sources, onSourceClick, onExtract, isExtracting }: SourceAttributionProps) {
+export function SourceAttribution({ sources, onSourceClick, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl }: SourceAttributionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
   const [questionDraft, setQuestionDraft] = useState('');
   const [questionOpen, setQuestionOpen] = useState(false);
+  const [crawlPopoverUrl, setCrawlPopoverUrl] = useState<string | null>(null);
+  const [crawlInstructions, setCrawlInstructions] = useState('');
 
   // Group by document (or url for web). Memoized so hooks below don't depend on a fresh Map each render.
   const grouped = useMemo(() => {
