@@ -28,6 +28,7 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
   const isUser = message.role === 'user';
   const { setActiveView, setSelectedProjectId } = useApp();
   const [copied, setCopied] = React.useState(false);
+  const [reExtractRequested, setReExtractRequested] = React.useState(false);
   const modelName = message.modelId 
     ? modelOptions.find(m => m.id === message.modelId)?.name ?? message.modelId.split('/').pop()
     : null;
