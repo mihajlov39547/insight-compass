@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { ResearchTrace } from './ResearchTrace';
 import { WebSearchTrace } from './WebSearchTrace';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
+import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
 import type { ChatSendPayload } from './ChatInput';
 
 export function ChatWorkspace() {
