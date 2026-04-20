@@ -47,6 +47,8 @@ export function ChatWorkspace() {
   });
 
   const { runExtract, extractingMessageId } = useExtractFollowUp();
+  const { runCrawl, crawlingMessageId } = useCrawlFollowUp();
+  const [crawlingUrl, setCrawlingUrl] = useState<string | null>(null);
 
   const previousUserMessage = useMemo(() => {
     const userMsgs = messages.filter(m => m.role === 'user');
