@@ -77,6 +77,46 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
     return t as WebSearchTraceState;
   })();
 
+  // Detect if this assistant message is itself a Tavily Extract result, and
+  // surface the depth + original selections so we can offer a one-click
+  // "Re-extract with deeper depth" when the original was 'basic'.
+  const extractMeta: {
+    depth: ExtractDepth;
+    selections: ExtractSelection[];
+    question: string | null;
+  } | null = (() => {
+    const raw = message.sources as any;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    if (raw.augmentationMode !== 'extract') return null;
+    const ex = raw.extract;
+    if (!ex || typeof ex !== 'object') return null;
+    const depth: ExtractDepth = ex.extractDepth === 'advanced' ? 'advanced' : 'basic';
+    const items: ExtractSelection[] = Array.isArray(raw.items)
+      ? raw.items
+          .filter((it: any) => it && typeof it.url === 'string' && it.url.length > 0)
+          .map((it: any) => ({ url: it.url, title: it.title ?? null, favicon: it.favicon ?? null }))
+      : [];
+    if (items.length === 0) return null;
+    return { depth, selections: items, question: typeof ex.query === 'string' ? ex.query : null };
+  })();
+
+  const canDeepReExtract =
+    !!extractMeta &&
+    extractMeta.depth === 'basic' &&
+    !!onExtract &&
+    !reExtractRequested;
+
+  const handleDeepReExtract = async () => {
+    if (!extractMeta || !onExtract) return;
+    setReExtractRequested(true);
+    try {
+      await onExtract(extractMeta.selections, extractMeta.question, 'advanced');
+    } catch {
+      // Allow retry on failure
+      setReExtractRequested(false);
+    }
+  };
+
   const handleCopyMarkdown = async () => {
     try {
       await navigator.clipboard.writeText(message.content);
