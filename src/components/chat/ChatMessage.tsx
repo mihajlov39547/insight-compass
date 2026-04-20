@@ -1,7 +1,8 @@
 import React from 'react';
-import { User, Sparkles, Bot, Copy, Check, Trash2 } from 'lucide-react';
+import { User, Sparkles, Bot, Copy, Check, Trash2, Layers, Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { modelOptions } from '@/config/modelOptions';
 import { Message } from '@/data/mockData';
 import { cn } from '@/lib/utils';
@@ -11,13 +12,15 @@ import { ResearchTrace } from './ResearchTrace';
 import { WebSearchTrace } from './WebSearchTrace';
 import type { ResearchTraceState } from '@/services/research/tavilyResearch';
 import type { WebSearchTraceState } from '@/services/web-search/webSearchTrace';
+import type { ExtractDepth } from '@/services/tavily-extract';
+import type { ExtractSelection } from './SourceAttribution';
 import { useApp } from '@/contexts/useApp';
 
 interface ChatMessageProps {
   message: Message;
   onRetry?: () => void;
   onDeletePair?: (id: string) => void;
-  onExtract?: (selections: Array<{ url: string; title?: string | null; favicon?: string | null }>, question: string | null) => void | Promise<void>;
+  onExtract?: (selections: ExtractSelection[], question: string | null, depth?: ExtractDepth) => void | Promise<void>;
   isExtracting?: boolean;
 }
 
