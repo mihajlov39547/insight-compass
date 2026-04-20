@@ -187,9 +187,31 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
           <SourceAttribution
             sources={sourceItems}
             onSourceClick={handleSourceClick}
-            onExtract={onExtract}
+            onExtract={onExtract ? (sels, q) => onExtract(sels, q, 'basic') : undefined}
             isExtracting={isExtracting}
           />
+        )}
+
+        {/* One-click deeper re-extract for thin/basic extracts */}
+        {!isUser && canDeepReExtract && (
+          <div className="px-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleDeepReExtract}
+              disabled={isExtracting}
+              className="h-7 text-[10px] gap-1.5"
+              title="Re-runs Tavily Extract on the same sources with extract_depth=advanced for richer content."
+            >
+              {isExtracting ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Layers className="h-3 w-3" />
+              )}
+              {isExtracting ? 'Re-extracting…' : 'Re-extract with deeper depth'}
+            </Button>
+          </div>
         )}
 
         {/* Timestamp + AI indicator */}
