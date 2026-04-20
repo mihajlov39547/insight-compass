@@ -257,6 +257,95 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                       <ExternalLink className="h-3 w-3 text-muted-foreground/50 shrink-0" />
                     )}
                   </button>
+                  {/* Per-source Crawl trigger (web sources only, not in select mode) */}
+                  {!selectMode && isWeb && !!url && !!onCrawl && (
+                    <Popover
+                      open={crawlPopoverUrl === url}
+                      onOpenChange={(open) => {
+                        if (open) {
+                          setCrawlPopoverUrl(url);
+                          setCrawlInstructions('');
+                        } else if (crawlPopoverUrl === url) {
+                          setCrawlPopoverUrl(null);
+                        }
+                      }}
+                    >
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "shrink-0 inline-flex items-center gap-1 px-1.5 py-1 mr-1 rounded text-[10px] text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors disabled:opacity-50",
+                          )}
+                          disabled={isCrawling}
+                          title="Crawl this site with Tavily"
+                          aria-label={`Crawl ${displayTitle}`}
+                        >
+                          {isCrawling && crawlingUrl === url ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Network className="h-3 w-3" />
+                          )}
+                          <span className="hidden sm:inline">Crawl</span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-3" align="end">
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium">Crawl this site</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Tavily will crawl pages from this URL. Add optional natural-language instructions to focus the crawl and trigger an AI summary.
+                          </p>
+                          <div className="text-[10px] text-muted-foreground/80 truncate">
+                            <span className="font-mono">{url}</span>
+                          </div>
+                          <Input
+                            autoFocus
+                            placeholder="Optional: e.g. Find pages about pricing"
+                            value={crawlInstructions}
+                            onChange={(e) => setCrawlInstructions(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const instr = crawlInstructions.trim();
+                                setCrawlPopoverUrl(null);
+                                onCrawl?.(
+                                  { url, title: displayTitle, favicon: primary.favicon ?? null },
+                                  instr.length > 0 ? instr : null,
+                                );
+                              }
+                            }}
+                            className="h-8 text-xs"
+                            maxLength={1000}
+                          />
+                          <div className="flex justify-end gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-[10px]"
+                              onClick={() => setCrawlPopoverUrl(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="h-7 text-[10px] bg-accent text-accent-foreground hover:bg-accent/90 gap-1"
+                              onClick={() => {
+                                const instr = crawlInstructions.trim();
+                                setCrawlPopoverUrl(null);
+                                onCrawl?.(
+                                  { url, title: displayTitle, favicon: primary.favicon ?? null },
+                                  instr.length > 0 ? instr : null,
+                                );
+                              }}
+                              disabled={isCrawling}
+                            >
+                              <Network className="h-3 w-3" />
+                              Crawl
+                            </Button>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )}
                 </div>
 
                 <CollapsibleContent>
