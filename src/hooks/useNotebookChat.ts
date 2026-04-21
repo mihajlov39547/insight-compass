@@ -173,6 +173,33 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         return;
       }
 
+      // 1c. YOUTUBE SEARCH MODE — bypass scope check + RAG.
+      if (options?.augmentationMode === 'youtube_search') {
+        const ytResult = await runYouTubeSearch(content);
+        const youtubeSources = youtubeSourcesToUnified(ytResult.sources);
+
+        await (supabase.from('notebook_messages' as any) as any).insert({
+          notebook_id: notebookId,
+          user_id: user.id,
+          role: 'assistant',
+          content: ytResult.synthesizedAnswer,
+          model_id: ytResult.synthesisModel ?? 'serpapi-youtube-search',
+          sources: {
+            items: youtubeSources,
+            responseLength,
+            augmentationMode: 'youtube_search',
+            youtubeProvider: 'serpapi',
+            youtubeQuery: ytResult.query,
+            youtubeSources: ytResult.sources,
+            synthesisModel: ytResult.synthesisModel,
+            synthesisError: ytResult.synthesisError,
+          } as any,
+        });
+
+        qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
+        return;
+      }
+
       // 2. Run notebook scope check (Stage 1 — fast classification)
       let scopeAlignment = 'aligned';
       let scopeReason = '';
