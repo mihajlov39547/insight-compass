@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FileText, ChevronDown, ChevronRight, ExternalLink, Globe, ScanText, X, Loader2, Network } from 'lucide-react';
+import { FileText, ChevronDown, ChevronRight, ExternalLink, Globe, ScanText, X, Loader2, Network, Youtube } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -170,9 +170,10 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
           const primary = items[0];
           const sourceType = primary.type ?? 'document';
           const isWeb = sourceType === 'web';
+          const isYouTube = sourceType === 'youtube';
           const isExpanded = expandedId === docId;
           const hasSnippet = items.some(i => i.snippet && i.snippet.trim().length > 0);
-          const displayTitle = primary.title || (isWeb ? 'Web result' : 'Document source');
+          const displayTitle = primary.title || (isYouTube ? 'YouTube video' : isWeb ? 'Web result' : 'Document source');
           const domain = primary.url ? (() => {
             try {
               return new URL(primary.url).hostname.replace(/^www\./, '');
@@ -184,6 +185,53 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
           const url = primary.url?.trim() || '';
           const isExtractable = selectMode && isWeb && !!url;
           const isSelected = isExtractable && selectedUrls.has(url);
+
+          // Compact YouTube card — thumbnail + title + channel + meta row.
+          if (isYouTube) {
+            return (
+              <a
+                key={docId}
+                href={url || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors overflow-hidden"
+              >
+                <div className="flex gap-3 p-2">
+                  {primary.thumbnail ? (
+                    <img
+                      src={primary.thumbnail}
+                      alt=""
+                      className="h-16 w-28 rounded object-cover bg-muted shrink-0"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="h-16 w-28 rounded bg-muted flex items-center justify-center shrink-0">
+                      <Youtube className="h-6 w-6 text-destructive" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-normal shrink-0 gap-0.5">
+                        <Youtube className="h-2.5 w-2.5 text-destructive" /> YouTube
+                      </Badge>
+                      <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 h-4 font-normal">
+                        {Math.round(primary.relevance * 100)}%
+                      </Badge>
+                    </div>
+                    <p className="text-xs font-medium text-foreground line-clamp-2 leading-snug">
+                      {displayTitle}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+                      {primary.channelName && <span className="truncate max-w-[140px]">{primary.channelName}</span>}
+                      {primary.publishedDate && <span>{primary.publishedDate}</span>}
+                      {primary.views !== undefined && <span>{primary.views} views</span>}
+                      {primary.length && <span>{primary.length}</span>}
+                    </div>
+                  </div>
+                </div>
+              </a>
+            );
+          }
 
           return (
             <Collapsible key={docId} open={isExpanded} onOpenChange={(open) => setExpandedId(open ? docId : null)}>
