@@ -13,7 +13,7 @@ export interface SourceItem {
   title: string;
   snippet: string;
   relevance: number;
-  type?: 'document' | 'web';
+  type?: 'document' | 'web' | 'youtube';
   page?: number | null;
   section?: string | null;
   documentId?: string;
@@ -24,6 +24,14 @@ export interface SourceItem {
   url?: string;
   favicon?: string | null;
   score?: number;
+  // YouTube-specific (only when type === 'youtube')
+  videoId?: string;
+  channelName?: string;
+  channelUrl?: string;
+  publishedDate?: string;
+  views?: number | string;
+  length?: string;
+  thumbnail?: string | null;
 }
 
 export interface ExtractSelection {
