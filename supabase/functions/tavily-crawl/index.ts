@@ -122,8 +122,10 @@ serve(async (req) => {
     const limit = clampInt(body?.limit, 1, 100, DEFAULT_LIMIT);
 
     // ---- Tavily /crawl --------------------------------------------------
+    // Tavily's /crawl endpoint requires the Bearer auth header (api_key in
+    // body is rejected with 401). We use the same Bearer pattern for all
+    // Tavily endpoints for consistency.
     const crawlPayload: Record<string, unknown> = {
-      api_key: tavilyKey,
       url,
       extract_depth: requestedDepth,
       format: "markdown",
@@ -141,7 +143,10 @@ serve(async (req) => {
 
     const upstream = await fetch(TAVILY_CRAWL_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tavilyKey}`,
+      },
       body: JSON.stringify(crawlPayload),
     });
 
@@ -152,7 +157,11 @@ serve(async (req) => {
         bodyPreview: upstreamText.slice(0, 300),
       });
       return new Response(
-        JSON.stringify({ error: "Tavily crawl upstream request failed" }),
+        JSON.stringify({
+          error: `Tavily crawl upstream request failed (${upstream.status})`,
+          upstreamStatus: upstream.status,
+          upstreamBody: upstreamText.slice(0, 300),
+        }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
