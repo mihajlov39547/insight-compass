@@ -21,6 +21,7 @@ import {
   WebSearchTraceBuilder,
   type WebSearchTraceState,
 } from '@/services/web-search/webSearchTrace';
+import { runYouTubeSearch, youtubeSourcesToUnified } from '@/services/youtube-search';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const SCOPE_CHECK_URL = getFunctionUrl('/functions/v1/notebook-scope-check');
@@ -62,7 +63,7 @@ interface UseNotebookAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
-  augmentationMode?: 'none' | 'web_search' | 'research';
+  augmentationMode?: 'none' | 'web_search' | 'research' | 'youtube_search';
   researchModel?: ResearchModel;
 }
 
