@@ -127,8 +127,10 @@ serve(async (req) => {
     const requestedDepth: ExtractDepth = body?.extract_depth === "advanced" ? "advanced" : "basic";
 
     // ---- Tavily /extract -----------------------------------------------
+    // Use Bearer auth header for consistency with /crawl and Tavily's
+    // documented standard. (Body api_key still works for /extract but the
+    // header form is preferred and required by /crawl.)
     const extractPayload: Record<string, unknown> = {
-      api_key: tavilyKey,
       urls: validUrls,
       extract_depth: requestedDepth,
       format: "markdown",
@@ -142,7 +144,10 @@ serve(async (req) => {
 
     const upstream = await fetch(TAVILY_EXTRACT_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tavilyKey}`,
+      },
       body: JSON.stringify(extractPayload),
     });
 

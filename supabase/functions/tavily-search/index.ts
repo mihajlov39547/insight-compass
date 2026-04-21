@@ -86,9 +86,9 @@ serve(async (req) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        api_key: apiKey,
         query: trimmedQuery,
         ...searchConfig,
       }),
