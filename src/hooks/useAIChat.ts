@@ -227,6 +227,76 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         return;
       }
 
+      // 1c. YOUTUBE SEARCH MODE — short-circuit. Calls SerpApi YouTube and
+      // persists the synthesized summary + 5 video sources as a single
+      // assistant message. No RAG, no LLM streaming.
+      if (options?.augmentationMode === 'youtube_search') {
+        const ytResult = await runYouTubeSearch(content);
+        const youtubeSources = youtubeSourcesToUnified(ytResult.sources);
+
+        const ytSourceMetadata: AssistantSourceMetadata = {
+          documentSources: [],
+          webSearchResponse: null,
+          webSearchResponseId: null,
+          webSources: youtubeSources as any,
+          combinedSources: youtubeSources as any,
+          responseLength,
+        };
+
+        await supabase.from('messages').insert({
+          chat_id: chatId,
+          user_id: user.id,
+          role: 'assistant',
+          content: ytResult.synthesizedAnswer,
+          sources: {
+            ...ytSourceMetadata,
+            augmentationMode: 'youtube_search',
+            youtubeProvider: 'serpapi',
+            youtubeQuery: ytResult.query,
+            youtubeSources: ytResult.sources,
+            synthesisModel: ytResult.synthesisModel,
+            synthesisError: ytResult.synthesisError,
+          } as any,
+          model_id: ytResult.synthesisModel ?? 'serpapi-youtube-search',
+        });
+
+        await supabase
+          .from('chats')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', chatId);
+
+        if (chatName === 'New Chat' && ytResult.synthesizedAnswer) {
+          fetch(TITLE_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({
+              userMessage: content,
+              assistantMessage: ytResult.synthesizedAnswer,
+            }),
+          })
+            .then((r) => r.json())
+            .then(async (data) => {
+              if (data.title) {
+                await supabase
+                  .from('chats')
+                  .update({ name: data.title, updated_at: new Date().toISOString() })
+                  .eq('id', chatId);
+                qc.invalidateQueries({ queryKey: ['chats'] });
+                qc.invalidateQueries({ queryKey: ['allChats'] });
+              }
+            })
+            .catch((e) => console.warn('Auto-rename failed:', e.message));
+        }
+
+        qc.invalidateQueries({ queryKey: ['messages', chatId] });
+        qc.invalidateQueries({ queryKey: ['chats'] });
+        qc.invalidateQueries({ queryKey: ['allChats'] });
+        return;
+      }
+
       const docPromise = projectId
         ? hybridRetrieve({
             query: content,
