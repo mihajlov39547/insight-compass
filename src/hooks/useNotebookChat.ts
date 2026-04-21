@@ -21,6 +21,7 @@ import {
   WebSearchTraceBuilder,
   type WebSearchTraceState,
 } from '@/services/web-search/webSearchTrace';
+import { runYouTubeSearch, youtubeSourcesToUnified } from '@/services/youtube-search';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const SCOPE_CHECK_URL = getFunctionUrl('/functions/v1/notebook-scope-check');
@@ -62,7 +63,7 @@ interface UseNotebookAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
-  augmentationMode?: 'none' | 'web_search' | 'research';
+  augmentationMode?: 'none' | 'web_search' | 'research' | 'youtube_search';
   researchModel?: ResearchModel;
 }
 
@@ -165,6 +166,33 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
             researchProvider: 'tavily',
             researchModel: options.researchModel ?? 'auto',
             researchTrace: researchResult.trace,
+          } as any,
+        });
+
+        qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
+        return;
+      }
+
+      // 1c. YOUTUBE SEARCH MODE — bypass scope check + RAG.
+      if (options?.augmentationMode === 'youtube_search') {
+        const ytResult = await runYouTubeSearch(content);
+        const youtubeSources = youtubeSourcesToUnified(ytResult.sources);
+
+        await (supabase.from('notebook_messages' as any) as any).insert({
+          notebook_id: notebookId,
+          user_id: user.id,
+          role: 'assistant',
+          content: ytResult.synthesizedAnswer,
+          model_id: ytResult.synthesisModel ?? 'serpapi-youtube-search',
+          sources: {
+            items: youtubeSources,
+            responseLength,
+            augmentationMode: 'youtube_search',
+            youtubeProvider: 'serpapi',
+            youtubeQuery: ytResult.query,
+            youtubeSources: ytResult.sources,
+            synthesisModel: ytResult.synthesisModel,
+            synthesisError: ytResult.synthesisError,
           } as any,
         });
 
