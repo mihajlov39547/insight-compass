@@ -249,7 +249,7 @@ class TraceBuilder {
 
 export async function runTavilyResearch({
   input,
-  model = 'auto',
+  model = 'mini',
   signal,
   onEvent,
   onTrace,
