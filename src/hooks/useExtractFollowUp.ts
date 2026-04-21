@@ -9,6 +9,7 @@ import {
   type ExtractResponse,
   type ExtractSourceItem,
   type ExtractFailedItem,
+  type ExtractDepth,
 } from '@/services/tavily-extract';
 import type { ExtractSelection } from '@/components/chat/SourceAttribution';
 
@@ -24,6 +25,7 @@ interface UseExtractFollowUpResult {
     sourceMessageId: string,
     selections: ExtractSelection[],
     question: string | null,
+    depth?: ExtractDepth,
   ) => Promise<void>;
 }
 
@@ -41,6 +43,7 @@ interface PersistedExtractSourcesPayload {
   extract: {
     query: string | null;
     requestedUrls: string[];
+    extractDepth: ExtractDepth;
     results: ExtractSourceItem[];
     failed_results: ExtractFailedItem[];
     response_time: number | null;
@@ -102,6 +105,7 @@ function buildPersistedSources(
     extract: {
       query: result.query,
       requestedUrls: result.urls,
+      extractDepth: result.extract_depth,
       results: result.results,
       failed_results: result.failed_results,
       response_time: result.response_time,
@@ -125,6 +129,7 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
       sourceMessageId: string,
       selections: ExtractSelection[],
       question: string | null,
+      depth: ExtractDepth = 'basic',
     ) => {
       if (!user) {
         toast.error('You must be signed in to extract sources');
@@ -140,6 +145,7 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
         const result = await runTavilyExtract({
           urls: selections.map((s) => s.url),
           query: question,
+          extract_depth: depth,
         });
 
         if (result.results.length === 0 && result.failed_results.length === selections.length) {
@@ -148,7 +154,8 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
 
         const content = formatExtractMarkdown(result, selections);
         const persistedSources = buildPersistedSources(selections, result, sourceMessageId);
-        const modelId = `tavily-extract${result.synthesisModel ? `:${result.synthesisModel}` : ''}`;
+        const depthTag = result.extract_depth === 'advanced' ? ':advanced' : ':basic';
+        const modelId = `tavily-extract${depthTag}${result.synthesisModel ? `:${result.synthesisModel}` : ''}`;
 
         if (scope.kind === 'chat') {
           const { error: insertError } = await supabase.from('messages').insert({
@@ -175,10 +182,11 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
         }
 
         if (result.results.length > 0) {
+          const depthLabel = result.extract_depth === 'advanced' ? ' (deep)' : '';
           toast.success(
             result.failed_results.length > 0
-              ? `Extracted ${result.results.length} of ${selections.length} sources`
-              : `Extracted ${result.results.length} source${result.results.length === 1 ? '' : 's'}`,
+              ? `Extracted ${result.results.length} of ${selections.length} sources${depthLabel}`
+              : `Extracted ${result.results.length} source${result.results.length === 1 ? '' : 's'}${depthLabel}`,
           );
         }
       } catch (err: any) {

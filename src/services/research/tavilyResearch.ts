@@ -365,12 +365,14 @@ export function researchSourcesToUnified(
   url: string;
   favicon: string | null;
 }> {
-  return sources.map((s, idx) => ({
+  // Cap at top 5 — sources are already ordered by Tavily relevance.
+  const top = sources.slice(0, 5);
+  return top.map((s, idx) => ({
     id: `research-${idx}`,
     type: 'web',
     title: s.title || s.url,
     snippet: s.domain ? s.domain : '',
-    relevance: 1 - idx / Math.max(sources.length, 1),
+    relevance: 1 - idx / Math.max(top.length, 1),
     url: s.url,
     favicon: s.favicon ?? null,
   }));

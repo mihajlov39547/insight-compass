@@ -27,9 +27,12 @@ const MAX_QUESTION_LENGTH = 1000;
 const PER_SOURCE_CHAR_BUDGET = 8000; // cap per-source content fed to LLM
 const TOTAL_CHAR_BUDGET = 24000;     // overall budget for synthesis context
 
+type ExtractDepth = "basic" | "advanced";
+
 interface ExtractRequestBody {
   urls?: string[];
   query?: string | null;
+  extract_depth?: ExtractDepth;
 }
 
 interface TavilyExtractResultRaw {
@@ -121,11 +124,15 @@ serve(async (req) => {
     const rawQuery = typeof body?.query === "string" ? body.query.trim() : "";
     const query = rawQuery.length > 0 ? rawQuery.slice(0, MAX_QUESTION_LENGTH) : null;
 
+    const requestedDepth: ExtractDepth = body?.extract_depth === "advanced" ? "advanced" : "basic";
+
     // ---- Tavily /extract -----------------------------------------------
+    // Use Bearer auth header for consistency with /crawl and Tavily's
+    // documented standard. (Body api_key still works for /extract but the
+    // header form is preferred and required by /crawl.)
     const extractPayload: Record<string, unknown> = {
-      api_key: tavilyKey,
       urls: validUrls,
-      extract_depth: "basic",
+      extract_depth: requestedDepth,
       format: "markdown",
       include_favicon: true,
       include_images: false,
@@ -137,7 +144,10 @@ serve(async (req) => {
 
     const upstream = await fetch(TAVILY_EXTRACT_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tavilyKey}`,
+      },
       body: JSON.stringify(extractPayload),
     });
 
@@ -267,6 +277,7 @@ serve(async (req) => {
         augmentationMode: "extract",
         query,
         urls: validUrls,
+        extract_depth: requestedDepth,
         results,
         failed_results,
         response_time: responseTime,
