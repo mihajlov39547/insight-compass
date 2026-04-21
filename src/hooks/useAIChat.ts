@@ -21,6 +21,7 @@ import {
   type ResearchModel,
   type ResearchTraceState,
 } from '@/services/research/tavilyResearch';
+import { runYouTubeSearch, youtubeSourcesToUnified } from '@/services/youtube-search';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const TITLE_URL = getFunctionUrl('/functions/v1/generate-chat-title');
@@ -34,7 +35,7 @@ interface UseAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
-  augmentationMode?: 'none' | 'web_search' | 'research';
+  augmentationMode?: 'none' | 'web_search' | 'research' | 'youtube_search';
   researchModel?: ResearchModel;
 }
 
