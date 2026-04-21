@@ -278,7 +278,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                 <Telescope className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
               )}
               {promptOptions.augmentationMode === 'youtube_search' && (
-                <Youtube className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                <Youtube className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
               )}
               <Textarea
                 ref={textareaRef}
