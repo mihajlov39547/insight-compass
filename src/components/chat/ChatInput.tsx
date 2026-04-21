@@ -356,7 +356,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                          <Youtube className="h-3.5 w-3.5 text-red-500" /> YouTube Search
+                          <Youtube className="h-3.5 w-3.5 text-destructive" /> YouTube Search
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           Search YouTube videos for this prompt.
