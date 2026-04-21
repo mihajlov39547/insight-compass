@@ -149,7 +149,7 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
         });
 
         if (result.results.length === 0 && result.failed_results.length === selections.length) {
-          toast.error('Tavily could not extract any of the selected sources');
+          toast.error('Could not extract any of the selected sources');
         }
 
         const content = formatExtractMarkdown(result, selections);

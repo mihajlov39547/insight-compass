@@ -339,7 +339,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                           <Telescope className="h-3.5 w-3.5" /> Research
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Run deep web research with Tavily for this prompt. Slower, more thorough.
+                          Run deep web research for this prompt. Slower, more thorough.
                         </p>
                       </div>
                       <Switch

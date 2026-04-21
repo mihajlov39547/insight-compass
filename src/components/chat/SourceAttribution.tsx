@@ -43,15 +43,15 @@ interface SourceAttributionProps {
   onSourceClick?: (source: SourceItem) => void;
   /**
    * When provided, enables a "Select to extract" mode that lets users pick one
-   * or more web sources and trigger Tavily Extract. Only web sources can be
-   * selected (extract works on URLs).
+   * or more web sources and trigger content extraction. Only web sources can
+   * be selected (extract works on URLs).
    */
   onExtract?: (selections: ExtractSelection[], question: string | null) => void | Promise<void>;
   isExtracting?: boolean;
   /**
    * When provided, renders a per-source "Crawl" button on web sources. Crawl
    * always operates on a single URL and supports optional natural-language
-   * instructions. Triggers Tavily Crawl.
+   * instructions.
    */
   onCrawl?: (selection: CrawlSelectionInput, instructions: string | null) => void | Promise<void>;
   isCrawling?: boolean;
@@ -277,7 +277,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                             "shrink-0 inline-flex items-center gap-1 px-1.5 py-1 mr-1 rounded text-[10px] text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors disabled:opacity-50",
                           )}
                           disabled={isCrawling}
-                          title="Crawl this site with Tavily"
+                          title="Crawl this site"
                           aria-label={`Crawl ${displayTitle}`}
                         >
                           {isCrawling && crawlingUrl === url ? (
@@ -292,7 +292,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                         <div className="space-y-2">
                           <p className="text-xs font-medium">Crawl this site</p>
                           <p className="text-[10px] text-muted-foreground">
-                            Tavily will crawl pages from this URL. Add optional natural-language instructions to focus the crawl and trigger an AI summary.
+                            We'll crawl pages from this URL. Add optional natural-language instructions to focus the crawl and trigger an AI summary.
                           </p>
                           <div className="text-[10px] text-muted-foreground/80 truncate">
                             <span className="font-mono">{url}</span>
@@ -418,7 +418,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                 <div className="space-y-2">
                   <p className="text-xs font-medium">Optional follow-up question</p>
                   <p className="text-[10px] text-muted-foreground">
-                    Tavily will extract the selected sources and an AI will answer using only that content.
+                    We'll extract the selected sources and an AI will answer using only that content.
                   </p>
                   <Input
                     autoFocus

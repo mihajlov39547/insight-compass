@@ -211,7 +211,7 @@ export function WebSearchTrace({
           {trace.answer && (
             <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2">
               <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                Tavily summary
+                Web search summary
               </p>
               <p className="whitespace-pre-wrap text-[11px] leading-snug text-foreground/80">
                 {trace.answer}

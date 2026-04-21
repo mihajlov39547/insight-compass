@@ -219,7 +219,7 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
               onClick={handleDeepReExtract}
               disabled={isExtracting}
               className="h-7 text-[10px] gap-1.5"
-              title="Re-runs Tavily Extract on the same sources with extract_depth=advanced for richer content."
+              title="Re-runs extraction on the same sources with deeper depth for richer content."
             >
               {isExtracting ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
