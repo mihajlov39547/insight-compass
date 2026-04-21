@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon, Telescope } from 'lucide-react';
+import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon, Telescope, Youtube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -12,7 +12,7 @@ import { useApp } from '@/contexts/useApp';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-export type PromptAugmentationMode = 'none' | 'web_search' | 'research';
+export type PromptAugmentationMode = 'none' | 'web_search' | 'research' | 'youtube_search';
 
 export interface ChatPromptOptions {
   /** Legacy convenience flag — true iff augmentationMode === 'web_search'. */
@@ -277,6 +277,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
               {promptOptions.augmentationMode === 'research' && (
                 <Telescope className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
               )}
+              {promptOptions.augmentationMode === 'youtube_search' && (
+                <Youtube className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+              )}
               <Textarea
                 ref={textareaRef}
                 value={message}
@@ -290,7 +293,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     ? 'Waiting for response...'
                     : promptOptions.augmentationMode === 'research'
                       ? 'Ask a deep research question…'
-                      : 'Ask a question about your documents...'
+                      : promptOptions.augmentationMode === 'youtube_search'
+                        ? 'Search YouTube for videos…'
+                        : 'Ask a question about your documents...'
                 }
                 className={cn(
                   'w-full h-auto min-h-0 resize-none border-0 bg-transparent py-2 px-2 leading-5 transition-[height] duration-150 focus-visible:ring-0 focus-visible:ring-offset-0',
@@ -345,6 +350,21 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                       <Switch
                         checked={promptOptions.augmentationMode === 'research'}
                         onCheckedChange={(checked) => setAugmentation(checked ? 'research' : 'none')}
+                      />
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                          <Youtube className="h-3.5 w-3.5 text-red-500" /> YouTube Search
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Search YouTube videos for this prompt.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={promptOptions.augmentationMode === 'youtube_search'}
+                        onCheckedChange={(checked) => setAugmentation(checked ? 'youtube_search' : 'none')}
                       />
                     </div>
 
