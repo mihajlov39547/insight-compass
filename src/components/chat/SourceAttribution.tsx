@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FileText, ChevronDown, ChevronRight, ExternalLink, Globe, ScanText, X, Loader2, Network, Youtube } from 'lucide-react';
+import { FileText, ChevronDown, ChevronRight, ExternalLink, Globe, ScanText, X, Loader2, Network, Youtube, Plus, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -64,9 +64,19 @@ interface SourceAttributionProps {
   onCrawl?: (selection: CrawlSelectionInput, instructions: string | null) => void | Promise<void>;
   isCrawling?: boolean;
   crawlingUrl?: string | null;
+  /**
+   * When provided, renders an "Add to sources" button on YouTube source
+   * cards. Clicking it should create a resource_link in the current container
+   * (project chat or notebook) and trigger transcript ingestion.
+   */
+  onAddYouTubeToSources?: (source: SourceItem) => void | Promise<void>;
+  /** URL currently being added — shows a spinner on that card. */
+  addingYouTubeUrl?: string | null;
+  /** URLs already present as sources in the current container — show "Added". */
+  addedYouTubeUrls?: Set<string>;
 }
 
-export function SourceAttribution({ sources, onSourceClick, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl }: SourceAttributionProps) {
+export function SourceAttribution({ sources, onSourceClick, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls }: SourceAttributionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
