@@ -27,7 +27,7 @@ import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDele
 import { useNotebookMessages, useNotebookAIChat, useDeleteNotebookMessagePair } from '@/hooks/useNotebookChat';
 import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
 import { useResources } from '@/hooks/useResources';
-import { useDeleteResource, useRetryYouTubeTranscriptIngestion, type ResourceActionInput } from '@/hooks/useResourceActions';
+import { useDeleteResource, useRetryYouTubeTranscriptIngestion, useCreateLinkResource, type ResourceActionInput } from '@/hooks/useResourceActions';
 import type { Resource } from '@/lib/resourceClassification';
 import { useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
