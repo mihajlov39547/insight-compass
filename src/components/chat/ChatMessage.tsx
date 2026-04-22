@@ -25,9 +25,12 @@ interface ChatMessageProps {
   onCrawl?: (selection: CrawlSelectionInput, instructions: string | null) => void | Promise<void>;
   isCrawling?: boolean;
   crawlingUrl?: string | null;
+  onAddYouTubeToSources?: (source: SourceItem) => void | Promise<void>;
+  addingYouTubeUrl?: string | null;
+  addedYouTubeUrls?: Set<string>;
 }
 
-export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl }: ChatMessageProps) {
+export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const { setActiveView, setSelectedProjectId } = useApp();
   const [copied, setCopied] = React.useState(false);
@@ -206,6 +209,9 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
             onCrawl={onCrawl}
             isCrawling={isCrawling}
             crawlingUrl={crawlingUrl}
+            onAddYouTubeToSources={onAddYouTubeToSources}
+            addingYouTubeUrl={addingYouTubeUrl}
+            addedYouTubeUrls={addedYouTubeUrls}
           />
         )}
 

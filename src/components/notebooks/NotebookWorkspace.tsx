@@ -27,7 +27,7 @@ import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDele
 import { useNotebookMessages, useNotebookAIChat, useDeleteNotebookMessagePair } from '@/hooks/useNotebookChat';
 import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
 import { useResources } from '@/hooks/useResources';
-import { useDeleteResource, useRetryYouTubeTranscriptIngestion, type ResourceActionInput } from '@/hooks/useResourceActions';
+import { useDeleteResource, useRetryYouTubeTranscriptIngestion, useCreateLinkResource, type ResourceActionInput } from '@/hooks/useResourceActions';
 import type { Resource } from '@/lib/resourceClassification';
 import { useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
@@ -106,6 +106,8 @@ export function NotebookWorkspace() {
   const deleteDocument = useDeleteDocument();
   const deleteResource = useDeleteResource();
   const retryTranscript = useRetryYouTubeTranscriptIngestion();
+  const createLinkResource = useCreateLinkResource();
+  const [addingYouTubeUrl, setAddingYouTubeUrl] = useState<string | null>(null);
   const createNote = useCreateNotebookNote();
   const updateNote = useUpdateNotebookNote();
   const deleteNote = useDeleteNotebookNote();
@@ -142,6 +144,38 @@ export function NotebookWorkspace() {
   const enabledDocs = documents.filter((d: any) => d.notebook_enabled !== false);
   const enabledVideoSources = linkedVideos.filter((v) => v.transcriptStatus === 'ready');
   const enabledSourceCount = enabledDocs.length + enabledVideoSources.length;
+
+  const addedYouTubeUrls = useMemo(() => {
+    const set = new Set<string>();
+    if (!selectedNotebookId) return set;
+    for (const r of resources) {
+      if (r.provider !== 'youtube') continue;
+      if (r.containerType !== 'notebook' || r.containerId !== selectedNotebookId) continue;
+      if (r.linkUrl) set.add(r.linkUrl);
+      if (r.normalizedUrl) set.add(r.normalizedUrl);
+    }
+    return set;
+  }, [resources, selectedNotebookId]);
+
+  const handleAddYouTubeToSources = async (source: SourceItem) => {
+    if (!selectedNotebookId || !source.url) return;
+    setAddingYouTubeUrl(source.url);
+    try {
+      await createLinkResource.mutateAsync({
+        url: source.url,
+        title: source.title,
+        provider: 'youtube',
+        containerType: 'notebook',
+        containerId: selectedNotebookId,
+      });
+      toast.success('Added to sources — extracting transcript');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to add video to sources');
+    } finally {
+      setAddingYouTubeUrl(null);
+    }
+  };
+
 
   const toResourceActionInput = (resource: Resource): ResourceActionInput => ({
     id: resource.id,
@@ -648,6 +682,9 @@ export function NotebookWorkspace() {
                           onCopy={handleCopyContent}
                           canSaveToNotes={permissions.canCreateNotes}
                           onDeletePair={(id) => selectedNotebookId && deleteMessagePair({ messageId: id, notebookId: selectedNotebookId })}
+                          onAddYouTubeToSources={msg.role === 'assistant' ? handleAddYouTubeToSources : undefined}
+                          addingYouTubeUrl={addingYouTubeUrl}
+                          addedYouTubeUrls={addedYouTubeUrls}
                         />
                       ))
                     )}
@@ -869,7 +906,7 @@ export function NotebookWorkspace() {
 }
 
 /* --- Notebook Chat Message --- */
-function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting }: {
+function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls }: {
   message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
@@ -877,6 +914,9 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
   onDeletePair?: (id: string) => void;
   onExtract?: (selections: ExtractSelection[], question: string | null) => void | Promise<void>;
   isExtracting?: boolean;
+  onAddYouTubeToSources?: (source: SourceItem) => void | Promise<void>;
+  addingYouTubeUrl?: string | null;
+  addedYouTubeUrls?: Set<string>;
 }) {
   const isUser = message.role === 'user';
   const modelName = message.model_id ? modelOptions.find(m => m.id === message.model_id)?.name ?? message.model_id.split('/').pop() : null;
@@ -932,7 +972,7 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
           <SourceAttribution
             sources={sourceItems.map((s: any, i: number) => ({
               id: s.id || `src-${i}`,
-              type: s.type === 'web' ? 'web' : 'document',
+              type: s.type === 'youtube' ? 'youtube' : s.type === 'web' ? 'web' : 'document',
               documentId: s.documentId || s.id || `src-${i}`,
               title: s.title,
               snippet: s.snippet || '',
@@ -942,9 +982,19 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
               url: s.url,
               favicon: s.favicon ?? null,
               score: s.score,
+              videoId: s.videoId,
+              channelName: s.channelName,
+              channelUrl: s.channelUrl,
+              publishedDate: s.publishedDate,
+              views: s.views,
+              length: s.length,
+              thumbnail: s.thumbnail ?? null,
             }))}
             onExtract={onExtract}
             isExtracting={isExtracting}
+            onAddYouTubeToSources={onAddYouTubeToSources}
+            addingYouTubeUrl={addingYouTubeUrl}
+            addedYouTubeUrls={addedYouTubeUrls}
           />
         )}
 
