@@ -227,27 +227,36 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
 
           // Compact YouTube card — thumbnail + title + channel + meta row.
           if (isYouTube) {
+            const ytUrl = url || '';
+            const isAdding = !!addingYouTubeUrl && addingYouTubeUrl === ytUrl;
+            const isAdded = !!addedYouTubeUrls && !!ytUrl && addedYouTubeUrls.has(ytUrl);
+            const canAdd = !!onAddYouTubeToSources && !!ytUrl;
             return (
-              <a
+              <div
                 key={docId}
-                href={url || '#'}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="block rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors overflow-hidden"
               >
                 <div className="flex gap-3 p-2">
-                  {youtubeThumbnail ? (
-                    <img
-                      src={youtubeThumbnail}
-                      alt=""
-                      className="h-16 w-28 rounded object-cover bg-muted shrink-0"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="h-16 w-28 rounded bg-muted flex items-center justify-center shrink-0">
-                      <Youtube className="h-6 w-6 text-destructive" />
-                    </div>
-                  )}
+                  <a
+                    href={ytUrl || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0"
+                    aria-label={`Open ${displayTitle} on YouTube`}
+                  >
+                    {youtubeThumbnail ? (
+                      <img
+                        src={youtubeThumbnail}
+                        alt=""
+                        className="h-16 w-28 rounded object-cover bg-muted"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="h-16 w-28 rounded bg-muted flex items-center justify-center">
+                        <Youtube className="h-6 w-6 text-destructive" />
+                      </div>
+                    )}
+                  </a>
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-1.5">
                       <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-normal shrink-0 gap-0.5">
@@ -257,18 +266,55 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                         {Math.round(primary.relevance * 100)}%
                       </Badge>
                     </div>
-                    <p className="text-xs font-medium text-foreground line-clamp-2 leading-snug">
-                      {displayTitle}
-                    </p>
+                    <a
+                      href={ytUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block hover:underline"
+                    >
+                      <p className="text-xs font-medium text-foreground line-clamp-2 leading-snug">
+                        {displayTitle}
+                      </p>
+                    </a>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
                       {primary.channelName && <span className="truncate max-w-[140px]">{primary.channelName}</span>}
                       {primary.publishedDate && <span>{primary.publishedDate}</span>}
                       {primary.views !== undefined && <span>{primary.views} views</span>}
                       {primary.length && <span>{primary.length}</span>}
                     </div>
+                    {canAdd && (
+                      <div className="pt-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isAdded ? 'ghost' : 'outline'}
+                          className="h-6 px-2 text-[10px] gap-1"
+                          disabled={isAdding || isAdded}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!isAdded && !isAdding) onAddYouTubeToSources?.(primary);
+                          }}
+                          title={isAdded ? 'Already in your sources' : 'Add this video as a source and extract its transcript'}
+                        >
+                          {isAdding ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : isAdded ? (
+                            <Check className="h-3 w-3" />
+                          ) : (
+                            <Plus className="h-3 w-3" />
+                          )}
+                          {isAdding
+                            ? 'Adding…'
+                            : isAdded
+                              ? 'Added to sources'
+                              : 'Add to sources & extract transcript'}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </a>
+              </div>
             );
           }
 
