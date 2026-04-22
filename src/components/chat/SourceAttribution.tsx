@@ -169,11 +169,6 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
         {Array.from(grouped.entries()).map(([docId, items]) => {
           const primary = items[0];
           const sourceType = primary.type ?? 'document';
-          const isWeb = sourceType === 'web';
-          const isYouTube = sourceType === 'youtube';
-          const isExpanded = expandedId === docId;
-          const hasSnippet = items.some(i => i.snippet && i.snippet.trim().length > 0);
-          const displayTitle = primary.title || (isYouTube ? 'YouTube video' : isWeb ? 'Web result' : 'Document source');
           const domain = primary.url ? (() => {
             try {
               return new URL(primary.url).hostname.replace(/^www\./, '');
@@ -181,6 +176,12 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
               return null;
             }
           })() : null;
+          const isYouTubeUrl = !!domain && (domain === 'youtube.com' || domain.endsWith('.youtube.com') || domain === 'youtu.be');
+          const isYouTube = sourceType === 'youtube' || (sourceType === 'web' && isYouTubeUrl);
+          const isWeb = sourceType === 'web' && !isYouTube;
+          const isExpanded = expandedId === docId;
+          const hasSnippet = items.some(i => i.snippet && i.snippet.trim().length > 0);
+          const displayTitle = primary.title || (isYouTube ? 'YouTube video' : isWeb ? 'Web result' : 'Document source');
 
           const url = primary.url?.trim() || '';
           const isExtractable = selectMode && isWeb && !!url;
