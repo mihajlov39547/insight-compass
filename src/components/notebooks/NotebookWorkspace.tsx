@@ -682,6 +682,9 @@ export function NotebookWorkspace() {
                           onCopy={handleCopyContent}
                           canSaveToNotes={permissions.canCreateNotes}
                           onDeletePair={(id) => selectedNotebookId && deleteMessagePair({ messageId: id, notebookId: selectedNotebookId })}
+                          onAddYouTubeToSources={msg.role === 'assistant' ? handleAddYouTubeToSources : undefined}
+                          addingYouTubeUrl={addingYouTubeUrl}
+                          addedYouTubeUrls={addedYouTubeUrls}
                         />
                       ))
                     )}
