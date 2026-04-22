@@ -19,7 +19,11 @@ import { ResearchTrace } from './ResearchTrace';
 import { WebSearchTrace } from './WebSearchTrace';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
+import { useCreateLinkResource } from '@/hooks/useResourceActions';
+import { useResources } from '@/hooks/useResources';
+import { toast } from 'sonner';
 import type { ChatSendPayload } from './ChatInput';
+import type { SourceItem } from './SourceAttribution';
 
 export function ChatWorkspace() {
   const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare } = useApp();
@@ -49,6 +53,41 @@ export function ChatWorkspace() {
   const { runExtract, extractingMessageId } = useExtractFollowUp();
   const { runCrawl, crawlingMessageId } = useCrawlFollowUp();
   const [crawlingUrl, setCrawlingUrl] = useState<string | null>(null);
+  const [addingYouTubeUrl, setAddingYouTubeUrl] = useState<string | null>(null);
+  const createLinkResource = useCreateLinkResource();
+  const { data: resources = [] } = useResources();
+
+  const addedYouTubeUrls = useMemo(() => {
+    const set = new Set<string>();
+    if (!selectedProjectId) return set;
+    for (const r of resources) {
+      if (r.provider !== 'youtube') continue;
+      if (r.containerType !== 'project' || r.containerId !== selectedProjectId) continue;
+      if (r.linkUrl) set.add(r.linkUrl);
+      if (r.normalizedUrl) set.add(r.normalizedUrl);
+    }
+    return set;
+  }, [resources, selectedProjectId]);
+
+  const handleAddYouTubeToSources = async (source: SourceItem) => {
+    if (!selectedProjectId || !source.url) return;
+    setAddingYouTubeUrl(source.url);
+    try {
+      await createLinkResource.mutateAsync({
+        url: source.url,
+        title: source.title,
+        provider: 'youtube',
+        containerType: 'project',
+        containerId: selectedProjectId,
+      });
+      toast.success('Added to sources — extracting transcript');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to add video to sources');
+    } finally {
+      setAddingYouTubeUrl(null);
+    }
+  };
+
 
   const previousUserMessage = useMemo(() => {
     const userMsgs = messages.filter(m => m.role === 'user');
