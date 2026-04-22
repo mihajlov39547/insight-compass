@@ -178,6 +178,25 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
           })() : null;
           const isYouTubeUrl = !!domain && (domain === 'youtube.com' || domain.endsWith('.youtube.com') || domain === 'youtu.be');
           const isYouTube = sourceType === 'youtube' || (sourceType === 'web' && isYouTubeUrl);
+          // Derive a YouTube video id from the URL if not explicitly provided,
+          // so we can render a real thumbnail for web-detected YouTube sources.
+          const derivedVideoId: string | null = (() => {
+            if (primary.videoId) return primary.videoId;
+            if (!isYouTube || !primary.url) return null;
+            try {
+              const u = new URL(primary.url);
+              if (u.hostname === 'youtu.be') return u.pathname.replace(/^\//, '').split('/')[0] || null;
+              if (u.hostname.endsWith('youtube.com')) {
+                const v = u.searchParams.get('v');
+                if (v) return v;
+                const parts = u.pathname.split('/').filter(Boolean);
+                const i = parts.findIndex((p) => p === 'shorts' || p === 'embed' || p === 'v');
+                if (i >= 0 && parts[i + 1]) return parts[i + 1];
+              }
+            } catch { /* ignore */ }
+            return null;
+          })();
+          const youtubeThumbnail = primary.thumbnail || (derivedVideoId ? `https://i.ytimg.com/vi/${derivedVideoId}/hqdefault.jpg` : null);
           const isWeb = sourceType === 'web' && !isYouTube;
           const isExpanded = expandedId === docId;
           const hasSnippet = items.some(i => i.snippet && i.snippet.trim().length > 0);
@@ -198,9 +217,9 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                 className="block rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors overflow-hidden"
               >
                 <div className="flex gap-3 p-2">
-                  {primary.thumbnail ? (
+                  {youtubeThumbnail ? (
                     <img
-                      src={primary.thumbnail}
+                      src={youtubeThumbnail}
                       alt=""
                       className="h-16 w-28 rounded object-cover bg-muted shrink-0"
                       loading="lazy"
