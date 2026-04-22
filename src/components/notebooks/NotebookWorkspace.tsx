@@ -972,7 +972,7 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
           <SourceAttribution
             sources={sourceItems.map((s: any, i: number) => ({
               id: s.id || `src-${i}`,
-              type: s.type === 'web' ? 'web' : 'document',
+              type: s.type === 'youtube' ? 'youtube' : s.type === 'web' ? 'web' : 'document',
               documentId: s.documentId || s.id || `src-${i}`,
               title: s.title,
               snippet: s.snippet || '',
@@ -982,9 +982,19 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
               url: s.url,
               favicon: s.favicon ?? null,
               score: s.score,
+              videoId: s.videoId,
+              channelName: s.channelName,
+              channelUrl: s.channelUrl,
+              publishedDate: s.publishedDate,
+              views: s.views,
+              length: s.length,
+              thumbnail: s.thumbnail ?? null,
             }))}
             onExtract={onExtract}
             isExtracting={isExtracting}
+            onAddYouTubeToSources={onAddYouTubeToSources}
+            addingYouTubeUrl={addingYouTubeUrl}
+            addedYouTubeUrls={addedYouTubeUrls}
           />
         )}
 
