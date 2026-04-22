@@ -217,9 +217,9 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                 className="block rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors overflow-hidden"
               >
                 <div className="flex gap-3 p-2">
-                  {primary.thumbnail ? (
+                  {youtubeThumbnail ? (
                     <img
-                      src={primary.thumbnail}
+                      src={youtubeThumbnail}
                       alt=""
                       className="h-16 w-28 rounded object-cover bg-muted shrink-0"
                       loading="lazy"
