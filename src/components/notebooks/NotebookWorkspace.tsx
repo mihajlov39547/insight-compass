@@ -906,7 +906,7 @@ export function NotebookWorkspace() {
 }
 
 /* --- Notebook Chat Message --- */
-function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting }: {
+function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls }: {
   message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
@@ -914,6 +914,9 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
   onDeletePair?: (id: string) => void;
   onExtract?: (selections: ExtractSelection[], question: string | null) => void | Promise<void>;
   isExtracting?: boolean;
+  onAddYouTubeToSources?: (source: SourceItem) => void | Promise<void>;
+  addingYouTubeUrl?: string | null;
+  addedYouTubeUrls?: Set<string>;
 }) {
   const isUser = message.role === 'user';
   const modelName = message.model_id ? modelOptions.find(m => m.id === message.model_id)?.name ?? message.model_id.split('/').pop() : null;
