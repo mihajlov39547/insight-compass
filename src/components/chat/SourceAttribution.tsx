@@ -282,7 +282,9 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                       onSourceClick?.(primary);
                     }}
                   >
-                    {isWeb ? (
+                    {isYouTube ? (
+                      <Youtube className="h-3.5 w-3.5 text-destructive shrink-0" />
+                    ) : isWeb ? (
                       primary.favicon ? (
                         <img src={primary.favicon} alt="" className="h-3.5 w-3.5 rounded-sm shrink-0" />
                       ) : (
@@ -292,7 +294,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                       <FileText className="h-3.5 w-3.5 text-accent shrink-0" />
                     )}
                     <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-normal shrink-0">
-                      {isWeb ? 'Web' : 'Document'}
+                      {isYouTube ? 'YouTube' : isWeb ? 'Web' : 'Document'}
                     </Badge>
                     <span className="text-xs font-medium text-foreground truncate max-w-[180px]">
                       {displayTitle}
