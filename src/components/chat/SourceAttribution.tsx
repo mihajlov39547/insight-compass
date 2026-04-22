@@ -87,14 +87,23 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
   }, [sources]);
 
   const extractCandidates = useMemo(() => {
-    // Only web sources are extract-eligible. One entry per unique URL.
+    // Only non-YouTube web sources are extract-eligible. Tavily Extract cannot
+    // fetch YouTube watch pages (they return "Failed to fetch url"), so we
+    // exclude them from selection entirely. One entry per unique URL.
     const seen = new Set<string>();
     const out: ExtractSelection[] = [];
     for (const s of sources) {
-      const isWeb = s.type === 'web' || (!!s.url && !s.documentId);
-      if (!isWeb) continue;
+      const isWebType = s.type === 'web' || (!!s.url && !s.documentId);
+      if (!isWebType) continue;
       const url = s.url?.trim();
       if (!url || seen.has(url)) continue;
+      // Skip YouTube URLs even when typed as 'web'
+      let isYouTubeUrl = false;
+      try {
+        const host = new URL(url).hostname.replace(/^www\./, '');
+        isYouTubeUrl = host === 'youtube.com' || host.endsWith('.youtube.com') || host === 'youtu.be';
+      } catch { /* ignore */ }
+      if (s.type === 'youtube' || isYouTubeUrl) continue;
       seen.add(url);
       out.push({ url, title: s.title, favicon: s.favicon ?? null });
     }
