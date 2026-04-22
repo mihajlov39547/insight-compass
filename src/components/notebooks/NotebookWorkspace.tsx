@@ -145,6 +145,38 @@ export function NotebookWorkspace() {
   const enabledVideoSources = linkedVideos.filter((v) => v.transcriptStatus === 'ready');
   const enabledSourceCount = enabledDocs.length + enabledVideoSources.length;
 
+  const addedYouTubeUrls = useMemo(() => {
+    const set = new Set<string>();
+    if (!selectedNotebookId) return set;
+    for (const r of resources) {
+      if (r.provider !== 'youtube') continue;
+      if (r.containerType !== 'notebook' || r.containerId !== selectedNotebookId) continue;
+      if (r.linkUrl) set.add(r.linkUrl);
+      if (r.normalizedUrl) set.add(r.normalizedUrl);
+    }
+    return set;
+  }, [resources, selectedNotebookId]);
+
+  const handleAddYouTubeToSources = async (source: SourceItem) => {
+    if (!selectedNotebookId || !source.url) return;
+    setAddingYouTubeUrl(source.url);
+    try {
+      await createLinkResource.mutateAsync({
+        url: source.url,
+        title: source.title,
+        provider: 'youtube',
+        containerType: 'notebook',
+        containerId: selectedNotebookId,
+      });
+      toast.success('Added to sources — extracting transcript');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to add video to sources');
+    } finally {
+      setAddingYouTubeUrl(null);
+    }
+  };
+
+
   const toResourceActionInput = (resource: Resource): ResourceActionInput => ({
     id: resource.id,
     title: resource.title,
