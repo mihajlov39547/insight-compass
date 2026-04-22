@@ -106,6 +106,8 @@ export function NotebookWorkspace() {
   const deleteDocument = useDeleteDocument();
   const deleteResource = useDeleteResource();
   const retryTranscript = useRetryYouTubeTranscriptIngestion();
+  const createLinkResource = useCreateLinkResource();
+  const [addingYouTubeUrl, setAddingYouTubeUrl] = useState<string | null>(null);
   const createNote = useCreateNotebookNote();
   const updateNote = useUpdateNotebookNote();
   const deleteNote = useDeleteNotebookNote();
