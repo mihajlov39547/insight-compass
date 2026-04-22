@@ -241,6 +241,9 @@ export function ChatWorkspace() {
                   : undefined}
                 isCrawling={crawlingMessageId === message.id}
                 crawlingUrl={crawlingMessageId === message.id ? crawlingUrl : null}
+                onAddYouTubeToSources={message.role === 'assistant' ? handleAddYouTubeToSources : undefined}
+                addingYouTubeUrl={addingYouTubeUrl}
+                addedYouTubeUrls={addedYouTubeUrls}
               />
             ))
           )}
