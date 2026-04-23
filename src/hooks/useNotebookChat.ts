@@ -347,6 +347,31 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         ? '\n\nIMPORTANT: The user\'s question is only partially related to this notebook\'s topic. Answer ONLY using this notebook\'s sources. Do not use general knowledge. Start your response with a brief note that you\'re answering strictly from the notebook\'s sources.'
         : '';
 
+      // Build authoritative inventory of ALL enabled notebook sources (docs + ready transcripts).
+      // This lets the model know about every source even if some weren't semantically retrieved.
+      const [{ data: enabledDocsForInventory }, { data: linkedVideosForInventory }] = await Promise.all([
+        (supabase.from('documents') as any)
+          .select('id, file_name')
+          .eq('notebook_id', notebookId)
+          .eq('notebook_enabled', true),
+        (supabase.from('resource_links') as any)
+          .select('id, title, url, normalized_url')
+          .eq('notebook_id', notebookId)
+          .eq('provider', 'youtube')
+          .eq('transcript_status', 'ready'),
+      ]);
+      const notebookSourceInventory = [
+        ...((enabledDocsForInventory || []).map((d: any) => ({
+          type: 'document',
+          title: d.file_name,
+        }))),
+        ...((linkedVideosForInventory || []).map((v: any) => ({
+          type: 'youtube_transcript',
+          title: v.title,
+          url: v.normalized_url || v.url,
+        }))),
+      ];
+
       // 5. Call AI (notebookScope ON unless web search is enabled — web grounding overrides scope-only mode)
       const projectDesc = (notebookDescription || `Notebook: ${notebookName || 'Untitled'}`) + partialWarning;
       const resp = await fetch(CHAT_URL, {
@@ -364,6 +389,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           notebookScope: !options?.useWebSearch,
           responseLength,
           messageOptions: options ?? { useWebSearch: false },
+          notebookSourceInventory,
         }),
       });
 
