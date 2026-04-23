@@ -63,8 +63,10 @@ interface UseNotebookAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
-  augmentationMode?: 'none' | 'web_search' | 'research' | 'youtube_search';
+  augmentationMode?: 'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook';
   researchModel?: ResearchModel;
+  notebookId?: string;
+  notebookName?: string;
 }
 
 interface NotebookSourceMetadata {

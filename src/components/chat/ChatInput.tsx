@@ -1,18 +1,20 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon, Telescope, Youtube } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon, Telescope, Youtube, BookOpen, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { modelOptions, DEFAULT_MODEL_ID } from '@/config/modelOptions';
 import { useApp } from '@/contexts/useApp';
+import { useNotebooks } from '@/hooks/useNotebooks';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-export type PromptAugmentationMode = 'none' | 'web_search' | 'research' | 'youtube_search';
+export type PromptAugmentationMode = 'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook';
 
 export interface ChatPromptOptions {
   /** Legacy convenience flag — true iff augmentationMode === 'web_search'. */
@@ -20,6 +22,10 @@ export interface ChatPromptOptions {
   augmentationMode: PromptAugmentationMode;
   /** Tavily research model. Defaults to 'auto'. */
   researchModel?: 'mini' | 'pro' | 'auto';
+  /** Required when augmentationMode === 'notebook' */
+  notebookId?: string;
+  /** Display name for selected notebook (used for chip + downstream metadata) */
+  notebookName?: string;
 }
 
 export interface PastedImage {
@@ -60,8 +66,21 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     researchModel: 'auto',
   });
   const [attachedImages, setAttachedImages] = useState<PastedImage[]>([]);
+  const [notebookSearch, setNotebookSearch] = useState('');
   const { setShowDocuments, setDocumentScope, selectedChatId } = useApp();
+  const { data: notebooks = [] } = useNotebooks();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const filteredNotebooks = useMemo(() => {
+    const q = notebookSearch.trim().toLowerCase();
+    if (!q) return notebooks;
+    return notebooks.filter((n) => n.name.toLowerCase().includes(q));
+  }, [notebooks, notebookSearch]);
+
+  const selectedNotebook = useMemo(
+    () => notebooks.find((n) => n.id === promptOptions.notebookId) ?? null,
+    [notebooks, promptOptions.notebookId]
+  );
 
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
@@ -134,15 +153,19 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (hasContent && !isGenerating) {
-      onSend(
-        { text: message.trim(), options: promptOptions, images: attachedImages.length > 0 ? attachedImages : undefined },
-        selectedModel
-      );
-      setMessage('');
-      setAttachedImages([]);
-      setPromptOptions({ useWebSearch: false, augmentationMode: 'none', researchModel: 'auto' });
+    if (!hasContent || isGenerating) return;
+    if (promptOptions.augmentationMode === 'notebook' && !promptOptions.notebookId) {
+      toast.error('Select a notebook to ground this prompt');
+      return;
     }
+    onSend(
+      { text: message.trim(), options: promptOptions, images: attachedImages.length > 0 ? attachedImages : undefined },
+      selectedModel
+    );
+    setMessage('');
+    setAttachedImages([]);
+    setPromptOptions({ useWebSearch: false, augmentationMode: 'none', researchModel: 'auto' });
+    setNotebookSearch('');
   };
 
   const setAugmentation = useCallback((mode: PromptAugmentationMode) => {
@@ -150,7 +173,24 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       ...prev,
       augmentationMode: mode,
       useWebSearch: mode === 'web_search',
+      // Clear notebook selection when leaving notebook mode
+      notebookId: mode === 'notebook' ? prev.notebookId : undefined,
+      notebookName: mode === 'notebook' ? prev.notebookName : undefined,
     }));
+  }, []);
+
+  const selectNotebook = useCallback((id: string, name: string) => {
+    setPromptOptions((prev) => ({
+      ...prev,
+      augmentationMode: 'notebook',
+      useWebSearch: false,
+      notebookId: id,
+      notebookName: name,
+    }));
+  }, []);
+
+  const clearNotebook = useCallback(() => {
+    setPromptOptions((prev) => ({ ...prev, notebookId: undefined, notebookName: undefined }));
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -270,6 +310,29 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
               </div>
             )}
 
+            {/* Selected notebook chip (notebook mode) */}
+            {promptOptions.augmentationMode === 'notebook' && selectedNotebook && (
+              <div className="flex items-center gap-2 px-3 pt-2 pb-0">
+                <div className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-2 py-1 text-xs text-foreground">
+                  <BookOpen className="h-3.5 w-3.5 text-accent" />
+                  <span className="font-medium truncate max-w-[200px]">{selectedNotebook.name}</span>
+                  <button
+                    type="button"
+                    onClick={clearNotebook}
+                    className="ml-1 text-muted-foreground hover:text-foreground"
+                    aria-label="Remove notebook"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+            {promptOptions.augmentationMode === 'notebook' && !selectedNotebook && (
+              <div className="px-3 pt-2 pb-0 text-xs text-destructive flex items-center gap-1.5">
+                <BookOpen className="h-3.5 w-3.5" /> Notebook required — select a notebook to ground this prompt.
+              </div>
+            )}
+
             <div className="relative px-3 pt-2 pb-1">
               {promptOptions.augmentationMode === 'web_search' && (
                 <Globe className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -279,6 +342,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
               )}
               {promptOptions.augmentationMode === 'youtube_search' && (
                 <Youtube className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
+              )}
+              {promptOptions.augmentationMode === 'notebook' && (
+                <BookOpen className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
               )}
               <Textarea
                 ref={textareaRef}
@@ -295,7 +361,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                       ? 'Ask a deep research question…'
                       : promptOptions.augmentationMode === 'youtube_search'
                         ? 'Search YouTube for videos…'
-                        : 'Ask a question about your documents...'
+                        : promptOptions.augmentationMode === 'notebook'
+                          ? (selectedNotebook ? `Ask grounded in "${selectedNotebook.name}"…` : 'Select a notebook below, then ask…')
+                          : 'Ask a question about your documents...'
                 }
                 className={cn(
                   'w-full h-auto min-h-0 resize-none border-0 bg-transparent py-2 px-2 leading-5 transition-[height] duration-150 focus-visible:ring-0 focus-visible:ring-offset-0',
@@ -366,6 +434,69 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                         checked={promptOptions.augmentationMode === 'youtube_search'}
                         onCheckedChange={(checked) => setAugmentation(checked ? 'youtube_search' : 'none')}
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                            <BookOpen className="h-3.5 w-3.5 text-accent" /> Notebook
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Ground this prompt in a selected notebook's sources.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={promptOptions.augmentationMode === 'notebook'}
+                          onCheckedChange={(checked) => setAugmentation(checked ? 'notebook' : 'none')}
+                        />
+                      </div>
+
+                      {promptOptions.augmentationMode === 'notebook' && (
+                        <div className="rounded-md border border-border/70 bg-muted/30 p-2 space-y-2">
+                          {notebooks.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-3">
+                              No notebooks available. Create one to use this mode.
+                            </p>
+                          ) : (
+                            <>
+                              <div className="relative">
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                <Input
+                                  value={notebookSearch}
+                                  onChange={(e) => setNotebookSearch(e.target.value)}
+                                  placeholder="Search notebooks…"
+                                  className="h-8 pl-7 text-xs"
+                                />
+                              </div>
+                              <div className="max-h-48 overflow-y-auto space-y-0.5">
+                                {filteredNotebooks.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground text-center py-2">No matches</p>
+                                ) : (
+                                  filteredNotebooks.map((nb) => {
+                                    const active = promptOptions.notebookId === nb.id;
+                                    return (
+                                      <button
+                                        type="button"
+                                        key={nb.id}
+                                        onClick={() => selectNotebook(nb.id, nb.name)}
+                                        className={cn(
+                                          'w-full flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors',
+                                          active ? 'bg-accent/15 text-accent-foreground' : 'hover:bg-muted'
+                                        )}
+                                      >
+                                        <BookOpen className="h-3.5 w-3.5 shrink-0 text-accent" />
+                                        <span className="flex-1 truncate">{nb.name}</span>
+                                        {active && <Check className="h-3.5 w-3.5 text-accent shrink-0" />}
+                                      </button>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {promptOptions.augmentationMode !== 'none' && (

@@ -34,7 +34,7 @@ export function ChatWorkspace() {
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research' | 'youtube_search'>('none');
+  const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook'>('none');
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
@@ -272,7 +272,7 @@ export function ChatWorkspace() {
                         <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                         <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
-                      <span>{activeMode === 'research' ? 'Researching the web…' : activeMode === 'web_search' ? 'Searching the web…' : 'Thinking...'}</span>
+                      <span>{activeMode === 'research' ? 'Researching the web…' : activeMode === 'web_search' ? 'Searching the web…' : activeMode === 'notebook' ? 'Searching notebook…' : 'Thinking...'}</span>
                     </div>
                   )}
                 </div>

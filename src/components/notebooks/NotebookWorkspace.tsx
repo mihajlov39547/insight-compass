@@ -118,7 +118,7 @@ export function NotebookWorkspace() {
     notebookName: notebook?.name,
     notebookDescription: notebook?.description,
   });
-  const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research' | 'youtube_search'>('none');
+  const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook'>('none');
 
   const [showUpload, setShowUpload] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);

@@ -35,8 +35,11 @@ interface UseAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
-  augmentationMode?: 'none' | 'web_search' | 'research' | 'youtube_search';
+  augmentationMode?: 'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook';
   researchModel?: ResearchModel;
+  /** When augmentationMode === 'notebook', the notebook to ground retrieval in. */
+  notebookId?: string;
+  notebookName?: string;
 }
 
 interface UnifiedSource {
@@ -297,7 +300,15 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         return;
       }
 
-      const docPromise = projectId
+      const isNotebookMode = options?.augmentationMode === 'notebook' && !!options?.notebookId;
+      const docPromise = isNotebookMode
+        ? hybridRetrieve({
+            query: content,
+            scope: 'notebook',
+            notebookId: options!.notebookId!,
+            maxResults: 8,
+          })
+        : projectId
         ? hybridRetrieve({
             query: content,
             scope: 'project',
@@ -424,6 +435,10 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       );
 
       // 4. Call AI edge function with document context
+      const notebookProjectDescription = isNotebookMode && options?.notebookName
+        ? `Notebook: ${options.notebookName}`
+        : (projectDescription ?? '');
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -432,10 +447,11 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         },
         body: JSON.stringify({
           messages: contextMessages,
-          projectDescription: projectDescription ?? '',
+          projectDescription: notebookProjectDescription,
           model: resolvedModel,
           documentContext,
           webContext,
+          notebookScope: isNotebookMode,
           responseLength,
           messageOptions: options ?? { useWebSearch: false },
         }),
@@ -489,18 +505,26 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       if (wsTraceBuilder) wsTraceBuilder.done();
       const finalWebSearchTrace = wsTraceBuilder ? wsTraceBuilder.snapshot() : null;
 
-      // 6. Persist assistant message with sources (+ optional web search trace metadata)
-      const persistedSourcesPayload = finalWebSearchTrace
-        ? ({
-            ...assistantSourceMetadata,
-            augmentationMode: 'web_search',
-            webSearchProvider: 'tavily',
-            tavilyAnswer: savedWebSearchResponse?.answer ?? null,
-            includeAnswer: 'advanced',
-            searchDepth: 'basic',
-            webSearchTrace: finalWebSearchTrace,
-          } as any)
-        : (assistantSourceMetadata as any);
+      // 6. Persist assistant message with sources (+ optional web search / notebook trace metadata)
+      let persistedSourcesPayload: any = assistantSourceMetadata;
+      if (finalWebSearchTrace) {
+        persistedSourcesPayload = {
+          ...assistantSourceMetadata,
+          augmentationMode: 'web_search',
+          webSearchProvider: 'tavily',
+          tavilyAnswer: savedWebSearchResponse?.answer ?? null,
+          includeAnswer: 'advanced',
+          searchDepth: 'basic',
+          webSearchTrace: finalWebSearchTrace,
+        };
+      } else if (isNotebookMode) {
+        persistedSourcesPayload = {
+          ...assistantSourceMetadata,
+          augmentationMode: 'notebook',
+          notebookId: options?.notebookId,
+          notebookName: options?.notebookName,
+        };
+      }
 
       await supabase.from('messages').insert({
         chat_id: chatId,
