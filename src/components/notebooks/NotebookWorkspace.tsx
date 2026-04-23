@@ -810,13 +810,44 @@ export function NotebookWorkspace() {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle />
+        {!notesCollapsed && <ResizableHandle />}
 
         {/* RIGHT — Notes */}
+        {notesCollapsed ? (
+          <div className="flex flex-col items-center w-10 shrink-0 border-l border-border bg-muted/20 py-3 gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => setNotesCollapsed(false)}
+              title="Expand notes"
+            >
+              <PanelRightOpen className="h-4 w-4" />
+            </Button>
+            <button
+              onClick={() => setNotesCollapsed(false)}
+              className="[writing-mode:vertical-rl] text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide mt-2"
+              title="Expand notes"
+            >
+              Notes {notes.length > 0 ? `(${notes.length})` : ''}
+            </button>
+          </div>
+        ) : (
         <ResizablePanel defaultSize={28} minSize={16} maxSize={40}>
           <div className="flex flex-col h-full border-l border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Notes</h2>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+                  onClick={() => setNotesCollapsed(true)}
+                  title="Collapse notes"
+                >
+                  <PanelRightClose className="h-4 w-4" />
+                </Button>
+                <h2 className="text-sm font-semibold text-foreground">Notes</h2>
+              </div>
               {permissions.canCreateNotes && (
                 <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddNote} disabled={createNote.isPending}>
                   <Plus className="h-3 w-3" /> Add note
@@ -855,6 +886,7 @@ export function NotebookWorkspace() {
             </ScrollArea>
           </div>
         </ResizablePanel>
+        )}
       </ResizablePanelGroup>
 
       {/* Edit Note Modal */}
