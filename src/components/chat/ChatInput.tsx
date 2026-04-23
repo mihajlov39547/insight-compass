@@ -436,6 +436,69 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                       />
                     </div>
 
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                            <BookOpen className="h-3.5 w-3.5 text-accent" /> Notebook
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Ground this prompt in a selected notebook's sources.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={promptOptions.augmentationMode === 'notebook'}
+                          onCheckedChange={(checked) => setAugmentation(checked ? 'notebook' : 'none')}
+                        />
+                      </div>
+
+                      {promptOptions.augmentationMode === 'notebook' && (
+                        <div className="rounded-md border border-border/70 bg-muted/30 p-2 space-y-2">
+                          {notebooks.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-3">
+                              No notebooks available. Create one to use this mode.
+                            </p>
+                          ) : (
+                            <>
+                              <div className="relative">
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                <Input
+                                  value={notebookSearch}
+                                  onChange={(e) => setNotebookSearch(e.target.value)}
+                                  placeholder="Search notebooks…"
+                                  className="h-8 pl-7 text-xs"
+                                />
+                              </div>
+                              <div className="max-h-48 overflow-y-auto space-y-0.5">
+                                {filteredNotebooks.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground text-center py-2">No matches</p>
+                                ) : (
+                                  filteredNotebooks.map((nb) => {
+                                    const active = promptOptions.notebookId === nb.id;
+                                    return (
+                                      <button
+                                        type="button"
+                                        key={nb.id}
+                                        onClick={() => selectNotebook(nb.id, nb.name)}
+                                        className={cn(
+                                          'w-full flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors',
+                                          active ? 'bg-accent/15 text-accent-foreground' : 'hover:bg-muted'
+                                        )}
+                                      >
+                                        <BookOpen className="h-3.5 w-3.5 shrink-0 text-accent" />
+                                        <span className="flex-1 truncate">{nb.name}</span>
+                                        {active && <Check className="h-3.5 w-3.5 text-accent shrink-0" />}
+                                      </button>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     {promptOptions.augmentationMode !== 'none' && (
                       <p className="text-[10px] text-muted-foreground border-t border-border/60 pt-2">
                         Applies only to the next message.
