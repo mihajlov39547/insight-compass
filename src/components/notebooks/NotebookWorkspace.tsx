@@ -131,6 +131,8 @@ export function NotebookWorkspace() {
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isChatNearBottom, setIsChatNearBottom] = useState(true);
   const [showChatScrollTop, setShowChatScrollTop] = useState(false);
+  const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
+  const [notesCollapsed, setNotesCollapsed] = useState(false);
 
   const linkedVideos = useMemo(() => {
     if (!selectedNotebookId) return [] as Resource[];
