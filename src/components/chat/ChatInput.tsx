@@ -1,18 +1,20 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon, Telescope, Youtube } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon, Telescope, Youtube, BookOpen, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { modelOptions, DEFAULT_MODEL_ID } from '@/config/modelOptions';
 import { useApp } from '@/contexts/useApp';
+import { useNotebooks } from '@/hooks/useNotebooks';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-export type PromptAugmentationMode = 'none' | 'web_search' | 'research' | 'youtube_search';
+export type PromptAugmentationMode = 'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook';
 
 export interface ChatPromptOptions {
   /** Legacy convenience flag — true iff augmentationMode === 'web_search'. */
@@ -20,6 +22,10 @@ export interface ChatPromptOptions {
   augmentationMode: PromptAugmentationMode;
   /** Tavily research model. Defaults to 'auto'. */
   researchModel?: 'mini' | 'pro' | 'auto';
+  /** Required when augmentationMode === 'notebook' */
+  notebookId?: string;
+  /** Display name for selected notebook (used for chip + downstream metadata) */
+  notebookName?: string;
 }
 
 export interface PastedImage {
