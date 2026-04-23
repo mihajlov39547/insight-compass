@@ -505,18 +505,26 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       if (wsTraceBuilder) wsTraceBuilder.done();
       const finalWebSearchTrace = wsTraceBuilder ? wsTraceBuilder.snapshot() : null;
 
-      // 6. Persist assistant message with sources (+ optional web search trace metadata)
-      const persistedSourcesPayload = finalWebSearchTrace
-        ? ({
-            ...assistantSourceMetadata,
-            augmentationMode: 'web_search',
-            webSearchProvider: 'tavily',
-            tavilyAnswer: savedWebSearchResponse?.answer ?? null,
-            includeAnswer: 'advanced',
-            searchDepth: 'basic',
-            webSearchTrace: finalWebSearchTrace,
-          } as any)
-        : (assistantSourceMetadata as any);
+      // 6. Persist assistant message with sources (+ optional web search / notebook trace metadata)
+      let persistedSourcesPayload: any = assistantSourceMetadata;
+      if (finalWebSearchTrace) {
+        persistedSourcesPayload = {
+          ...assistantSourceMetadata,
+          augmentationMode: 'web_search',
+          webSearchProvider: 'tavily',
+          tavilyAnswer: savedWebSearchResponse?.answer ?? null,
+          includeAnswer: 'advanced',
+          searchDepth: 'basic',
+          webSearchTrace: finalWebSearchTrace,
+        };
+      } else if (isNotebookMode) {
+        persistedSourcesPayload = {
+          ...assistantSourceMetadata,
+          augmentationMode: 'notebook',
+          notebookId: options?.notebookId,
+          notebookName: options?.notebookName,
+        };
+      }
 
       await supabase.from('messages').insert({
         chat_id: chatId,
