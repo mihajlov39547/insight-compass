@@ -664,8 +664,9 @@ export function NotebookWorkspace() {
             </ScrollArea>
           </div>
         </ResizablePanel>
+        )}
 
-        <ResizableHandle />
+        {!sourcesCollapsed && <ResizableHandle />}
 
         {/* CENTER — Chat */}
         <ResizablePanel defaultSize={50} minSize={30}>
