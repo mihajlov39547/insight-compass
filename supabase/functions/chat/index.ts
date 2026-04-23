@@ -183,21 +183,29 @@ serve(async (req) => {
       }).join("\n\n");
 
       if (notebookScope) {
+        const videoCount = docs.filter((d) => d.sourceType === "youtube_transcript").length;
+        const docCount = docs.length - videoCount;
+        const sourceMix = videoCount > 0 && docCount > 0
+          ? `${docCount} document(s) and ${videoCount} YouTube video transcript(s)`
+          : videoCount > 0
+            ? `${videoCount} YouTube video transcript(s)`
+            : `${docCount} document(s)`;
+
         documentGrounding = `
 
-You are working within a notebook that has exactly ${docs.length} enabled source(s). These are the ONLY sources you have access to. You do NOT have access to any other documents, sources, or materials beyond what is listed below.
+You are working within a notebook that has exactly ${docs.length} enabled source(s) — ${sourceMix}. These are the ONLY sources you have access to. You do NOT have access to any other documents, sources, or materials beyond what is listed below. YouTube video transcripts ARE sources — treat them with the same authority as documents.
 
 --- BEGIN ENABLED NOTEBOOK SOURCES (${docs.length} total) ---
 ${docSections}
 --- END ENABLED NOTEBOOK SOURCES ---
 
 STRICT RULES for notebook-scoped answers:
-- You can ONLY reference the ${docs.length} source(s) listed above
-- Do NOT mention, summarize, or reference any documents not listed above
+- You can ONLY reference the ${docs.length} source(s) listed above (documents AND video transcripts both count)
+- Do NOT mention, summarize, or reference any sources not listed above
 - Do NOT invent or hallucinate additional sources
-- If asked "what sources do you have access to" or "what documents are available", list ONLY the ${docs.length} source(s) above by name
+- If asked "what sources do you have access to", list ALL ${docs.length} source(s) above by name, indicating which are documents and which are YouTube videos
 - If the provided sources don't cover a topic, say so honestly — do NOT pretend you have other sources
-- When you use information from a source, mention which source it came from`;
+- When you use information from a source, mention which source it came from (use the video title for YouTube transcripts)`;
       } else {
         documentGrounding = `
 
