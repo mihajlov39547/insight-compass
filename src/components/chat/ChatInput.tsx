@@ -66,8 +66,21 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     researchModel: 'auto',
   });
   const [attachedImages, setAttachedImages] = useState<PastedImage[]>([]);
+  const [notebookSearch, setNotebookSearch] = useState('');
   const { setShowDocuments, setDocumentScope, selectedChatId } = useApp();
+  const { data: notebooks = [] } = useNotebooks();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const filteredNotebooks = useMemo(() => {
+    const q = notebookSearch.trim().toLowerCase();
+    if (!q) return notebooks;
+    return notebooks.filter((n) => n.name.toLowerCase().includes(q));
+  }, [notebooks, notebookSearch]);
+
+  const selectedNotebook = useMemo(
+    () => notebooks.find((n) => n.id === promptOptions.notebookId) ?? null,
+    [notebooks, promptOptions.notebookId]
+  );
 
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
 
