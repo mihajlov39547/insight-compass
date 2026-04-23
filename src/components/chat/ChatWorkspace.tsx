@@ -113,6 +113,20 @@ export function ChatWorkspace() {
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages, streamingContent, isNearBottom]);
 
+  // When generation starts, force scroll to bottom so the user always sees
+  // the streaming response — even if they had scrolled up earlier.
+  const wasGeneratingRef = useRef(false);
+  useEffect(() => {
+    if (isGenerating && !wasGeneratingRef.current) {
+      const el = messagesViewportRef.current;
+      if (el) {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        setIsNearBottom(true);
+      }
+    }
+    wasGeneratingRef.current = isGenerating;
+  }, [isGenerating]);
+
   if (!selectedProjectId || !selectedProject) {
     return <ProjectsLanding />;
   }
