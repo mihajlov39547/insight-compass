@@ -217,6 +217,18 @@ export function NotebookWorkspace() {
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages, streamingContent, isChatNearBottom]);
 
+  const wasGeneratingRef = useRef(false);
+  useEffect(() => {
+    if (isGenerating && !wasGeneratingRef.current) {
+      const el = chatViewportRef.current;
+      if (el) {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        setIsChatNearBottom(true);
+      }
+    }
+    wasGeneratingRef.current = isGenerating;
+  }, [isGenerating]);
+
   const handleToggleSource = async (doc: DbDocument) => {
     if (!permissions.canManageDocumentState) {
       toast.error('You do not have permission to manage notebook sources');
