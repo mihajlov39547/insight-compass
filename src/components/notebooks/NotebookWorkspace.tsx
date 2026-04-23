@@ -3,7 +3,8 @@ import {
   Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
   Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
-  FileUp, ArrowUp, Video, RotateCcw
+  FileUp, ArrowUp, Video, RotateCcw,
+  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -130,6 +131,8 @@ export function NotebookWorkspace() {
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isChatNearBottom, setIsChatNearBottom] = useState(true);
   const [showChatScrollTop, setShowChatScrollTop] = useState(false);
+  const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
+  const [notesCollapsed, setNotesCollapsed] = useState(false);
 
   const linkedVideos = useMemo(() => {
     if (!selectedNotebookId) return [] as Resource[];
@@ -523,10 +526,41 @@ export function NotebookWorkspace() {
       {/* 3-column layout */}
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         {/* LEFT — Sources */}
+        {sourcesCollapsed ? (
+          <div className="flex flex-col items-center w-10 shrink-0 border-r border-border bg-muted/20 py-3 gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => setSourcesCollapsed(false)}
+              title="Expand sources"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </Button>
+            <button
+              onClick={() => setSourcesCollapsed(false)}
+              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide mt-2"
+              title="Expand sources"
+            >
+              Sources {hasSources ? `(${documents.length + linkedVideos.length})` : ''}
+            </button>
+          </div>
+        ) : (
         <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
           <div className="flex flex-col h-full border-r border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Sources</h2>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+                  onClick={() => setSourcesCollapsed(true)}
+                  title="Collapse sources"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+                <h2 className="text-sm font-semibold text-foreground">Sources</h2>
+              </div>
               {permissions.canUploadDocuments && (
                 <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setShowUpload(true)}>
                   <Plus className="h-3 w-3" /> Add source
@@ -630,8 +664,9 @@ export function NotebookWorkspace() {
             </ScrollArea>
           </div>
         </ResizablePanel>
+        )}
 
-        <ResizableHandle />
+        {!sourcesCollapsed && <ResizableHandle />}
 
         {/* CENTER — Chat */}
         <ResizablePanel defaultSize={50} minSize={30}>
@@ -775,13 +810,44 @@ export function NotebookWorkspace() {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle />
+        {!notesCollapsed && <ResizableHandle />}
 
         {/* RIGHT — Notes */}
+        {notesCollapsed ? (
+          <div className="flex flex-col items-center w-10 shrink-0 border-l border-border bg-muted/20 py-3 gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => setNotesCollapsed(false)}
+              title="Expand notes"
+            >
+              <PanelRightOpen className="h-4 w-4" />
+            </Button>
+            <button
+              onClick={() => setNotesCollapsed(false)}
+              className="[writing-mode:vertical-rl] text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide mt-2"
+              title="Expand notes"
+            >
+              Notes {notes.length > 0 ? `(${notes.length})` : ''}
+            </button>
+          </div>
+        ) : (
         <ResizablePanel defaultSize={28} minSize={16} maxSize={40}>
           <div className="flex flex-col h-full border-l border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Notes</h2>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+                  onClick={() => setNotesCollapsed(true)}
+                  title="Collapse notes"
+                >
+                  <PanelRightClose className="h-4 w-4" />
+                </Button>
+                <h2 className="text-sm font-semibold text-foreground">Notes</h2>
+              </div>
               {permissions.canCreateNotes && (
                 <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddNote} disabled={createNote.isPending}>
                   <Plus className="h-3 w-3" /> Add note
@@ -820,6 +886,7 @@ export function NotebookWorkspace() {
             </ScrollArea>
           </div>
         </ResizablePanel>
+        )}
       </ResizablePanelGroup>
 
       {/* Edit Note Modal */}
