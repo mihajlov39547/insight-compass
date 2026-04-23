@@ -435,6 +435,10 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       );
 
       // 4. Call AI edge function with document context
+      const notebookProjectDescription = isNotebookMode && options?.notebookName
+        ? `Notebook: ${options.notebookName}`
+        : (projectDescription ?? '');
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -443,10 +447,11 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         },
         body: JSON.stringify({
           messages: contextMessages,
-          projectDescription: projectDescription ?? '',
+          projectDescription: notebookProjectDescription,
           model: resolvedModel,
           documentContext,
           webContext,
+          notebookScope: isNotebookMode,
           responseLength,
           messageOptions: options ?? { useWebSearch: false },
         }),
