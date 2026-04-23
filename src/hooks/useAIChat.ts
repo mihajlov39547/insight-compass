@@ -300,7 +300,15 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         return;
       }
 
-      const docPromise = projectId
+      const isNotebookMode = options?.augmentationMode === 'notebook' && !!options?.notebookId;
+      const docPromise = isNotebookMode
+        ? hybridRetrieve({
+            query: content,
+            scope: 'notebook',
+            notebookId: options!.notebookId!,
+            maxResults: 8,
+          })
+        : projectId
         ? hybridRetrieve({
             query: content,
             scope: 'project',
