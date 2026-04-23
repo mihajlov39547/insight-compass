@@ -310,6 +310,29 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
               </div>
             )}
 
+            {/* Selected notebook chip (notebook mode) */}
+            {promptOptions.augmentationMode === 'notebook' && selectedNotebook && (
+              <div className="flex items-center gap-2 px-3 pt-2 pb-0">
+                <div className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-2 py-1 text-xs text-foreground">
+                  <BookOpen className="h-3.5 w-3.5 text-accent" />
+                  <span className="font-medium truncate max-w-[200px]">{selectedNotebook.name}</span>
+                  <button
+                    type="button"
+                    onClick={clearNotebook}
+                    className="ml-1 text-muted-foreground hover:text-foreground"
+                    aria-label="Remove notebook"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+            {promptOptions.augmentationMode === 'notebook' && !selectedNotebook && (
+              <div className="px-3 pt-2 pb-0 text-xs text-destructive flex items-center gap-1.5">
+                <BookOpen className="h-3.5 w-3.5" /> Notebook required — select a notebook to ground this prompt.
+              </div>
+            )}
+
             <div className="relative px-3 pt-2 pb-1">
               {promptOptions.augmentationMode === 'web_search' && (
                 <Globe className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -319,6 +342,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
               )}
               {promptOptions.augmentationMode === 'youtube_search' && (
                 <Youtube className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
+              )}
+              {promptOptions.augmentationMode === 'notebook' && (
+                <BookOpen className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
               )}
               <Textarea
                 ref={textareaRef}
@@ -335,7 +361,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                       ? 'Ask a deep research question…'
                       : promptOptions.augmentationMode === 'youtube_search'
                         ? 'Search YouTube for videos…'
-                        : 'Ask a question about your documents...'
+                        : promptOptions.augmentationMode === 'notebook'
+                          ? (selectedNotebook ? `Ask grounded in "${selectedNotebook.name}"…` : 'Select a notebook below, then ask…')
+                          : 'Ask a question about your documents...'
                 }
                 className={cn(
                   'w-full h-auto min-h-0 resize-none border-0 bg-transparent py-2 px-2 leading-5 transition-[height] duration-150 focus-visible:ring-0 focus-visible:ring-offset-0',
