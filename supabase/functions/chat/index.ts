@@ -112,7 +112,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength } = await req.json();
+    const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength, notebookSourceInventory } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
