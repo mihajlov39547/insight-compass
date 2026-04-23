@@ -35,8 +35,11 @@ interface UseAIChatOptions {
 
 interface MessageOptions {
   useWebSearch: boolean;
-  augmentationMode?: 'none' | 'web_search' | 'research' | 'youtube_search';
+  augmentationMode?: 'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook';
   researchModel?: ResearchModel;
+  /** When augmentationMode === 'notebook', the notebook to ground retrieval in. */
+  notebookId?: string;
+  notebookName?: string;
 }
 
 interface UnifiedSource {
