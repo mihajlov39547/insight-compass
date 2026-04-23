@@ -183,28 +183,60 @@ serve(async (req) => {
       }).join("\n\n");
 
       if (notebookScope) {
-        const videoCount = docs.filter((d) => d.sourceType === "youtube_transcript").length;
-        const docCount = docs.length - videoCount;
-        const sourceMix = videoCount > 0 && docCount > 0
-          ? `${docCount} document(s) and ${videoCount} YouTube video transcript(s)`
-          : videoCount > 0
-            ? `${videoCount} YouTube video transcript(s)`
-            : `${docCount} document(s)`;
+        // Build authoritative inventory of ALL enabled sources (independent of retrieval).
+        // This ensures the model knows about every source the user attached, even if
+        // some weren't semantically retrieved for the current question.
+        const inventory = Array.isArray(notebookSourceInventory)
+          ? notebookSourceInventory.filter((s: any) => s && typeof s.title === "string")
+          : [];
+        const totalSources = inventory.length > 0 ? inventory.length : docs.length;
+        const inventoryVideoCount = inventory.length > 0
+          ? inventory.filter((s: any) => s.type === "youtube_transcript").length
+          : docs.filter((d) => d.sourceType === "youtube_transcript").length;
+        const inventoryDocCount = totalSources - inventoryVideoCount;
+        const sourceMix = inventoryVideoCount > 0 && inventoryDocCount > 0
+          ? `${inventoryDocCount} document(s) and ${inventoryVideoCount} YouTube video transcript(s)`
+          : inventoryVideoCount > 0
+            ? `${inventoryVideoCount} YouTube video transcript(s)`
+            : `${inventoryDocCount} document(s)`;
+
+        const inventoryListing = inventory.length > 0
+          ? inventory
+              .map((s: any, idx: number) => {
+                const kind = s.type === "youtube_transcript" ? "YouTube Video Transcript" : "Document";
+                const url = s.url ? ` — ${s.url}` : "";
+                return `  ${idx + 1}. [${kind}] ${s.title}${url}`;
+              })
+              .join("\n")
+          : docs
+              .map((d, idx) => {
+                const kind = d.sourceType === "youtube_transcript" ? "YouTube Video Transcript" : "Document";
+                return `  ${idx + 1}. [${kind}] ${d.fileName}`;
+              })
+              .join("\n");
 
         documentGrounding = `
 
-You are working within a notebook that has exactly ${docs.length} enabled source(s) — ${sourceMix}. These are the ONLY sources you have access to. You do NOT have access to any other documents, sources, or materials beyond what is listed below. YouTube video transcripts ARE sources — treat them with the same authority as documents.
+You are working within a notebook that has exactly ${totalSources} enabled source(s) — ${sourceMix}. These are the ONLY sources you have access to. You do NOT have access to any other documents, sources, or materials beyond what is listed below. YouTube video transcripts ARE sources — treat them with the same authority as documents.
 
---- BEGIN ENABLED NOTEBOOK SOURCES (${docs.length} total) ---
+--- COMPLETE LIST OF ENABLED NOTEBOOK SOURCES (${totalSources} total) ---
+${inventoryListing}
+--- END COMPLETE SOURCE LIST ---
+
+The following excerpts were retrieved as most relevant to the current question. Note: not every source above will have a retrieved excerpt for every question, but ALL sources in the list above are available to the user and you must acknowledge them when asked.
+
+--- BEGIN RETRIEVED EXCERPTS (${docs.length} retrieved for this query) ---
 ${docSections}
---- END ENABLED NOTEBOOK SOURCES ---
+--- END RETRIEVED EXCERPTS ---
 
 STRICT RULES for notebook-scoped answers:
-- You can ONLY reference the ${docs.length} source(s) listed above (documents AND video transcripts both count)
+- The notebook contains exactly ${totalSources} source(s) — refer to the COMPLETE LIST above when asked "what sources do you have"
+- You can ONLY reference sources from the COMPLETE LIST above (documents AND video transcripts both count)
 - Do NOT mention, summarize, or reference any sources not listed above
 - Do NOT invent or hallucinate additional sources
-- If asked "what sources do you have access to", list ALL ${docs.length} source(s) above by name, indicating which are documents and which are YouTube videos
-- If the provided sources don't cover a topic, say so honestly — do NOT pretend you have other sources
+- If asked "what sources do you have access to", list ALL ${totalSources} source(s) from the COMPLETE LIST by name, indicating which are documents and which are YouTube videos
+- If a source is in the COMPLETE LIST but no excerpt was retrieved for the current question, you can still mention it exists but acknowledge you don't have a relevant excerpt for this specific query
+- If the retrieved excerpts don't cover a topic, say so honestly — do NOT pretend you have other sources
 - When you use information from a source, mention which source it came from (use the video title for YouTube transcripts)`;
       } else {
         documentGrounding = `
