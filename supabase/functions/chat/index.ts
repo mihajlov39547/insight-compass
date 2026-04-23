@@ -254,10 +254,32 @@ When answering:
 - Do not fabricate document content`;
       }
     } else if (notebookScope) {
-      documentGrounding = `
+      const inventory = Array.isArray(notebookSourceInventory)
+        ? notebookSourceInventory.filter((s: any) => s && typeof s.title === "string")
+        : [];
+      if (inventory.length > 0) {
+        const inventoryListing = inventory
+          .map((s: any, idx: number) => {
+            const kind = s.type === "youtube_transcript" ? "YouTube Video Transcript" : "Document";
+            const url = s.url ? ` — ${s.url}` : "";
+            return `  ${idx + 1}. [${kind}] ${s.title}${url}`;
+          })
+          .join("\n");
+        documentGrounding = `
+
+You are working within a notebook that has exactly ${inventory.length} enabled source(s). No excerpts were retrieved for this specific question, but the following sources are available:
+
+--- COMPLETE LIST OF ENABLED NOTEBOOK SOURCES (${inventory.length} total) ---
+${inventoryListing}
+--- END COMPLETE SOURCE LIST ---
+
+If asked "what sources do you have", list ALL ${inventory.length} source(s) above. If the user's question doesn't relate to any source, say so honestly.`;
+      } else {
+        documentGrounding = `
 
 You are working within a notebook. Currently, there are NO enabled sources available. You do not have access to any documents or sources.
 If the user asks about available sources or documents, tell them no sources are currently enabled in this notebook.`;
+      }
     }
 
     // Build optional web grounding section (project chat only)
