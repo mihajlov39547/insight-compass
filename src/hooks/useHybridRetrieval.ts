@@ -64,13 +64,29 @@ export async function hybridRetrieve(params: RetrievalParams): Promise<HybridRes
 
 /** Convert hybrid results to document context for the AI chat edge function */
 export function toDocumentContext(results: HybridResult[]) {
-  // Group chunks by document
-  const docMap = new Map<string, { fileName: string; summary?: string; excerpts: string[] }>();
+  // Group chunks by document (or transcript-resource pseudo-id)
+  const docMap = new Map<string, {
+    fileName: string;
+    summary?: string;
+    excerpts: string[];
+    sourceType: 'document' | 'youtube_transcript';
+    url?: string;
+  }>();
 
   for (const r of results) {
     let entry = docMap.get(r.documentId);
     if (!entry) {
-      entry = { fileName: r.fileName, summary: r.summary ?? undefined, excerpts: [] };
+      // Pseudo-document IDs from the backend look like "link:<resourceLinkId>"
+      // and indicate a YouTube transcript chunk. The transcript URL is stored
+      // in `summary` for these entries (see hybrid-retrieval merge step).
+      const isTranscript = typeof r.documentId === 'string' && r.documentId.startsWith('link:');
+      entry = {
+        fileName: r.fileName,
+        summary: isTranscript ? undefined : (r.summary ?? undefined),
+        excerpts: [],
+        sourceType: isTranscript ? 'youtube_transcript' : 'document',
+        url: isTranscript ? (r.summary ?? undefined) : undefined,
+      };
       docMap.set(r.documentId, entry);
     }
     if (r.chunkText) {
@@ -83,6 +99,8 @@ export function toDocumentContext(results: HybridResult[]) {
     fileName: doc.fileName,
     summary: doc.summary,
     excerpt: doc.excerpts.join('\n\n').slice(0, 3000),
+    sourceType: doc.sourceType,
+    url: doc.url,
   }));
 }
 

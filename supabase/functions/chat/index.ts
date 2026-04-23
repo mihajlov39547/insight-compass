@@ -22,6 +22,8 @@ interface DocumentContext {
   fileName: string;
   summary?: string;
   excerpt?: string;
+  sourceType?: "document" | "youtube_transcript";
+  url?: string;
 }
 
 interface WebContextItem {
@@ -171,9 +173,12 @@ serve(async (req) => {
     let documentGrounding = "";
     if (docs.length > 0) {
       const docSections = docs.map((doc, i) => {
-        let section = `[Document ${i + 1}: ${doc.fileName}]`;
+        const isVideo = doc.sourceType === "youtube_transcript";
+        const label = isVideo ? "YouTube Video Transcript" : "Document";
+        let section = `[${label} ${i + 1}: ${doc.fileName}]`;
+        if (isVideo && doc.url) section += `\nVideo URL: ${doc.url}`;
         if (doc.summary) section += `\nSummary: ${doc.summary}`;
-        if (doc.excerpt) section += `\nRelevant excerpt: ${doc.excerpt}`;
+        if (doc.excerpt) section += `\n${isVideo ? "Transcript excerpt" : "Relevant excerpt"}: ${doc.excerpt}`;
         return section;
       }).join("\n\n");
 
