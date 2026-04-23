@@ -526,10 +526,41 @@ export function NotebookWorkspace() {
       {/* 3-column layout */}
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         {/* LEFT — Sources */}
+        {sourcesCollapsed ? (
+          <div className="flex flex-col items-center w-10 shrink-0 border-r border-border bg-muted/20 py-3 gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => setSourcesCollapsed(false)}
+              title="Expand sources"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </Button>
+            <button
+              onClick={() => setSourcesCollapsed(false)}
+              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide mt-2"
+              title="Expand sources"
+            >
+              Sources {hasSources ? `(${documents.length + linkedVideos.length})` : ''}
+            </button>
+          </div>
+        ) : (
         <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
           <div className="flex flex-col h-full border-r border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Sources</h2>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+                  onClick={() => setSourcesCollapsed(true)}
+                  title="Collapse sources"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+                <h2 className="text-sm font-semibold text-foreground">Sources</h2>
+              </div>
               {permissions.canUploadDocuments && (
                 <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setShowUpload(true)}>
                   <Plus className="h-3 w-3" /> Add source
