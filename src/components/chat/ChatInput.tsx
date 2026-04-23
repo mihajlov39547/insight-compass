@@ -153,15 +153,19 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (hasContent && !isGenerating) {
-      onSend(
-        { text: message.trim(), options: promptOptions, images: attachedImages.length > 0 ? attachedImages : undefined },
-        selectedModel
-      );
-      setMessage('');
-      setAttachedImages([]);
-      setPromptOptions({ useWebSearch: false, augmentationMode: 'none', researchModel: 'auto' });
+    if (!hasContent || isGenerating) return;
+    if (promptOptions.augmentationMode === 'notebook' && !promptOptions.notebookId) {
+      toast.error('Select a notebook to ground this prompt');
+      return;
     }
+    onSend(
+      { text: message.trim(), options: promptOptions, images: attachedImages.length > 0 ? attachedImages : undefined },
+      selectedModel
+    );
+    setMessage('');
+    setAttachedImages([]);
+    setPromptOptions({ useWebSearch: false, augmentationMode: 'none', researchModel: 'auto' });
+    setNotebookSearch('');
   };
 
   const setAugmentation = useCallback((mode: PromptAugmentationMode) => {
@@ -169,7 +173,24 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       ...prev,
       augmentationMode: mode,
       useWebSearch: mode === 'web_search',
+      // Clear notebook selection when leaving notebook mode
+      notebookId: mode === 'notebook' ? prev.notebookId : undefined,
+      notebookName: mode === 'notebook' ? prev.notebookName : undefined,
     }));
+  }, []);
+
+  const selectNotebook = useCallback((id: string, name: string) => {
+    setPromptOptions((prev) => ({
+      ...prev,
+      augmentationMode: 'notebook',
+      useWebSearch: false,
+      notebookId: id,
+      notebookName: name,
+    }));
+  }, []);
+
+  const clearNotebook = useCallback(() => {
+    setPromptOptions((prev) => ({ ...prev, notebookId: undefined, notebookName: undefined }));
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
