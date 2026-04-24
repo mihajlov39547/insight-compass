@@ -18,8 +18,10 @@ import { getItemPermissions, getRoleLabel, type ItemRole } from '@/lib/permissio
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 export function ShareDialog() {
+  const { t } = useTranslation();
   const { showShare, setShowShare, selectedProjectId, selectedNotebookId, activeView } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: notebooks = [] } = useNotebooks();
@@ -34,7 +36,7 @@ export function ShareDialog() {
   const isNotebook = activeView === 'notebook-workspace';
   const selectedProject = projects.find(p => p.id === selectedProjectId);
   const selectedNotebook = notebooks.find(n => n.id === selectedNotebookId);
-  const context = isNotebook ? selectedNotebook?.name || 'Notebook' : selectedProject?.name || 'Project';
+  const context = isNotebook ? selectedNotebook?.name || t('shareDialog.fallback.notebook') : selectedProject?.name || t('shareDialog.fallback.project');
   const entityType = isNotebook ? 'notebook' : 'project';
   const itemId = isNotebook ? selectedNotebookId : selectedProjectId;
 
@@ -52,13 +54,13 @@ export function ShareDialog() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      toast.error('Please enter a valid email address');
+      toast.error(t('shareDialog.toasts.invalidEmail'));
       return;
     }
 
     setSending(true);
     try {
-      const inviterName = profile?.full_name || profile?.username || user.email || 'A team member';
+      const inviterName = profile?.full_name || profile?.username || user.email || t('shareDialog.pending');
       const inviteId = crypto.randomUUID();
 
       const { data: invitedProfile } = await supabase
@@ -83,10 +85,10 @@ export function ShareDialog() {
 
       if (shareError) {
         if (shareError.code === '23505') {
-          toast.info('This user already has access');
+          toast.info(t('shareDialog.toasts.alreadyAccess'));
         } else {
           console.error('Share insert error:', shareError);
-          toast.error('Failed to create share');
+          toast.error(t('shareDialog.toasts.createFailed'));
         }
         setSending(false);
         return;
@@ -108,13 +110,13 @@ export function ShareDialog() {
         },
       });
 
-      toast.success(`Invitation sent to ${email.trim()}`);
+      toast.success(t('shareDialog.toasts.invitationSent', { email: email.trim() }));
       setEmail('');
       refetchMembers();
       queryClient.invalidateQueries({ queryKey: ['shared-items'] });
     } catch (err: any) {
       console.error('Invite error:', err);
-      toast.error('Failed to send invitation');
+      toast.error(t('shareDialog.toasts.invitationFailed'));
     } finally {
       setSending(false);
     }
@@ -123,10 +125,10 @@ export function ShareDialog() {
   const handleChangeRole = async (shareId: string, newRole: string) => {
     const { error } = await supabase.from('shares').update({ permission: newRole }).eq('id', shareId);
     if (error) {
-      toast.error('Failed to update role');
+      toast.error(t('shareDialog.toasts.roleUpdateFailed'));
       return;
     }
-    toast.success('Role updated');
+    toast.success(t('shareDialog.toasts.roleUpdated'));
     refetchMembers();
     queryClient.invalidateQueries({ queryKey: ['item-role'] });
   };
@@ -134,10 +136,10 @@ export function ShareDialog() {
   const handleRemoveAccess = async (shareId: string, memberName: string) => {
     const { error } = await supabase.from('shares').delete().eq('id', shareId);
     if (error) {
-      toast.error('Failed to remove access');
+      toast.error(t('shareDialog.toasts.removeFailed'));
       return;
     }
-    toast.success(`Removed access for ${memberName}`);
+    toast.success(t('shareDialog.toasts.removed', { name: memberName }));
     refetchMembers();
     queryClient.invalidateQueries({ queryKey: ['shared-items'] });
     queryClient.invalidateQueries({ queryKey: ['item-role'] });
@@ -150,12 +152,12 @@ export function ShareDialog() {
       <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-accent" />Share "{context}"
+            <Users className="h-5 w-5 text-accent" />{t('shareDialog.shareTitle', { context })}
           </DialogTitle>
           <DialogDescription>
             {canManage
-              ? `Manage who has access to this ${entityType} and their permissions.`
-              : `View who has access to this ${entityType}.`}
+              ? t('shareDialog.manageDescription', { type: t(`shareDialog.types.${entityType}`) })
+              : t('shareDialog.viewDescription', { type: t(`shareDialog.types.${entityType}`) })}
           </DialogDescription>
         </DialogHeader>
 
@@ -163,12 +165,12 @@ export function ShareDialog() {
           {/* Invite section — admin+ only */}
           {canManage && (
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Invite by email</Label>
+              <Label className="text-sm font-medium">{t('shareDialog.inviteByEmail')}</Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Enter email address"
+                    placeholder={t('shareDialog.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-9"
@@ -180,9 +182,9 @@ export function ShareDialog() {
                 <Select value={permission} onValueChange={setPermission}>
                   <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="viewer">Viewer</SelectItem>
-                    <SelectItem value="editor">Editor</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="viewer">{t('shareDialog.viewer')}</SelectItem>
+                    <SelectItem value="editor">{t('shareDialog.editor')}</SelectItem>
+                    <SelectItem value="admin">{t('shareDialog.admin')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button
@@ -190,7 +192,7 @@ export function ShareDialog() {
                   onClick={handleInvite}
                   disabled={!email.trim() || sending}
                 >
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Invite'}
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('shareDialog.invite')}
                 </Button>
               </div>
             </div>
@@ -199,7 +201,7 @@ export function ShareDialog() {
           {/* Members list */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">
-              People with access ({members.length + 1})
+              {t('shareDialog.peopleAccess', { count: members.length + 1 })}
             </Label>
 
             <div className="space-y-1">
@@ -223,40 +225,40 @@ export function ShareDialog() {
 
           {/* Role explanation */}
           <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-            <p className="text-xs font-medium text-foreground">Role permissions</p>
+            <p className="text-xs font-medium text-foreground">{t('shareDialog.rolePermissions')}</p>
             <div className="grid grid-cols-1 gap-1.5 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Eye className="h-3 w-3 shrink-0" />
-                <span><strong>Viewer</strong> — View content, participate in existing chats</span>
+                <span><strong>{t('shareDialog.viewer')}</strong> — {t('shareDialog.viewerHelp')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Pencil className="h-3 w-3 shrink-0" />
-                <span><strong>Editor</strong> — Create chats, upload & manage documents</span>
+                <span><strong>{t('shareDialog.editor')}</strong> — {t('shareDialog.editorHelp')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Shield className="h-3 w-3 shrink-0" />
-                <span><strong>Admin</strong> — Full management except archive/delete</span>
+                <span><strong>{t('shareDialog.admin')}</strong> — {t('shareDialog.adminHelp')}</span>
               </div>
             </div>
           </div>
 
           {/* Copy link */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Share via link</Label>
+            <Label className="text-sm font-medium">{t('shareDialog.shareViaLink')}</Label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input value={`${window.location.origin}/?shared=${itemId}`} readOnly className="pl-9 bg-muted text-xs" />
               </div>
               <Button variant="outline" onClick={handleCopyLink} className="gap-2">
-                {copied ? <><Check className="h-4 w-4 text-green-500" />Copied</> : <><Copy className="h-4 w-4" />Copy</>}
+                {copied ? <><Check className="h-4 w-4 text-green-500" />{t('shareDialog.copied')}</> : <><Copy className="h-4 w-4" />{t('shareDialog.copy')}</>}
               </Button>
             </div>
           </div>
         </div>
 
         <div className="flex justify-end pt-4 border-t border-border">
-          <Button variant="outline" onClick={() => setShowShare(false)}>Done</Button>
+          <Button variant="outline" onClick={() => setShowShare(false)}>{t('shareDialog.done')}</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -264,8 +266,9 @@ export function ShareDialog() {
 }
 
 function OwnerRow({ ownerUserId, isCurrentUser }: { ownerUserId?: string; isCurrentUser: boolean }) {
+  const { t } = useTranslation();
   const { data: ownerProfile } = useOwnerProfile(ownerUserId);
-  const name = ownerProfile?.full_name || ownerProfile?.username || ownerProfile?.email || 'Owner';
+  const name = ownerProfile?.full_name || ownerProfile?.username || ownerProfile?.email || t('shareDialog.owner');
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
@@ -276,14 +279,14 @@ function OwnerRow({ ownerUserId, isCurrentUser }: { ownerUserId?: string; isCurr
       </Avatar>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">
-          {name} {isCurrentUser && <span className="text-muted-foreground">(you)</span>}
+          {name} {isCurrentUser && <span className="text-muted-foreground">{t('shareDialog.you')}</span>}
         </p>
         {ownerProfile?.email && (
           <p className="text-xs text-muted-foreground truncate">{ownerProfile.email}</p>
         )}
       </div>
       <Badge variant="default" className="gap-1 text-xs">
-        <Crown className="h-3 w-3" /> Owner
+        <Crown className="h-3 w-3" /> {t('shareDialog.owner')}
       </Badge>
     </div>
   );
@@ -322,7 +325,8 @@ function MemberRow({
   onChangeRole: (shareId: string, newRole: string) => void;
   onRemove: (shareId: string, name: string) => void;
 }) {
-  const name = member.fullName || member.username || member.email || 'Pending';
+  const { t } = useTranslation();
+  const name = member.fullName || member.username || member.email || t('shareDialog.pending');
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
   const roleIcon = member.permission === 'admin' ? Shield : member.permission === 'editor' ? Pencil : Eye;
   const RoleIcon = roleIcon;
@@ -335,7 +339,7 @@ function MemberRow({
       </Avatar>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">
-          {name} {isCurrentUser && <span className="text-muted-foreground">(you)</span>}
+          {name} {isCurrentUser && <span className="text-muted-foreground">{t('shareDialog.you')}</span>}
         </p>
         {member.email && (
           <p className="text-xs text-muted-foreground truncate">{member.email}</p>
@@ -349,9 +353,9 @@ function MemberRow({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="viewer">Viewer</SelectItem>
-              <SelectItem value="editor">Editor</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="viewer">{t('shareDialog.viewer')}</SelectItem>
+              <SelectItem value="editor">{t('shareDialog.editor')}</SelectItem>
+              <SelectItem value="admin">{t('shareDialog.admin')}</SelectItem>
             </SelectContent>
           </Select>
           <Button
