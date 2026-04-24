@@ -637,7 +637,7 @@ export function AppSidebar() {
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
                   {projectsSectionOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                  My Projects
+                  {t('sidebar.projects.section')}
                 </button>
               </CollapsibleTrigger>
               <div className="flex items-center gap-0.5">
@@ -655,7 +655,7 @@ export function AppSidebar() {
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={(e) => { e.stopPropagation(); if (expandedProjects.size === projects.length) { collapseAll(); } else { expandAll(); } }}>
                     {expandedProjects.size === projects.length ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
                   </Button>
-                </TooltipTrigger><TooltipContent side="top" className="text-xs">{expandedProjects.size === projects.length ? 'Collapse all' : 'Expand all'}</TooltipContent></Tooltip>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{expandedProjects.size === projects.length ? t('sidebar.sort.collapseAll') : t('sidebar.sort.expandAll')}</TooltipContent></Tooltip>
               </div>
             </div>
 
@@ -673,16 +673,16 @@ export function AppSidebar() {
                   <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'projects' ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
                     <FolderOpen className="h-3.5 w-3.5" />
                   </div>
-                  <span className="truncate">All projects</span>
+                  <span className="truncate">{t('sidebar.projects.all')}</span>
                 </button>
                 <Tooltip><TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent flex-shrink-0" onClick={() => setShowNewProject(true)}>
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
-                </TooltipTrigger><TooltipContent>New Project</TooltipContent></Tooltip>
+                </TooltipTrigger><TooltipContent>{t('sidebar.projects.newTooltip')}</TooltipContent></Tooltip>
               </div>
 
-              {projectsLoading && <p className="text-xs text-sidebar-muted px-2 py-4 text-center">Loading projects...</p>}
+              {projectsLoading && <p className="text-xs text-sidebar-muted px-2 py-4 text-center">{t('sidebar.projects.loading')}</p>}
 
               {sortedProjects.map((project) => (
                 <ProjectItem
@@ -702,7 +702,7 @@ export function AppSidebar() {
                   onRenameChat={(chatId, currentName) => { setRenameChatId(chatId); setRenameChatValue(currentName); }}
                 />
               ))}
-              {!projectsLoading && projects.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No projects yet</p>}
+              {!projectsLoading && projects.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.projects.empty')}</p>}
             </CollapsibleContent>
           </Collapsible>
 
