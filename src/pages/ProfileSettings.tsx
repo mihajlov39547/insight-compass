@@ -411,15 +411,15 @@ export default function ProfileSettings() {
           <TabsContent value="settings" className="space-y-8">
             {/* Username */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Username</h3>
-              <p className="text-xs text-muted-foreground">Your public identifier and profile URL.</p>
+              <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.username.title')}</h3>
+              <p className="text-xs text-muted-foreground">{t('profileSettings.username.description')}</p>
               <div className="flex gap-2">
-                <Input value={username} onChange={e => setUsername(sanitizeUsername(e.target.value))} placeholder="username" />
+                <Input value={username} onChange={e => setUsername(sanitizeUsername(e.target.value))} placeholder={t('profileSettings.username.placeholder')} />
                 <Button variant="outline" size="sm" onClick={handleSaveUsername} disabled={isSavingUsername}>
-                  {isSavingUsername ? 'Saving...' : 'Update'}
+                  {isSavingUsername ? t('profileSettings.username.updating') : t('profileSettings.username.update')}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Lowercase letters and numbers only.</p>
+              <p className="text-xs text-muted-foreground">{t('profileSettings.username.rules')}</p>
               {usernameValidationMessage ? (
                 <p className="text-xs text-destructive">{usernameValidationMessage}</p>
               ) : null}
@@ -429,11 +429,11 @@ export default function ProfileSettings() {
 
             {/* Email */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Email</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.email.title')}</h3>
               <Input value={displayEmail} disabled />
               {googleProvider && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Shield className="h-3 w-3" /> Managed by Google — cannot be changed here.
+                  <Shield className="h-3 w-3" /> {t('profileSettings.email.googleManaged')}
                 </p>
               )}
             </section>
@@ -448,7 +448,7 @@ export default function ProfileSettings() {
 
             {/* Linked Accounts */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Linked Accounts</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.linkedAccounts.title')}</h3>
               <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/40">
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -458,9 +458,9 @@ export default function ProfileSettings() {
                 </svg>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground">Google</p>
-                  <p className="text-xs text-muted-foreground">{displayEmail} — Primary sign-in method</p>
+                  <p className="text-xs text-muted-foreground">{t('profileSettings.linkedAccounts.googlePrimary', { email: displayEmail })}</p>
                 </div>
-                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">Connected</span>
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('profileSettings.linkedAccounts.connected')}</span>
               </div>
             </section>
 
