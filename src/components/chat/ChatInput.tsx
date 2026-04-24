@@ -396,10 +396,10 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                          <Globe className="h-3.5 w-3.5" /> Web search
+                          <Globe className="h-3.5 w-3.5" /> {t('chatInput.modes.webSearch')}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Add quick web result snippets to ground this prompt.
+                          {t('chatInput.modes.webSearchDesc')}
                         </p>
                       </div>
                       <Switch
@@ -411,10 +411,10 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                          <Telescope className="h-3.5 w-3.5" /> Research
+                          <Telescope className="h-3.5 w-3.5" /> {t('chatInput.modes.research')}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Run deep web research for this prompt. Slower, more thorough.
+                          {t('chatInput.modes.researchDesc')}
                         </p>
                       </div>
                       <Switch
@@ -426,10 +426,10 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                          <Youtube className="h-3.5 w-3.5 text-destructive" /> YouTube Search
+                          <Youtube className="h-3.5 w-3.5 text-destructive" /> {t('chatInput.modes.youtube')}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Search YouTube videos for this prompt.
+                          {t('chatInput.modes.youtubeDesc')}
                         </p>
                       </div>
                       <Switch
@@ -442,10 +442,10 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                            <BookOpen className="h-3.5 w-3.5 text-accent" /> Notebook
+                            <BookOpen className="h-3.5 w-3.5 text-accent" /> {t('chatInput.modes.notebook')}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            Ground this prompt in a selected notebook's sources.
+                            {t('chatInput.modes.notebookDesc')}
                           </p>
                         </div>
                         <Switch
@@ -458,7 +458,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                         <div className="rounded-md border border-border/70 bg-muted/30 p-2 space-y-2">
                           {notebooks.length === 0 ? (
                             <p className="text-xs text-muted-foreground text-center py-3">
-                              No notebooks available. Create one to use this mode.
+                              {t('chatInput.modes.noNotebooks')}
                             </p>
                           ) : (
                             <>
@@ -467,13 +467,13 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                                 <Input
                                   value={notebookSearch}
                                   onChange={(e) => setNotebookSearch(e.target.value)}
-                                  placeholder="Search notebooks…"
+                                  placeholder={t('chatInput.modes.searchPlaceholder')}
                                   className="h-8 pl-7 text-xs"
                                 />
                               </div>
                               <div className="max-h-48 overflow-y-auto space-y-0.5">
                                 {filteredNotebooks.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground text-center py-2">No matches</p>
+                                  <p className="text-xs text-muted-foreground text-center py-2">{t('chatInput.modes.noMatches')}</p>
                                 ) : (
                                   filteredNotebooks.map((nb) => {
                                     const active = promptOptions.notebookId === nb.id;
@@ -503,7 +503,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
 
                     {promptOptions.augmentationMode !== 'none' && (
                       <p className="text-[10px] text-muted-foreground border-t border-border/60 pt-2">
-                        Applies only to the next message.
+                        {t('chatInput.modes.appliesNext')}
                       </p>
                     )}
                   </PopoverContent>
@@ -530,10 +530,10 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                         ) : (
                           <Sparkles className="h-3 w-3" />
                         )}
-                        <span className="hidden sm:inline">{isImproving ? 'Improving…' : 'Improve'}</span>
+                        <span className="hidden sm:inline">{isImproving ? t('chatInput.improving') : t('chatInput.improve')}</span>
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Improve prompt with AI</TooltipContent>
+                    <TooltipContent>{t('chatInput.improveTooltip')}</TooltipContent>
                   </Tooltip>
 
                   <div className="h-4 w-px bg-border" />
@@ -576,7 +576,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                         <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setDocumentScope('chat'); setShowDocuments(true); }}>
                           <Paperclip className="h-4 w-4" />
                         </Button>
-                      </TooltipTrigger><TooltipContent>Attach files</TooltipContent></Tooltip>
+                      </TooltipTrigger><TooltipContent>{t('chatInput.attach')}</TooltipContent></Tooltip>
                     </>
                   )}
 
@@ -586,7 +586,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                 </div>
 
                 <span className="text-[10px] text-muted-foreground pr-0.5">
-                  {isGenerating ? 'Generating…' : <>Press <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> to send</>}
+                  {isGenerating ? t('chatInput.generating') : <>{t('chatInput.pressEnter')} <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> {t('chatInput.pressEnterSuffix')}</>}
                 </span>
               </div>
             </div>
