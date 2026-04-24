@@ -194,6 +194,7 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
 }
 
 export function SearchDashboard() {
+  const { t } = useTranslation();
   const { searchQuery, setSearchQuery, setSelectedProjectId, setSelectedChatId, setSelectedNotebookId, setActiveView } = useApp();
   const [filter, setFilter] = useState<SearchFilter>('all');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -210,10 +211,10 @@ export function SearchDashboard() {
   }, [results]);
 
   const filters: { key: SearchFilter; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'projects', label: 'Projects' },
-    { key: 'notebooks', label: 'Notebooks' },
-    { key: 'documents', label: 'Documents' },
+    { key: 'all', label: t('search.filters.all') },
+    { key: 'projects', label: t('search.filters.projects') },
+    { key: 'notebooks', label: t('search.filters.notebooks') },
+    { key: 'documents', label: t('search.filters.documents') },
   ];
 
   const handleProjectClick = (id: string) => {
