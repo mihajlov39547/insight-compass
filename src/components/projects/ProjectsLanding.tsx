@@ -259,11 +259,11 @@ export function ProjectsLanding() {
       <div className="max-w-6xl mx-auto px-6 py-10 animate-fade-in">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">My Projects</h1>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">{t('projectsLanding.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {hasProjects
-              ? `${projects.length} project${projects.length !== 1 ? 's' : ''}`
-              : 'No projects yet'}
+              ? t('projectsLanding.count', { count: projects.length })
+              : t('projectsLanding.empty')}
           </p>
         </div>
 
