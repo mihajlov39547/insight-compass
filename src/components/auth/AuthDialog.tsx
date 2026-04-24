@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface AuthDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthDialogProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'signin' | 'register'>(initialMode);
   const [identifier, setIdentifier] = useState('');
   const [email, setEmail] = useState('');
@@ -50,10 +52,10 @@ export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthD
         redirect_uri: window.location.origin,
       });
       if (error) {
-        toast.error("Failed to sign in with Google");
+        toast.error(t('auth.googleFailed'));
       }
     } catch {
-      toast.error("Failed to sign in with Google");
+      toast.error(t('auth.googleFailed'));
     } finally {
       setIsGoogleLoading(false);
     }
@@ -62,8 +64,8 @@ export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthD
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
-    if (!identifier.trim()) newErrors.identifier = 'Email or username is required';
-    if (!password) newErrors.password = 'Password is required';
+    if (!identifier.trim()) newErrors.identifier = t('auth.errors.identifierRequired');
+    if (!password) newErrors.password = t('auth.errors.passwordRequired');
     setErrors(newErrors);
     if (Object.keys(newErrors).length) return;
 
@@ -72,24 +74,24 @@ export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthD
       let loginEmail = identifier.trim();
       if (!loginEmail.includes('@')) {
         const { data, error } = await supabase.rpc('get_email_by_username', { lookup_username: loginEmail });
-        if (error || !data) { toast.error('Invalid username or password'); setLoading(false); return; }
+        if (error || !data) { toast.error(t('auth.errors.invalidUsernameOrPassword')); setLoading(false); return; }
         loginEmail = data as string;
       }
       const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-      if (error) { toast.error('Invalid credentials. Please try again.'); return; }
-      toast.success('Signed in successfully!');
+      if (error) { toast.error(t('auth.errors.invalidCredentials')); return; }
+      toast.success(t('auth.toasts.signedIn'));
       handleOpenChange(false);
-    } catch { toast.error('Sign in failed.'); } finally { setLoading(false); }
+    } catch { toast.error(t('auth.errors.signInFailed')); } finally { setLoading(false); }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
-    if (!email.trim()) newErrors.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Invalid email address';
-    if (!password) newErrors.password = 'Password is required';
-    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-    if (password !== confirmPassword) newErrors.confirm = 'Passwords do not match';
+    if (!email.trim()) newErrors.email = t('auth.errors.emailRequired');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = t('auth.errors.invalidEmail');
+    if (!password) newErrors.password = t('auth.errors.passwordRequired');
+    else if (password.length < 6) newErrors.password = t('auth.errors.passwordTooShort');
+    if (password !== confirmPassword) newErrors.confirm = t('auth.errors.passwordsDontMatch');
     setErrors(newErrors);
     if (Object.keys(newErrors).length) return;
 
@@ -100,38 +102,38 @@ export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthD
         options: { emailRedirectTo: window.location.origin },
       });
       if (error) { toast.error(error.message); return; }
-      if (data.user) { toast.success('Account created successfully!'); handleOpenChange(false); }
-    } catch { toast.error('Registration failed.'); } finally { setLoading(false); }
+      if (data.user) { toast.success(t('auth.toasts.accountCreated')); handleOpenChange(false); }
+    } catch { toast.error(t('auth.errors.registrationFailed')); } finally { setLoading(false); }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">{mode === 'signin' ? 'Sign in' : 'Create an account'}</DialogTitle>
+          <DialogTitle className="text-xl">{mode === 'signin' ? t('auth.signInTitle') : t('auth.registerTitle')}</DialogTitle>
         </DialogHeader>
 
         {mode === 'signin' ? (
           <form onSubmit={handleSignIn} className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="auth-id">Email or username</Label>
-              <Input id="auth-id" type="text" placeholder="you@example.com or username" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" />
+              <Label htmlFor="auth-id">{t('auth.emailOrUsername')}</Label>
+              <Input id="auth-id" type="text" placeholder={t('auth.emailOrUsernamePlaceholder')} value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" />
               {errors.identifier && <p className="text-sm text-destructive">{errors.identifier}</p>}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="auth-pw">Password</Label>
-                <button type="button" className="text-xs text-muted-foreground hover:text-primary transition-colors" onClick={() => toast.info('Password reset will be available soon.')}>Reset password</button>
+                <Label htmlFor="auth-pw">{t('auth.password')}</Label>
+                <button type="button" className="text-xs text-muted-foreground hover:text-primary transition-colors" onClick={() => toast.info(t('auth.resetPasswordSoon'))}>{t('auth.resetPassword')}</button>
               </div>
-              <Input id="auth-pw" type="password" placeholder="Your password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+              <Input id="auth-pw" type="password" placeholder={t('auth.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Sign in
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{t('auth.signIn')}
             </Button>
             <div className="relative my-2">
               <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">or</span>
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">{t('auth.or')}</span>
             </div>
             <Button type="button" variant="outline" className="w-full gap-2" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
               <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -140,36 +142,36 @@ export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthD
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              {isGoogleLoading ? 'Signing in...' : 'Sign in with Google'}
+              {isGoogleLoading ? t('auth.signingIn') : t('auth.signInWithGoogle')}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Don't have an account?{' '}
-              <button type="button" className="text-primary hover:underline font-medium" onClick={() => switchMode('register')}>Register instead</button>
+              {t('auth.noAccount')}{' '}
+              <button type="button" className="text-primary hover:underline font-medium" onClick={() => switchMode('register')}>{t('auth.registerInstead')}</button>
             </p>
           </form>
         ) : (
           <form onSubmit={handleRegister} className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="reg-email">Email</Label>
-              <Input id="reg-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+              <Label htmlFor="reg-email">{t('auth.email')}</Label>
+              <Input id="reg-email" type="email" placeholder={t('auth.emailPlaceholder')} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
               {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-pw">Password</Label>
-              <Input id="reg-pw" type="password" placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+              <Label htmlFor="reg-pw">{t('auth.password')}</Label>
+              <Input id="reg-pw" type="password" placeholder={t('auth.passwordHintPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-confirm">Repeat password</Label>
-              <Input id="reg-confirm" type="password" placeholder="Repeat your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
+              <Label htmlFor="reg-confirm">{t('auth.repeatPassword')}</Label>
+              <Input id="reg-confirm" type="password" placeholder={t('auth.repeatPasswordPlaceholder')} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
               {errors.confirm && <p className="text-sm text-destructive">{errors.confirm}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Create account
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{t('auth.createAccount')}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Already have an account?{' '}
-              <button type="button" className="text-primary hover:underline font-medium" onClick={() => switchMode('signin')}>Sign in instead</button>
+              {t('auth.haveAccount')}{' '}
+              <button type="button" className="text-primary hover:underline font-medium" onClick={() => switchMode('signin')}>{t('auth.signInInstead')}</button>
             </p>
           </form>
         )}

@@ -439,5 +439,325 @@
       "emptyTitle": "No messages or invites pending",
       "emptyDescription": "Messages, workspace and project invitations will appear here"
     }
+  },
+  "auth": {
+    "signInTitle": "Sign in",
+    "registerTitle": "Create an account",
+    "emailOrUsername": "Email or username",
+    "emailOrUsernamePlaceholder": "you@example.com or username",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "Your password",
+    "passwordHintPlaceholder": "At least 6 characters",
+    "repeatPassword": "Repeat password",
+    "repeatPasswordPlaceholder": "Repeat your password",
+    "resetPassword": "Reset password",
+    "resetPasswordSoon": "Password reset will be available soon.",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "signInWithGoogle": "Sign in with Google",
+    "googleFailed": "Failed to sign in with Google",
+    "createAccount": "Create account",
+    "or": "or",
+    "noAccount": "Don't have an account?",
+    "registerInstead": "Register instead",
+    "register": "Register",
+    "haveAccount": "Already have an account?",
+    "signInInstead": "Sign in instead",
+    "errors": {
+      "identifierRequired": "Email or username is required",
+      "passwordRequired": "Password is required",
+      "emailRequired": "Email is required",
+      "invalidEmail": "Invalid email address",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordsDontMatch": "Passwords do not match",
+      "invalidUsernameOrPassword": "Invalid username or password",
+      "invalidCredentials": "Invalid credentials. Please try again.",
+      "signInFailed": "Sign in failed.",
+      "signInFailedRetry": "Sign in failed. Please try again.",
+      "registrationFailed": "Registration failed.",
+      "registrationFailedRetry": "Registration failed. Please try again."
+    },
+    "toasts": {
+      "signedIn": "Signed in successfully!",
+      "accountCreated": "Account created successfully!"
+    }
+  },
+  "onboarding": {
+    "badge": "Researcher",
+    "heroLine1": "Turn Your Documents Into",
+    "heroLine2": "Intelligent Conversations",
+    "heroDescription": "Upload your files, build a searchable knowledge base, and get accurate answers powered by retrieval-augmented generation. Perfect for teams who need fast, reliable information retrieval.",
+    "signIn": "Sign in",
+    "viewPricing": "View Pricing",
+    "features": {
+      "upload": {
+        "title": "Upload & Index Documents",
+        "description": "Upload PDFs, Word files, and text documents. They're automatically indexed for fast, accurate retrieval."
+      },
+      "knowledge": {
+        "title": "Multimodal Knowledge Base",
+        "description": "Combine text, structured data, and multiple file formats into a centralized knowledge base per project."
+      },
+      "rag": {
+        "title": "RAG-Powered Chat",
+        "description": "Ask questions in natural language. Responses are grounded in your uploaded content for improved accuracy."
+      },
+      "team": {
+        "title": "Team Collaboration",
+        "description": "Share projects with team members. Ensure consistent answers from a shared source of truth."
+      }
+    },
+    "notebooks": {
+      "title": "Organize Insights with Notebooks",
+      "description": "Go beyond Q&A — structure your knowledge, capture findings, and build reusable research workflows.",
+      "build": {
+        "title": "Build Research Notebooks",
+        "description": "Organize documents, questions, and sources into focused knowledge workspaces."
+      },
+      "save": {
+        "title": "Save and Reuse Insights",
+        "description": "Turn useful answers into notes, refine them, and add them back as reusable sources."
+      }
+    },
+    "useCases": {
+      "title": "What You Can Do with Researcher",
+      "description": "Practical ways to get value from your documents and knowledge.",
+      "research": {
+        "title": "Research & Analysis",
+        "description": "Explore papers, reports, specifications, and long documents faster."
+      },
+      "learning": {
+        "title": "Learning & Study",
+        "description": "Turn dense material into clear explanations, summaries, and study notes."
+      },
+      "qa": {
+        "title": "Document Q&A",
+        "description": "Ask questions across your uploaded files and get grounded answers quickly."
+      },
+      "organize": {
+        "title": "Knowledge Organization",
+        "description": "Build reusable notebooks, notes, and source-backed knowledge bases."
+      }
+    }
+  },
+  "newProject": {
+    "title": "Create New Project",
+    "description": "Start a new knowledge project to organize your documents and chats.",
+    "name": "Project name",
+    "namePlaceholder": "Enter project name",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe what this project is about. This helps the AI agent provide more relevant and accurate answers...",
+    "descriptionHelp": "This description helps the AI understand the project context and provide better answers.",
+    "language": "Language",
+    "cancel": "Cancel",
+    "create": "Create Project",
+    "errors": {
+      "nameRequired": "Project name is required",
+      "descriptionRequired": "Project description is required — it helps the AI provide better answers"
+    }
+  },
+  "shareDialog": {
+    "shareTitle": "Share \"{{context}}\"",
+    "manageDescription": "Manage who has access to this {{type}} and their permissions.",
+    "viewDescription": "View who has access to this {{type}}.",
+    "inviteByEmail": "Invite by email",
+    "emailPlaceholder": "Enter email address",
+    "invite": "Invite",
+    "peopleAccess": "People with access ({{count}})",
+    "rolePermissions": "Role permissions",
+    "viewer": "Viewer",
+    "editor": "Editor",
+    "admin": "Admin",
+    "viewerHelp": "View content, participate in existing chats",
+    "editorHelp": "Create chats, upload & manage documents",
+    "adminHelp": "Full management except archive/delete",
+    "shareViaLink": "Share via link",
+    "copy": "Copy",
+    "copied": "Copied",
+    "done": "Done",
+    "owner": "Owner",
+    "you": "(you)",
+    "pending": "Pending",
+    "types": {
+      "project": "project",
+      "notebook": "notebook"
+    },
+    "fallback": {
+      "notebook": "Notebook",
+      "project": "Project"
+    },
+    "toasts": {
+      "invalidEmail": "Please enter a valid email address",
+      "alreadyAccess": "This user already has access",
+      "createFailed": "Failed to create share",
+      "invitationSent": "Invitation sent to {{email}}",
+      "invitationFailed": "Failed to send invitation",
+      "roleUpdated": "Role updated",
+      "roleUpdateFailed": "Failed to update role",
+      "removed": "Removed access for {{name}}",
+      "removeFailed": "Failed to remove access"
+    }
+  },
+  "uploadDialog": {
+    "title": "Upload Documents",
+    "description": "Upload documents to attach to this {{context}}. Files will be analyzed and indexed in the background.",
+    "dropHint": "Drop files here or click to browse",
+    "supported": "Supported: PDF, DOC/DOCX, CSV/XLS/XLSX, JPG/JPEG/PNG, PPTX, EML/MSG, TXT/TXTX/MD/RTF/XML/JSON/LOG • Max 20 MB",
+    "unsupported": "Unsupported file type",
+    "uploading": "Uploading…",
+    "uploadFailed": "Upload failed",
+    "cancel": "Cancel",
+    "upload": "Upload ({{count}})",
+    "toasts": {
+      "filesFailed_one": "{{count}} file failed to upload",
+      "filesFailed_other": "{{count}} files failed to upload",
+      "uploadedAndProcessing_one": "{{count}} document uploaded and processing started",
+      "uploadedAndProcessing_other": "{{count}} documents uploaded and processing started",
+      "uploadFailed": "Upload failed"
+    },
+    "context": {
+      "project": "project",
+      "chat": "chat",
+      "notebook": "notebook"
+    }
+  },
+  "documentsDialog": {
+    "projectDocuments": "Project Documents",
+    "chatDocuments": "Chat Documents",
+    "uploadDocuments": "Upload Documents",
+    "noDocuments": "No documents uploaded yet",
+    "retry": "Retry processing",
+    "done": "Done",
+    "documentCount_one": "{{count}} document",
+    "documentCount_other": "{{count}} documents",
+    "analyzedCount": "{{count}} analyzed",
+    "wordsSuffix": "words",
+    "deleted": "{{name}} deleted",
+    "deleteFailed": "Delete failed",
+    "stages": {
+      "uploaded": "Queued",
+      "extracting_metadata": "Extracting metadata",
+      "extracting_content": "Analyzing content",
+      "detecting_language": "Detecting language",
+      "summarizing": "Generating summary",
+      "indexing": "Creating search index",
+      "processing": "Processing",
+      "searchable": "Searchable",
+      "failed": "Failed"
+    }
+  },
+  "settingsDialog": {
+    "title": "General Settings",
+    "aiSection": "AI Response Preferences",
+    "responseLength": "Default Response Length",
+    "responseLengths": {
+      "concise": "Concise",
+      "standard": "Standard",
+      "detailed": "Detailed"
+    },
+    "retrievalDepth": "Retrieval Depth",
+    "retrievalDepths": {
+      "shallow": "Shallow",
+      "medium": "Medium",
+      "deep": "Deep"
+    },
+    "citeSources": "Cite Sources",
+    "autoSummarize": "Auto-summarize Documents",
+    "autoSummarizeHelp": "Enabled by default",
+    "answerFormatting": "Enable Answer Formatting",
+    "answerFormattingHelp": "Rich markdown rendering for AI answers",
+    "chatSuggestions": "Chat suggestions",
+    "chatSuggestionsHelp": "Show AI-generated follow-up suggestions in chat",
+    "generationSound": "Generation complete sound",
+    "generationSoundHelp": "Play a sound when generation finishes",
+    "generationSounds": {
+      "first": "First generation",
+      "always": "Always",
+      "never": "Never"
+    },
+    "agentNotifications": "Agent action notifications",
+    "agentNotificationsHelp": "Get notified when agent actions complete",
+    "interfaceSection": "Interface Preferences",
+    "language": "Language",
+    "layout": "Layout",
+    "layouts": {
+      "comfortable": "Comfortable",
+      "compact": "Compact"
+    },
+    "defaultsSection": "Defaults",
+    "preferredModel": "Preferred AI Model",
+    "cancel": "Cancel",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "saved": "Settings saved",
+    "saveFailed": "Failed to save settings",
+    "redeployEdge": "Redeploy Edge",
+    "pinging": "Pinging…",
+    "redeployPinged": "Redeploy pinged {{ok}}/{{total}} functions",
+    "redeployFailed": "Redeploy request failed"
+  },
+  "pricingDialog": {
+    "title": "Choose Your Plan",
+    "subtitle": "Select the perfect plan for your needs. Upgrade or downgrade anytime.",
+    "mostPopular": "Most Popular",
+    "currentPlan": "Current Plan",
+    "periods": {
+      "forever": "forever",
+      "perMonth": "per month",
+      "contactUs": "contact us"
+    },
+    "ctas": {
+      "getStarted": "Get Started",
+      "contactSales": "Contact Sales"
+    },
+    "plans": {
+      "free": {
+        "name": "Free",
+        "description": "Perfect for getting started",
+        "features": {
+          "0": "Up to 3 projects",
+          "1": "10 document uploads",
+          "2": "Basic RAG chat",
+          "3": "Community support"
+        }
+      },
+      "basic": {
+        "name": "Basic",
+        "description": "For individuals and small teams",
+        "features": {
+          "0": "Up to 10 projects",
+          "1": "100 document uploads",
+          "2": "Faster retrieval",
+          "3": "Project sharing (3 members)",
+          "4": "Email support"
+        }
+      },
+      "premium": {
+        "name": "Premium",
+        "description": "For growing teams",
+        "features": {
+          "0": "Unlimited projects",
+          "1": "500 document uploads",
+          "2": "Advanced retrieval",
+          "3": "Priority models",
+          "4": "Project sharing (10 members)",
+          "5": "Priority support"
+        }
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "For large organizations",
+        "features": {
+          "0": "Everything in Premium",
+          "1": "Unlimited documents",
+          "2": "Team management",
+          "3": "SSO & security features",
+          "4": "Custom integrations",
+          "5": "Dedicated support"
+        }
+      }
+    }
   }
 }

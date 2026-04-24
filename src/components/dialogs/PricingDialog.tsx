@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Plan } from '@/data/mockData';
 import { planIcons } from '@/lib/planConfig';
+import { useTranslation } from 'react-i18next';
 
 interface PricingDialogProps {
   open: boolean;
@@ -19,79 +20,23 @@ interface PricingDialogProps {
   onSelectPlan: (plan: Plan) => void;
 }
 
-const plans = [
-  {
-    id: 'free' as Plan,
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Perfect for getting started',
-    icon: planIcons.free,
-    features: [
-      'Up to 3 projects',
-      '10 document uploads',
-      'Basic RAG chat',
-      'Community support',
-    ],
-    cta: 'Get Started',
-    popular: false,
-  },
-  {
-    id: 'basic' as Plan,
-    name: 'Basic',
-    price: '$19',
-    period: 'per month',
-    description: 'For individuals and small teams',
-    icon: planIcons.basic,
-    features: [
-      'Up to 10 projects',
-      '100 document uploads',
-      'Faster retrieval',
-      'Project sharing (3 members)',
-      'Email support',
-    ],
-    cta: 'Get Started',
-    popular: false,
-  },
-  {
-    id: 'premium' as Plan,
-    name: 'Premium',
-    price: '$49',
-    period: 'per month',
-    description: 'For growing teams',
-    icon: planIcons.premium,
-    features: [
-      'Unlimited projects',
-      '500 document uploads',
-      'Advanced retrieval',
-      'Priority models',
-      'Project sharing (10 members)',
-      'Priority support',
-    ],
-    cta: 'Get Started',
-    popular: true,
-  },
-  {
-    id: 'enterprise' as Plan,
-    name: 'Enterprise',
-    price: 'Custom',
-    period: 'contact us',
-    description: 'For large organizations',
-    icon: planIcons.enterprise,
-    features: [
-      'Everything in Premium',
-      'Unlimited documents',
-      'Team management',
-      'SSO & security features',
-      'Custom integrations',
-      'Dedicated support',
-    ],
-    cta: 'Contact Sales',
-    popular: false,
-  },
+const planConfig: Array<{
+  id: Plan;
+  price: string;
+  periodKey: 'forever' | 'perMonth' | 'contactUs';
+  icon: any;
+  featureCount: number;
+  ctaKey: 'getStarted' | 'contactSales';
+  popular: boolean;
+}> = [
+  { id: 'free', price: '$0', periodKey: 'forever', icon: planIcons.free, featureCount: 4, ctaKey: 'getStarted', popular: false },
+  { id: 'basic', price: '$19', periodKey: 'perMonth', icon: planIcons.basic, featureCount: 5, ctaKey: 'getStarted', popular: false },
+  { id: 'premium', price: '$49', periodKey: 'perMonth', icon: planIcons.premium, featureCount: 6, ctaKey: 'getStarted', popular: true },
+  { id: 'enterprise', price: 'Custom', periodKey: 'contactUs', icon: planIcons.enterprise, featureCount: 6, ctaKey: 'contactSales', popular: false },
 ];
 
 export function PricingDialog({ open, onOpenChange, currentPlan, onSelectPlan }: PricingDialogProps) {
+  const { t } = useTranslation();
   const handleSelectPlan = (planId: Plan) => {
     onSelectPlan(planId);
     onOpenChange(false);
@@ -101,16 +46,19 @@ export function PricingDialog({ open, onOpenChange, currentPlan, onSelectPlan }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="text-center pb-4">
-          <DialogTitle className="text-2xl font-bold">Choose Your Plan</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">{t('pricingDialog.title')}</DialogTitle>
           <p className="text-muted-foreground">
-            Select the perfect plan for your needs. Upgrade or downgrade anytime.
+            {t('pricingDialog.subtitle')}
           </p>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {plans.map((plan) => {
+          {planConfig.map((plan) => {
             const isCurrentPlan = currentPlan === plan.id;
             const Icon = plan.icon;
+            const features = Array.from({ length: plan.featureCount }, (_, i) =>
+              t(`pricingDialog.plans.${plan.id}.features.${i}`)
+            );
 
             return (
               <div
@@ -125,7 +73,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan, onSelectPlan }:
               >
                 {plan.popular && (
                   <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                    Most Popular
+                    {t('pricingDialog.mostPopular')}
                   </Badge>
                 )}
 
@@ -133,17 +81,17 @@ export function PricingDialog({ open, onOpenChange, currentPlan, onSelectPlan }:
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
                     <Icon className="h-5 w-5 text-primary" />
                   </div>
-                  <h3 className="font-semibold text-lg">{plan.name}</h3>
-                  <p className="text-sm text-muted-foreground">{plan.description}</p>
+                  <h3 className="font-semibold text-lg">{t(`pricingDialog.plans.${plan.id}.name`)}</h3>
+                  <p className="text-sm text-muted-foreground">{t(`pricingDialog.plans.${plan.id}.description`)}</p>
                 </div>
 
                 <div className="mb-4">
                   <span className="text-3xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground text-sm ml-1">/{plan.period}</span>
+                  <span className="text-muted-foreground text-sm ml-1">/{t(`pricingDialog.periods.${plan.periodKey}`)}</span>
                 </div>
 
                 <ul className="space-y-2.5 mb-6 flex-1">
-                  {plan.features.map((feature, idx) => (
+                  {features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-muted-foreground">{feature}</span>
@@ -157,7 +105,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan, onSelectPlan }:
                   disabled={isCurrentPlan}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
-                  {isCurrentPlan ? 'Current Plan' : plan.cta}
+                  {isCurrentPlan ? t('pricingDialog.currentPlan') : t(`pricingDialog.ctas.${plan.ctaKey}`)}
                 </Button>
               </div>
             );

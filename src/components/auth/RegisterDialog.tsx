@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface RegisterDialogProps {
   open: boolean;
@@ -14,6 +15,7 @@ interface RegisterDialogProps {
 }
 
 export function RegisterDialog({ open, onOpenChange, onSwitchToSignIn }: RegisterDialogProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -22,11 +24,11 @@ export function RegisterDialog({ open, onOpenChange, onSwitchToSignIn }: Registe
 
   const validate = () => {
     const newErrors: typeof errors = {};
-    if (!email.trim()) newErrors.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Invalid email address';
-    if (!password) newErrors.password = 'Password is required';
-    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-    if (password !== confirmPassword) newErrors.confirm = 'Passwords do not match';
+    if (!email.trim()) newErrors.email = t('auth.errors.emailRequired');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = t('auth.errors.invalidEmail');
+    if (!password) newErrors.password = t('auth.errors.passwordRequired');
+    else if (password.length < 6) newErrors.password = t('auth.errors.passwordTooShort');
+    if (password !== confirmPassword) newErrors.confirm = t('auth.errors.passwordsDontMatch');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -51,12 +53,12 @@ export function RegisterDialog({ open, onOpenChange, onSwitchToSignIn }: Registe
       }
 
       if (data.user) {
-        toast.success('Account created successfully!');
+        toast.success(t('auth.toasts.accountCreated'));
         onOpenChange(false);
         resetForm();
       }
     } catch (err) {
-      toast.error('Registration failed. Please try again.');
+      toast.error(t('auth.errors.registrationFailedRetry'));
     } finally {
       setLoading(false);
     }
@@ -73,15 +75,15 @@ export function RegisterDialog({ open, onOpenChange, onSwitchToSignIn }: Registe
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetForm(); }}>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">Create an account</DialogTitle>
+          <DialogTitle className="text-xl">{t('auth.registerTitle')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
-            <Label htmlFor="reg-email">Email</Label>
+            <Label htmlFor="reg-email">{t('auth.email')}</Label>
             <Input
               id="reg-email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
@@ -89,11 +91,11 @@ export function RegisterDialog({ open, onOpenChange, onSwitchToSignIn }: Registe
             {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="reg-password">Password</Label>
+            <Label htmlFor="reg-password">{t('auth.password')}</Label>
             <Input
               id="reg-password"
               type="password"
-              placeholder="At least 6 characters"
+              placeholder={t('auth.passwordHintPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
@@ -101,11 +103,11 @@ export function RegisterDialog({ open, onOpenChange, onSwitchToSignIn }: Registe
             {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="reg-confirm">Repeat password</Label>
+            <Label htmlFor="reg-confirm">{t('auth.repeatPassword')}</Label>
             <Input
               id="reg-confirm"
               type="password"
-              placeholder="Repeat your password"
+              placeholder={t('auth.repeatPasswordPlaceholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               autoComplete="new-password"
@@ -114,16 +116,16 @@ export function RegisterDialog({ open, onOpenChange, onSwitchToSignIn }: Registe
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Create account
+            {t('auth.createAccount')}
           </Button>
           <p className="text-sm text-center text-muted-foreground">
-            Already have an account?{' '}
+            {t('auth.haveAccount')}{' '}
             <button
               type="button"
               className="text-primary hover:underline font-medium"
               onClick={() => { onOpenChange(false); resetForm(); onSwitchToSignIn(); }}
             >
-              Sign in
+              {t('auth.signIn')}
             </button>
           </p>
         </form>

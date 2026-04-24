@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SignInDialogProps {
   open: boolean;
@@ -14,6 +15,7 @@ interface SignInDialogProps {
 }
 
 export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInDialogProps) {
+  const { t } = useTranslation();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,8 +23,8 @@ export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInD
 
   const validate = () => {
     const newErrors: typeof errors = {};
-    if (!identifier.trim()) newErrors.identifier = 'Email or username is required';
-    if (!password) newErrors.password = 'Password is required';
+    if (!identifier.trim()) newErrors.identifier = t('auth.errors.identifierRequired');
+    if (!password) newErrors.password = t('auth.errors.passwordRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -35,13 +37,12 @@ export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInD
     try {
       let email = identifier.trim();
 
-      // If it doesn't look like an email, treat it as a username
       if (!email.includes('@')) {
         const { data, error } = await supabase.rpc('get_email_by_username', {
           lookup_username: email,
         });
         if (error || !data) {
-          toast.error('Invalid username or password');
+          toast.error(t('auth.errors.invalidUsernameOrPassword'));
           setLoading(false);
           return;
         }
@@ -54,15 +55,15 @@ export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInD
       });
 
       if (error) {
-        toast.error('Invalid credentials. Please try again.');
+        toast.error(t('auth.errors.invalidCredentials'));
         return;
       }
 
-      toast.success('Signed in successfully!');
+      toast.success(t('auth.toasts.signedIn'));
       onOpenChange(false);
       resetForm();
     } catch (err) {
-      toast.error('Sign in failed. Please try again.');
+      toast.error(t('auth.errors.signInFailedRetry'));
     } finally {
       setLoading(false);
     }
@@ -78,15 +79,15 @@ export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInD
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetForm(); }}>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">Sign in</DialogTitle>
+          <DialogTitle className="text-xl">{t('auth.signInTitle')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
-            <Label htmlFor="signin-id">Email or username</Label>
+            <Label htmlFor="signin-id">{t('auth.emailOrUsername')}</Label>
             <Input
               id="signin-id"
               type="text"
-              placeholder="you@example.com or username"
+              placeholder={t('auth.emailOrUsernamePlaceholder')}
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               autoComplete="username"
@@ -95,19 +96,19 @@ export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInD
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="signin-password">Password</Label>
+              <Label htmlFor="signin-password">{t('auth.password')}</Label>
               <button
                 type="button"
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                onClick={() => toast.info('Password reset will be available soon.')}
+                onClick={() => toast.info(t('auth.resetPasswordSoon'))}
               >
-                Reset password
+                {t('auth.resetPassword')}
               </button>
             </div>
             <Input
               id="signin-password"
               type="password"
-              placeholder="Your password"
+              placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -116,16 +117,16 @@ export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInD
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Sign in
+            {t('auth.signIn')}
           </Button>
           <p className="text-sm text-center text-muted-foreground">
-            Don't have an account?{' '}
+            {t('auth.noAccount')}{' '}
             <button
               type="button"
               className="text-primary hover:underline font-medium"
               onClick={() => { onOpenChange(false); resetForm(); onSwitchToRegister(); }}
             >
-              Register
+              {t('auth.register')}
             </button>
           </p>
         </form>
