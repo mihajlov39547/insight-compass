@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Upload, Trash2, File as FileIcon, FileType, FileSpreadsheet, Loader2, RotateCcw, CheckCircle2, AlertCircle, Search } from 'lucide-react';
+import { FileText, Upload, Trash2, File as FileIcon, FileType, FileSpreadsheet, Loader2, RotateCcw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,6 +13,7 @@ import { AIReadyBadge } from '@/components/documents/AIReadyBadge';
 import { UploadDocumentsDialog } from './UploadDocumentsDialog';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 const fileIcons: Record<string, any> = {
   pdf: FileText, docx: FileType, doc: FileType, txt: FileIcon,
@@ -24,6 +25,15 @@ const fileColors: Record<string, string> = {
   pdf: 'text-red-500', docx: 'text-blue-500', doc: 'text-blue-500',
   txt: 'text-muted-foreground', xlsx: 'text-green-500', xls: 'text-green-500',
   csv: 'text-green-500', md: 'text-violet-500', rtf: 'text-orange-500',
+};
+
+const STAGE_KEYS: Record<string, string> = {
+  uploaded: 'uploaded',
+  extracting_metadata: 'extracting_metadata',
+  extracting_content: 'extracting_content',
+  detecting_language: 'detecting_language',
+  summarizing: 'summarizing',
+  indexing: 'indexing',
 };
 
 function formatFileSize(bytes: number): string {
@@ -43,31 +53,24 @@ function truncateFileName(name: string, maxBase = 30): string {
   return base.slice(0, maxBase) + '…' + ext;
 }
 
-const STAGE_LABELS: Record<string, string> = {
-  uploaded: 'Queued',
-  extracting_metadata: 'Extracting metadata',
-  extracting_content: 'Analyzing content',
-  detecting_language: 'Detecting language',
-  summarizing: 'Generating summary',
-  indexing: 'Creating search index',
-};
-
 function ProcessingBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   switch (status) {
     case 'completed':
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
-          <CheckCircle2 className="h-2.5 w-2.5" /> Searchable
+          <CheckCircle2 className="h-2.5 w-2.5" /> {t('documentsDialog.stages.searchable')}
         </Badge>
       );
     case 'failed':
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-destructive/10 text-destructive border-destructive/20">
-          <AlertCircle className="h-2.5 w-2.5" /> Failed
+          <AlertCircle className="h-2.5 w-2.5" /> {t('documentsDialog.stages.failed')}
         </Badge>
       );
     default: {
-      const label = STAGE_LABELS[status] || 'Processing';
+      const stageKey = STAGE_KEYS[status];
+      const label = stageKey ? t(`documentsDialog.stages.${stageKey}`) : t('documentsDialog.stages.processing');
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-accent/10 text-accent border-accent/20">
           <Loader2 className="h-2.5 w-2.5 animate-spin" /> {label}
@@ -78,6 +81,7 @@ function ProcessingBadge({ status }: { status: string }) {
 }
 
 export function DocumentsDialog() {
+  const { t } = useTranslation();
   const { showDocuments, setShowDocuments, selectedProjectId, selectedChatId, documentScope } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
@@ -100,10 +104,12 @@ export function DocumentsDialog() {
   const { data: chunkStatsMap } = useDocumentChunkStats(documentIds);
   const handleDelete = (doc: DbDocument) => {
     deleteMutation.mutate(doc, {
-      onSuccess: () => toast({ title: `${doc.file_name} deleted` }),
-      onError: (err: any) => toast({ title: 'Delete failed', description: err.message, variant: 'destructive' }),
+      onSuccess: () => toast({ title: t('documentsDialog.deleted', { name: doc.file_name }) }),
+      onError: (err: any) => toast({ title: t('documentsDialog.deleteFailed'), description: err.message, variant: 'destructive' }),
     });
   };
+
+  const analyzedCount = documents.filter(d => d.processing_status === 'completed').length;
 
   return (
     <>
@@ -112,7 +118,7 @@ export function DocumentsDialog() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-accent" />
-              {isProjectScope ? 'Project Documents' : 'Chat Documents'}
+              {isProjectScope ? t('documentsDialog.projectDocuments') : t('documentsDialog.chatDocuments')}
               {scopeLabel && (
                 <Badge variant="secondary" className="ml-2 font-normal">
                   {scopeLabel}
@@ -122,7 +128,7 @@ export function DocumentsDialog() {
           </DialogHeader>
           <div className="py-4">
             <Button variant="outline" className="w-full mb-4 gap-2 border-2 border-dashed hover:border-accent hover:bg-accent/5" onClick={() => setShowUpload(true)}>
-              <Upload className="h-4 w-4" /> Upload Documents
+              <Upload className="h-4 w-4" /> {t('documentsDialog.uploadDocuments')}
             </Button>
             <ScrollArea className="h-[300px]">
               {isLoading ? (
@@ -132,7 +138,7 @@ export function DocumentsDialog() {
               ) : documents.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No documents uploaded yet</p>
+                  <p className="text-sm text-muted-foreground">{t('documentsDialog.noDocuments')}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -154,7 +160,7 @@ export function DocumentsDialog() {
                           </div>
                           <p className="text-xs text-muted-foreground">
                             {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)}
-                            {doc.word_count ? ` • ${doc.word_count.toLocaleString()} words` : ''}
+                            {doc.word_count ? ` • ${doc.word_count.toLocaleString()} ${t('documentsDialog.wordsSuffix')}` : ''}
                             {doc.detected_language ? ` • ${doc.detected_language.toUpperCase()}` : ''}
                             {' • '}{new Date(doc.created_at).toLocaleDateString()}
                           </p>
@@ -170,7 +176,7 @@ export function DocumentsDialog() {
                               className="h-7 w-7 text-muted-foreground hover:text-accent"
                               onClick={() => retryProcessing(doc)}
                               disabled={isRetrying}
-                              title="Retry processing"
+                              title={t('documentsDialog.retry')}
                             >
                               <RotateCcw className="h-4 w-4" />
                             </Button>
@@ -194,12 +200,12 @@ export function DocumentsDialog() {
           </div>
           <div className="flex justify-between pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground">
-              {documents.length} document{documents.length !== 1 ? 's' : ''}
-              {documents.filter(d => d.processing_status === 'completed').length > 0 && (
-                <span className="ml-1">• {documents.filter(d => d.processing_status === 'completed').length} analyzed</span>
+              {t('documentsDialog.documentCount', { count: documents.length })}
+              {analyzedCount > 0 && (
+                <span className="ml-1">• {t('documentsDialog.analyzedCount', { count: analyzedCount })}</span>
               )}
             </p>
-            <Button variant="outline" onClick={() => setShowDocuments(false)}>Done</Button>
+            <Button variant="outline" onClick={() => setShowDocuments(false)}>{t('documentsDialog.done')}</Button>
           </div>
         </DialogContent>
       </Dialog>
