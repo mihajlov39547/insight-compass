@@ -1006,6 +1006,7 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
   addingYouTubeUrl?: string | null;
   addedYouTubeUrls?: Set<string>;
 }) {
+  const { t } = useTranslation();
   const isUser = message.role === 'user';
   const modelName = message.model_id ? modelOptions.find(m => m.id === message.model_id)?.name ?? message.model_id.split('/').pop() : null;
 
@@ -1099,23 +1100,23 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
                   className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded hover:text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <Trash2 className="h-2.5 w-2.5" />
-                  Delete
+                  {t('notebookWorkspace.chat.delete')}
                 </button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                  <AlertDialogTitle>{t('notebookWorkspace.chat.deleteDialog.title')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete this question and its corresponding answer from the system and database. This action cannot be undone.
+                    {t('notebookWorkspace.chat.deleteDialog.description')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t('notebookWorkspace.chat.deleteDialog.cancel')}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => onDeletePair(message.id)}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    Delete
+                    {t('notebookWorkspace.chat.deleteDialog.confirm')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -1133,11 +1134,11 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
               )}
               {canSaveToNotes && (
                 <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] gap-1 text-muted-foreground hover:text-foreground" onClick={() => onSaveToNote(message.content)}>
-                  <BookmarkPlus className="h-3 w-3" /> Save to note
+                  <BookmarkPlus className="h-3 w-3" /> {t('notebookWorkspace.chat.save')}
                 </Button>
               )}
               <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] gap-1 text-muted-foreground hover:text-foreground" onClick={() => onCopy(message.content)}>
-                <Copy className="h-3 w-3" /> Copy
+                <Copy className="h-3 w-3" /> {t('notebookWorkspace.chat.copy')}
               </Button>
             </>
           )}
