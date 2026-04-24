@@ -111,7 +111,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 text-muted-foreground hover:text-foreground rounded-lg">
                     <Globe className="h-4 w-4" />
-                    <span className="text-sm">{language === 'en' ? 'EN' : 'SR'}</span>
+                    <span className="text-sm">{t(`header.language.short.${toI18nLang(language)}`)}</span>
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
