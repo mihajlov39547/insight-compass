@@ -461,7 +461,7 @@ export function ResourcesLanding() {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search resources…"
+              placeholder={t('resources.search.placeholder')}
               className="pl-9 h-8 text-sm"
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -474,11 +474,11 @@ export function ResourcesLanding() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Last updated (newest)</SelectItem>
-              <SelectItem value="oldest">Last updated (oldest)</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="type">Type</SelectItem>
-              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="newest">{t('resources.sort.newest')}</SelectItem>
+              <SelectItem value="oldest">{t('resources.sort.oldest')}</SelectItem>
+              <SelectItem value="name">{t('resources.sort.name')}</SelectItem>
+              <SelectItem value="type">{t('resources.sort.type')}</SelectItem>
+              <SelectItem value="status">{t('resources.sort.status')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -490,9 +490,9 @@ export function ResourcesLanding() {
           {/* Ownership */}
           <Tabs value={ownershipFilter} onValueChange={(v) => setOwnershipFilter(v as OwnershipFilter)}>
             <TabsList className="h-7 p-0.5">
-              <TabsTrigger value="all" className="text-xs px-2.5 h-6">All</TabsTrigger>
-              <TabsTrigger value="mine" className="text-xs px-2.5 h-6">Mine</TabsTrigger>
-              <TabsTrigger value="shared" className="text-xs px-2.5 h-6">Shared</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs px-2.5 h-6">{t('resources.filters.ownership.all')}</TabsTrigger>
+              <TabsTrigger value="mine" className="text-xs px-2.5 h-6">{t('resources.filters.ownership.mine')}</TabsTrigger>
+              <TabsTrigger value="shared" className="text-xs px-2.5 h-6">{t('resources.filters.ownership.shared')}</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -501,25 +501,25 @@ export function ResourcesLanding() {
           {/* Status */}
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
             <SelectTrigger className="w-[120px] h-7 text-xs">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t('resources.filters.status.placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="ready">Ready</SelectItem>
-              <SelectItem value="processing">Processing</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
+              <SelectItem value="all">{t('resources.filters.status.all')}</SelectItem>
+              <SelectItem value="ready">{t('resources.filters.status.ready')}</SelectItem>
+              <SelectItem value="processing">{t('resources.filters.status.processing')}</SelectItem>
+              <SelectItem value="failed">{t('resources.filters.status.failed')}</SelectItem>
             </SelectContent>
           </Select>
 
           {/* Type */}
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
             <SelectTrigger className="w-[130px] h-7 text-xs">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder={t('resources.filters.type.placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              {activeResourceTypes.map(t => (
-                <SelectItem key={t} value={t}>{RESOURCE_TYPE_LABELS[t]}</SelectItem>
+              <SelectItem value="all">{t('resources.filters.type.all')}</SelectItem>
+              {activeResourceTypes.map(rt => (
+                <SelectItem key={rt} value={rt}>{t(`resources.types.${rt}`)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -527,13 +527,13 @@ export function ResourcesLanding() {
           {/* Container */}
           <Select value={containerFilter} onValueChange={(v) => setContainerFilter(v as ContainerFilter)}>
             <SelectTrigger className="w-[130px] h-7 text-xs">
-              <SelectValue placeholder="Location" />
+              <SelectValue placeholder={t('resources.filters.container.placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All locations</SelectItem>
-              <SelectItem value="project">Projects</SelectItem>
-              <SelectItem value="notebook">Notebooks</SelectItem>
-              <SelectItem value="personal">Personal</SelectItem>
+              <SelectItem value="all">{t('resources.filters.container.all')}</SelectItem>
+              <SelectItem value="project">{t('resources.filters.container.project')}</SelectItem>
+              <SelectItem value="notebook">{t('resources.filters.container.notebook')}</SelectItem>
+              <SelectItem value="personal">{t('resources.filters.container.personal')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -544,7 +544,7 @@ export function ResourcesLanding() {
               className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1"
               onClick={() => { setSearch(''); setOwnershipFilter('all'); setStatusFilter('all'); setTypeFilter('all'); setContainerFilter('all'); }}
             >
-              <X className="h-3 w-3" /> Clear
+              <X className="h-3 w-3" /> {t('resources.filters.clear')}
             </Button>
           )}
         </div>
