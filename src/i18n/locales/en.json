@@ -263,6 +263,87 @@
       "title": "Add a source to get started",
       "description": "Upload a document or add a website URL to begin asking questions.",
       "hint": "No sources added yet. Check the Sources panel on the left."
+    },
+    "sources": {
+      "title": "Sources",
+      "addSource": "Add source",
+      "expand": "Expand sources",
+      "collapse": "Collapse sources",
+      "empty": {
+        "title": "No sources yet",
+        "description": "Upload documents or attach videos to start asking questions",
+        "upload": "Upload"
+      },
+      "enableSource": "Enable source",
+      "disableSource": "Disable source",
+      "retryTranscript": "Retry transcript",
+      "transcriptStatus": "transcript {{status}}",
+      "footerEnabled_one": "{{count}} source enabled",
+      "footerEnabled_other": "{{count}} sources enabled"
+    },
+    "notes": {
+      "title": "Notes",
+      "addNote": "Add note",
+      "expand": "Expand notes",
+      "collapse": "Collapse notes",
+      "empty": {
+        "title": "No notes yet",
+        "description": "Save insights from chat or create your own note."
+      },
+      "emptyNote": "Empty note",
+      "untitled": "Untitled Note",
+      "aiInsight": "AI Insight",
+      "modal": {
+        "editTitle": "Edit Note",
+        "viewTitle": "View Note",
+        "srDescription": "Edit your notebook note",
+        "titlePlaceholder": "Note title",
+        "contentPlaceholder": "Write your note…",
+        "addToSources": "Add to sources",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "close": "Close",
+        "save": "Save"
+      },
+      "toasts": {
+        "savedFromChat": "Saved to notes — you can edit it now",
+        "copied": "Copied to clipboard",
+        "noteSourceUpdated": "Note source updated — reprocessing started",
+        "noteSourceUpdatedReprocessing": "Note source updated — re-processing",
+        "noteAddedToSources": "Note added to sources",
+        "addToSourcesFailed": "Failed to add note to sources"
+      },
+      "permissions": {
+        "createDenied": "You do not have permission to create notes",
+        "editDenied": "You do not have permission to edit notes",
+        "deleteDenied": "You do not have permission to delete notes",
+        "manageSourcesDenied": "You do not have permission to manage notebook sources"
+      }
+    },
+    "chat": {
+      "loading": "Loading…",
+      "askTitle": "Ask questions about your sources",
+      "askDescription": "Use the chat to summarize, compare, extract insights, or explore ideas from your attached materials.",
+      "researching": "Researching the web…",
+      "searching": "Searching the web…",
+      "working": "Working…",
+      "failed": "Failed to get response",
+      "dismiss": "Dismiss",
+      "readOnly": "You have read-only access to this notebook.",
+      "save": "Save to note",
+      "copy": "Copy",
+      "delete": "Delete",
+      "deleteDialog": {
+        "title": "Delete Message",
+        "description": "This will permanently delete this question and its corresponding answer from the system and database. This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      }
+    },
+    "toasts": {
+      "renamed": "Notebook renamed",
+      "youtubeAdded": "Added to sources — extracting transcript",
+      "youtubeFailed": "Failed to add video to sources"
     }
   },
   "chat": {
