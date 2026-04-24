@@ -712,7 +712,7 @@ export function AppSidebar() {
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
                   {notebooksSectionOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                  My Notebooks
+                  {t('sidebar.notebooks.section')}
                 </button>
               </CollapsibleTrigger>
               <div className="flex items-center gap-0.5">
@@ -730,7 +730,7 @@ export function AppSidebar() {
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={(e) => { e.stopPropagation(); setNotebooksListOpen(prev => !prev); }}>
                     {notebooksListOpen ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
                   </Button>
-                </TooltipTrigger><TooltipContent side="top" className="text-xs">{notebooksListOpen ? 'Collapse notebooks' : 'Expand notebooks'}</TooltipContent></Tooltip>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{notebooksListOpen ? t('sidebar.notebooks.collapse') : t('sidebar.notebooks.expand')}</TooltipContent></Tooltip>
               </div>
             </div>
 
@@ -748,13 +748,13 @@ export function AppSidebar() {
                   <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'notebooks' && !selectedNotebookId ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
                     <BookOpenCheck className="h-3.5 w-3.5" />
                   </div>
-                  <span className="truncate">All notebooks</span>
+                  <span className="truncate">{t('sidebar.notebooks.all')}</span>
                 </button>
                 <Tooltip><TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent flex-shrink-0" onClick={handleCreateNotebook}>
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
-                </TooltipTrigger><TooltipContent>New Notebook</TooltipContent></Tooltip>
+                </TooltipTrigger><TooltipContent>{t('sidebar.notebooks.newTooltip')}</TooltipContent></Tooltip>
               </div>
 
               {notebooksListOpen && (
@@ -779,7 +779,7 @@ export function AppSidebar() {
                       onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id, nb.name)}
                     />
                   ))}
-                  {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
+                  {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.notebooks.empty')}</p>}
                 </div>
               )}
             </CollapsibleContent>
