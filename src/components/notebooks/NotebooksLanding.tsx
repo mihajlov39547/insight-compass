@@ -94,6 +94,8 @@ function formatLastActivity(dateStr: string, t: any, locale: string): string {
 }
 
 export function NotebooksLanding() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.resolvedLanguage === 'sr' ? 'sr-Latn' : 'en-US';
   const { user } = useAuth();
   const { setSelectedNotebookId, setActiveView } = useApp();
   const { data: notebooks = [], isLoading } = useNotebooks();
