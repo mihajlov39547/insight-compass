@@ -279,7 +279,7 @@ export function NotebooksLanding() {
         {!hasNotebooks && (
           <div className="max-w-xl mx-auto mt-10 text-center">
             <p className="text-muted-foreground text-sm">
-              Create a notebook to organize your research, collect sources, and explore topics with AI-powered analysis.
+              {t('notebooksLanding.intro')}
             </p>
           </div>
         )}
@@ -289,48 +289,48 @@ export function NotebooksLanding() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Create Notebook</DialogTitle>
-            <DialogDescription>Give your notebook a name and optional description.</DialogDescription>
+            <DialogTitle>{t('notebooksLanding.create.title')}</DialogTitle>
+            <DialogDescription>{t('notebooksLanding.create.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="create-nb-name">Notebook name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="create-nb-name">{t('notebooksLanding.create.nameLabel')} <span className="text-destructive">*</span></Label>
               <Input
                 id="create-nb-name"
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
-                placeholder="e.g. Research on AI Safety"
+                placeholder={t('notebooksLanding.create.namePlaceholder')}
                 autoFocus
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-nb-desc">Description</Label>
+              <Label htmlFor="create-nb-desc">{t('notebooksLanding.create.descriptionLabel')}</Label>
               <Textarea
                 id="create-nb-desc"
                 value={createDescription}
                 onChange={(e) => setCreateDescription(e.target.value)}
-                placeholder="What is this notebook about?"
+                placeholder={t('notebooksLanding.create.descriptionPlaceholder')}
                 rows={3}
                 className="resize-none"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-nb-lang">Language</Label>
+              <Label htmlFor="create-nb-lang">{t('notebooksLanding.create.languageLabel')}</Label>
               <Select value={createLanguage} onValueChange={(val: 'en' | 'sr') => setCreateLanguage(val)}>
                 <SelectTrigger id="create-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                  <SelectItem value="en">{t('notebooksLanding.create.languageEn')}</SelectItem>
+                  <SelectItem value="sr">{t('notebooksLanding.create.languageSr')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={!createName.trim()}>Create Notebook</Button>
+            <Button variant="outline" onClick={() => setShowCreate(false)}>{t('notebooksLanding.create.cancel')}</Button>
+            <Button onClick={handleCreate} disabled={!createName.trim()}>{t('notebooksLanding.create.submit')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -339,23 +339,23 @@ export function NotebooksLanding() {
       <Dialog open={!!editNotebook} onOpenChange={(open) => !open && setEditNotebook(null)}>
         <DialogContent className="sm:max-w-[480px]" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>Manage Notebook</DialogTitle>
-            <DialogDescription>Update your notebook details.</DialogDescription>
+            <DialogTitle>{t('notebooksLanding.manage.title')}</DialogTitle>
+            <DialogDescription>{t('notebooksLanding.manage.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-name">Notebook name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="edit-nb-name">{t('notebooksLanding.manage.nameLabel')} <span className="text-destructive">*</span></Label>
               <Input
                 id="edit-nb-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Notebook name"
+                placeholder={t('notebooksLanding.manage.namePlaceholder')}
                 autoFocus
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="edit-nb-desc">Description</Label>
+                <Label htmlFor="edit-nb-desc">{t('notebooksLanding.manage.descriptionLabel')}</Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -387,49 +387,49 @@ export function NotebooksLanding() {
                       });
 
                       const data = await resp.json();
-                      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+                      if (!resp.ok) throw new Error(data.error || t('notebooksLanding.manage.improveFailed'));
                       if (data.description) {
                         setEditDescription(data.description);
-                        toast.success('Description improved');
+                        toast.success(t('notebooksLanding.manage.improveSuccess'));
                       }
                     } catch (err: any) {
                       console.error('Improve description error:', err);
-                      toast.error(err.message || 'Failed to improve description');
+                      toast.error(err.message || t('notebooksLanding.manage.improveFailed'));
                     } finally {
                       setImprovingDescription(false);
                     }
                   }}
                 >
                   {improvingDescription ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  {improvingDescription ? 'Improving…' : 'Improve with AI'}
+                  {improvingDescription ? t('notebooksLanding.manage.improving') : t('notebooksLanding.manage.improveWithAi')}
                 </Button>
               </div>
               <Textarea
                 id="edit-nb-desc"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Describe what this notebook is about..."
+                placeholder={t('notebooksLanding.manage.descriptionPlaceholder')}
                 rows={3}
                 className="resize-none"
               />
-              <p className="text-xs text-muted-foreground">This helps the AI understand the notebook context and provide better answers.</p>
+              <p className="text-xs text-muted-foreground">{t('notebooksLanding.manage.descriptionHint')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-lang">Language</Label>
+              <Label htmlFor="edit-nb-lang">{t('notebooksLanding.manage.languageLabel')}</Label>
               <Select value={editLanguage} onValueChange={(val: string) => setEditLanguage(val)}>
                 <SelectTrigger id="edit-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                  <SelectItem value="en">{t('notebooksLanding.manage.languageEn')}</SelectItem>
+                  <SelectItem value="sr">{t('notebooksLanding.manage.languageSr')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditNotebook(null)}>Cancel</Button>
-            <Button onClick={handleManageSubmit} disabled={!editName.trim()}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditNotebook(null)}>{t('notebooksLanding.manage.cancel')}</Button>
+            <Button onClick={handleManageSubmit} disabled={!editName.trim()}>{t('notebooksLanding.manage.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -437,27 +437,27 @@ export function NotebooksLanding() {
       <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Notebook</AlertDialogTitle>
+            <AlertDialogTitle>{t('notebooksLanding.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this notebook and all of its data, including:
+              {t('notebooksLanding.delete.intro')}
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>All chat messages and history</li>
-                <li>All uploaded documents and files</li>
-                <li>All notes</li>
-                <li>All extracted text, summaries, and processed data</li>
-                <li>All linked resources and transcripts</li>
-                <li>All sharing settings</li>
+                <li>{t('notebooksLanding.delete.items.chats')}</li>
+                <li>{t('notebooksLanding.delete.items.documents')}</li>
+                <li>{t('notebooksLanding.delete.items.notes')}</li>
+                <li>{t('notebooksLanding.delete.items.extracted')}</li>
+                <li>{t('notebooksLanding.delete.items.resources')}</li>
+                <li>{t('notebooksLanding.delete.items.sharing')}</li>
               </ul>
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">{t('notebooksLanding.delete.irreversible')}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('notebooksLanding.delete.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteNotebook}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Notebook
+              {t('notebooksLanding.delete.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
