@@ -1035,5 +1035,93 @@
     "code": "Inline kod",
     "bullet": "Lista sa znakovima",
     "numbered": "Numerisana lista"
+  },
+  "profileSettings": {
+    "title": "Podešavanja profila",
+    "tabs": {
+      "profile": "Profil",
+      "settings": "Podešavanja aplikacije"
+    },
+    "banner": "Baner profila",
+    "actions": {
+      "edit": "Izmeni profil",
+      "cancel": "Otkaži",
+      "save": "Sačuvaj",
+      "saving": "Čuvanje..."
+    },
+    "fields": {
+      "name": "Ime",
+      "bio": "Biografija",
+      "bioPlaceholder": "Recite nam nešto o sebi",
+      "location": "Lokacija",
+      "locationPlaceholder": "Grad, država",
+      "website": "Veb sajt",
+      "websitePlaceholder": "https://...",
+      "phone": "Broj telefona",
+      "phoneFormat": "Format: 381 60 345-2323",
+      "bannerUrl": "URL banera",
+      "bannerUrlHelp": "Direktan link do slike banera",
+      "avatarUrl": "URL avatara",
+      "avatarUrlPlaceholder": "Upravlja Google — ili nalepite URL",
+      "avatarUrlHelp": "Podrazumevano se koristi vaša Google profilna slika"
+    },
+    "username": {
+      "title": "Korisničko ime",
+      "description": "Vaš javni identifikator i URL profila.",
+      "placeholder": "korisnickoime",
+      "update": "Ažuriraj",
+      "updating": "Čuvanje...",
+      "rules": "Samo mala slova i brojevi.",
+      "errors": {
+        "required": "Korisničko ime je obavezno.",
+        "pattern": "Korisničko ime može sadržati samo mala slova i brojeve.",
+        "taken": "Korisničko ime je zauzeto",
+        "saveFailed": "Neuspešno ažuriranje korisničkog imena"
+      },
+      "saved": "Korisničko ime je ažurirano"
+    },
+    "email": {
+      "title": "Email",
+      "googleManaged": "Upravlja Google — ne može se menjati ovde."
+    },
+    "subscription": {
+      "title": "Pretplata",
+      "active": "Aktivno",
+      "comingSoon": "Upravljanje planom i nadogradnje uskoro.",
+      "planSuffix": "plan",
+      "plans": {
+        "free": { "name": "Besplatan", "description": "Idealno za početak", "price": "$0 / zauvek" },
+        "basic": { "name": "Osnovni", "description": "Za pojedince i male timove", "price": "$19 / mesečno" },
+        "premium": { "name": "Premium", "description": "Za timove u rastu", "price": "$49 / mesečno" },
+        "enterprise": { "name": "Enterprise", "description": "Za velike organizacije", "price": "Po dogovoru" }
+      }
+    },
+    "linkedAccounts": {
+      "title": "Povezani nalozi",
+      "googlePrimary": "{{email}} — Primarni način prijave",
+      "connected": "Povezano"
+    },
+    "password": {
+      "title": "Lozinka",
+      "googleManaged": "Autentifikacijom upravlja Google. Prijava lozinkom nije dostupna.",
+      "change": "Promeni lozinku"
+    },
+    "danger": {
+      "title": "Opasna zona",
+      "description": "Trajno obrišite svoj nalog i sve povezane podatke. Ova radnja se ne može poništiti.",
+      "deleteButton": "Obriši nalog",
+      "dialogTitle": "Obriši nalog",
+      "dialogDescription": "Ovo će trajno obrisati vaš nalog, sve projekte i podatke. Ova radnja se ne može poništiti.",
+      "cancel": "Otkaži",
+      "confirm": "Da, obriši moj nalog"
+    },
+    "toasts": {
+      "loadFailed": "Neuspešno učitavanje profila",
+      "saved": "Profil je sačuvan",
+      "saveFailed": "Neuspešno čuvanje profila",
+      "phoneInvalid": "Unesite ispravan broj telefona u sva 3 polja.",
+      "deleted": "Podaci naloga su obrisani. Odjavljeni ste.",
+      "deleteFailed": "Neuspešno brisanje podataka naloga."
+    }
   }
 }
