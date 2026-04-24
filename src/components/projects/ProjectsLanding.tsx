@@ -152,7 +152,7 @@ export function ProjectsLanding() {
       language: editLanguage,
     }, {
       onSuccess: () => {
-        toast.success('Project updated');
+        toast.success(t('projectsLanding.manage.updated'));
         setEditProject(null);
       },
     });
