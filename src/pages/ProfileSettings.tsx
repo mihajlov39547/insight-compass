@@ -519,37 +519,40 @@ export default function ProfileSettings() {
 }
 
 
-const planMeta: Record<string, { name: string; description: string; icon: React.ElementType; price: string }> = {
-  free: { name: 'Free', description: 'Perfect for getting started', icon: Sparkles, price: '$0 / forever' },
-  basic: { name: 'Basic', description: 'For individuals and small teams', icon: Zap, price: '$19 / month' },
-  premium: { name: 'Premium', description: 'For growing teams', icon: Crown, price: '$49 / month' },
-  enterprise: { name: 'Enterprise', description: 'For large organizations', icon: Building2, price: 'Custom' },
+const planIcons: Record<string, React.ElementType> = {
+  free: Sparkles,
+  basic: Zap,
+  premium: Crown,
+  enterprise: Building2,
 };
 
 function SubscriptionSection({ plan }: { plan: string }) {
-  const meta = planMeta[plan] || planMeta.free;
-  const Icon = meta.icon;
+  const { t } = useTranslation();
+  const planKey = planIcons[plan] ? plan : 'free';
+  const Icon = planIcons[planKey];
 
   return (
     <section className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">Subscription</h3>
+      <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.subscription.title')}</h3>
       <div className="rounded-lg border border-border p-4 space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <Icon className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">{meta.name} Plan</p>
-            <p className="text-xs text-muted-foreground">{meta.description}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {t(`profileSettings.subscription.plans.${planKey}.name`)} {t('profileSettings.subscription.planSuffix')}
+            </p>
+            <p className="text-xs text-muted-foreground">{t(`profileSettings.subscription.plans.${planKey}.description`)}</p>
           </div>
-          <span className="text-sm font-medium text-foreground">{meta.price}</span>
+          <span className="text-sm font-medium text-foreground">{t(`profileSettings.subscription.plans.${planKey}.price`)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>
+          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('profileSettings.subscription.active')}</span>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Plan management and upgrades coming soon.
+        {t('profileSettings.subscription.comingSoon')}
       </p>
     </section>
   );
