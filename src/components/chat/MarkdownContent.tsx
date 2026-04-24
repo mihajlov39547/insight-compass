@@ -10,6 +10,17 @@ interface MarkdownContentProps {
   className?: string;
 }
 
+function canInlineImage(src?: string): boolean {
+  if (!src) return false;
+  if (src.startsWith('data:') || src.startsWith('blob:')) return true;
+  try {
+    const url = new URL(src, window.location.origin);
+    return url.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export function MarkdownContent({ content, className }: MarkdownContentProps) {
   const sanitized = sanitizeAssistantAnswerForDisplay(content);
   return (
@@ -95,9 +106,31 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
               {children}
             </td>
           ),
-          img: ({ src, alt }) => (
-            <img src={src} alt={alt ?? ''} className="my-2 max-w-full h-auto rounded-md border border-border" loading="lazy" />
-          ),
+          img: ({ src, alt }) => {
+            if (!canInlineImage(src)) {
+              return (
+                <a
+                  href={src}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline underline-offset-2 hover:text-primary/80 break-all"
+                >
+                  {alt || 'Open image'}
+                </a>
+              );
+            }
+            return (
+              <img
+                src={src}
+                alt={alt ?? ''}
+                className="my-2 max-w-full h-auto rounded-md border border-border"
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            );
+          },
         }}
       >
         {sanitized}
