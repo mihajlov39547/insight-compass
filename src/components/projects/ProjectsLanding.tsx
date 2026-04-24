@@ -238,7 +238,7 @@ export function ProjectsLanding() {
           setSelectedProjectId(null);
           setSelectedChatId(null);
         }
-        toast.success('Project and all its data deleted');
+        toast.success(t('projectsLanding.delete.success'));
         setPendingDeleteId(null);
       },
     });
