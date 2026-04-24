@@ -428,5 +428,16 @@
         "yesterday": "Yesterday"
       }
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "tabs": {
+      "inbox": "Inbox",
+      "whatsNew": "What's New"
+    },
+    "inbox": {
+      "emptyTitle": "No messages or invites pending",
+      "emptyDescription": "Messages, workspace and project invitations will appear here"
+    }
   }
 }
