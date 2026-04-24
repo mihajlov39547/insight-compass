@@ -297,7 +297,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                   <div key={idx} className="relative group shrink-0">
                     <img
                       src={img.previewUrl}
-                      alt={`Attached ${idx + 1}`}
+                      alt={t('chatInput.imageAlt', { index: idx + 1 })}
                       className="h-16 w-16 rounded-lg object-cover border border-border"
                     />
                     <button
