@@ -88,6 +88,8 @@ function formatLastActivity(dateStr: string, t: (key: string) => string, locale:
 }
 
 export function ProjectsLanding() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.resolvedLanguage === 'sr' ? 'sr-Latn' : 'en-US';
   const {
     setShowNewProject,
     setSelectedProjectId,
