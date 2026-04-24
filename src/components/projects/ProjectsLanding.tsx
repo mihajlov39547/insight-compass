@@ -449,26 +449,26 @@ export function ProjectsLanding() {
       <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogTitle>{t('projectsLanding.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this project and all of its data, including:
+              {t('projectsLanding.delete.intro')}
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>All chats and messages</li>
-                <li>All uploaded documents and files</li>
-                <li>All extracted text, summaries, and processed data</li>
-                <li>All linked resources and transcripts</li>
-                <li>All sharing settings</li>
+                <li>{t('projectsLanding.delete.items.chats')}</li>
+                <li>{t('projectsLanding.delete.items.documents')}</li>
+                <li>{t('projectsLanding.delete.items.extracted')}</li>
+                <li>{t('projectsLanding.delete.items.resources')}</li>
+                <li>{t('projectsLanding.delete.items.sharing')}</li>
               </ul>
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">{t('projectsLanding.delete.irreversible')}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('projectsLanding.delete.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteProject}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Project
+              {t('projectsLanding.delete.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
