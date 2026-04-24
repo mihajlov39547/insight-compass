@@ -303,14 +303,14 @@ export default function ProfileSettings() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-base font-semibold text-foreground">Profile Settings</h1>
+        <h1 className="text-base font-semibold text-foreground">{t('profileSettings.title')}</h1>
       </header>
 
       <div className="max-w-2xl mx-auto py-8 px-4">
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="w-full mb-6">
-            <TabsTrigger value="profile" className="flex-1">Profile</TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1">App Settings</TabsTrigger>
+            <TabsTrigger value="profile" className="flex-1">{t('profileSettings.tabs.profile')}</TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1">{t('profileSettings.tabs.settings')}</TabsTrigger>
           </TabsList>
 
           {/* ===================== PROFILE TAB ===================== */}
