@@ -38,8 +38,8 @@ export function useChatPreviews(chatIds: string[]) {
       const latestMsg: Record<string, string> = {};
       (messages || []).forEach((m: any) => {
         if (!latestMsg[m.chat_id]) {
-          // Skip default welcome messages
-          if (m.role === 'assistant' && m.content.startsWith('Welcome! I can help you')) return;
+          // Skip default welcome messages (English or Serbian)
+          if (m.role === 'assistant' && (m.content.startsWith('Welcome! I can help you') || m.content.startsWith('Dobrodošli!'))) return;
           latestMsg[m.chat_id] = m.content;
         }
       });

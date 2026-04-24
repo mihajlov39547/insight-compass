@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import type { AvailableLanguageCode } from '@/lib/languages';
+import i18n from '@/i18n/config';
 
 export interface DbChat {
   id: string;
@@ -47,12 +48,15 @@ export function useCreateChat() {
         .single();
       if (error) throw error;
 
-      // Insert welcome assistant message
+      // Insert localized welcome assistant message based on the chat's language
+      // (falls back to current UI language if the project language has no translation).
+      const welcomeMessage = i18n.getFixedT(language)('chat.welcomeMessage')
+        || i18n.t('chat.welcomeMessage');
       await supabase.from('messages').insert({
         chat_id: data.id,
         user_id: user!.id,
         role: 'assistant',
-        content: WELCOME_MESSAGE,
+        content: welcomeMessage,
         sources: [],
       });
 
