@@ -284,10 +284,10 @@ export default function ProfileSettings() {
       await supabase.from('user_settings').delete().eq('user_id', authUser.id);
       await supabase.from('profiles').delete().eq('user_id', authUser.id);
       await signOut();
-      toast.success('Account data deleted. You have been signed out.');
+      toast.success(t('profileSettings.toasts.deleted'));
       navigate('/');
     } catch {
-      toast.error('Failed to delete account data.');
+      toast.error(t('profileSettings.toasts.deleteFailed'));
     }
   };
 
