@@ -805,7 +805,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
       {/* Type */}
       <div>
         <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal">
-          {RESOURCE_TYPE_LABELS[resource.resourceType]}
+          {t(`resources.types.${resource.resourceType}`)}
         </Badge>
       </div>
 
