@@ -402,11 +402,11 @@ export function SearchDashboard() {
                         </div>
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
                           {d.matchType === 'hybrid' ? (
-                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />hybrid</span>
+                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />{t('search.badges.hybrid')}</span>
                           ) : d.matchType === 'semantic' ? (
-                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />semantic</span>
+                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />{t('search.badges.semantic')}</span>
                           ) : (
-                            <span className="flex items-center gap-0.5"><Type className="h-2.5 w-2.5" />keyword</span>
+                            <span className="flex items-center gap-0.5"><Type className="h-2.5 w-2.5" />{t('search.badges.keyword')}</span>
                           )}
                         </Badge>
                       </button>
