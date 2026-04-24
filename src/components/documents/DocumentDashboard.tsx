@@ -426,12 +426,43 @@ function DocumentRow({
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {doc.processing_status === 'failed' && (
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-accent" onClick={e => { e.stopPropagation(); onRetry(); }} disabled={isRetrying} title="Retry processing">
-                  <RotateCcw className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-accent" asChild>
+                  <span
+                    role="button"
+                    tabIndex={isRetrying ? -1 : 0}
+                    aria-disabled={isRetrying}
+                    title="Retry processing"
+                    onClick={(e) => { e.stopPropagation(); if (!isRetrying) onRetry(); }}
+                    onKeyDown={(e) => {
+                      if (isRetrying) return;
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onRetry();
+                      }
+                    }}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                  </span>
                 </Button>
               )}
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={e => { e.stopPropagation(); onDelete(); }} disabled={isDeleting}>
-                <Trash2 className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" asChild>
+                <span
+                  role="button"
+                  tabIndex={isDeleting ? -1 : 0}
+                  aria-disabled={isDeleting}
+                  onClick={(e) => { e.stopPropagation(); if (!isDeleting) onDelete(); }}
+                  onKeyDown={(e) => {
+                    if (isDeleting) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDelete();
+                    }
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </span>
               </Button>
               {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
             </div>
