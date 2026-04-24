@@ -3,7 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 import en from './locales/en.json';
-import srLatn from './locales/sr.json';
+import srLatn from './locales/sr-latn.json';
 
 export const SUPPORTED_LANGUAGES = ['en', 'sr'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
@@ -12,7 +12,7 @@ export const DEFAULT_LANGUAGE: SupportedLanguage = 'en';
 
 if (
   typeof window !== 'undefined' &&
-  ['sr', 'sr-lat', 'sr', 'sr'].includes(window.localStorage.getItem('i18nextLng') || '')
+  ['sr', 'sr-lat', 'sr-latn', 'sr-Latn'].includes(window.localStorage.getItem('i18nextLng') || '')
 ) {
   window.localStorage.setItem('i18nextLng', 'sr');
 }
