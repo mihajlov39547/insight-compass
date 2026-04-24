@@ -5,6 +5,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTranslation } from 'react-i18next';
 
 interface NoteFormatToolbarProps {
   textareaRef: React.RefObject<HTMLTextAreaElement>;
@@ -14,7 +15,7 @@ interface NoteFormatToolbarProps {
 
 type FormatAction = {
   icon: React.ElementType;
-  label: string;
+  labelKey: string;
   action: (ta: HTMLTextAreaElement, value: string) => string;
 };
 
@@ -69,24 +70,25 @@ function insertList(ta: HTMLTextAreaElement, value: string, ordered: boolean): s
 }
 
 const actions: FormatAction[] = [
-  { icon: Type, label: 'Normal text', action: (ta, v) => v },
-  { icon: Heading1, label: 'Heading 1', action: (ta, v) => prefixLine(ta, v, '# ') },
-  { icon: Heading2, label: 'Heading 2', action: (ta, v) => prefixLine(ta, v, '## ') },
-  { icon: Heading3, label: 'Heading 3', action: (ta, v) => prefixLine(ta, v, '### ') },
+  { icon: Type, labelKey: 'noteToolbar.normal', action: (ta, v) => v },
+  { icon: Heading1, labelKey: 'noteToolbar.h1', action: (ta, v) => prefixLine(ta, v, '# ') },
+  { icon: Heading2, labelKey: 'noteToolbar.h2', action: (ta, v) => prefixLine(ta, v, '## ') },
+  { icon: Heading3, labelKey: 'noteToolbar.h3', action: (ta, v) => prefixLine(ta, v, '### ') },
 ];
 
 const inlineActions: FormatAction[] = [
-  { icon: Bold, label: 'Bold', action: (ta, v) => wrapSelection(ta, v, '**', '**') },
-  { icon: Italic, label: 'Italic', action: (ta, v) => wrapSelection(ta, v, '*', '*') },
-  { icon: Code, label: 'Inline code', action: (ta, v) => wrapSelection(ta, v, '`', '`') },
+  { icon: Bold, labelKey: 'noteToolbar.bold', action: (ta, v) => wrapSelection(ta, v, '**', '**') },
+  { icon: Italic, labelKey: 'noteToolbar.italic', action: (ta, v) => wrapSelection(ta, v, '*', '*') },
+  { icon: Code, labelKey: 'noteToolbar.code', action: (ta, v) => wrapSelection(ta, v, '`', '`') },
 ];
 
 const listActions: FormatAction[] = [
-  { icon: List, label: 'Bullet list', action: (ta, v) => insertList(ta, v, false) },
-  { icon: ListOrdered, label: 'Numbered list', action: (ta, v) => insertList(ta, v, true) },
+  { icon: List, labelKey: 'noteToolbar.bullet', action: (ta, v) => insertList(ta, v, false) },
+  { icon: ListOrdered, labelKey: 'noteToolbar.numbered', action: (ta, v) => insertList(ta, v, true) },
 ];
 
 export function NoteFormatToolbar({ textareaRef, value, onChange }: NoteFormatToolbarProps) {
+  const { t } = useTranslation();
   const handleAction = (action: FormatAction['action']) => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -109,22 +111,22 @@ export function NoteFormatToolbar({ textareaRef, value, onChange }: NoteFormatTo
           <item.icon className="h-3.5 w-3.5" />
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="text-xs">{item.label}</TooltipContent>
+      <TooltipContent side="bottom" className="text-xs">{t(item.labelKey)}</TooltipContent>
     </Tooltip>
   );
 
   return (
     <div className="flex items-center gap-0.5 px-1 py-1 rounded-md border border-border bg-muted/30">
       {actions.map((item) => (
-        <ToolbarButton key={item.label} item={item} />
+        <ToolbarButton key={item.labelKey} item={item} />
       ))}
       <Separator orientation="vertical" className="mx-1 h-5" />
       {inlineActions.map((item) => (
-        <ToolbarButton key={item.label} item={item} />
+        <ToolbarButton key={item.labelKey} item={item} />
       ))}
       <Separator orientation="vertical" className="mx-1 h-5" />
       {listActions.map((item) => (
-        <ToolbarButton key={item.label} item={item} />
+        <ToolbarButton key={item.labelKey} item={item} />
       ))}
     </div>
   );
