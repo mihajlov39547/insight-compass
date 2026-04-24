@@ -468,13 +468,13 @@ export default function ProfileSettings() {
 
             {/* Password */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Password</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.password.title')}</h3>
               {googleProvider ? (
                 <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                  <Shield className="h-4 w-4" /> Authentication is managed by Google. Password login is not available.
+                  <Shield className="h-4 w-4" /> {t('profileSettings.password.googleManaged')}
                 </p>
               ) : (
-                <Button variant="outline" size="sm">Change Password</Button>
+                <Button variant="outline" size="sm">{t('profileSettings.password.change')}</Button>
               )}
             </section>
 
@@ -482,30 +482,30 @@ export default function ProfileSettings() {
 
             {/* Delete Account */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
+              <h3 className="text-sm font-semibold text-destructive">{t('profileSettings.danger.title')}</h3>
               <p className="text-xs text-muted-foreground">
-                Permanently delete your account and all associated data. This action cannot be undone.
+                {t('profileSettings.danger.description')}
               </p>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" className="gap-2">
-                    <Trash2 className="h-4 w-4" /> Delete Account
+                    <Trash2 className="h-4 w-4" /> {t('profileSettings.danger.deleteButton')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-destructive" />
-                      Delete Account
+                      {t('profileSettings.danger.dialogTitle')}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete your account, all your projects, and data. This action cannot be undone.
+                      {t('profileSettings.danger.dialogDescription')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t('profileSettings.danger.cancel')}</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Yes, delete my account
+                      {t('profileSettings.danger.confirm')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
