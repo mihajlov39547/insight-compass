@@ -557,13 +557,13 @@ export function AppSidebar() {
             <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `plan-badge-${currentPlan}`)}>
               <PlanIcon className="h-4 w-4" />
             </div>
-          </TooltipTrigger><TooltipContent side="right">{planLabels[currentPlan]} Plan</TooltipContent></Tooltip>
+          </TooltipTrigger><TooltipContent side="right">{planLabels[currentPlan]} {t('sidebar.plan.suffix')}</TooltipContent></Tooltip>
           <Tooltip><TooltipTrigger asChild>
             <Button variant="ghost" size="icon" className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent" onClick={() => setShowNotifications(true)}>
               <Bell className="h-4 w-4" />
               {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center">{unreadCount}</span>}
             </Button>
-          </TooltipTrigger><TooltipContent side="right">Notifications</TooltipContent></Tooltip>
+          </TooltipTrigger><TooltipContent side="right">{t('sidebar.notifications')}</TooltipContent></Tooltip>
           <Avatar className="h-8 w-8 cursor-pointer">
             {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
             <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">{initials}</AvatarFallback>
