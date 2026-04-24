@@ -1225,7 +1225,7 @@ function ResourceDetailsDrawer({
   const canFallbackPersonalOpen = resource.containerType === 'personal';
   const canRetryTranscript = resource.provider === 'youtube' && resource.transcriptStatus === 'failed';
   const locationText = formatResourceLocation(resource);
-  const contentTabLabel = isVideo ? 'Transcript' : 'Extracted Text';
+  const contentTabLabel = isVideo ? t('resources.drawer.tabs.transcript') : t('resources.drawer.tabs.extractedText');
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
