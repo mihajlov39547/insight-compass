@@ -13,6 +13,7 @@ import { useApp } from '@/contexts/useApp';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export type PromptAugmentationMode = 'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook';
 
@@ -55,6 +56,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage, variant = 'project', footerLeft }: ChatInputProps) {
+  const { t } = useTranslation();
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
@@ -125,12 +127,12 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     setAttachedImages(prev => {
       const remaining = MAX_ATTACHED_IMAGES - prev.length;
       if (remaining <= 0) {
-        toast.error(`Maximum ${MAX_ATTACHED_IMAGES} images allowed`);
+        toast.error(t('chatInput.imageMaxToast', { count: MAX_ATTACHED_IMAGES }));
         return prev;
       }
       const toAdd = valid.slice(0, remaining);
       if (valid.length > remaining) {
-        toast.error(`Only ${remaining} more image(s) can be attached`);
+        toast.error(t('chatInput.imageRemainingToast', { count: remaining }));
       }
       return [...prev, ...toAdd.map(file => ({ file, previewUrl: URL.createObjectURL(file) }))];
     });
@@ -155,7 +157,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
     e.preventDefault();
     if (!hasContent || isGenerating) return;
     if (promptOptions.augmentationMode === 'notebook' && !promptOptions.notebookId) {
-      toast.error('Select a notebook to ground this prompt');
+      toast.error(t('chatInput.notebook.missingToast'));
       return;
     }
     onSend(
@@ -264,13 +266,13 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
         }
       );
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Failed to improve prompt');
+      if (!resp.ok) throw new Error(data.error || t('chatInput.improveError'));
       if (data.improved) {
         setMessage(data.improved);
       }
     } catch (err: any) {
       console.error('Improve prompt error:', err);
-      toast.error(err.message || 'Failed to improve prompt');
+      toast.error(err.message || t('chatInput.improveError'));
     } finally {
       setIsImproving(false);
     }
@@ -320,7 +322,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                     type="button"
                     onClick={clearNotebook}
                     className="ml-1 text-muted-foreground hover:text-foreground"
-                    aria-label="Remove notebook"
+                    aria-label={t('chatInput.notebook.remove')}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -329,7 +331,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
             )}
             {promptOptions.augmentationMode === 'notebook' && !selectedNotebook && (
               <div className="px-3 pt-2 pb-0 text-xs text-destructive flex items-center gap-1.5">
-                <BookOpen className="h-3.5 w-3.5" /> Notebook required — select a notebook to ground this prompt.
+                <BookOpen className="h-3.5 w-3.5" /> {t('chatInput.notebook.required')}
               </div>
             )}
 
@@ -356,14 +358,14 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                 onKeyDown={handleKeyDown}
                 placeholder={
                   isGenerating
-                    ? 'Waiting for response...'
+                    ? t('chatInput.placeholders.waiting')
                     : promptOptions.augmentationMode === 'research'
-                      ? 'Ask a deep research question…'
+                      ? t('chatInput.placeholders.research')
                       : promptOptions.augmentationMode === 'youtube_search'
-                        ? 'Search YouTube for videos…'
+                        ? t('chatInput.placeholders.youtube')
                         : promptOptions.augmentationMode === 'notebook'
-                          ? (selectedNotebook ? `Ask grounded in "${selectedNotebook.name}"…` : 'Select a notebook below, then ask…')
-                          : 'Ask a question about your documents...'
+                          ? (selectedNotebook ? t('chatInput.placeholders.notebookGrounded', { name: selectedNotebook.name }) : t('chatInput.placeholders.notebookSelect'))
+                          : t('chatInput.placeholders.default')
                 }
                 className={cn(
                   'w-full h-auto min-h-0 resize-none border-0 bg-transparent py-2 px-2 leading-5 transition-[height] duration-150 focus-visible:ring-0 focus-visible:ring-offset-0',
