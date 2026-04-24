@@ -437,5 +437,16 @@
         "yesterday": "Juče"
       }
     }
+  },
+  "notifications": {
+    "title": "Obaveštenja",
+    "tabs": {
+      "inbox": "Prijemno sanduče",
+      "whatsNew": "Šta je novo"
+    },
+    "inbox": {
+      "emptyTitle": "Nema poruka ni poziva na čekanju",
+      "emptyDescription": "Poruke, pozivi za radni prostor i projekte pojaviće se ovde"
+    }
   }
 }

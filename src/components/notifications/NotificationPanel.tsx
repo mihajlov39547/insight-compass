@@ -3,6 +3,7 @@ import { Inbox, Sparkles, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 const whatsNewItems = [
   {
@@ -34,6 +35,7 @@ interface NotificationPanelProps {
 }
 
 export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
+  const { t } = useTranslation();
   if (!open) return null;
 
   return (
@@ -45,7 +47,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
       <div className="relative ml-auto w-full max-w-md bg-card border-l border-border shadow-xl flex flex-col animate-slide-in-right">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <h2 className="text-base font-semibold text-foreground">Notifications</h2>
+          <h2 className="text-base font-semibold text-foreground">{t('notifications.title')}</h2>
           <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
           </Button>
@@ -57,11 +59,11 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
             <TabsList className="w-full">
               <TabsTrigger value="inbox" className="flex-1 gap-1.5">
                 <Inbox className="h-3.5 w-3.5" />
-                Inbox
+                {t('notifications.tabs.inbox')}
               </TabsTrigger>
               <TabsTrigger value="whats-new" className="flex-1 gap-1.5">
                 <Sparkles className="h-3.5 w-3.5" />
-                What's New
+                {t('notifications.tabs.whatsNew')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -74,10 +76,10 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                   <Inbox className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <p className="text-sm font-medium text-foreground mb-1">
-                  No messages or invites pending
+                  {t('notifications.inbox.emptyTitle')}
                 </p>
                 <p className="text-xs text-muted-foreground max-w-[240px]">
-                  Messages, workspace and project invitations will appear here
+                  {t('notifications.inbox.emptyDescription')}
                 </p>
               </div>
             </ScrollArea>
