@@ -372,6 +372,207 @@
       "failed": "Failed",
       "mine": "Mine",
       "shared": "Shared"
+    },
+    "search": {
+      "placeholder": "Search resources…"
+    },
+    "sort": {
+      "newest": "Last updated (newest)",
+      "oldest": "Last updated (oldest)",
+      "name": "Name",
+      "type": "Type",
+      "status": "Status"
+    },
+    "filters": {
+      "ownership": {
+        "all": "All",
+        "mine": "Mine",
+        "shared": "Shared"
+      },
+      "status": {
+        "placeholder": "Status",
+        "all": "All statuses",
+        "ready": "Ready",
+        "processing": "Processing",
+        "failed": "Failed"
+      },
+      "type": {
+        "placeholder": "Type",
+        "all": "All types"
+      },
+      "container": {
+        "placeholder": "Location",
+        "all": "All locations",
+        "project": "Projects",
+        "notebook": "Notebooks",
+        "personal": "Personal"
+      },
+      "clear": "Clear"
+    },
+    "table": {
+      "resource": "Resource",
+      "type": "Type",
+      "location": "Location",
+      "status": "Status",
+      "updated": "Updated"
+    },
+    "row": {
+      "linkedResource": "Linked resource",
+      "by": "by {{name}}",
+      "transcriptStatus": "transcript {{status}}"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
+    },
+    "badges": {
+      "ready": "Ready",
+      "processing": "Processing",
+      "failed": "Failed",
+      "unknown": "Unknown",
+      "soon": "Soon",
+      "allowed": "Allowed",
+      "notAllowed": "Not allowed"
+    },
+    "actions": {
+      "openWorkspace": "Open workspace",
+      "viewDetails": "View details",
+      "download": "Download",
+      "rename": "Rename",
+      "delete": "Delete",
+      "retry": "Retry",
+      "retryProcessing": "Retry processing",
+      "retryTranscript": "Retry transcript",
+      "viewInPersonal": "View in personal resources"
+    },
+    "types": {
+      "document": "Document",
+      "image": "Image",
+      "spreadsheet": "Spreadsheet",
+      "presentation": "Presentation",
+      "email": "Email",
+      "text": "Text",
+      "dataset": "Data",
+      "audio": "Audio",
+      "video": "Video",
+      "link": "Link",
+      "other": "Other"
+    },
+    "empty": {
+      "noMatches": {
+        "title": "No matching resources",
+        "description": "Try adjusting your filters or search query to find what you're looking for."
+      },
+      "none": {
+        "title": "No resources yet",
+        "description": "Upload documents to your projects or notebooks to see them here. Resources from shared workspaces will also appear once available."
+      }
+    },
+    "rename": {
+      "title": "Rename resource",
+      "description": "Update the resource title shown across Resources and related workspaces.",
+      "currentTitle": "Current title",
+      "newTitle": "New title",
+      "placeholder": "Enter new title",
+      "untitled": "Untitled resource",
+      "cancel": "Cancel",
+      "submit": "Rename",
+      "submitting": "Renaming..."
+    },
+    "addSourceDialog": {
+      "title": "Add source",
+      "tooltip": "Add a specific URL or supported source now so it appears in Resources immediately. Some providers support richer enrichment. Unavailable providers are marked Soon.",
+      "description": "Add a URL or supported source so content can appear in Resources.",
+      "url": "URL",
+      "urlPlaceholder": "https://example.com/resource",
+      "titleLabel": "Title (optional)",
+      "titlePlaceholder": "Readable resource title",
+      "provider": "Provider",
+      "providers": {
+        "anyUrl": "Any URL",
+        "youtube": "YouTube",
+        "googleDrive": "Google Drive",
+        "dropbox": "Dropbox",
+        "notion": "Notion",
+        "internal": "Internal"
+      },
+      "location": "Location",
+      "locations": {
+        "personal": "Personal",
+        "project": "Project",
+        "notebook": "Notebook"
+      },
+      "target": "Target {{type}}",
+      "selectTarget": "Select a {{type}}",
+      "footnote": "Supported sources are available now. Others are marked Soon.",
+      "cancel": "Cancel",
+      "submit": "Add source",
+      "submitting": "Adding..."
+    },
+    "drawer": {
+      "tabs": {
+        "overview": "Overview",
+        "transcript": "Transcript",
+        "extractedText": "Extracted Text"
+      },
+      "sections": {
+        "summary": "Summary",
+        "metadata": "Metadata",
+        "processing": "Processing",
+        "permissions": "Permissions"
+      },
+      "meta": {
+        "resourceId": "Resource ID",
+        "fileSize": "File size",
+        "mimeType": "MIME type",
+        "extension": "Extension",
+        "sourceType": "Source type",
+        "provider": "Provider",
+        "uploaded": "Uploaded",
+        "lastUpdated": "Last updated",
+        "location": "Location",
+        "owner": "Owner",
+        "originalUrl": "Original URL",
+        "previewTitle": "Preview title",
+        "previewDomain": "Preview domain",
+        "videoId": "Video ID",
+        "channel": "Channel",
+        "duration": "Duration",
+        "status": "Status",
+        "language": "Language",
+        "pageCount": "Page count",
+        "wordCount": "Word count",
+        "processingError": "Processing error",
+        "unknown": "Unknown",
+        "unknownDomain": "Unknown domain"
+      },
+      "permissions": {
+        "open": "Open",
+        "viewDetails": "View details",
+        "download": "Download",
+        "rename": "Rename",
+        "delete": "Delete",
+        "retryProcessing": "Retry processing"
+      },
+      "content": {
+        "transcriptText": "Transcript text",
+        "extractedText": "Extracted text",
+        "charsCount": "{{count}} chars",
+        "transcriptStatus": "Transcript status",
+        "extractionStatus": "Extraction status",
+        "transcriptFetchFailed": "Transcript fetch failed",
+        "transcriptRetryHint": "Use Retry transcript to queue another attempt.",
+        "transcriptInProgress": "Transcript ingestion is in progress. This tab will populate when processing is complete.",
+        "transcriptUnavailable": "Transcript is not available for this resource yet.",
+        "transcriptEmpty": "No transcript text available.",
+        "extractionFailed": "Text extraction failed",
+        "extractionRetryHint": "Use Retry to queue another attempt.",
+        "extractionInProgress": "Document extraction is in progress. Extracted text will appear here when processing is complete.",
+        "extractedEmpty": "No extracted text available for this document.",
+        "noErrorDetails": "No additional error details available."
+      }
     }
   },
   "projectDashboard": {

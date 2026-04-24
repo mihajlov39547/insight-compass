@@ -379,6 +379,207 @@
       "failed": "Neuspešno",
       "mine": "Moji",
       "shared": "Deljeno"
+    },
+    "search": {
+      "placeholder": "Pretraži resurse…"
+    },
+    "sort": {
+      "newest": "Poslednje ažurirano (najnovije)",
+      "oldest": "Poslednje ažurirano (najstarije)",
+      "name": "Naziv",
+      "type": "Tip",
+      "status": "Status"
+    },
+    "filters": {
+      "ownership": {
+        "all": "Svi",
+        "mine": "Moji",
+        "shared": "Deljeno"
+      },
+      "status": {
+        "placeholder": "Status",
+        "all": "Svi statusi",
+        "ready": "Spremno",
+        "processing": "U obradi",
+        "failed": "Neuspešno"
+      },
+      "type": {
+        "placeholder": "Tip",
+        "all": "Svi tipovi"
+      },
+      "container": {
+        "placeholder": "Lokacija",
+        "all": "Sve lokacije",
+        "project": "Projekti",
+        "notebook": "Sveske",
+        "personal": "Lično"
+      },
+      "clear": "Očisti"
+    },
+    "table": {
+      "resource": "Resurs",
+      "type": "Tip",
+      "location": "Lokacija",
+      "status": "Status",
+      "updated": "Ažurirano"
+    },
+    "row": {
+      "linkedResource": "Povezani resurs",
+      "by": "od {{name}}",
+      "transcriptStatus": "transkript {{status}}"
+    },
+    "time": {
+      "justNow": "Upravo sada",
+      "minutesAgo": "pre {{count}} min",
+      "hoursAgo": "pre {{count}} h",
+      "daysAgo": "pre {{count}} d"
+    },
+    "badges": {
+      "ready": "Spremno",
+      "processing": "U obradi",
+      "failed": "Neuspešno",
+      "unknown": "Nepoznato",
+      "soon": "Uskoro",
+      "allowed": "Dozvoljeno",
+      "notAllowed": "Nije dozvoljeno"
+    },
+    "actions": {
+      "openWorkspace": "Otvori radni prostor",
+      "viewDetails": "Prikaži detalje",
+      "download": "Preuzmi",
+      "rename": "Preimenuj",
+      "delete": "Obriši",
+      "retry": "Pokušaj ponovo",
+      "retryProcessing": "Pokreni obradu ponovo",
+      "retryTranscript": "Pokušaj transkript ponovo",
+      "viewInPersonal": "Prikaži u ličnim resursima"
+    },
+    "types": {
+      "document": "Dokument",
+      "image": "Slika",
+      "spreadsheet": "Tabela",
+      "presentation": "Prezentacija",
+      "email": "Email",
+      "text": "Tekst",
+      "dataset": "Podaci",
+      "audio": "Audio",
+      "video": "Video",
+      "link": "Link",
+      "other": "Ostalo"
+    },
+    "empty": {
+      "noMatches": {
+        "title": "Nema rezultata",
+        "description": "Pokušajte da prilagodite filtere ili upit pretrage da pronađete ono što tražite."
+      },
+      "none": {
+        "title": "Još uvek nema resursa",
+        "description": "Otpremite dokumente u svoje projekte ili sveske da biste ih ovde videli. Resursi iz deljenih radnih prostora će se takođe pojaviti kada budu dostupni."
+      }
+    },
+    "rename": {
+      "title": "Preimenuj resurs",
+      "description": "Ažurirajte naslov resursa prikazan u Resursima i povezanim radnim prostorima.",
+      "currentTitle": "Trenutni naslov",
+      "newTitle": "Novi naslov",
+      "placeholder": "Unesite novi naslov",
+      "untitled": "Resurs bez naslova",
+      "cancel": "Otkaži",
+      "submit": "Preimenuj",
+      "submitting": "Preimenovanje..."
+    },
+    "addSourceDialog": {
+      "title": "Dodaj izvor",
+      "tooltip": "Dodajte određeni URL ili podržani izvor odmah da bi se odmah pojavio u Resursima. Neki provajderi podržavaju bogatije obogaćivanje. Nedostupni provajderi su označeni sa Uskoro.",
+      "description": "Dodajte URL ili podržani izvor da bi sadržaj mogao da se pojavi u Resursima.",
+      "url": "URL",
+      "urlPlaceholder": "https://example.com/resource",
+      "titleLabel": "Naslov (opciono)",
+      "titlePlaceholder": "Čitljiv naslov resursa",
+      "provider": "Provajder",
+      "providers": {
+        "anyUrl": "Bilo koji URL",
+        "youtube": "YouTube",
+        "googleDrive": "Google Drive",
+        "dropbox": "Dropbox",
+        "notion": "Notion",
+        "internal": "Interni"
+      },
+      "location": "Lokacija",
+      "locations": {
+        "personal": "Lično",
+        "project": "Projekat",
+        "notebook": "Sveska"
+      },
+      "target": "Cilj: {{type}}",
+      "selectTarget": "Izaberite {{type}}",
+      "footnote": "Podržani izvori su trenutno dostupni. Ostali su označeni sa Uskoro.",
+      "cancel": "Otkaži",
+      "submit": "Dodaj izvor",
+      "submitting": "Dodavanje..."
+    },
+    "drawer": {
+      "tabs": {
+        "overview": "Pregled",
+        "transcript": "Transkript",
+        "extractedText": "Izdvojeni tekst"
+      },
+      "sections": {
+        "summary": "Sažetak",
+        "metadata": "Metapodaci",
+        "processing": "Obrada",
+        "permissions": "Dozvole"
+      },
+      "meta": {
+        "resourceId": "ID resursa",
+        "fileSize": "Veličina fajla",
+        "mimeType": "MIME tip",
+        "extension": "Ekstenzija",
+        "sourceType": "Tip izvora",
+        "provider": "Provajder",
+        "uploaded": "Otpremljeno",
+        "lastUpdated": "Poslednje ažuriranje",
+        "location": "Lokacija",
+        "owner": "Vlasnik",
+        "originalUrl": "Originalni URL",
+        "previewTitle": "Naslov pregleda",
+        "previewDomain": "Domen pregleda",
+        "videoId": "ID videa",
+        "channel": "Kanal",
+        "duration": "Trajanje",
+        "status": "Status",
+        "language": "Jezik",
+        "pageCount": "Broj strana",
+        "wordCount": "Broj reči",
+        "processingError": "Greška u obradi",
+        "unknown": "Nepoznato",
+        "unknownDomain": "Nepoznat domen"
+      },
+      "permissions": {
+        "open": "Otvori",
+        "viewDetails": "Prikaži detalje",
+        "download": "Preuzmi",
+        "rename": "Preimenuj",
+        "delete": "Obriši",
+        "retryProcessing": "Pokreni obradu ponovo"
+      },
+      "content": {
+        "transcriptText": "Tekst transkripta",
+        "extractedText": "Izdvojeni tekst",
+        "charsCount": "{{count}} znakova",
+        "transcriptStatus": "Status transkripta",
+        "extractionStatus": "Status izdvajanja",
+        "transcriptFetchFailed": "Preuzimanje transkripta nije uspelo",
+        "transcriptRetryHint": "Koristite „Pokušaj transkript ponovo” da biste pokrenuli novi pokušaj.",
+        "transcriptInProgress": "Obrada transkripta je u toku. Ova kartica će se popuniti kada se obrada završi.",
+        "transcriptUnavailable": "Transkript još uvek nije dostupan za ovaj resurs.",
+        "transcriptEmpty": "Tekst transkripta nije dostupan.",
+        "extractionFailed": "Izdvajanje teksta nije uspelo",
+        "extractionRetryHint": "Koristite „Pokušaj ponovo” da biste pokrenuli novi pokušaj.",
+        "extractionInProgress": "Izdvajanje dokumenta je u toku. Izdvojeni tekst će se ovde pojaviti kada se obrada završi.",
+        "extractedEmpty": "Nema izdvojenog teksta za ovaj dokument.",
+        "noErrorDetails": "Nema dodatnih detalja o grešci."
+      }
     }
   },
   "projectDashboard": {

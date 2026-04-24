@@ -37,7 +37,7 @@ import { useResourceExtractedText } from '@/hooks/useResourceExtractedText';
 import { useResourceTranscriptDebug, type TranscriptDebugPayload, type StageDebugEntry } from '@/hooks/useResourceTranscriptDebug';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
-  RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName, formatResourceLocation
+  formatFileSize, truncateFileName, formatResourceLocation
 } from '@/lib/resourceClassification';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -461,7 +461,7 @@ export function ResourcesLanding() {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search resources…"
+              placeholder={t('resources.search.placeholder')}
               className="pl-9 h-8 text-sm"
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -474,11 +474,11 @@ export function ResourcesLanding() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Last updated (newest)</SelectItem>
-              <SelectItem value="oldest">Last updated (oldest)</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="type">Type</SelectItem>
-              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="newest">{t('resources.sort.newest')}</SelectItem>
+              <SelectItem value="oldest">{t('resources.sort.oldest')}</SelectItem>
+              <SelectItem value="name">{t('resources.sort.name')}</SelectItem>
+              <SelectItem value="type">{t('resources.sort.type')}</SelectItem>
+              <SelectItem value="status">{t('resources.sort.status')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -490,9 +490,9 @@ export function ResourcesLanding() {
           {/* Ownership */}
           <Tabs value={ownershipFilter} onValueChange={(v) => setOwnershipFilter(v as OwnershipFilter)}>
             <TabsList className="h-7 p-0.5">
-              <TabsTrigger value="all" className="text-xs px-2.5 h-6">All</TabsTrigger>
-              <TabsTrigger value="mine" className="text-xs px-2.5 h-6">Mine</TabsTrigger>
-              <TabsTrigger value="shared" className="text-xs px-2.5 h-6">Shared</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs px-2.5 h-6">{t('resources.filters.ownership.all')}</TabsTrigger>
+              <TabsTrigger value="mine" className="text-xs px-2.5 h-6">{t('resources.filters.ownership.mine')}</TabsTrigger>
+              <TabsTrigger value="shared" className="text-xs px-2.5 h-6">{t('resources.filters.ownership.shared')}</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -501,25 +501,25 @@ export function ResourcesLanding() {
           {/* Status */}
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
             <SelectTrigger className="w-[120px] h-7 text-xs">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t('resources.filters.status.placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="ready">Ready</SelectItem>
-              <SelectItem value="processing">Processing</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
+              <SelectItem value="all">{t('resources.filters.status.all')}</SelectItem>
+              <SelectItem value="ready">{t('resources.filters.status.ready')}</SelectItem>
+              <SelectItem value="processing">{t('resources.filters.status.processing')}</SelectItem>
+              <SelectItem value="failed">{t('resources.filters.status.failed')}</SelectItem>
             </SelectContent>
           </Select>
 
           {/* Type */}
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
             <SelectTrigger className="w-[130px] h-7 text-xs">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder={t('resources.filters.type.placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              {activeResourceTypes.map(t => (
-                <SelectItem key={t} value={t}>{RESOURCE_TYPE_LABELS[t]}</SelectItem>
+              <SelectItem value="all">{t('resources.filters.type.all')}</SelectItem>
+              {activeResourceTypes.map(rt => (
+                <SelectItem key={rt} value={rt}>{t(`resources.types.${rt}`)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -527,13 +527,13 @@ export function ResourcesLanding() {
           {/* Container */}
           <Select value={containerFilter} onValueChange={(v) => setContainerFilter(v as ContainerFilter)}>
             <SelectTrigger className="w-[130px] h-7 text-xs">
-              <SelectValue placeholder="Location" />
+              <SelectValue placeholder={t('resources.filters.container.placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All locations</SelectItem>
-              <SelectItem value="project">Projects</SelectItem>
-              <SelectItem value="notebook">Notebooks</SelectItem>
-              <SelectItem value="personal">Personal</SelectItem>
+              <SelectItem value="all">{t('resources.filters.container.all')}</SelectItem>
+              <SelectItem value="project">{t('resources.filters.container.project')}</SelectItem>
+              <SelectItem value="notebook">{t('resources.filters.container.notebook')}</SelectItem>
+              <SelectItem value="personal">{t('resources.filters.container.personal')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -544,7 +544,7 @@ export function ResourcesLanding() {
               className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1"
               onClick={() => { setSearch(''); setOwnershipFilter('all'); setStatusFilter('all'); setTypeFilter('all'); setContainerFilter('all'); }}
             >
-              <X className="h-3 w-3" /> Clear
+              <X className="h-3 w-3" /> {t('resources.filters.clear')}
             </Button>
           )}
         </div>
@@ -563,11 +563,11 @@ export function ResourcesLanding() {
             <div className="space-y-1">
               {/* Table header */}
               <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-                <span>Resource</span>
-                <span>Type</span>
-                <span>Location</span>
-                <span>Status</span>
-                <span>Updated</span>
+                <span>{t('resources.table.resource')}</span>
+                <span>{t('resources.table.type')}</span>
+                <span>{t('resources.table.location')}</span>
+                <span>{t('resources.table.status')}</span>
+                <span>{t('resources.table.updated')}</span>
                 <span></span>
               </div>
 
@@ -675,29 +675,30 @@ function StatPill({ label, value, variant }: {
 }
 
 function ReadinessBadge({ readiness }: { readiness: ReadinessStatus }) {
+  const { t } = useTranslation();
   switch (readiness) {
     case 'ready':
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
-          <CheckCircle2 className="h-2.5 w-2.5" /> Ready
+          <CheckCircle2 className="h-2.5 w-2.5" /> {t('resources.badges.ready')}
         </Badge>
       );
     case 'processing':
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-amber-500/10 text-amber-700 border-amber-500/20">
-          <Loader2 className="h-2.5 w-2.5 animate-spin" /> Processing
+          <Loader2 className="h-2.5 w-2.5 animate-spin" /> {t('resources.badges.processing')}
         </Badge>
       );
     case 'failed':
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-destructive/10 text-destructive border-destructive/20">
-          <AlertCircle className="h-2.5 w-2.5" /> Failed
+          <AlertCircle className="h-2.5 w-2.5" /> {t('resources.badges.failed')}
         </Badge>
       );
     default:
       return (
         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-          Unknown
+          {t('resources.badges.unknown')}
         </Badge>
       );
   }
@@ -714,6 +715,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   isDeleting: boolean;
   isRetrying: boolean;
 }) {
+  const { t } = useTranslation();
   const Icon = RESOURCE_ICONS[resource.resourceType] || File;
   const color = RESOURCE_COLORS[resource.resourceType] || 'text-muted-foreground';
   const ContainerIcon = CONTAINER_ICONS[resource.containerType] || Globe;
@@ -728,8 +730,8 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   const isLinkedResource = resource.resourceType === 'link' || resource.sourceType === 'linked';
   const previewImage = resource.mediaThumbnailUrl || resource.previewFaviconUrl;
   const retryLabel = resource.provider === 'youtube' && resource.transcriptStatus === 'failed'
-    ? 'Retry transcript'
-    : 'Retry processing';
+    ? t('resources.actions.retryTranscript')
+    : t('resources.actions.retryProcessing');
   const locationText = formatResourceLocation(resource);
 
   const relativeDate = useMemo(() => {
@@ -737,14 +739,14 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1) return t('resources.time.justNow');
+    if (diffMins < 60) return t('resources.time.minutesAgo', { count: diffMins });
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return t('resources.time.hoursAgo', { count: diffHours });
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 30) return `${diffDays}d ago`;
+    if (diffDays < 30) return t('resources.time.daysAgo', { count: diffDays });
     return d.toLocaleDateString();
-  }, [resource.updatedAt]);
+  }, [resource.updatedAt, t]);
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors group">
@@ -774,7 +776,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
                   />
                 )}
                 <p className="text-[11px] text-muted-foreground truncate">
-                  {resource.previewDomain || resource.normalizedUrl || resource.linkUrl || 'Linked resource'}
+                  {resource.previewDomain || resource.normalizedUrl || resource.linkUrl || t('resources.row.linkedResource')}
                 </p>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -782,10 +784,10 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">{formatProvider(resource.provider)}</Badge>
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">{resource.processingStatus}</Badge>
                 {resource.transcriptStatus && resource.transcriptStatus !== 'none' && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">transcript {resource.transcriptStatus}</Badge>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t('resources.row.transcriptStatus', { status: resource.transcriptStatus })}</Badge>
                 )}
                 {resource.isSharedWithMe && (
-                  <span className="text-[10px] text-muted-foreground">by {resource.ownerDisplayName}</span>
+                  <span className="text-[10px] text-muted-foreground">{t('resources.row.by', { name: resource.ownerDisplayName })}</span>
                 )}
               </div>
             </div>
@@ -793,7 +795,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
             <p className="text-[11px] text-muted-foreground truncate">
               {resource.extension.toUpperCase()} • {formatFileSize(resource.sizeBytes)}
               {resource.isSharedWithMe && (
-                <span> • by {resource.ownerDisplayName}</span>
+                <span> • {t('resources.row.by', { name: resource.ownerDisplayName })}</span>
               )}
             </p>
           )}
@@ -803,7 +805,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
       {/* Type */}
       <div>
         <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal">
-          {RESOURCE_TYPE_LABELS[resource.resourceType]}
+          {t(`resources.types.${resource.resourceType}`)}
         </Badge>
       </div>
 
@@ -839,25 +841,25 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
               {canOpen && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onOpen}>
                   <ExternalLink className="h-3.5 w-3.5" />
-                  Open workspace
+                  {t('resources.actions.openWorkspace')}
                 </DropdownMenuItem>
               )}
               {canViewDetails && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onViewDetails}>
                   <Eye className="h-3.5 w-3.5" />
-                  View details
+                  {t('resources.actions.viewDetails')}
                 </DropdownMenuItem>
               )}
               {canDownload && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onDownload}>
                   <Download className="h-3.5 w-3.5" />
-                  Download
+                  {t('resources.actions.download')}
                 </DropdownMenuItem>
               )}
               {canRename && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onRename}>
                   <FileType className="h-3.5 w-3.5" />
-                  Rename
+                  {t('resources.actions.rename')}
                 </DropdownMenuItem>
               )}
               {canRetry && (
@@ -875,7 +877,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
                     disabled={isDeleting}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    Delete
+                    {t('resources.actions.delete')}
                   </DropdownMenuItem>
                 </>
               )}
@@ -888,13 +890,14 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
 }
 
 function EmptyState({ hasResources, hasFilters }: { hasResources: boolean; hasFilters: boolean }) {
+  const { t } = useTranslation();
   if (hasFilters) {
     return (
       <div className="text-center py-20">
         <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-        <h3 className="text-sm font-medium text-foreground mb-1">No matching resources</h3>
+        <h3 className="text-sm font-medium text-foreground mb-1">{t('resources.empty.noMatches.title')}</h3>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-          Try adjusting your filters or search query to find what you're looking for.
+          {t('resources.empty.noMatches.description')}
         </p>
       </div>
     );
@@ -902,9 +905,9 @@ function EmptyState({ hasResources, hasFilters }: { hasResources: boolean; hasFi
   return (
     <div className="text-center py-20">
       <Globe className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-      <h3 className="text-sm font-medium text-foreground mb-1">No resources yet</h3>
+      <h3 className="text-sm font-medium text-foreground mb-1">{t('resources.empty.none.title')}</h3>
       <p className="text-sm text-muted-foreground max-w-md mx-auto">
-        Upload documents to your projects or notebooks to see them here. Resources from shared workspaces will also appear once available.
+        {t('resources.empty.none.description')}
       </p>
     </div>
   );
@@ -927,23 +930,24 @@ function RenameResourceDialog({
   onValueChange: (value: string) => void;
   onSubmit: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Rename resource</DialogTitle>
+          <DialogTitle>{t('resources.rename.title')}</DialogTitle>
           <DialogDescription>
-            Update the resource title shown across Resources and related workspaces.
+            {t('resources.rename.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Current title</p>
-          <p className="text-sm truncate" title={currentTitle}>{currentTitle || 'Untitled resource'}</p>
+          <p className="text-xs text-muted-foreground">{t('resources.rename.currentTitle')}</p>
+          <p className="text-sm truncate" title={currentTitle}>{currentTitle || t('resources.rename.untitled')}</p>
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">New title</p>
+          <p className="text-xs text-muted-foreground">{t('resources.rename.newTitle')}</p>
           <Input
             value={value}
             onChange={(e) => onValueChange(e.target.value)}
@@ -953,15 +957,15 @@ function RenameResourceDialog({
                 onSubmit();
               }
             }}
-            placeholder="Enter new title"
+            placeholder={t('resources.rename.placeholder')}
             autoFocus
           />
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('resources.rename.cancel')}</Button>
           <Button onClick={onSubmit} disabled={submitting || !value.trim()}>
-            {submitting ? 'Renaming...' : 'Rename'}
+            {submitting ? t('resources.rename.submitting') : t('resources.rename.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1004,25 +1008,28 @@ function AddSourceDialog({
   onContainerIdChange: (value: string | null) => void;
   onSubmit: () => void;
 }) {
+  const { t } = useTranslation();
   const targetOptions = containerType === 'project' ? projects : notebooks;
 
   const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal']);
 
-  const providerOptions: Array<{ value: string; label: string; implemented: boolean }> = [
-    { value: 'unknown', label: 'Any URL', implemented: true },
-    { value: 'youtube', label: 'YouTube', implemented: true },
-    { value: 'google_drive', label: 'Google Drive', implemented: false },
-    { value: 'dropbox', label: 'Dropbox', implemented: false },
-    { value: 'notion', label: 'Notion', implemented: false },
-    { value: 'internal', label: 'Internal', implemented: true },
+  const providerOptions: Array<{ value: string; labelKey: string; implemented: boolean }> = [
+    { value: 'unknown', labelKey: 'anyUrl', implemented: true },
+    { value: 'youtube', labelKey: 'youtube', implemented: true },
+    { value: 'google_drive', labelKey: 'googleDrive', implemented: false },
+    { value: 'dropbox', labelKey: 'dropbox', implemented: false },
+    { value: 'notion', labelKey: 'notion', implemented: false },
+    { value: 'internal', labelKey: 'internal', implemented: true },
   ];
+
+  const containerLabel = t(`resources.addSourceDialog.locations.${containerType}`);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <DialogTitle>Add source</DialogTitle>
+            <DialogTitle>{t('resources.addSourceDialog.title')}</DialogTitle>
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -1031,38 +1038,38 @@ function AddSourceDialog({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="max-w-xs text-xs leading-relaxed">
-                  Add a specific URL or supported source now so it appears in Resources immediately. Some providers support richer enrichment. Unavailable providers are marked Soon.
+                  {t('resources.addSourceDialog.tooltip')}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           <DialogDescription>
-            Add a URL or supported source so content can appear in Resources.
+            {t('resources.addSourceDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">URL</p>
+          <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.url')}</p>
           <Input
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
-            placeholder="https://example.com/resource"
+            placeholder={t('resources.addSourceDialog.urlPlaceholder')}
             autoFocus
           />
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Title (optional)</p>
+          <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.titleLabel')}</p>
           <Input
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
-            placeholder="Readable resource title"
+            placeholder={t('resources.addSourceDialog.titlePlaceholder')}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Provider</p>
+            <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.provider')}</p>
             <Select
               value={provider}
               onValueChange={(v) => {
@@ -1081,10 +1088,10 @@ function AddSourceDialog({
                     className={cn(!opt.implemented && 'opacity-50')}
                   >
                     <span className="flex items-center gap-2">
-                      {opt.label}
+                      {t(`resources.addSourceDialog.providers.${opt.labelKey}`)}
                       {!opt.implemented && (
                         <Badge variant="outline" className="text-[9px] px-1 py-0 font-normal text-muted-foreground border-muted-foreground/30">
-                          Soon
+                          {t('resources.badges.soon')}
                         </Badge>
                       )}
                     </span>
@@ -1095,15 +1102,15 @@ function AddSourceDialog({
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Location</p>
+            <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.location')}</p>
             <Select value={containerType} onValueChange={(v) => onContainerTypeChange(v as ContainerType)}>
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="project">Project</SelectItem>
-                <SelectItem value="notebook">Notebook</SelectItem>
+                <SelectItem value="personal">{t('resources.addSourceDialog.locations.personal')}</SelectItem>
+                <SelectItem value="project">{t('resources.addSourceDialog.locations.project')}</SelectItem>
+                <SelectItem value="notebook">{t('resources.addSourceDialog.locations.notebook')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1111,10 +1118,10 @@ function AddSourceDialog({
 
         {containerType !== 'personal' && (
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Target {containerType}</p>
+            <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.target', { type: containerLabel })}</p>
             <Select value={containerId ?? undefined} onValueChange={(v) => onContainerIdChange(v || null)}>
               <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder={`Select a ${containerType}`} />
+                <SelectValue placeholder={t('resources.addSourceDialog.selectTarget', { type: containerLabel })} />
               </SelectTrigger>
               <SelectContent>
                 {targetOptions.map((option) => (
@@ -1126,13 +1133,13 @@ function AddSourceDialog({
         )}
 
         <p className="text-[11px] text-muted-foreground">
-          Supported sources are available now. Others are marked Soon.
+          {t('resources.addSourceDialog.footnote')}
         </p>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('resources.addSourceDialog.cancel')}</Button>
           <Button onClick={onSubmit} disabled={submitting || !url.trim()}>
-            {submitting ? 'Adding...' : 'Add source'}
+            {submitting ? t('resources.addSourceDialog.submitting') : t('resources.addSourceDialog.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1141,11 +1148,12 @@ function AddSourceDialog({
 }
 
 function PermissionRow({ label, enabled }: { label: string; enabled: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between rounded-md border border-border/60 px-2.5 py-1.5">
       <span className="text-xs text-muted-foreground">{label}</span>
       <Badge variant={enabled ? 'secondary' : 'outline'} className="text-[10px] px-1.5 py-0">
-        {enabled ? 'Allowed' : 'Not allowed'}
+        {enabled ? t('resources.badges.allowed') : t('resources.badges.notAllowed')}
       </Badge>
     </div>
   );
@@ -1180,6 +1188,7 @@ function ResourceDetailsDrawer({
   isRetryingTranscript: boolean;
   isDeleting: boolean;
 }) {
+  const { t } = useTranslation();
   const resourceId = resource?.id ?? null;
   const [detailsTab, setDetailsTab] = useState<'overview' | 'content'>('overview');
 
@@ -1216,7 +1225,7 @@ function ResourceDetailsDrawer({
   const canFallbackPersonalOpen = resource.containerType === 'personal';
   const canRetryTranscript = resource.provider === 'youtube' && resource.transcriptStatus === 'failed';
   const locationText = formatResourceLocation(resource);
-  const contentTabLabel = isVideo ? 'Transcript' : 'Extracted Text';
+  const contentTabLabel = isVideo ? t('resources.drawer.tabs.transcript') : t('resources.drawer.tabs.extractedText');
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -1228,7 +1237,7 @@ function ResourceDetailsDrawer({
               {locationText} • {resource.ownerDisplayName}
             </SheetDescription>
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{RESOURCE_TYPE_LABELS[resource.resourceType]}</Badge>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t(`resources.types.${resource.resourceType}`)}</Badge>
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{resource.sourceType}</Badge>
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{formatProvider(resource.provider)}</Badge>
               <ReadinessBadge readiness={resource.readiness} />
@@ -1239,7 +1248,7 @@ function ResourceDetailsDrawer({
             <div className="px-6 py-4">
               <Tabs value={detailsTab} onValueChange={(value) => setDetailsTab(value as 'overview' | 'content')}>
                 <TabsList className="h-8 p-0.5">
-                  <TabsTrigger value="overview" className="text-xs h-7 px-3">Overview</TabsTrigger>
+                  <TabsTrigger value="overview" className="text-xs h-7 px-3">{t('resources.drawer.tabs.overview')}</TabsTrigger>
                   {showContentTab && (
                     <TabsTrigger value="content" className="text-xs h-7 px-3">{contentTabLabel}</TabsTrigger>
                   )}
@@ -1262,14 +1271,14 @@ function ResourceDetailsDrawer({
                   {/* Summary */}
                   {resource.summary && (
                     <section className="space-y-1.5">
-                      <h3 className="text-sm font-medium">Summary</h3>
+                      <h3 className="text-sm font-medium">{t('resources.drawer.sections.summary')}</h3>
                       <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{resource.summary}</p>
                     </section>
                   )}
 
                   {/* Metadata */}
                   <section className="space-y-2">
-                    <h3 className="text-sm font-medium">Metadata</h3>
+                    <h3 className="text-sm font-medium">{t('resources.drawer.sections.metadata')}</h3>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <MetaCell label="Resource ID" value={resource.id} mono />
                       <MetaCell label="File size" value={formatFileSize(resource.sizeBytes)} />
@@ -1311,7 +1320,7 @@ function ResourceDetailsDrawer({
 
                   {/* Processing */}
                   <section className="space-y-2">
-                    <h3 className="text-sm font-medium">Processing</h3>
+                    <h3 className="text-sm font-medium">{t('resources.drawer.sections.processing')}</h3>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <MetaCell label="Status" value={resource.processingStatus} />
                       <MetaCell label="Language" value={resource.detectedLanguage || 'Unknown'} />
@@ -1328,14 +1337,14 @@ function ResourceDetailsDrawer({
 
                   {/* Permissions */}
                   <section className="space-y-2">
-                    <h3 className="text-sm font-medium">Permissions</h3>
+                    <h3 className="text-sm font-medium">{t('resources.drawer.sections.permissions')}</h3>
                     <div className="grid grid-cols-1 gap-2">
-                      <PermissionRow label="Open" enabled={resource.canOpen} />
-                      <PermissionRow label="View details" enabled={resource.canViewDetails} />
-                      <PermissionRow label="Download" enabled={resource.canDownload} />
-                      <PermissionRow label="Rename" enabled={resource.canRename} />
-                      <PermissionRow label="Delete" enabled={resource.canDelete} />
-                      <PermissionRow label="Retry processing" enabled={resource.canRetry} />
+                      <PermissionRow label={t('resources.drawer.permissions.open')} enabled={resource.canOpen} />
+                      <PermissionRow label={t('resources.drawer.permissions.viewDetails')} enabled={resource.canViewDetails} />
+                      <PermissionRow label={t('resources.drawer.permissions.download')} enabled={resource.canDownload} />
+                      <PermissionRow label={t('resources.drawer.permissions.rename')} enabled={resource.canRename} />
+                      <PermissionRow label={t('resources.drawer.permissions.delete')} enabled={resource.canDelete} />
+                      <PermissionRow label={t('resources.drawer.permissions.retryProcessing')} enabled={resource.canRetry} />
                     </div>
                   </section>
                 </TabsContent>
@@ -1366,32 +1375,32 @@ function ResourceDetailsDrawer({
           <div className="border-t border-border px-6 py-3 flex items-center gap-2 flex-wrap">
             {canOpenWorkspace && (
               <Button size="sm" className="gap-1.5" onClick={() => onOpenResource(resource)}>
-                <ExternalLink className="h-3.5 w-3.5" /> Open workspace
+                <ExternalLink className="h-3.5 w-3.5" /> {t('resources.actions.openWorkspace')}
               </Button>
             )}
             {!canOpenWorkspace && canFallbackPersonalOpen && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onOpenPersonalFallback(resource)}>
-                <Globe className="h-3.5 w-3.5" /> View in personal resources
+                <Globe className="h-3.5 w-3.5" /> {t('resources.actions.viewInPersonal')}
               </Button>
             )}
             {resource.canDownload && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
-                <Download className="h-3.5 w-3.5" /> Download
+                <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
               </Button>
             )}
             {resource.canRename && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRename(resource)}>
-                <FileType className="h-3.5 w-3.5" /> Rename
+                <FileType className="h-3.5 w-3.5" /> {t('resources.actions.rename')}
               </Button>
             )}
             {resource.canRetry && resource.readiness === 'failed' && !canRetryTranscript && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRetry(resource)} disabled={isRetrying}>
-                <RotateCcw className="h-3.5 w-3.5" /> Retry
+                <RotateCcw className="h-3.5 w-3.5" /> {t('resources.actions.retry')}
               </Button>
             )}
             {canRetryTranscript && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRetryTranscript(resource)} disabled={isRetryingTranscript}>
-                <RotateCcw className="h-3.5 w-3.5" /> Retry transcript
+                <RotateCcw className="h-3.5 w-3.5" /> {t('resources.actions.retryTranscript')}
               </Button>
             )}
             {resource.canDelete && (
@@ -1400,7 +1409,7 @@ function ResourceDetailsDrawer({
                 className="gap-1.5 text-destructive border-destructive/30 hover:text-destructive"
                 onClick={() => onDelete(resource)} disabled={isDeleting}
               >
-                <Trash2 className="h-3.5 w-3.5" /> Delete
+                <Trash2 className="h-3.5 w-3.5" /> {t('resources.actions.delete')}
               </Button>
             )}
           </div>
