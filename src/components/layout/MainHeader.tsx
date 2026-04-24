@@ -27,7 +27,7 @@ import { useAuth } from '@/contexts/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-import { planIcons, planLabels } from '@/lib/planConfig';
+import { planIcons } from '@/lib/planConfig';
 
 interface MainHeaderProps {
   minimal?: boolean;
