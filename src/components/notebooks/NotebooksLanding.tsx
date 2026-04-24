@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -77,16 +78,16 @@ function hashCode(str: string): number {
   return Math.abs(hash);
 }
 
-function formatLastActivity(dateStr: string): string {
+function formatLastActivity(dateStr: string, t: any, locale: string): string {
   try {
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
+    if (diffDays === 0) return t('notebooksLanding.time.today');
+    if (diffDays === 1) return t('notebooksLanding.time.yesterday');
     if (diffDays < 7) return formatDistanceToNow(date, { addSuffix: true });
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   } catch {
     return '';
   }
