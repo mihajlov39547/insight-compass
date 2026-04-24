@@ -383,23 +383,23 @@ export function ProjectsLanding() {
       <Dialog open={!!editProject} onOpenChange={(open) => !open && setEditProject(null)}>
         <DialogContent className="sm:max-w-[480px]" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>Manage Project</DialogTitle>
-            <DialogDescription>Update your project details. The description helps the AI provide better answers.</DialogDescription>
+            <DialogTitle>{t('projectsLanding.manage.title')}</DialogTitle>
+            <DialogDescription>{t('projectsLanding.manage.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="card-edit-project-name">Project name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="card-edit-project-name">{t('projectsLanding.manage.nameLabel')} <span className="text-destructive">*</span></Label>
               <Input
                 id="card-edit-project-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Project name"
+                placeholder={t('projectsLanding.manage.namePlaceholder')}
                 autoFocus
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="card-edit-project-desc">Description <span className="text-destructive">*</span></Label>
+                <Label htmlFor="card-edit-project-desc">{t('projectsLanding.manage.descriptionLabel')} <span className="text-destructive">*</span></Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -413,35 +413,35 @@ export function ProjectsLanding() {
                   ) : (
                     <Sparkles className="h-3 w-3" />
                   )}
-                  {isImprovingDesc ? 'Improving…' : 'Improve with AI'}
+                  {isImprovingDesc ? t('projectsLanding.manage.improving') : t('projectsLanding.manage.improveWithAi')}
                 </Button>
               </div>
               <Textarea
                 id="card-edit-project-desc"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Describe what this project is about..."
+                placeholder={t('projectsLanding.manage.descriptionPlaceholder')}
                 rows={3}
                 className="resize-none"
               />
-              <p className="text-xs text-muted-foreground">This helps the AI understand the project context and provide better answers.</p>
+              <p className="text-xs text-muted-foreground">{t('projectsLanding.manage.descriptionHint')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="card-edit-project-lang">Language</Label>
+              <Label htmlFor="card-edit-project-lang">{t('projectsLanding.manage.languageLabel')}</Label>
               <Select value={editLanguage} onValueChange={(val: 'en' | 'sr') => setEditLanguage(val)}>
                 <SelectTrigger id="card-edit-project-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                  <SelectItem value="en">{t('projectsLanding.manage.languageEn')}</SelectItem>
+                  <SelectItem value="sr">{t('projectsLanding.manage.languageSr')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditProject(null)}>Cancel</Button>
-            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditProject(null)}>{t('projectsLanding.manage.cancel')}</Button>
+            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>{t('projectsLanding.manage.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
