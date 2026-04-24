@@ -1237,7 +1237,7 @@ function ResourceDetailsDrawer({
               {locationText} • {resource.ownerDisplayName}
             </SheetDescription>
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{RESOURCE_TYPE_LABELS[resource.resourceType]}</Badge>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t(`resources.types.${resource.resourceType}`)}</Badge>
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{resource.sourceType}</Badge>
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{formatProvider(resource.provider)}</Badge>
               <ReadinessBadge readiness={resource.readiness} />
