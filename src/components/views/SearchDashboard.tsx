@@ -377,7 +377,7 @@ export function SearchDashboard() {
               {/* Documents */}
               {grouped.documents.length > 0 && (filter === 'all' || filter === 'documents') && (
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Documents</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('search.sections.documents')}</h3>
                   <div className="space-y-1">
                     {grouped.documents.map(d => (
                       <button
