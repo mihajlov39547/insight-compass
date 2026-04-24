@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, type AvailableLanguageCode } from '@/lib/languages';
+import { useTranslation } from 'react-i18next';
 
 interface NewProjectDialogProps {
   open: boolean;
@@ -28,6 +29,7 @@ interface NewProjectDialogProps {
 }
 
 export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewProjectDialogProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [language, setLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
@@ -38,11 +40,11 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
     e.preventDefault();
     
     if (!name.trim()) {
-      setNameError('Project name is required');
+      setNameError(t('newProject.errors.nameRequired'));
       return;
     }
     if (!description.trim()) {
-      setDescriptionError('Project description is required — it helps the AI provide better answers');
+      setDescriptionError(t('newProject.errors.descriptionRequired'));
       return;
     }
     
@@ -75,9 +77,9 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
               <FolderPlus className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <DialogTitle>Create New Project</DialogTitle>
+              <DialogTitle>{t('newProject.title')}</DialogTitle>
               <DialogDescription>
-                Start a new knowledge project to organize your documents and chats.
+                {t('newProject.description')}
               </DialogDescription>
             </div>
           </div>
@@ -86,11 +88,11 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="project-name">
-              Project name <span className="text-destructive">*</span>
+              {t('newProject.name')} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="project-name"
-              placeholder="Enter project name"
+              placeholder={t('newProject.namePlaceholder')}
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               className={nameError ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -103,11 +105,11 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
 
           <div className="space-y-2">
             <Label htmlFor="project-description">
-              Description <span className="text-destructive">*</span>
+              {t('newProject.descriptionLabel')} <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="project-description"
-              placeholder="Describe what this project is about. This helps the AI agent provide more relevant and accurate answers..."
+              placeholder={t('newProject.descriptionPlaceholder')}
               value={description}
               onChange={(e) => {
                 setDescription(e.target.value);
@@ -120,12 +122,12 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
               <p className="text-sm text-destructive animate-fade-in">{descriptionError}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              This description helps the AI understand the project context and provide better answers.
+              {t('newProject.descriptionHelp')}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="project-language">Language</Label>
+            <Label htmlFor="project-language">{t('newProject.language')}</Label>
             <Select value={language} onValueChange={(val: AvailableLanguageCode) => setLanguage(val)}>
               <SelectTrigger id="project-language">
                 <SelectValue />
@@ -142,10 +144,10 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
 
           <DialogFooter className="gap-2 pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
+              {t('newProject.cancel')}
             </Button>
             <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              Create Project
+              {t('newProject.create')}
             </Button>
           </DialogFooter>
         </form>
