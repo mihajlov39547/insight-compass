@@ -37,7 +37,7 @@ import { useResourceExtractedText } from '@/hooks/useResourceExtractedText';
 import { useResourceTranscriptDebug, type TranscriptDebugPayload, type StageDebugEntry } from '@/hooks/useResourceTranscriptDebug';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
-  RESOURCE_TYPE_LABELS, formatFileSize, truncateFileName, formatResourceLocation
+  formatFileSize, truncateFileName, formatResourceLocation
 } from '@/lib/resourceClassification';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
