@@ -280,34 +280,34 @@ export function SearchDashboard() {
           {!hasQuery && (
             <div className="text-center py-16">
               <Search className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground text-sm">Search across your projects, chats, notebooks, and notes</p>
-              <p className="text-muted-foreground/60 text-xs mt-1">Type at least 2 characters to start</p>
+              <p className="text-muted-foreground text-sm">{t('search.emptyHint')}</p>
+              <p className="text-muted-foreground/60 text-xs mt-1">{t('search.minChars')}</p>
             </div>
           )}
 
           {/* Loading */}
           {hasQuery && isLoading && (
-            <div className="text-center py-12 text-muted-foreground text-sm">Searching…</div>
+            <div className="text-center py-12 text-muted-foreground text-sm">{t('search.loading')}</div>
           )}
 
           {/* No results */}
           {hasQuery && !isLoading && totalResults === 0 && (
             <div className="text-center py-16">
               <Search className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">No results found for "{searchQuery}"</p>
-              <p className="text-muted-foreground/60 text-xs mt-1">Try a different search term or filter</p>
+              <p className="text-muted-foreground text-sm">{t('search.noResults', { query: searchQuery })}</p>
+              <p className="text-muted-foreground/60 text-xs mt-1">{t('search.noResultsHint')}</p>
             </div>
           )}
 
           {/* Results */}
           {hasQuery && !isLoading && totalResults > 0 && (
             <div className="space-y-6">
-              <p className="text-xs text-muted-foreground">{totalResults} result{totalResults !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-muted-foreground">{t('search.resultCount', { count: totalResults })}</p>
 
               {/* Projects */}
               {grouped.projects.length > 0 && (filter === 'all' || filter === 'projects') && (
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Projects</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('search.sections.projects')}</h3>
                   <div className="space-y-1">
                     {grouped.projects.map(p => (
                       <button key={p.id} className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors" onClick={() => handleProjectClick(p.id)}>
