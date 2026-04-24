@@ -3,7 +3,11 @@
     "language": {
       "label": "Language",
       "en": "English",
-      "sr-latn": "Serbian (Latin)"
+      "sr-latn": "Serbian (Latin)",
+      "short": {
+        "en": "EN",
+        "sr-latn": "SR"
+      }
     }
   }
 }

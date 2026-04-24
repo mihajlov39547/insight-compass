@@ -3,7 +3,11 @@
     "language": {
       "label": "Jezik",
       "en": "Engleski",
-      "sr-latn": "Srpski (Latinica)"
+      "sr-latn": "Srpski (Latinica)",
+      "short": {
+        "en": "EN",
+        "sr-latn": "SR"
+      }
     }
   }
 }
