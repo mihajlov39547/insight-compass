@@ -27,7 +27,7 @@ import { useAuth } from '@/contexts/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-import { planIcons, planLabels } from '@/lib/planConfig';
+import { planIcons } from '@/lib/planConfig';
 
 interface MainHeaderProps {
   minimal?: boolean;
@@ -129,10 +129,10 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                   onClick={() => setShowPricing(true)}
                 >
                   <PlanIcon className="h-4 w-4" />
-                  <span className="text-sm font-medium">{planLabels[appUser.plan]}</span>
+                  <span className="text-sm font-medium">{t(`header.plans.${appUser.plan}`)}</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{planLabels[appUser.plan]} Plan</TooltipContent>
+              <TooltipContent>{t(`header.plans.${appUser.plan}`)} {t('profileSettings.subscription.planSuffix')}</TooltipContent>
             </Tooltip>
 
             {/* General Settings - hide in minimal mode */}
@@ -165,17 +165,17 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span>{displayName || 'User'}</span>
+                    <span>{displayName || t('header.userMenu.fallbackName')}</span>
                     <span className="text-xs font-normal text-muted-foreground">{displayEmail}</span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile-settings')}>Profile Settings</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowPricing(true)}>Billing & Plans</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile-settings')}>{t('header.userMenu.profileSettings')}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowPricing(true)}>{t('header.userMenu.billingPlans')}</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="h-4 w-4 mr-2" />
-                  Sign out
+                  {t('header.userMenu.signOut')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -12,6 +12,18 @@
         "en": "EN",
         "sr": "SR"
       }
+    },
+    "userMenu": {
+      "fallbackName": "User",
+      "profileSettings": "Profile Settings",
+      "billingPlans": "Billing & Plans",
+      "signOut": "Sign out"
+    },
+    "plans": {
+      "free": "Free",
+      "basic": "Basic",
+      "premium": "Premium",
+      "enterprise": "Enterprise"
     }
   },
   "sidebar": {

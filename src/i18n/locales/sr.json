@@ -12,6 +12,18 @@
         "en": "EN",
         "sr": "SR"
       }
+    },
+    "userMenu": {
+      "fallbackName": "Korisnik",
+      "profileSettings": "Podešavanja profila",
+      "billingPlans": "Naplata i planovi",
+      "signOut": "Odjavi se"
+    },
+    "plans": {
+      "free": "Besplatan",
+      "basic": "Osnovni",
+      "premium": "Premium",
+      "enterprise": "Enterprise"
     }
   },
   "sidebar": {
