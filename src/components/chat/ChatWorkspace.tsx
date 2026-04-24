@@ -24,8 +24,10 @@ import { useResources } from '@/hooks/useResources';
 import { toast } from 'sonner';
 import type { ChatSendPayload } from './ChatInput';
 import type { SourceItem } from './SourceAttribution';
+import { useTranslation } from 'react-i18next';
 
 export function ChatWorkspace() {
+  const { t } = useTranslation();
   const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
@@ -142,16 +144,16 @@ export function ChatWorkspace() {
               )}
               {permissions.canManageSharing && (
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowShare(true)}>
-                  <Share2 className="h-4 w-4" /> Share
+                  <Share2 className="h-4 w-4" /> {t('projectDashboard.share')}
                 </Button>
               )}
             </div>
 
             <div className="text-center space-y-6 max-w-3xl mx-auto mb-6">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-                <FeatureCard icon={<FileText className="h-5 w-5" />} title="Document Analysis" description="Query across all your uploaded documents" />
-                <FeatureCard icon={<Zap className="h-5 w-5" />} title="Instant Answers" description="Get accurate responses with source citations" />
-                <FeatureCard icon={<Shield className="h-5 w-5" />} title="Secure & Private" description="Your data stays within your workspace" />
+                <FeatureCard icon={<FileText className="h-5 w-5" />} title={t('projectDashboard.features.documentAnalysis.title')} description={t('projectDashboard.features.documentAnalysis.description')} />
+                <FeatureCard icon={<Zap className="h-5 w-5" />} title={t('projectDashboard.features.instantAnswers.title')} description={t('projectDashboard.features.instantAnswers.description')} />
+                <FeatureCard icon={<Shield className="h-5 w-5" />} title={t('projectDashboard.features.secure.title')} description={t('projectDashboard.features.secure.description')} />
               </div>
               {permissions.canCreateChats && (
                 <Button
@@ -164,7 +166,7 @@ export function ChatWorkspace() {
                   }}
                   disabled={createChat.isPending}
                 >
-                  <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? 'Creating...' : 'Create New Chat'}
+                  <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
                 </Button>
               )}
             </div>
@@ -179,9 +181,9 @@ export function ChatWorkspace() {
       <div className="flex-1 flex items-center justify-center bg-muted/30">
         <div className="text-center space-y-6 max-w-lg px-4 animate-fade-in">
           <div className="grid grid-cols-3 gap-4 pt-4">
-            <FeatureCard icon={<FileText className="h-5 w-5" />} title="Document Analysis" description="Query across all your uploaded documents" />
-            <FeatureCard icon={<Zap className="h-5 w-5" />} title="Instant Answers" description="Get accurate responses with source citations" />
-            <FeatureCard icon={<Shield className="h-5 w-5" />} title="Secure & Private" description="Your data stays within your workspace" />
+            <FeatureCard icon={<FileText className="h-5 w-5" />} title={t('projectDashboard.features.documentAnalysis.title')} description={t('projectDashboard.features.documentAnalysis.description')} />
+            <FeatureCard icon={<Zap className="h-5 w-5" />} title={t('projectDashboard.features.instantAnswers.title')} description={t('projectDashboard.features.instantAnswers.description')} />
+            <FeatureCard icon={<Shield className="h-5 w-5" />} title={t('projectDashboard.features.secure.title')} description={t('projectDashboard.features.secure.description')} />
           </div>
           {permissions.canCreateChats ? (
             <Button
@@ -194,10 +196,10 @@ export function ChatWorkspace() {
               }}
               disabled={createChat.isPending}
             >
-              <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? 'Creating...' : 'Create New Chat'}
+              <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
             </Button>
           ) : (
-            <p className="text-sm text-muted-foreground">No chats yet. Ask an editor or admin to create one.</p>
+            <p className="text-sm text-muted-foreground">{t('projectDashboard.noChatsYet')}</p>
           )}
         </div>
       </div>
@@ -218,13 +220,13 @@ export function ChatWorkspace() {
           {messagesLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto" />
-              <p className="text-sm text-muted-foreground mt-2">Loading messages...</p>
+              <p className="text-sm text-muted-foreground mt-2">{t('projectDashboard.loadingMessages')}</p>
             </div>
           ) : messages.length === 0 ? (
             <EmptyState 
               icon={<MessageSquarePlus className="h-10 w-10 text-accent" />}
-              title="No messages yet"
-              description="Start the conversation by asking a question about your documents."
+              title={t('projectDashboard.noMessagesYet.title')}
+              description={t('projectDashboard.noMessagesYet.description')}
             />
           ) : (
             messages.map((message) => (
@@ -286,7 +288,7 @@ export function ChatWorkspace() {
                         <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                         <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
-                      <span>{activeMode === 'research' ? 'Researching the web…' : activeMode === 'web_search' ? 'Searching the web…' : activeMode === 'notebook' ? 'Searching notebook…' : 'Thinking...'}</span>
+                      <span>{activeMode === 'research' ? t('projectDashboard.researching') : activeMode === 'web_search' ? t('projectDashboard.searchingWeb') : activeMode === 'notebook' ? t('projectDashboard.searchingNotebook') : t('projectDashboard.thinking')}</span>
                     </div>
                   )}
                 </div>
@@ -298,17 +300,17 @@ export function ChatWorkspace() {
             <div className="flex items-center gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5 animate-fade-in">
               <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-destructive">Failed to get response</p>
+                <p className="text-sm font-medium text-destructive">{t('projectDashboard.failedResponse')}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{error}</p>
               </div>
               <div className="flex items-center gap-2">
                 {failedPrompt && (
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={retry}>
-                    <RefreshCw className="h-3 w-3" /> Retry
+                    <RefreshCw className="h-3 w-3" /> {t('projectDashboard.retry')}
                   </Button>
                 )}
                 <Button variant="ghost" size="sm" className="text-xs" onClick={clearError}>
-                  Dismiss
+                  {t('projectDashboard.dismiss')}
                 </Button>
               </div>
             </div>
