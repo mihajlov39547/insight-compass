@@ -321,7 +321,7 @@ export default function ProfileSettings() {
                 className="h-32 rounded-xl bg-muted flex items-center justify-center"
                 style={bannerUrl ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
               >
-                {!bannerUrl && <span className="text-muted-foreground text-sm">Profile Banner</span>}
+                {!bannerUrl && <span className="text-muted-foreground text-sm">{t('profileSettings.banner')}</span>}
               </div>
               {/* Avatar overlay — positioned below the banner, not clipped */}
               <div className="absolute -bottom-10 left-6 z-10">
