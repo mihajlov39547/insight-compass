@@ -41,6 +41,7 @@ import {
 } from '@/lib/resourceClassification';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 // ── Icon mapping ────────────────────────────────────────────────────
 const RESOURCE_ICONS: Record<ResourceType, React.ElementType> = {
@@ -96,6 +97,7 @@ function formatProvider(value: string): string {
 
 // ── Main Component ──────────────────────────────────────────────────
 export function ResourcesLanding() {
+  const { t } = useTranslation();
   const { data: resources = [], isLoading } = useResources();
   const { user } = useAuth();
   const { setActiveView, setSelectedProjectId, setSelectedNotebookId, setSelectedChatId } = useApp();
@@ -415,10 +417,10 @@ export function ResourcesLanding() {
           <div>
             <div className="flex items-center gap-2.5">
               <Globe className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-semibold text-foreground">Resources</h1>
+              <h1 className="text-lg font-semibold text-foreground">{t('resources.title')}</h1>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              All documents and resources across your projects and notebooks
+              {t('resources.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -435,20 +437,20 @@ export function ResourcesLanding() {
               </Tooltip>
             </TooltipProvider>
             <Button size="sm" className="gap-1.5" onClick={() => setAddSourceOpen(true)}>
-              <Plus className="h-3.5 w-3.5" /> Add source
+              <Plus className="h-3.5 w-3.5" /> {t('resources.addSource')}
             </Button>
           </div>
         </div>
 
         {/* ── Summary stats ───────────────────────────────────── */}
         <div className="flex items-center gap-5 flex-wrap">
-          <StatPill label="Total" value={totalCount} />
-          <StatPill label="Ready" value={readyCount} variant="success" />
-          <StatPill label="Processing" value={processingCount} variant="warning" />
-          {failedCount > 0 && <StatPill label="Failed" value={failedCount} variant="error" />}
+          <StatPill label={t('resources.stats.total')} value={totalCount} />
+          <StatPill label={t('resources.stats.ready')} value={readyCount} variant="success" />
+          <StatPill label={t('resources.stats.processing')} value={processingCount} variant="warning" />
+          {failedCount > 0 && <StatPill label={t('resources.stats.failed')} value={failedCount} variant="error" />}
           <div className="h-4 w-px bg-border" />
-          <StatPill label="Mine" value={myCount} />
-          {sharedCount > 0 && <StatPill label="Shared" value={sharedCount} variant="info" />}
+          <StatPill label={t('resources.stats.mine')} value={myCount} />
+          {sharedCount > 0 && <StatPill label={t('resources.stats.shared')} value={sharedCount} variant="info" />}
         </div>
       </div>
 
