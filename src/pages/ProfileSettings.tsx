@@ -208,7 +208,7 @@ export default function ProfileSettings() {
     const formattedPhone = [phoneCountry, phoneArea, phoneNumber].filter(Boolean).join(' ');
 
     if ((phoneCountry || phoneArea || phoneNumber) && (!phoneCountry || !phoneArea || phoneNumber.replace(/\D/g, '').length < 6)) {
-      toast.error('Enter a valid phone number in all 3 fields.');
+      toast.error(t('profileSettings.toasts.phoneInvalid'));
       return;
     }
 
