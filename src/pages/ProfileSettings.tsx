@@ -229,7 +229,7 @@ export default function ProfileSettings() {
       .upsert(payload, { onConflict: 'user_id' });
     setIsSavingProfile(false);
     if (error) {
-      toast.error('Failed to save profile');
+      toast.error(t('profileSettings.toasts.saveFailed'));
     } else {
       const nextState = {
         fullName,
@@ -244,7 +244,7 @@ export default function ProfileSettings() {
         phoneNumber,
       };
       setSavedProfile(nextState);
-      toast.success('Profile saved');
+      toast.success(t('profileSettings.toasts.saved'));
       setIsProfileEditing(false);
       void loadProfile();
     }
