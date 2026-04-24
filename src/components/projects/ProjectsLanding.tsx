@@ -106,7 +106,7 @@ export function ProjectsLanding() {
   const [editProject, setEditProject] = React.useState<DbProject | null>(null);
   const [editName, setEditName] = React.useState('');
   const [editDescription, setEditDescription] = React.useState('');
-  const [editLanguage, setEditLanguage] = React.useState<'en' | 'sr-lat'>('en');
+  const [editLanguage, setEditLanguage] = React.useState<'en' | 'sr'>('en');
   const [isImprovingDesc, setIsImprovingDesc] = React.useState(false);
 
   const { data: allDocCounts = {} } = useQuery({
@@ -137,7 +137,7 @@ export function ProjectsLanding() {
     setEditProject(project);
     setEditName(project.name);
     setEditDescription(project.description || '');
-    setEditLanguage((project.language as 'en' | 'sr-lat') || 'en');
+    setEditLanguage((project.language as 'en' | 'sr') || 'en');
   };
 
   const handleManageSubmit = () => {
@@ -425,13 +425,13 @@ export function ProjectsLanding() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="card-edit-project-lang">Language</Label>
-              <Select value={editLanguage} onValueChange={(val: 'en' | 'sr-lat') => setEditLanguage(val)}>
+              <Select value={editLanguage} onValueChange={(val: 'en' | 'sr') => setEditLanguage(val)}>
                 <SelectTrigger id="card-edit-project-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

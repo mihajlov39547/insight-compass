@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import type { SupportedLanguage } from '@/i18n/config';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Settings, 
@@ -34,8 +35,6 @@ interface MainHeaderProps {
 export function MainHeader({ minimal = false }: MainHeaderProps) {
   const { 
     user: appUser, 
-    language, 
-    setLanguage,
     setShowSettings,
     setShowPricing,
   } = useApp();
@@ -45,21 +44,14 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
   const { t, i18n } = useTranslation();
   const [showAuth, setShowAuth] = useState(false);
 
-  // Map app language ('en' | 'sr-lat') to i18n language ('en' | 'sr-latn')
-  const toI18nLang = (lang: 'en' | 'sr-lat') => (lang === 'sr-lat' ? 'sr-latn' : 'en');
+  const normalizeLanguage = (lang?: string): SupportedLanguage =>
+    (lang === 'sr' || lang === 'sr-lat' || lang === 'sr' || lang === 'sr') ? 'sr' : 'en';
 
-  const handleLanguageChange = (lang: 'en' | 'sr-lat') => {
-    setLanguage(lang);
-    i18n.changeLanguage(toI18nLang(lang));
+  const language = normalizeLanguage(i18n.resolvedLanguage || i18n.language);
+
+  const handleLanguageChange = async (lang: SupportedLanguage) => {
+    await i18n.changeLanguage(lang);
   };
-
-  // Keep i18n in sync if app language changes elsewhere
-  React.useEffect(() => {
-    const target = toI18nLang(language);
-    if (i18n.language !== target) {
-      i18n.changeLanguage(target);
-    }
-  }, [language, i18n]);
 
   const PlanIcon = planIcons[appUser.plan];
 
@@ -111,7 +103,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 text-muted-foreground hover:text-foreground rounded-lg">
                     <Globe className="h-4 w-4" />
-                    <span className="text-sm">{t(`header.language.short.${toI18nLang(language)}`)}</span>
+                    <span className="text-sm">{t(`header.language.short.${language}`)}</span>
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -121,8 +113,8 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                   <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
                     <span className={cn(language === 'en' && 'font-medium')}>{t('header.language.en')}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleLanguageChange('sr-lat')}>
-                    <span className={cn(language === 'sr-lat' && 'font-medium')}>{t('header.language.sr-latn')}</span>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('sr')}>
+                    <span className={cn(language === 'sr' && 'font-medium')}>{t('header.language.sr')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

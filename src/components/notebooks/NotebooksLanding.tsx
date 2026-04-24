@@ -105,7 +105,7 @@ export function NotebooksLanding() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [createName, setCreateName] = useState('');
   const [createDescription, setCreateDescription] = useState('');
-  const [createLanguage, setCreateLanguage] = useState<'en' | 'sr-lat'>('en');
+  const [createLanguage, setCreateLanguage] = useState<'en' | 'sr'>('en');
 
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editName, setEditName] = useState('');
@@ -314,13 +314,13 @@ export function NotebooksLanding() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="create-nb-lang">Language</Label>
-              <Select value={createLanguage} onValueChange={(val: 'en' | 'sr-lat') => setCreateLanguage(val)}>
+              <Select value={createLanguage} onValueChange={(val: 'en' | 'sr') => setCreateLanguage(val)}>
                 <SelectTrigger id="create-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -419,7 +419,7 @@ export function NotebooksLanding() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

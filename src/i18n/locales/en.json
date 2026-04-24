@@ -3,10 +3,10 @@
     "language": {
       "label": "Language",
       "en": "English",
-      "sr-latn": "Serbian (Latin)",
+      "sr": "Serbian (Latin)",
       "short": {
         "en": "EN",
-        "sr-latn": "SR"
+        "sr": "SR"
       }
     }
   },

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppProvider } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/useAuth';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -64,8 +65,10 @@ function AppContent() {
   } = useApp();
 
   const { user: authUser, profile, loading } = useAuth();
+  const { i18n } = useTranslation();
   const createProject = useCreateProject();
   const currentPlan = (profile?.plan || 'free') as import('@/data/mockData').Plan;
+  const sidebarLanguageKey = i18n.resolvedLanguage || i18n.language || 'en';
 
   const handleCreateProject = async (name: string, description: string, language: 'en' | 'sr-lat') => {
     createProject.mutate({ name, description, language });
@@ -103,7 +106,7 @@ function AppContent() {
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {sidebarCollapsed ? (
         <>
-          <AppSidebar />
+          <AppSidebar key={`sidebar-${sidebarLanguageKey}`} />
           <div className="flex-1 flex flex-col min-w-0">
             <MainHeader />
             <div className="flex-1 min-h-0 h-full flex flex-col">
@@ -114,7 +117,7 @@ function AppContent() {
       ) : (
         <ResizablePanelGroup direction="horizontal" className="h-full">
           <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-            <AppSidebar />
+            <AppSidebar key={`sidebar-${sidebarLanguageKey}`} />
           </ResizablePanel>
           <ResizableHandle />
           <ResizablePanel defaultSize={80}>

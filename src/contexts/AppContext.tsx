@@ -45,10 +45,6 @@ export interface AppContextType {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   
-  // Language
-  language: 'en' | 'sr-lat';
-  setLanguage: (lang: 'en' | 'sr-lat') => void;
-  
   // Notifications
   notifications: Notification[];
   unreadCount: number;
@@ -79,7 +75,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [selectedNotebookId, setSelectedNotebookIdRaw] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>('default');
   const [searchQuery, setSearchQuery] = useState('');
-  const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
   const [showSettings, setShowSettings] = useState<boolean | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
   const [documentScope, setDocumentScope] = useState<'project' | 'chat'>('project');
@@ -127,8 +122,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setActiveView,
         searchQuery,
         setSearchQuery,
-        language,
-        setLanguage,
         notifications: mockNotifications,
         unreadCount,
         showSettings,

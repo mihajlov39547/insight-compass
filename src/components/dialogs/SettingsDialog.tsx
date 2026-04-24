@@ -156,8 +156,8 @@ export function SettingsDialog() {
             <SettingSelect
               label="Language"
               value={local.language_preference}
-              options={['en', 'sr-lat']}
-              optionLabels={{ en: 'English', 'sr-lat': 'Serbian (Latin)' }}
+              options={['en', 'sr']}
+              optionLabels={{ en: 'English', 'sr': 'Serbian (Latin)' }}
               onChange={v => update('language_preference', v)}
             />
             <SettingSelect

@@ -3,12 +3,19 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 import en from './locales/en.json';
-import srLatn from './locales/sr-latn.json';
+import srLatn from './locales/sr.json';
 
-export const SUPPORTED_LANGUAGES = ['en', 'sr-latn'] as const;
+export const SUPPORTED_LANGUAGES = ['en', 'sr'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'en';
+
+if (
+  typeof window !== 'undefined' &&
+  ['sr', 'sr-lat', 'sr', 'sr'].includes(window.localStorage.getItem('i18nextLng') || '')
+) {
+  window.localStorage.setItem('i18nextLng', 'sr');
+}
 
 i18n
   .use(LanguageDetector)
@@ -16,10 +23,11 @@ i18n
   .init({
     resources: {
       en: { translation: en },
-      'sr-latn': { translation: srLatn },
+      sr: { translation: srLatn },
     },
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
+    load: 'currentOnly',
     nonExplicitSupportedLngs: true,
     interpolation: {
       escapeValue: false,

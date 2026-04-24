@@ -165,7 +165,6 @@ export function useCrawlFollowUp(): UseCrawlFollowUpResult {
         const modelId = `tavily-crawl${depthTag}${result.synthesisModel ? `:${result.synthesisModel}` : ''}`;
 
         if (scope.kind === 'chat') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { error: insertError } = await supabase.from('messages').insert({
             chat_id: scope.chatId,
             user_id: user.id,
@@ -177,7 +176,6 @@ export function useCrawlFollowUp(): UseCrawlFollowUpResult {
           if (insertError) throw insertError;
           qc.invalidateQueries({ queryKey: ['messages', scope.chatId] });
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { error: insertError } = await (supabase.from('notebook_messages' as any) as any).insert({
             notebook_id: scope.notebookId,
             user_id: user.id,

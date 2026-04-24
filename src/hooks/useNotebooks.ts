@@ -47,7 +47,7 @@ export function useCreateNotebook() {
     }: {
       name: string;
       description: string;
-      language: 'en' | 'sr-lat';
+      language: 'en' | 'sr';
       icon?: string;
       color?: string;
     }) => {
