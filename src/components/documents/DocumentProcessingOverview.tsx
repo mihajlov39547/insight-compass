@@ -15,6 +15,7 @@ import {
   deriveDocumentStatusPresentation,
   getActivityLabel,
 } from '@/hooks/useDocumentProcessingStatus';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   status: DocumentProcessingStatus;
@@ -83,6 +84,7 @@ function OverallStatusBadge({ status }: { status: DocumentProcessingStatus }) {
 }
 
 function CurrentProcessingSection({ status }: { status: DocumentProcessingStatus }) {
+  const { t } = useTranslation();
   const presentation = deriveDocumentStatusPresentation(status);
   const isTerminal = status.documentStatus === 'completed' || status.documentStatus === 'failed';
 
@@ -102,7 +104,7 @@ function CurrentProcessingSection({ status }: { status: DocumentProcessingStatus
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
         {status.runningActivities.length > 0 && presentation.primaryTone === 'processing' && (
           <div className="col-span-2">
-            <span className="text-muted-foreground">Running now: </span>
+            <span className="text-muted-foreground">{t('documentProcessing.runningNow')} </span>
             <span className="text-foreground font-medium">
               {status.runningActivities.map(a => getActivityLabel(a.activityKey)).join(', ')}
             </span>
@@ -110,13 +112,13 @@ function CurrentProcessingSection({ status }: { status: DocumentProcessingStatus
         )}
         {presentation.secondaryLabel && (
           <div className="col-span-2">
-            <span className="text-muted-foreground">Background: </span>
+            <span className="text-muted-foreground">{t('documentProcessing.background')} </span>
             <span className="text-foreground">{presentation.secondaryLabel}</span>
           </div>
         )}
         {status.lastCompletedActivity && (
           <div className="col-span-2">
-            <span className="text-muted-foreground">Last completed: </span>
+            <span className="text-muted-foreground">{t('documentProcessing.lastCompleted')} </span>
             <span className="text-foreground">{getActivityLabel(status.lastCompletedActivity.activityKey)}</span>
             {status.lastCompletedActivity.durationMs != null && (
               <span className="text-muted-foreground/70 ml-1">({formatMs(status.lastCompletedActivity.durationMs)})</span>
@@ -125,13 +127,13 @@ function CurrentProcessingSection({ status }: { status: DocumentProcessingStatus
         )}
         {status.elapsedSeconds != null && (
           <div>
-            <span className="text-muted-foreground">Elapsed: </span>
+            <span className="text-muted-foreground">{t('documentProcessing.elapsed')} </span>
             <span className="text-foreground tabular-nums">{formatDuration(status.elapsedSeconds)}</span>
           </div>
         )}
         {status.retryCount > 0 && (
           <div>
-            <span className="text-muted-foreground">Retries: </span>
+            <span className="text-muted-foreground">{t('documentProcessing.retries')} </span>
             <span className="text-foreground tabular-nums">{status.retryCount}</span>
           </div>
         )}
@@ -174,24 +176,25 @@ function ReadinessCard({ label, ready, icon, detail }: ReadinessCardProps) {
 }
 
 function ReadinessSection({ readiness, metrics }: { readiness: ProcessingReadiness; metrics: DocumentProcessingStatus['metrics'] }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1.5">
-      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Readiness</p>
+      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentProcessing.readiness')}</p>
       <div className="grid grid-cols-2 gap-1.5">
-        <ReadinessCard label="Text extracted" ready={readiness.textExtracted} icon={<FileText className="h-3 w-3" />} />
-        <ReadinessCard label="Language detected" ready={readiness.languageDetected} icon={<Languages className="h-3 w-3" />} />
-        <ReadinessCard label="Summary" ready={readiness.summaryReady} icon={<FileSearch className="h-3 w-3" />} />
-        <ReadinessCard label="Keyword search" ready={readiness.keywordSearchReady} icon={<Search className="h-3 w-3" />} />
+        <ReadinessCard label={t('documentProcessing.items.textExtracted')} ready={readiness.textExtracted} icon={<FileText className="h-3 w-3" />} />
+        <ReadinessCard label={t('documentProcessing.items.languageDetected')} ready={readiness.languageDetected} icon={<Languages className="h-3 w-3" />} />
+        <ReadinessCard label={t('documentProcessing.items.summary')} ready={readiness.summaryReady} icon={<FileSearch className="h-3 w-3" />} />
+        <ReadinessCard label={t('documentProcessing.items.keywordSearch')} ready={readiness.keywordSearchReady} icon={<Search className="h-3 w-3" />} />
         <ReadinessCard
-          label="Semantic search"
+          label={t('documentProcessing.items.semanticSearch')}
           ready={readiness.semanticSearchReady}
           icon={<Brain className="h-3 w-3" />}
           detail={metrics.chunkCount > 0 ? `${metrics.embeddingCoverage}%` : undefined}
         />
-        <ReadinessCard label="Hybrid retrieval" ready={readiness.hybridReady} icon={<Zap className="h-3 w-3" />} />
-        <ReadinessCard label="Grounded chat" ready={readiness.groundedChatReady} icon={<MessageSquareText className="h-3 w-3" />} />
+        <ReadinessCard label={t('documentProcessing.items.hybridRetrieval')} ready={readiness.hybridReady} icon={<Zap className="h-3 w-3" />} />
+        <ReadinessCard label={t('documentProcessing.items.groundedChat')} ready={readiness.groundedChatReady} icon={<MessageSquareText className="h-3 w-3" />} />
         <ReadinessCard
-          label="Question enrichment"
+          label={t('documentProcessing.items.questionEnrichment')}
           ready={readiness.questionEnrichmentReady}
           icon={<HelpCircle className="h-3 w-3" />}
           detail={metrics.questionCount > 0 ? `${metrics.questionCount}` : undefined}
@@ -202,33 +205,34 @@ function ReadinessSection({ readiness, metrics }: { readiness: ProcessingReadine
 }
 
 function MetricsSection({ metrics }: { metrics: DocumentProcessingStatus['metrics'] }) {
+  const { t } = useTranslation();
   if (metrics.chunkCount === 0 && metrics.questionCount === 0) return null;
 
   return (
     <div className="space-y-1.5">
-      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Metrics</p>
+      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentProcessing.metrics')}</p>
       <div className="flex flex-wrap gap-3 text-xs">
         {metrics.chunkCount > 0 && (
           <div>
-            <span className="text-muted-foreground">Chunks: </span>
+            <span className="text-muted-foreground">{t('documentProcessing.metricLabels.chunks')} </span>
             <span className="text-foreground font-medium tabular-nums">{metrics.chunkCount}</span>
           </div>
         )}
         {metrics.embeddingCount > 0 && (
           <div>
-            <span className="text-muted-foreground">Embeddings: </span>
+            <span className="text-muted-foreground">{t('documentProcessing.metricLabels.embeddings')} </span>
             <span className="text-foreground font-medium tabular-nums">{metrics.embeddingCount}/{metrics.chunkCount}</span>
           </div>
         )}
         {metrics.embeddingCoverage > 0 && (
           <div>
-            <span className="text-muted-foreground">Coverage: </span>
+            <span className="text-muted-foreground">{t('documentProcessing.metricLabels.coverage')} </span>
             <span className="text-foreground font-medium tabular-nums">{metrics.embeddingCoverage}%</span>
           </div>
         )}
         {metrics.questionCount > 0 && (
           <div>
-            <span className="text-muted-foreground">Questions: </span>
+            <span className="text-muted-foreground">{t('documentProcessing.metricLabels.questions')} </span>
             <span className="text-foreground font-medium tabular-nums">{metrics.questionCount}</span>
           </div>
         )}
@@ -238,6 +242,7 @@ function MetricsSection({ metrics }: { metrics: DocumentProcessingStatus['metric
 }
 
 function ActivityTimeline({ status }: { status: DocumentProcessingStatus }) {
+  const { t } = useTranslation();
   const allActivities = [
     ...status.completedActivities,
     ...status.runningActivities,
@@ -252,7 +257,7 @@ function ActivityTimeline({ status }: { status: DocumentProcessingStatus }) {
 
   return (
     <div className="space-y-1.5">
-      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Activity timeline</p>
+      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentProcessing.activityTimeline')}</p>
       <div className="space-y-0.5">
         {allActivities.map((activity, idx) => (
           <div key={`${activity.activityKey}-${idx}`} className="flex items-center gap-2 text-[11px]">
@@ -261,7 +266,7 @@ function ActivityTimeline({ status }: { status: DocumentProcessingStatus }) {
               {getActivityLabel(activity.activityKey)}
             </span>
             {activity.isOptional && (
-              <span className="text-[9px] text-muted-foreground/60 italic">optional</span>
+              <span className="text-[9px] text-muted-foreground/60 italic">{t('documentProcessing.optional')}</span>
             )}
             <span className="ml-auto text-muted-foreground/50 tabular-nums">
               {activity.durationMs != null ? formatMs(activity.durationMs) : ''}

@@ -27,6 +27,7 @@ import { useDocumentQuestionStats } from '@/hooks/useDocumentQuestionStats';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { LinkedVideoRow } from './LinkedVideoRow';
+import { useTranslation } from 'react-i18next';
 
 const fileIcons: Record<string, any> = {
   pdf: FileText, docx: FileType, doc: FileType, txt: FileIcon,
@@ -61,6 +62,7 @@ type FilterStatus = 'all' | 'processing' | 'searchable' | 'failed';
 type SortKey = 'recent' | 'oldest' | 'name' | 'status';
 
 export function NotebookDocumentDashboard() {
+  const { t } = useTranslation();
   const { selectedNotebookId, setActiveView } = useApp();
   const { data: notebooks = [] } = useNotebooks();
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
@@ -80,8 +82,8 @@ export function NotebookDocumentDashboard() {
 
   const handleDelete = (doc: DbDocument) => {
     deleteMutation.mutate(doc, {
-      onSuccess: () => toast({ title: `${doc.file_name} deleted` }),
-      onError: (err: any) => toast({ title: 'Delete failed', description: err.message, variant: 'destructive' }),
+      onSuccess: () => toast({ title: t('documentDashboard.deleted', { name: doc.file_name }) }),
+      onError: (err: any) => toast({ title: t('documentDashboard.deleteFailed'), description: err.message, variant: 'destructive' }),
     });
   };
 
@@ -98,16 +100,16 @@ export function NotebookDocumentDashboard() {
 
   const handleDeleteResource = (resource: Resource) => {
     deleteResourceMutation.mutate(toResourceActionInput(resource), {
-      onSuccess: () => toast({ title: `${resource.title} deleted` }),
-      onError: (err: any) => toast({ title: 'Delete failed', description: err.message, variant: 'destructive' }),
+      onSuccess: () => toast({ title: t('documentDashboard.deleted', { name: resource.title }) }),
+      onError: (err: any) => toast({ title: t('documentDashboard.deleteFailed'), description: err.message, variant: 'destructive' }),
     });
   };
 
   const handleRetryTranscript = (resource: Resource) => {
     if (resource.provider !== 'youtube') return;
     retryTranscriptMutation.mutate(toResourceActionInput(resource), {
-      onSuccess: () => toast({ title: 'Transcript retry queued', description: 'Transcript ingestion is running again.' }),
-      onError: (err: any) => toast({ title: 'Transcript retry failed', description: err.message, variant: 'destructive' }),
+      onSuccess: () => toast({ title: t('documentDashboard.transcriptRetried'), description: t('documentDashboard.transcriptRetriedDesc') }),
+      onError: (err: any) => toast({ title: t('documentDashboard.transcriptRetryFailed'), description: err.message, variant: 'destructive' }),
     });
   };
 
@@ -178,14 +180,14 @@ export function NotebookDocumentDashboard() {
       <div className="px-6 py-5 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-2 mb-1">
           <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground -ml-2" onClick={() => setActiveView('notebooks')}>
-            ← Back
+            {t('documentDashboard.back')}
           </Button>
         </div>
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2.5">
               <FileText className="h-5 w-5 text-accent" />
-              <h1 className="text-lg font-semibold text-foreground">Manage Notebook Documents</h1>
+              <h1 className="text-lg font-semibold text-foreground">{t('documentDashboard.manageNotebookDocs')}</h1>
             </div>
             {notebook && (
               <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
@@ -195,16 +197,16 @@ export function NotebookDocumentDashboard() {
             )}
           </div>
           <Button className="gap-2" onClick={() => setShowUpload(true)}>
-            <Upload className="h-4 w-4" /> Upload Documents
+            <Upload className="h-4 w-4" /> {t('documentDashboard.uploadDocuments')}
           </Button>
         </div>
 
         {/* Stats */}
         <div className="flex items-center gap-6 mt-4">
-          <StatCard label="Total" value={totalCount} />
-          <StatCard label="Searchable" value={searchableCount} color="text-green-600" />
-          <StatCard label="Processing" value={processingCount} color="text-amber-600" />
-          <StatCard label="Failed" value={failedCount} color="text-destructive" />
+          <StatCard label={t('documentDashboard.stats.total')} value={totalCount} />
+          <StatCard label={t('documentDashboard.stats.searchable')} value={searchableCount} color="text-green-600" />
+          <StatCard label={t('documentDashboard.stats.processing')} value={processingCount} color="text-amber-600" />
+          <StatCard label={t('documentDashboard.stats.failed')} value={failedCount} color="text-destructive" />
         </div>
       </div>
 
@@ -212,7 +214,7 @@ export function NotebookDocumentDashboard() {
       <div className="px-6 py-3 border-b border-border bg-muted/30 shrink-0 flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Filter by name…" className="pl-9 h-8 text-sm" value={search} onChange={e => setSearch(e.target.value)} />
+          <Input placeholder={t('documentDashboard.filterByName')} className="pl-9 h-8 text-sm" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={filter} onValueChange={(v: FilterStatus) => setFilter(v)}>
           <SelectTrigger className="w-[140px] h-8 text-sm">
@@ -220,10 +222,10 @@ export function NotebookDocumentDashboard() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="searchable">Searchable</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="all">{t('documentDashboard.filters.all')}</SelectItem>
+            <SelectItem value="searchable">{t('documentDashboard.filters.searchable')}</SelectItem>
+            <SelectItem value="processing">{t('documentDashboard.filters.processing')}</SelectItem>
+            <SelectItem value="failed">{t('documentDashboard.filters.failed')}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sort} onValueChange={(v: SortKey) => setSort(v)}>
@@ -232,10 +234,10 @@ export function NotebookDocumentDashboard() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="recent">Most recent</SelectItem>
-            <SelectItem value="oldest">Oldest</SelectItem>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="status">Status</SelectItem>
+            <SelectItem value="recent">{t('documentDashboard.sort.recent')}</SelectItem>
+            <SelectItem value="oldest">{t('documentDashboard.sort.oldest')}</SelectItem>
+            <SelectItem value="name">{t('documentDashboard.sort.name')}</SelectItem>
+            <SelectItem value="status">{t('documentDashboard.sort.status')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -252,17 +254,17 @@ export function NotebookDocumentDashboard() {
               {documents.length > 0 || notebookLinkedVideos.length > 0 ? (
                 <>
                   <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">No sources match your filters</p>
+                  <p className="text-sm text-muted-foreground">{t('documentDashboard.noMatchSources')}</p>
                 </>
               ) : (
                 <>
                   <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                  <h3 className="text-sm font-medium text-foreground mb-1">No sources yet</h3>
+                  <h3 className="text-sm font-medium text-foreground mb-1">{t('documentDashboard.noSources')}</h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
-                    Add documents or linked videos to this notebook to enable AI-powered search and analysis across your sources.
+                    {t('documentDashboard.emptyNotebook')}
                   </p>
                   <Button variant="outline" className="gap-2" onClick={() => setShowUpload(true)}>
-                    <Upload className="h-4 w-4" /> Upload Documents
+                    <Upload className="h-4 w-4" /> {t('documentDashboard.uploadDocuments')}
                   </Button>
                 </>
               )}
@@ -332,6 +334,7 @@ function DocumentRow({
   isDeleting: boolean;
   isRetrying: boolean;
 }) {
+  const { t } = useTranslation();
   const Icon = fileIcons[doc.file_type] || FileIcon;
   const color = fileColors[doc.file_type] || 'text-muted-foreground';
   const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
@@ -372,7 +375,7 @@ function DocumentRow({
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
-                {doc.word_count ? ` • ${doc.word_count.toLocaleString()} words` : ''}
+                {doc.word_count ? ` • ${doc.word_count.toLocaleString()} ${t('documentDashboard.wordsSuffix')}` : ''}
                 {statusPresentation?.secondaryLabel && (
                   <span className="text-muted-foreground"> • {statusPresentation.secondaryLabel}</span>
                 )}
@@ -380,7 +383,7 @@ function DocumentRow({
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {doc.processing_status === 'failed' && (
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-accent" onClick={e => { e.stopPropagation(); onRetry(); }} disabled={isRetrying} title="Retry processing">
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-accent" onClick={e => { e.stopPropagation(); onRetry(); }} disabled={isRetrying} title={t('documentDashboard.retryProcessing')}>
                   <RotateCcw className="h-3.5 w-3.5" />
                 </Button>
               )}
@@ -395,35 +398,35 @@ function DocumentRow({
         <CollapsibleContent>
           <div className="px-3 pb-3 pt-0 border-t border-border">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 py-3 text-xs">
-              <MetaItem label="File type" value={doc.file_type.toUpperCase()} />
-              <MetaItem label="MIME type" value={doc.mime_type} />
-              <MetaItem label="Size" value={formatFileSize(doc.file_size)} />
-              <MetaItem label="Uploaded" value={new Date(doc.created_at).toLocaleString()} />
-              {doc.detected_language && <MetaItem label="Language" value={doc.detected_language.toUpperCase()} />}
-              {doc.word_count != null && <MetaItem label="Words" value={doc.word_count.toLocaleString()} />}
-              {doc.char_count != null && <MetaItem label="Characters" value={doc.char_count.toLocaleString()} />}
-              {doc.page_count != null && <MetaItem label="Pages" value={doc.page_count.toString()} />}
-              {chunkStats && chunkStats.chunkCount > 0 && <MetaItem label="Chunks created" value={chunkStats.chunkCount.toString()} />}
-              {chunkStats && chunkStats.embeddedCount > 0 && <MetaItem label="Embeddings created" value={`${chunkStats.embeddedCount}/${chunkStats.chunkCount}`} />}
+              <MetaItem label={t('documentDashboard.meta.fileType')} value={doc.file_type.toUpperCase()} />
+              <MetaItem label={t('documentDashboard.meta.mimeType')} value={doc.mime_type} />
+              <MetaItem label={t('documentDashboard.meta.size')} value={formatFileSize(doc.file_size)} />
+              <MetaItem label={t('documentDashboard.meta.uploaded')} value={new Date(doc.created_at).toLocaleString()} />
+              {doc.detected_language && <MetaItem label={t('documentDashboard.meta.language')} value={doc.detected_language.toUpperCase()} />}
+              {doc.word_count != null && <MetaItem label={t('documentDashboard.meta.words')} value={doc.word_count.toLocaleString()} />}
+              {doc.char_count != null && <MetaItem label={t('documentDashboard.meta.characters')} value={doc.char_count.toLocaleString()} />}
+              {doc.page_count != null && <MetaItem label={t('documentDashboard.meta.pages')} value={doc.page_count.toString()} />}
+              {chunkStats && chunkStats.chunkCount > 0 && <MetaItem label={t('documentDashboard.meta.chunksCreated')} value={chunkStats.chunkCount.toString()} />}
+              {chunkStats && chunkStats.embeddedCount > 0 && <MetaItem label={t('documentDashboard.meta.embeddingsCreated')} value={`${chunkStats.embeddedCount}/${chunkStats.chunkCount}`} />}
               {chunkStats && chunkStats.chunkCount > 0 && (
-                <MetaItem label="Embedding coverage" value={`${Math.round((chunkStats.embeddedCount / chunkStats.chunkCount) * 100)}%`} />
+                <MetaItem label={t('documentDashboard.meta.embeddingCoverage')} value={`${Math.round((chunkStats.embeddedCount / chunkStats.chunkCount) * 100)}%`} />
               )}
               {chunkStats && chunkStats.embeddedCount === chunkStats.chunkCount && chunkStats.chunkCount > 0 && (
-                <MetaItem label="Semantic retrieval" value="Ready" />
+                <MetaItem label={t('documentDashboard.meta.semanticRetrieval')} value={t('documentDashboard.meta.ready')} />
               )}
-              {doc.retry_count > 0 && <MetaItem label="Retry attempts" value={doc.retry_count.toString()} />}
-              {doc.last_retry_at && <MetaItem label="Last retry" value={new Date(doc.last_retry_at).toLocaleString()} />}
+              {doc.retry_count > 0 && <MetaItem label={t('documentDashboard.meta.retryAttempts')} value={doc.retry_count.toString()} />}
+              {doc.last_retry_at && <MetaItem label={t('documentDashboard.meta.lastRetry')} value={new Date(doc.last_retry_at).toLocaleString()} />}
             </div>
 
             {doc.processing_error && (
               <div className="text-xs text-destructive bg-destructive/5 rounded p-2 mb-3">
-                <span className="font-medium">Error: </span>{doc.processing_error}
+                <span className="font-medium">{t('documentDashboard.errorLabel')} </span>{doc.processing_error}
               </div>
             )}
 
             {doc.summary && (
               <div className="mb-3">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Summary</p>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('documentDashboard.summary')}</p>
                 <p className="text-xs text-foreground leading-relaxed">{doc.summary}</p>
               </div>
             )}

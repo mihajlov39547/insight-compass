@@ -24,8 +24,10 @@ import { toast } from 'sonner';
 import { RetrievalWeightsSection } from '@/components/settings/RetrievalWeightsSection';
 import { supabase } from '@/integrations/supabase/client';
 import { AVAILABLE_LANGUAGES } from '@/lib/languages';
+import { useTranslation } from 'react-i18next';
 
 export function SettingsDialog() {
+  const { t } = useTranslation();
   const { showSettings, setShowSettings } = useApp();
   const { data: settings } = useUserSettings();
   const saveSettings = useSaveUserSettings();
@@ -51,12 +53,15 @@ export function SettingsDialog() {
   const handleSave = async () => {
     try {
       await saveSettings.mutateAsync(local);
-      toast.success('Settings saved');
+      toast.success(t('settingsDialog.saved'));
       setShowSettings(null);
     } catch {
-      toast.error('Failed to save settings');
+      toast.error(t('settingsDialog.saveFailed'));
     }
   };
+
+  const responseLengthLabel = (v: string) => t(`settingsDialog.responseLengths.${v.toLowerCase()}`, { defaultValue: v });
+  const retrievalDepthLabel = (v: string) => t(`settingsDialog.retrievalDepths.${v.toLowerCase()}`, { defaultValue: v });
 
   return (
     <Dialog open={!!showSettings} onOpenChange={() => setShowSettings(null)}>
@@ -64,42 +69,52 @@ export function SettingsDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-accent" />
-            General Settings
+            {t('settingsDialog.title')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="py-4 space-y-6">
           {/* AI Response Preferences */}
           <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">AI Response Preferences</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t('settingsDialog.aiSection')}</h3>
 
             <SettingSelect
-              label="Default Response Length"
+              label={t('settingsDialog.responseLength')}
               value={local.response_length}
               options={['Concise', 'Standard', 'Detailed']}
+              optionLabels={{
+                Concise: responseLengthLabel('Concise'),
+                Standard: responseLengthLabel('Standard'),
+                Detailed: responseLengthLabel('Detailed'),
+              }}
               onChange={v => update('response_length', v)}
             />
             <SettingSelect
-              label="Retrieval Depth"
+              label={t('settingsDialog.retrievalDepth')}
               value={local.retrieval_depth}
               options={['Shallow', 'Medium', 'Deep']}
+              optionLabels={{
+                Shallow: retrievalDepthLabel('Shallow'),
+                Medium: retrievalDepthLabel('Medium'),
+                Deep: retrievalDepthLabel('Deep'),
+              }}
               onChange={v => update('retrieval_depth', v)}
             />
             <SettingToggle
-              label="Cite Sources"
+              label={t('settingsDialog.citeSources')}
               checked={local.cite_sources}
               onChange={v => update('cite_sources', v)}
             />
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm">Auto-summarize Documents</Label>
-                <p className="text-xs text-muted-foreground">Enabled by default</p>
+                <Label className="text-sm">{t('settingsDialog.autoSummarize')}</Label>
+                <p className="text-xs text-muted-foreground">{t('settingsDialog.autoSummarizeHelp')}</p>
               </div>
               <Switch checked={true} disabled />
             </div>
             <SettingToggle
-              label="Enable Answer Formatting"
-              description="Rich markdown rendering for AI answers"
+              label={t('settingsDialog.answerFormatting')}
+              description={t('settingsDialog.answerFormattingHelp')}
               checked={local.enable_answer_formatting}
               onChange={v => update('enable_answer_formatting', v)}
             />
@@ -119,30 +134,30 @@ export function SettingsDialog() {
               }}
             />
             <SettingToggle
-              label="Chat suggestions"
-              description="Show AI-generated follow-up suggestions in chat"
+              label={t('settingsDialog.chatSuggestions')}
+              description={t('settingsDialog.chatSuggestionsHelp')}
               checked={local.chat_suggestions}
               onChange={v => update('chat_suggestions', v)}
             />
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm">Generation complete sound</Label>
-                <p className="text-xs text-muted-foreground">Play a sound when generation finishes</p>
+                <Label className="text-sm">{t('settingsDialog.generationSound')}</Label>
+                <p className="text-xs text-muted-foreground">{t('settingsDialog.generationSoundHelp')}</p>
               </div>
               <Select value={local.generation_sound} onValueChange={v => update('generation_sound', v)}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="first">First generation</SelectItem>
-                  <SelectItem value="always">Always</SelectItem>
-                  <SelectItem value="never">Never</SelectItem>
+                  <SelectItem value="first">{t('settingsDialog.generationSounds.first')}</SelectItem>
+                  <SelectItem value="always">{t('settingsDialog.generationSounds.always')}</SelectItem>
+                  <SelectItem value="never">{t('settingsDialog.generationSounds.never')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <SettingToggle
-              label="Agent action notifications"
-              description="Get notified when agent actions complete"
+              label={t('settingsDialog.agentNotifications')}
+              description={t('settingsDialog.agentNotificationsHelp')}
               checked={local.agent_action_notifications}
               onChange={v => update('agent_action_notifications', v)}
             />
@@ -152,10 +167,10 @@ export function SettingsDialog() {
 
           {/* Interface Preferences */}
           <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Interface Preferences</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t('settingsDialog.interfaceSection')}</h3>
 
             <SettingSelect
-              label="Language"
+              label={t('settingsDialog.language')}
               value={local.language_preference}
               options={AVAILABLE_LANGUAGES.map((language) => language.code)}
               optionLabels={Object.fromEntries(
@@ -164,10 +179,13 @@ export function SettingsDialog() {
               onChange={v => update('language_preference', v)}
             />
             <SettingSelect
-              label="Layout"
+              label={t('settingsDialog.layout')}
               value={local.layout_preference}
               options={['comfortable', 'compact']}
-              optionLabels={{ comfortable: 'Comfortable', compact: 'Compact' }}
+              optionLabels={{
+                comfortable: t('settingsDialog.layouts.comfortable'),
+                compact: t('settingsDialog.layouts.compact'),
+              }}
               onChange={v => update('layout_preference', v)}
             />
           </section>
@@ -176,10 +194,10 @@ export function SettingsDialog() {
 
           {/* Defaults */}
           <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Defaults</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t('settingsDialog.defaultsSection')}</h3>
 
             <div className="flex items-center justify-between">
-              <Label className="text-sm">Preferred AI Model</Label>
+              <Label className="text-sm">{t('settingsDialog.preferredModel')}</Label>
               <Select value={local.preferred_model} onValueChange={v => update('preferred_model', v)}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue />
@@ -200,14 +218,14 @@ export function SettingsDialog() {
           <RedeployEdgeButton />
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setShowSettings(null)}>
-              Cancel
+              {t('settingsDialog.cancel')}
             </Button>
             <Button
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
               onClick={handleSave}
               disabled={saveSettings.isPending}
             >
-              {saveSettings.isPending ? 'Saving...' : 'Save Changes'}
+              {saveSettings.isPending ? t('settingsDialog.saving') : t('settingsDialog.save')}
             </Button>
           </div>
         </div>
@@ -279,6 +297,7 @@ const EDGE_FUNCTIONS = [
 ];
 
 function RedeployEdgeButton() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const handleRedeploy = async () => {
@@ -290,9 +309,9 @@ function RedeployEdgeButton() {
         )
       );
       const ok = results.filter((r) => r.status === 'fulfilled').length;
-      toast.success(`Redeploy pinged ${ok}/${EDGE_FUNCTIONS.length} functions`);
+      toast.success(t('settingsDialog.redeployPinged', { ok, total: EDGE_FUNCTIONS.length }));
     } catch {
-      toast.error('Redeploy request failed');
+      toast.error(t('settingsDialog.redeployFailed'));
     } finally {
       setLoading(false);
     }
@@ -307,7 +326,7 @@ function RedeployEdgeButton() {
       className="gap-1.5 text-muted-foreground"
     >
       <RotateCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-      {loading ? 'Pinging…' : 'Redeploy Edge'}
+      {loading ? t('settingsDialog.pinging') : t('settingsDialog.redeployEdge')}
     </Button>
   );
 }

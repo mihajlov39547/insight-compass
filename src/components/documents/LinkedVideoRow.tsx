@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import type { Resource } from '@/lib/resourceClassification';
 import { useResourceTranscriptDebug } from '@/hooks/useResourceTranscriptDebug';
 import { useResourceTranscriptPipelineStats } from '@/hooks/useResourceTranscriptPipelineStats';
+import { useTranslation } from 'react-i18next';
 
 function formatDurationFromMs(ms: number | null | undefined): string {
   if (ms == null) return '—';
@@ -39,10 +40,11 @@ function mapTranscriptStatus(resource: Resource): 'completed' | 'failed' | 'proc
 }
 
 function VideoStatusBadge({ status }: { status: 'completed' | 'failed' | 'processing' }) {
+  const { t } = useTranslation();
   if (status === 'completed') {
     return (
       <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
-        <Search className="h-2.5 w-2.5" /> Searchable
+        <Search className="h-2.5 w-2.5" /> {t('documentStatus.searchable')}
       </Badge>
     );
   }
@@ -50,14 +52,14 @@ function VideoStatusBadge({ status }: { status: 'completed' | 'failed' | 'proces
   if (status === 'failed') {
     return (
       <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-destructive/10 text-destructive border-destructive/20">
-        <AlertCircle className="h-2.5 w-2.5" /> Failed
+        <AlertCircle className="h-2.5 w-2.5" /> {t('documentStatus.failed')}
       </Badge>
     );
   }
 
   return (
     <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-amber-500/10 text-amber-700 border-amber-500/20">
-      <Loader2 className="h-2.5 w-2.5 animate-spin" /> Processing
+      <Loader2 className="h-2.5 w-2.5 animate-spin" /> {t('documentStatus.processing')}
     </Badge>
   );
 }
@@ -117,6 +119,7 @@ export function LinkedVideoRow({
   isDeleting: boolean;
   isRetrying: boolean;
 }) {
+  const { t } = useTranslation();
   const effectiveStatus = mapTranscriptStatus(resource);
   const { data: debug } = useResourceTranscriptDebug(resource.id, isExpanded || effectiveStatus === 'processing');
   const { data: stats } = useResourceTranscriptPipelineStats(resource.id, isExpanded || effectiveStatus === 'processing');
@@ -131,37 +134,37 @@ export function LinkedVideoRow({
   const timeline = [
     {
       key: 'serpapi_primary',
-      label: 'Fetching transcript',
+      label: t('linkedVideo.stages.fetching'),
       status: debug?.stages?.find((s) => s.stage === 'serpapi_primary')?.status || 'skipped',
       detail: debug?.stages?.find((s) => s.stage === 'serpapi_primary')?.reason || null,
     },
     {
       key: 'page_probe',
-      label: 'Metadata probe',
+      label: t('linkedVideo.stages.metadataProbe'),
       status: debug?.stages?.find((s) => s.stage === 'page_fetch')?.status || 'skipped',
       detail: debug?.stages?.find((s) => s.stage === 'page_fetch')?.reason || null,
     },
     {
       key: 'chunking',
-      label: 'Chunking for retrieval',
+      label: t('linkedVideo.stages.chunking'),
       status: chunkCount > 0 ? 'success' : transcriptReady ? 'failed' : 'skipped',
-      detail: chunkCount > 0 ? `${chunkCount} chunks` : null,
+      detail: chunkCount > 0 ? t('linkedVideo.details.chunksFmt', { count: chunkCount }) : null,
     },
     {
       key: 'embeddings',
-      label: 'Generating embeddings',
+      label: t('linkedVideo.stages.embeddings'),
       status: embeddingCount > 0 ? 'success' : transcriptReady ? 'failed' : 'skipped',
       detail: embeddingCount > 0 ? `${embeddingCount}/${chunkCount}` : null,
     },
     {
       key: 'questions',
-      label: 'Generating suggested questions',
+      label: t('linkedVideo.stages.questions'),
       status: questionCount > 0 ? 'success' : transcriptReady ? 'skipped' : 'skipped',
-      detail: questionCount > 0 ? `${questionCount} questions` : 'optional',
+      detail: questionCount > 0 ? t('linkedVideo.details.questionsFmt', { count: questionCount }) : t('documentProcessing.optional'),
     },
     {
       key: 'finalize',
-      label: 'Finalizing',
+      label: t('linkedVideo.stages.finalize'),
       status: transcriptReady ? 'success' : resource.transcriptStatus === 'failed' ? 'failed' : 'skipped',
       detail: debug?.totalDurationMs ? formatDurationFromMs(debug.totalDurationMs) : null,
     },
@@ -183,12 +186,12 @@ export function LinkedVideoRow({
                 <VideoStatusBadge status={effectiveStatus} />
                 {isAIReady && (
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
-                    <Zap className="h-2.5 w-2.5" /> AI ready
+                    <Zap className="h-2.5 w-2.5" /> {t('aiReady')}
                   </Badge>
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                VIDEO • linked
+                {t('linkedVideo.video')} • {t('linkedVideo.linked')}
                 {resource.mediaVideoId ? ` • ${resource.mediaVideoId}` : ''}
                 {resource.mediaChannelName ? ` • ${resource.mediaChannelName}` : ''}
                 {' • '}
@@ -206,7 +209,7 @@ export function LinkedVideoRow({
                     onRetry();
                   }}
                   disabled={isRetrying}
-                  title="Retry transcript"
+                  title={t('linkedVideo.retryTranscript')}
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                 </Button>
@@ -231,26 +234,26 @@ export function LinkedVideoRow({
         <CollapsibleContent>
           <div className="px-3 pb-3 pt-0 border-t border-border">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 py-3 text-xs">
-              <MetaItem label="File type" value="VIDEO" />
-              <MetaItem label="Provider" value={resource.provider || 'youtube'} />
-              <MetaItem label="Size" value={`${resource.sizeBytes || 0} B`} />
-              <MetaItem label="Uploaded" value={new Date(resource.uploadedAt).toLocaleString()} />
-              {resource.mediaVideoId && <MetaItem label="Video ID" value={resource.mediaVideoId} />}
-              {resource.mediaChannelName && <MetaItem label="Channel" value={resource.mediaChannelName} />}
-              {resource.detectedLanguage && <MetaItem label="Language" value={resource.detectedLanguage.toUpperCase()} />}
-              <MetaItem label="Transcript status" value={resource.transcriptStatus || 'none'} />
+              <MetaItem label={t('documentDashboard.meta.fileType')} value={t('linkedVideo.video')} />
+              <MetaItem label={t('documentDashboard.meta.provider')} value={resource.provider || 'youtube'} />
+              <MetaItem label={t('documentDashboard.meta.size')} value={`${resource.sizeBytes || 0} B`} />
+              <MetaItem label={t('documentDashboard.meta.uploaded')} value={new Date(resource.uploadedAt).toLocaleString()} />
+              {resource.mediaVideoId && <MetaItem label={t('documentDashboard.meta.videoId')} value={resource.mediaVideoId} />}
+              {resource.mediaChannelName && <MetaItem label={t('documentDashboard.meta.channel')} value={resource.mediaChannelName} />}
+              {resource.detectedLanguage && <MetaItem label={t('documentDashboard.meta.language')} value={resource.detectedLanguage.toUpperCase()} />}
+              <MetaItem label={t('documentDashboard.meta.transcriptStatus')} value={resource.transcriptStatus || 'none'} />
             </div>
 
             {resource.processingError && (
               <div className="text-xs text-destructive bg-destructive/5 rounded p-2 mb-3">
-                <span className="font-medium">Error: </span>
+                <span className="font-medium">{t('documentDashboard.errorLabel')} </span>
                 {resource.processingError}
               </div>
             )}
 
             {resource.summary && (
               <div className="mb-3">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Summary</p>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('documentDashboard.summary')}</p>
                 <p className="text-xs text-foreground leading-relaxed">{resource.summary}</p>
               </div>
             )}
@@ -265,7 +268,7 @@ export function LinkedVideoRow({
                 </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Last completed: </span>
+                    <span className="text-muted-foreground">{t('documentProcessing.lastCompleted')} </span>
                     <span className="text-foreground">
                       {timeline.filter((a) => a.status === 'success').slice(-1)[0]?.label || '—'}
                     </span>
@@ -274,43 +277,43 @@ export function LinkedVideoRow({
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Readiness</p>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentProcessing.readiness')}</p>
                 <div className="grid grid-cols-2 gap-1.5">
-                  <ReadinessCard label="Text extracted" ready={transcriptReady} icon={<FileText className="h-3 w-3" />} />
-                  <ReadinessCard label="Language detected" ready={!!debug?.serpapiLanguageCode} icon={<Languages className="h-3 w-3" />} />
-                  <ReadinessCard label="Summary" ready={!!resource.summary} icon={<FileSearch className="h-3 w-3" />} />
-                  <ReadinessCard label="Keyword search" ready={transcriptReady && chunkCount > 0} icon={<Search className="h-3 w-3" />} />
-                  <ReadinessCard label="Semantic search" ready={embeddingCoverage >= 90 && chunkCount > 0} icon={<Brain className="h-3 w-3" />} detail={chunkCount > 0 ? `${embeddingCoverage}%` : undefined} />
-                  <ReadinessCard label="Hybrid retrieval" ready={transcriptReady && chunkCount > 0} icon={<Zap className="h-3 w-3" />} />
-                  <ReadinessCard label="Grounded chat" ready={transcriptReady && chunkCount > 0} icon={<MessageSquareText className="h-3 w-3" />} />
-                  <ReadinessCard label="Question enrichment" ready={questionCount > 0} icon={<HelpCircle className="h-3 w-3" />} detail={questionCount > 0 ? `${questionCount}` : undefined} />
+                  <ReadinessCard label={t('documentProcessing.items.textExtracted')} ready={transcriptReady} icon={<FileText className="h-3 w-3" />} />
+                  <ReadinessCard label={t('documentProcessing.items.languageDetected')} ready={!!debug?.serpapiLanguageCode} icon={<Languages className="h-3 w-3" />} />
+                  <ReadinessCard label={t('documentProcessing.items.summary')} ready={!!resource.summary} icon={<FileSearch className="h-3 w-3" />} />
+                  <ReadinessCard label={t('documentProcessing.items.keywordSearch')} ready={transcriptReady && chunkCount > 0} icon={<Search className="h-3 w-3" />} />
+                  <ReadinessCard label={t('documentProcessing.items.semanticSearch')} ready={embeddingCoverage >= 90 && chunkCount > 0} icon={<Brain className="h-3 w-3" />} detail={chunkCount > 0 ? `${embeddingCoverage}%` : undefined} />
+                  <ReadinessCard label={t('documentProcessing.items.hybridRetrieval')} ready={transcriptReady && chunkCount > 0} icon={<Zap className="h-3 w-3" />} />
+                  <ReadinessCard label={t('documentProcessing.items.groundedChat')} ready={transcriptReady && chunkCount > 0} icon={<MessageSquareText className="h-3 w-3" />} />
+                  <ReadinessCard label={t('documentProcessing.items.questionEnrichment')} ready={questionCount > 0} icon={<HelpCircle className="h-3 w-3" />} detail={questionCount > 0 ? `${questionCount}` : undefined} />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Metrics</p>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentProcessing.metrics')}</p>
                 <div className="flex flex-wrap gap-3 text-xs">
                   <div>
-                    <span className="text-muted-foreground">Chunks: </span>
+                    <span className="text-muted-foreground">{t('documentProcessing.metricLabels.chunks')} </span>
                     <span className="text-foreground font-medium tabular-nums">{chunkCount}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Embeddings: </span>
+                    <span className="text-muted-foreground">{t('documentProcessing.metricLabels.embeddings')} </span>
                     <span className="text-foreground font-medium tabular-nums">{embeddingCount}/{chunkCount}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Coverage: </span>
+                    <span className="text-muted-foreground">{t('documentProcessing.metricLabels.coverage')} </span>
                     <span className="text-foreground font-medium tabular-nums">{embeddingCoverage}%</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Questions: </span>
+                    <span className="text-muted-foreground">{t('documentProcessing.metricLabels.questions')} </span>
                     <span className="text-foreground font-medium tabular-nums">{questionCount}</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Activity timeline</p>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentProcessing.activityTimeline')}</p>
                 <div className="space-y-0.5">
                   {timeline.map((activity) => (
                     <div key={activity.key} className="flex items-center gap-2 text-[11px]">
@@ -325,7 +328,7 @@ export function LinkedVideoRow({
                       )}
                       <span className={activity.status === 'failed' ? 'text-destructive' : 'text-foreground'}>{activity.label}</span>
                       {activity.key === 'questions' && (
-                        <span className="text-[9px] text-muted-foreground/60 italic">optional</span>
+                        <span className="text-[9px] text-muted-foreground/60 italic">{t('documentProcessing.optional')}</span>
                       )}
                       <span className="ml-auto text-muted-foreground/50 tabular-nums">{activity.detail || ''}</span>
                     </div>
