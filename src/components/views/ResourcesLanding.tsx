@@ -1008,25 +1008,28 @@ function AddSourceDialog({
   onContainerIdChange: (value: string | null) => void;
   onSubmit: () => void;
 }) {
+  const { t } = useTranslation();
   const targetOptions = containerType === 'project' ? projects : notebooks;
 
   const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal']);
 
-  const providerOptions: Array<{ value: string; label: string; implemented: boolean }> = [
-    { value: 'unknown', label: 'Any URL', implemented: true },
-    { value: 'youtube', label: 'YouTube', implemented: true },
-    { value: 'google_drive', label: 'Google Drive', implemented: false },
-    { value: 'dropbox', label: 'Dropbox', implemented: false },
-    { value: 'notion', label: 'Notion', implemented: false },
-    { value: 'internal', label: 'Internal', implemented: true },
+  const providerOptions: Array<{ value: string; labelKey: string; implemented: boolean }> = [
+    { value: 'unknown', labelKey: 'anyUrl', implemented: true },
+    { value: 'youtube', labelKey: 'youtube', implemented: true },
+    { value: 'google_drive', labelKey: 'googleDrive', implemented: false },
+    { value: 'dropbox', labelKey: 'dropbox', implemented: false },
+    { value: 'notion', labelKey: 'notion', implemented: false },
+    { value: 'internal', labelKey: 'internal', implemented: true },
   ];
+
+  const containerLabel = t(`resources.addSourceDialog.locations.${containerType}`);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <DialogTitle>Add source</DialogTitle>
+            <DialogTitle>{t('resources.addSourceDialog.title')}</DialogTitle>
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -1035,38 +1038,38 @@ function AddSourceDialog({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="max-w-xs text-xs leading-relaxed">
-                  Add a specific URL or supported source now so it appears in Resources immediately. Some providers support richer enrichment. Unavailable providers are marked Soon.
+                  {t('resources.addSourceDialog.tooltip')}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           <DialogDescription>
-            Add a URL or supported source so content can appear in Resources.
+            {t('resources.addSourceDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">URL</p>
+          <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.url')}</p>
           <Input
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
-            placeholder="https://example.com/resource"
+            placeholder={t('resources.addSourceDialog.urlPlaceholder')}
             autoFocus
           />
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Title (optional)</p>
+          <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.titleLabel')}</p>
           <Input
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
-            placeholder="Readable resource title"
+            placeholder={t('resources.addSourceDialog.titlePlaceholder')}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Provider</p>
+            <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.provider')}</p>
             <Select
               value={provider}
               onValueChange={(v) => {
@@ -1085,10 +1088,10 @@ function AddSourceDialog({
                     className={cn(!opt.implemented && 'opacity-50')}
                   >
                     <span className="flex items-center gap-2">
-                      {opt.label}
+                      {t(`resources.addSourceDialog.providers.${opt.labelKey}`)}
                       {!opt.implemented && (
                         <Badge variant="outline" className="text-[9px] px-1 py-0 font-normal text-muted-foreground border-muted-foreground/30">
-                          Soon
+                          {t('resources.badges.soon')}
                         </Badge>
                       )}
                     </span>
@@ -1099,15 +1102,15 @@ function AddSourceDialog({
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Location</p>
+            <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.location')}</p>
             <Select value={containerType} onValueChange={(v) => onContainerTypeChange(v as ContainerType)}>
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="project">Project</SelectItem>
-                <SelectItem value="notebook">Notebook</SelectItem>
+                <SelectItem value="personal">{t('resources.addSourceDialog.locations.personal')}</SelectItem>
+                <SelectItem value="project">{t('resources.addSourceDialog.locations.project')}</SelectItem>
+                <SelectItem value="notebook">{t('resources.addSourceDialog.locations.notebook')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1115,10 +1118,10 @@ function AddSourceDialog({
 
         {containerType !== 'personal' && (
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Target {containerType}</p>
+            <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.target', { type: containerLabel })}</p>
             <Select value={containerId ?? undefined} onValueChange={(v) => onContainerIdChange(v || null)}>
               <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder={`Select a ${containerType}`} />
+                <SelectValue placeholder={t('resources.addSourceDialog.selectTarget', { type: containerLabel })} />
               </SelectTrigger>
               <SelectContent>
                 {targetOptions.map((option) => (
@@ -1130,13 +1133,13 @@ function AddSourceDialog({
         )}
 
         <p className="text-[11px] text-muted-foreground">
-          Supported sources are available now. Others are marked Soon.
+          {t('resources.addSourceDialog.footnote')}
         </p>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('resources.addSourceDialog.cancel')}</Button>
           <Button onClick={onSubmit} disabled={submitting || !url.trim()}>
-            {submitting ? 'Adding...' : 'Add source'}
+            {submitting ? t('resources.addSourceDialog.submitting') : t('resources.addSourceDialog.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>
