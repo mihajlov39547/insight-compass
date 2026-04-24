@@ -265,13 +265,13 @@ export default function ProfileSettings() {
     setIsSavingUsername(false);
     if (error) {
       if (error.code === '23505') {
-        toast.error('Username is already taken');
+        toast.error(t('profileSettings.username.errors.taken'));
       } else {
-        toast.error('Failed to update username');
+        toast.error(t('profileSettings.username.errors.saveFailed'));
       }
     } else {
       setSavedProfile((current) => ({ ...current, username }));
-      toast.success('Username updated');
+      toast.success(t('profileSettings.username.saved'));
       void loadProfile();
     }
   };
