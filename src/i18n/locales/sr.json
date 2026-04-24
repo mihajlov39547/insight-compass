@@ -448,5 +448,107 @@
       "emptyTitle": "Nema poruka ni poziva na čekanju",
       "emptyDescription": "Poruke, pozivi za radni prostor i projekte pojaviće se ovde"
     }
+  },
+  "auth": {
+    "signInTitle": "Prijavite se",
+    "registerTitle": "Napravite nalog",
+    "emailOrUsername": "E-pošta ili korisničko ime",
+    "emailOrUsernamePlaceholder": "vi@primer.com ili korisničko ime",
+    "email": "E-pošta",
+    "emailPlaceholder": "vi@primer.com",
+    "password": "Lozinka",
+    "passwordPlaceholder": "Vaša lozinka",
+    "passwordHintPlaceholder": "Najmanje 6 karaktera",
+    "repeatPassword": "Ponovite lozinku",
+    "repeatPasswordPlaceholder": "Ponovite vašu lozinku",
+    "resetPassword": "Resetuj lozinku",
+    "resetPasswordSoon": "Resetovanje lozinke biće uskoro dostupno.",
+    "signIn": "Prijavi se",
+    "signingIn": "Prijavljivanje...",
+    "signInWithGoogle": "Prijavite se preko Google-a",
+    "googleFailed": "Neuspešna prijava preko Google-a",
+    "createAccount": "Napravi nalog",
+    "or": "ili",
+    "noAccount": "Nemate nalog?",
+    "registerInstead": "Registrujte se",
+    "register": "Registracija",
+    "haveAccount": "Već imate nalog?",
+    "signInInstead": "Prijavite se",
+    "errors": {
+      "identifierRequired": "E-pošta ili korisničko ime su obavezni",
+      "passwordRequired": "Lozinka je obavezna",
+      "emailRequired": "E-pošta je obavezna",
+      "invalidEmail": "Neispravna adresa e-pošte",
+      "passwordTooShort": "Lozinka mora imati najmanje 6 karaktera",
+      "passwordsDontMatch": "Lozinke se ne podudaraju",
+      "invalidUsernameOrPassword": "Neispravno korisničko ime ili lozinka",
+      "invalidCredentials": "Neispravni podaci za prijavu. Pokušajte ponovo.",
+      "signInFailed": "Prijava nije uspela.",
+      "signInFailedRetry": "Prijava nije uspela. Pokušajte ponovo.",
+      "registrationFailed": "Registracija nije uspela.",
+      "registrationFailedRetry": "Registracija nije uspela. Pokušajte ponovo."
+    },
+    "toasts": {
+      "signedIn": "Uspešno ste prijavljeni!",
+      "accountCreated": "Nalog je uspešno kreiran!"
+    }
+  },
+  "onboarding": {
+    "badge": "Istraživač",
+    "heroLine1": "Pretvorite svoje dokumente u",
+    "heroLine2": "Inteligentne razgovore",
+    "heroDescription": "Otpremite datoteke, izgradite pretraživu bazu znanja i dobijajte tačne odgovore potpomognute pretragom (RAG). Savršeno za timove kojima je potrebno brzo i pouzdano pronalaženje informacija.",
+    "signIn": "Prijavi se",
+    "viewPricing": "Pogledaj cene",
+    "features": {
+      "upload": {
+        "title": "Otpremajte i indeksirajte dokumente",
+        "description": "Otpremite PDF, Word i tekstualne datoteke. Automatski se indeksiraju za brzo i tačno pretraživanje."
+      },
+      "knowledge": {
+        "title": "Multimodalna baza znanja",
+        "description": "Kombinujte tekst, strukturirane podatke i različite formate datoteka u centralizovanu bazu znanja po projektu."
+      },
+      "rag": {
+        "title": "Ćaskanje pokretano RAG-om",
+        "description": "Postavljajte pitanja prirodnim jezikom. Odgovori su zasnovani na vašem otpremljenom sadržaju radi veće tačnosti."
+      },
+      "team": {
+        "title": "Timska saradnja",
+        "description": "Delite projekte sa članovima tima. Obezbedite dosledne odgovore iz zajedničkog izvora istine."
+      }
+    },
+    "notebooks": {
+      "title": "Organizujte uvide pomoću svesaka",
+      "description": "Idite dalje od Q&A — strukturirajte znanje, beležite zaključke i izgradite ponovo upotrebljive istraživačke tokove rada.",
+      "build": {
+        "title": "Pravite istraživačke sveske",
+        "description": "Organizujte dokumente, pitanja i izvore u fokusirane radne prostore znanja."
+      },
+      "save": {
+        "title": "Sačuvajte i ponovo koristite uvide",
+        "description": "Pretvorite korisne odgovore u beleške, doradite ih i dodajte ih nazad kao ponovo iskoristive izvore."
+      }
+    },
+    "useCases": {
+      "title": "Šta možete da radite sa Istraživačem",
+      "description": "Praktični načini da izvučete vrednost iz svojih dokumenata i znanja.",
+      "research": {
+        "title": "Istraživanje i analiza",
+        "description": "Brže istražujte radove, izveštaje, specifikacije i duge dokumente."
+      },
+      "learning": {
+        "title": "Učenje i studiranje",
+        "description": "Pretvorite gust materijal u jasna objašnjenja, sažetke i beleške za učenje."
+      },
+      "qa": {
+        "title": "Q&A nad dokumentima",
+        "description": "Postavljajte pitanja preko svojih otpremljenih datoteka i brzo dobijajte utemeljene odgovore."
+      },
+      "organize": {
+        "title": "Organizacija znanja",
+        "description": "Pravite ponovo upotrebljive sveske, beleške i baze znanja zasnovane na izvorima."
+      }
+    }
   }
 }
