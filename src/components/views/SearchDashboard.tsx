@@ -340,7 +340,7 @@ export function SearchDashboard() {
                           {c.snippet && <p className="text-xs text-muted-foreground/70 line-clamp-2 mt-1">{c.snippet}</p>}
                         </div>
                         {c.matchSource === 'message' && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">message match</Badge>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">{t('search.badges.messageMatch')}</Badge>
                         )}
                       </button>
                     ))}
