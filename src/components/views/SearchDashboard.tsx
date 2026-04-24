@@ -351,7 +351,7 @@ export function SearchDashboard() {
               {/* Notebooks */}
               {grouped.notebooks.length > 0 && (filter === 'all' || filter === 'notebooks') && (
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Notebooks</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('search.sections.notebooks')}</h3>
                   <div className="space-y-1">
                     {grouped.notebooks.map(n => (
                       <button key={n.id} className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors" onClick={() => handleNotebookClick(n.id)}>
