@@ -550,5 +550,226 @@
         "description": "Pravite ponovo upotrebljive sveske, beleške i baze znanja zasnovane na izvorima."
       }
     }
+  },
+  "newProject": {
+    "title": "Napravi novi projekat",
+    "description": "Započnite novi projekat znanja za organizaciju dokumenata i ćaskanja.",
+    "name": "Naziv projekta",
+    "namePlaceholder": "Unesite naziv projekta",
+    "descriptionLabel": "Opis",
+    "descriptionPlaceholder": "Opišite o čemu je ovaj projekat. Ovo pomaže AI agentu da daje preciznije i relevantnije odgovore...",
+    "descriptionHelp": "Ovaj opis pomaže AI-ju da razume kontekst projekta i daje bolje odgovore.",
+    "language": "Jezik",
+    "cancel": "Otkaži",
+    "create": "Napravi projekat",
+    "errors": {
+      "nameRequired": "Naziv projekta je obavezan",
+      "descriptionRequired": "Opis projekta je obavezan — pomaže AI-ju da daje bolje odgovore"
+    }
+  },
+  "shareDialog": {
+    "shareTitle": "Podeli „{{context}}\"",
+    "manageDescription": "Upravljajte ko ima pristup ovom resursu ({{type}}) i njegovim dozvolama.",
+    "viewDescription": "Pregledajte ko ima pristup ovom resursu ({{type}}).",
+    "inviteByEmail": "Pozovi putem e-pošte",
+    "emailPlaceholder": "Unesite adresu e-pošte",
+    "invite": "Pozovi",
+    "peopleAccess": "Osobe sa pristupom ({{count}})",
+    "rolePermissions": "Dozvole uloga",
+    "viewer": "Pregledač",
+    "editor": "Urednik",
+    "admin": "Administrator",
+    "viewerHelp": "Pregled sadržaja, učešće u postojećim ćaskanjima",
+    "editorHelp": "Kreiranje ćaskanja, otpremanje i upravljanje dokumentima",
+    "adminHelp": "Potpuno upravljanje osim arhiviranja/brisanja",
+    "shareViaLink": "Podeli putem linka",
+    "copy": "Kopiraj",
+    "copied": "Kopirano",
+    "done": "Gotovo",
+    "owner": "Vlasnik",
+    "you": "(vi)",
+    "pending": "Na čekanju",
+    "types": {
+      "project": "projekat",
+      "notebook": "sveska"
+    },
+    "fallback": {
+      "notebook": "Sveska",
+      "project": "Projekat"
+    },
+    "toasts": {
+      "invalidEmail": "Unesite ispravnu adresu e-pošte",
+      "alreadyAccess": "Ovaj korisnik već ima pristup",
+      "createFailed": "Neuspešno kreiranje deljenja",
+      "invitationSent": "Poziv poslat na {{email}}",
+      "invitationFailed": "Neuspešno slanje poziva",
+      "roleUpdated": "Uloga ažurirana",
+      "roleUpdateFailed": "Neuspešno ažuriranje uloge",
+      "removed": "Uklonjen pristup za {{name}}",
+      "removeFailed": "Neuspešno uklanjanje pristupa"
+    }
+  },
+  "uploadDialog": {
+    "title": "Otpremi dokumente",
+    "description": "Otpremite dokumente da ih priložite ovom resursu ({{context}}). Datoteke će biti analizirane i indeksirane u pozadini.",
+    "dropHint": "Prevucite datoteke ovde ili kliknite za izbor",
+    "supported": "Podržano: PDF, DOC/DOCX, CSV/XLS/XLSX, JPG/JPEG/PNG, PPTX, EML/MSG, TXT/TXTX/MD/RTF/XML/JSON/LOG • Najviše 20 MB",
+    "unsupported": "Nepodržan tip datoteke",
+    "uploading": "Otpremanje…",
+    "uploadFailed": "Otpremanje nije uspelo",
+    "cancel": "Otkaži",
+    "upload": "Otpremi ({{count}})",
+    "toasts": {
+      "filesFailed_one": "{{count}} datoteka nije otpremljena",
+      "filesFailed_few": "{{count}} datoteke nisu otpremljene",
+      "filesFailed_other": "{{count}} datoteka nije otpremljeno",
+      "uploadedAndProcessing_one": "{{count}} dokument otpremljen i obrada započeta",
+      "uploadedAndProcessing_few": "{{count}} dokumenta otpremljena i obrada započeta",
+      "uploadedAndProcessing_other": "{{count}} dokumenata otpremljeno i obrada započeta",
+      "uploadFailed": "Otpremanje nije uspelo"
+    },
+    "context": {
+      "project": "projekat",
+      "chat": "ćaskanje",
+      "notebook": "sveska"
+    }
+  },
+  "documentsDialog": {
+    "projectDocuments": "Dokumenti projekta",
+    "chatDocuments": "Dokumenti ćaskanja",
+    "uploadDocuments": "Otpremi dokumente",
+    "noDocuments": "Još nema otpremljenih dokumenata",
+    "retry": "Pokušaj obradu ponovo",
+    "done": "Gotovo",
+    "documentCount_one": "{{count}} dokument",
+    "documentCount_few": "{{count}} dokumenta",
+    "documentCount_other": "{{count}} dokumenata",
+    "analyzedCount": "{{count}} analizirano",
+    "wordsSuffix": "reči",
+    "deleted": "{{name}} obrisan",
+    "deleteFailed": "Brisanje nije uspelo",
+    "stages": {
+      "uploaded": "U redu",
+      "extracting_metadata": "Izvlačenje metapodataka",
+      "extracting_content": "Analiza sadržaja",
+      "detecting_language": "Detekcija jezika",
+      "summarizing": "Generisanje sažetka",
+      "indexing": "Kreiranje indeksa pretrage",
+      "processing": "U obradi",
+      "searchable": "Pretraživo",
+      "failed": "Neuspešno"
+    }
+  },
+  "settingsDialog": {
+    "title": "Opšta podešavanja",
+    "aiSection": "AI postavke odgovora",
+    "responseLength": "Podrazumevana dužina odgovora",
+    "responseLengths": {
+      "concise": "Sažeto",
+      "standard": "Standardno",
+      "detailed": "Detaljno"
+    },
+    "retrievalDepth": "Dubina pretraživanja",
+    "retrievalDepths": {
+      "shallow": "Plitko",
+      "medium": "Srednje",
+      "deep": "Duboko"
+    },
+    "citeSources": "Citiraj izvore",
+    "autoSummarize": "Auto-sažimanje dokumenata",
+    "autoSummarizeHelp": "Uključeno po podrazumevanom",
+    "answerFormatting": "Omogući formatiranje odgovora",
+    "answerFormattingHelp": "Bogato markdown prikazivanje AI odgovora",
+    "chatSuggestions": "Predlozi u ćaskanju",
+    "chatSuggestionsHelp": "Prikaži AI generisane predloge nastavka u ćaskanju",
+    "generationSound": "Zvuk završetka generisanja",
+    "generationSoundHelp": "Pusti zvuk kada se generisanje završi",
+    "generationSounds": {
+      "first": "Prvo generisanje",
+      "always": "Uvek",
+      "never": "Nikad"
+    },
+    "agentNotifications": "Obaveštenja agenta",
+    "agentNotificationsHelp": "Budite obavešteni kada se akcije agenta završe",
+    "interfaceSection": "Postavke interfejsa",
+    "language": "Jezik",
+    "layout": "Raspored",
+    "layouts": {
+      "comfortable": "Udobno",
+      "compact": "Kompaktno"
+    },
+    "defaultsSection": "Podrazumevano",
+    "preferredModel": "Preferirani AI model",
+    "cancel": "Otkaži",
+    "save": "Sačuvaj izmene",
+    "saving": "Čuvanje...",
+    "saved": "Podešavanja sačuvana",
+    "saveFailed": "Neuspešno čuvanje podešavanja",
+    "redeployEdge": "Ponovo objavi Edge",
+    "pinging": "Pingovanje…",
+    "redeployPinged": "Ponovno objavljivanje pingovalo {{ok}}/{{total}} funkcija",
+    "redeployFailed": "Zahtev za ponovno objavljivanje nije uspeo"
+  },
+  "pricingDialog": {
+    "title": "Izaberite svoj plan",
+    "subtitle": "Izaberite savršen plan za svoje potrebe. Nadogradite ili smanjite u bilo kom trenutku.",
+    "mostPopular": "Najpopularnije",
+    "currentPlan": "Trenutni plan",
+    "periods": {
+      "forever": "zauvek",
+      "perMonth": "mesečno",
+      "contactUs": "kontaktirajte nas"
+    },
+    "ctas": {
+      "getStarted": "Započni",
+      "contactSales": "Kontaktiraj prodaju"
+    },
+    "plans": {
+      "free": {
+        "name": "Besplatno",
+        "description": "Savršeno za početak",
+        "features": {
+          "0": "Do 3 projekta",
+          "1": "10 otpremljenih dokumenata",
+          "2": "Osnovno RAG ćaskanje",
+          "3": "Podrška zajednice"
+        }
+      },
+      "basic": {
+        "name": "Osnovni",
+        "description": "Za pojedince i male timove",
+        "features": {
+          "0": "Do 10 projekata",
+          "1": "100 otpremljenih dokumenata",
+          "2": "Brže pretraživanje",
+          "3": "Deljenje projekta (3 člana)",
+          "4": "Podrška putem e-pošte"
+        }
+      },
+      "premium": {
+        "name": "Premium",
+        "description": "Za timove u rastu",
+        "features": {
+          "0": "Neograničeno projekata",
+          "1": "500 otpremljenih dokumenata",
+          "2": "Napredno pretraživanje",
+          "3": "Prioritetni modeli",
+          "4": "Deljenje projekta (10 članova)",
+          "5": "Prioritetna podrška"
+        }
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "Za velike organizacije",
+        "features": {
+          "0": "Sve iz Premium plana",
+          "1": "Neograničeno dokumenata",
+          "2": "Upravljanje timom",
+          "3": "SSO i bezbednosne opcije",
+          "4": "Prilagođene integracije",
+          "5": "Posvećena podrška"
+        }
+      }
+    }
   }
 }
