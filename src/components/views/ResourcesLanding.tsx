@@ -1248,7 +1248,7 @@ function ResourceDetailsDrawer({
             <div className="px-6 py-4">
               <Tabs value={detailsTab} onValueChange={(value) => setDetailsTab(value as 'overview' | 'content')}>
                 <TabsList className="h-8 p-0.5">
-                  <TabsTrigger value="overview" className="text-xs h-7 px-3">Overview</TabsTrigger>
+                  <TabsTrigger value="overview" className="text-xs h-7 px-3">{t('resources.drawer.tabs.overview')}</TabsTrigger>
                   {showContentTab && (
                     <TabsTrigger value="content" className="text-xs h-7 px-3">{contentTabLabel}</TabsTrigger>
                   )}
