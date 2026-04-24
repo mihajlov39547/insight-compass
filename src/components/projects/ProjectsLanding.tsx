@@ -349,30 +349,30 @@ export function ProjectsLanding() {
                   <Plus className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
                 <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                  Create your first project
+                  {t('projectsLanding.createFirst')}
                 </span>
               </button>
             </div>
 
             <div className="max-w-3xl mx-auto">
               <p className="text-center text-muted-foreground text-sm mb-8">
-                Create a project to organize your documents, build a knowledge base, and get grounded answers.
+                {t('projectsLanding.intro')}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FeatureBlock
                   icon={<FileText className="h-5 w-5" />}
-                  title="Document Analysis"
-                  description="Query across all your uploaded documents"
+                  title={t('projectsLanding.features.documentAnalysis.title')}
+                  description={t('projectsLanding.features.documentAnalysis.description')}
                 />
                 <FeatureBlock
                   icon={<Zap className="h-5 w-5" />}
-                  title="Instant Answers"
-                  description="Get accurate responses with source-aware retrieval"
+                  title={t('projectsLanding.features.instantAnswers.title')}
+                  description={t('projectsLanding.features.instantAnswers.description')}
                 />
                 <FeatureBlock
                   icon={<Shield className="h-5 w-5" />}
-                  title="Secure & Private"
-                  description="Your data stays inside your workspace and project context"
+                  title={t('projectsLanding.features.secure.title')}
+                  description={t('projectsLanding.features.secure.description')}
                 />
               </div>
             </div>
