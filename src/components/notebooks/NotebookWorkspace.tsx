@@ -48,6 +48,7 @@ import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import type { ExtractSelection } from '@/components/chat/SourceAttribution';
+import { useTranslation } from 'react-i18next';
 
 function NotebookSourceStatus({ doc }: { doc: DbDocument }) {
   const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
@@ -93,6 +94,7 @@ function NotebookVideoSourceStatus({ resource }: { resource: Resource }) {
 }
 
 export function NotebookWorkspace() {
+  const { t } = useTranslation();
   const { selectedNotebookId, setShowShare } = useApp();
   const queryClient = useQueryClient();
   const { data: myRole } = useItemRole(selectedNotebookId, 'notebook');
@@ -690,12 +692,12 @@ export function NotebookWorkspace() {
                   <div className="w-16 h-16 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
                     <Upload className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <h2 className="text-xl font-semibold text-foreground mb-2">Add a source to get started</h2>
+                  <h2 className="text-xl font-semibold text-foreground mb-2">{t('notebookWorkspace.emptySources.title')}</h2>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Upload a document or add a website URL to begin asking questions.
+                    {t('notebookWorkspace.emptySources.description')}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    No sources added yet. Check the Sources panel on the left.
+                    {t('notebookWorkspace.emptySources.hint')}
                   </p>
                 </div>
               </div>

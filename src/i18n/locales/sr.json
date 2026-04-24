@@ -241,5 +241,37 @@
       "success": "Sveska i svi njeni podaci su obrisani",
       "archived": "Sveska arhivirana"
     }
+  },
+  "starred": {
+    "title": "Označeno zvezdicom",
+    "description": "Vaši označeni projekti, sveske i ćaskanja pojaviće se ovde. Označite važne stavke zvezdicom da biste im brzo pristupili."
+  },
+  "sharedLanding": {
+    "title": "Deljeno sa mnom",
+    "subtitle": "Projekti i sveske koje su podelili vaši saradnici",
+    "empty": {
+      "title": "Deljeno sa mnom",
+      "intro": "Ovde će se pojaviti projekti i sveske koji su podeljeni sa vama.",
+      "hint": "Kada saradnici podele svoje projekte ili sveske sa vama, moći ćete da im pristupite sa ove kontrolne table."
+    },
+    "sections": {
+      "projects": "Deljeni projekti",
+      "notebooks": "Deljene sveske"
+    },
+    "badges": {
+      "project": "Projekat",
+      "notebook": "Sveska"
+    },
+    "sharedBy": "Podelio/la {{name}}"
+  },
+  "notebookWorkspace": {
+    "emptySources": {
+      "title": "Dodajte izvor da biste započeli",
+      "description": "Otpremite dokument ili dodajte URL veb-sajta da počnete sa postavljanjem pitanja.",
+      "hint": "Još nema dodatih izvora. Pogledajte panel Izvori sa leve strane."
+    }
+  },
+  "chat": {
+    "welcomeMessage": "Dobrodošli! Mogu da vam pomognem da istražite i radite sa informacijama u ovom projektu. Možete otpremati datoteke, izgraditi bazu znanja, postavljati pitanja o vašim dokumentima i dobijati utemeljene odgovore zasnovane na dostupnom sadržaju. Da biste započeli, dodajte datoteke u ovo ćaskanje ili projekat, pa zatim postavite pitanje, zatražite sažetak ili istražite ključne uvide."
   }
 }

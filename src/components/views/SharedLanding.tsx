@@ -6,8 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { useSharedItems, SharedItem } from '@/hooks/useSharedItems';
 import { useApp } from '@/contexts/useApp';
 import { formatDistanceToNow } from 'date-fns';
+import { srLatn as srLatnLocale, enUS as enUSLocale } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 function SharedItemCard({ item }: { item: SharedItem }) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.resolvedLanguage === 'sr' ? srLatnLocale : enUSLocale;
   const { setSelectedProjectId, setSelectedChatId, setSelectedNotebookId, setActiveView } = useApp();
 
   const handleClick = () => {
@@ -50,7 +54,7 @@ function SharedItemCard({ item }: { item: SharedItem }) {
                 {item.item_name}
               </h3>
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 flex-shrink-0">
-                {isProject ? 'Project' : 'Notebook'}
+                {isProject ? t('sharedLanding.badges.project') : t('sharedLanding.badges.notebook')}
               </Badge>
             </div>
             {item.item_description && (
@@ -65,12 +69,12 @@ function SharedItemCard({ item }: { item: SharedItem }) {
                   <AvatarFallback className="text-[8px] bg-muted">{initials}</AvatarFallback>
                 </Avatar>
                 <span className="text-xs text-muted-foreground">
-                  Shared by {item.shared_by_name}
+                  {t('sharedLanding.sharedBy', { name: item.shared_by_name })}
                 </span>
               </div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
-                {formatDistanceToNow(new Date(item.item_updated_at || item.created_at), { addSuffix: true })}
+                {formatDistanceToNow(new Date(item.item_updated_at || item.created_at), { addSuffix: true, locale: dateLocale })}
               </div>
             </div>
           </div>
@@ -81,6 +85,7 @@ function SharedItemCard({ item }: { item: SharedItem }) {
 }
 
 export function SharedLanding() {
+  const { t } = useTranslation();
   const { data: sharedItems = [], isLoading } = useSharedItems();
 
   const sharedProjects = sharedItems.filter(i => i.item_type === 'project');
@@ -101,12 +106,12 @@ export function SharedLanding() {
         <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
           <Users className="h-8 w-8 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">Shared with me</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t('sharedLanding.empty.title')}</h1>
         <p className="text-muted-foreground text-center max-w-md mb-2">
-          Projects and notebooks shared with you will appear here.
+          {t('sharedLanding.empty.intro')}
         </p>
         <p className="text-sm text-muted-foreground/70 text-center max-w-sm">
-          When collaborators share their projects or notebooks with you, you'll be able to access them from this dashboard.
+          {t('sharedLanding.empty.hint')}
         </p>
       </div>
     );
@@ -115,9 +120,9 @@ export function SharedLanding() {
   return (
     <div className="flex-1 overflow-auto p-6 max-w-5xl mx-auto w-full">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Shared with me</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-1">{t('sharedLanding.title')}</h1>
         <p className="text-muted-foreground text-sm">
-          Projects and notebooks shared by your collaborators
+          {t('sharedLanding.subtitle')}
         </p>
       </div>
 
@@ -125,7 +130,7 @@ export function SharedLanding() {
         <div className="mb-8">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
             <FolderOpen className="h-4 w-4" />
-            Shared Projects
+            {t('sharedLanding.sections.projects')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {sharedProjects.map(item => (
@@ -139,7 +144,7 @@ export function SharedLanding() {
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
             <BookOpenCheck className="h-4 w-4" />
-            Shared Notebooks
+            {t('sharedLanding.sections.notebooks')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {sharedNotebooks.map(item => (
