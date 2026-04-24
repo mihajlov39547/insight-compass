@@ -160,7 +160,7 @@ export function ChatWorkspace() {
                   className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
                   onClick={() => {
                     createChat.mutate(
-                      { projectId: selectedProjectId!, name: 'New Chat', language: selectedProject!.language },
+                      { projectId: selectedProjectId!, name: 'New Chat', language: (selectedProject!.language as 'en' | 'sr') },
                       { onSuccess: (chat) => setSelectedChatId(chat.id) }
                     );
                   }}
@@ -190,7 +190,7 @@ export function ChatWorkspace() {
               className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
               onClick={() => {
                 createChat.mutate(
-                  { projectId: selectedProjectId!, name: 'New Chat', language: selectedProject!.language },
+                  { projectId: selectedProjectId!, name: 'New Chat', language: (selectedProject!.language as 'en' | 'sr') },
                   { onSuccess: (chat) => setSelectedChatId(chat.id) }
                 );
               }}
