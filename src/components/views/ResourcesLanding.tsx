@@ -1148,11 +1148,12 @@ function AddSourceDialog({
 }
 
 function PermissionRow({ label, enabled }: { label: string; enabled: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between rounded-md border border-border/60 px-2.5 py-1.5">
       <span className="text-xs text-muted-foreground">{label}</span>
       <Badge variant={enabled ? 'secondary' : 'outline'} className="text-[10px] px-1.5 py-0">
-        {enabled ? 'Allowed' : 'Not allowed'}
+        {enabled ? t('resources.badges.allowed') : t('resources.badges.notAllowed')}
       </Badge>
     </div>
   );
