@@ -1271,7 +1271,7 @@ function ResourceDetailsDrawer({
                   {/* Summary */}
                   {resource.summary && (
                     <section className="space-y-1.5">
-                      <h3 className="text-sm font-medium">Summary</h3>
+                      <h3 className="text-sm font-medium">{t('resources.drawer.sections.summary')}</h3>
                       <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{resource.summary}</p>
                     </section>
                   )}
