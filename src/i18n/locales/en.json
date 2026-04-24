@@ -9,5 +9,51 @@
         "sr-latn": "SR"
       }
     }
+  },
+  "sidebar": {
+    "nav": {
+      "home": "Home",
+      "search": "Search",
+      "resources": "Resources",
+      "starred": "Starred",
+      "sharedWithMe": "Shared with me",
+      "recents": "Recents"
+    },
+    "projects": {
+      "section": "My Projects",
+      "all": "All projects",
+      "newTooltip": "New Project",
+      "loading": "Loading projects...",
+      "empty": "No projects yet"
+    },
+    "notebooks": {
+      "section": "My Notebooks",
+      "all": "All notebooks",
+      "newTooltip": "New Notebook",
+      "empty": "No notebooks yet",
+      "collapse": "Collapse notebooks",
+      "expand": "Expand notebooks"
+    },
+    "sort": {
+      "alphaNone": "Sort A→Z",
+      "alphaAsc": "Sorted A→Z",
+      "alphaDesc": "Sorted Z→A",
+      "dateUpdated": "Recently updated",
+      "dateNewest": "Newest first",
+      "dateOldest": "Oldest first",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all"
+    },
+    "recents": {
+      "empty": "No recent activity",
+      "viewAll": "View all →"
+    },
+    "plan": {
+      "suffix": "Plan",
+      "upgrade": "Upgrade for more features"
+    },
+    "workspaceSuffix": "'s Knowledge Assistant",
+    "expandSidebar": "Expand sidebar",
+    "notifications": "Notifications"
   }
 }

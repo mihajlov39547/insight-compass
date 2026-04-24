@@ -9,5 +9,51 @@
         "sr-latn": "SR"
       }
     }
+  },
+  "sidebar": {
+    "nav": {
+      "home": "Početna",
+      "search": "Pretraga",
+      "resources": "Resursi",
+      "starred": "Označeno zvezdicom",
+      "sharedWithMe": "Deljeno sa mnom",
+      "recents": "Nedavno"
+    },
+    "projects": {
+      "section": "Moji projekti",
+      "all": "Svi projekti",
+      "newTooltip": "Novi projekat",
+      "loading": "Učitavanje projekata...",
+      "empty": "Još nema projekata"
+    },
+    "notebooks": {
+      "section": "Moje sveske",
+      "all": "Sve sveske",
+      "newTooltip": "Nova sveska",
+      "empty": "Još nema svesaka",
+      "collapse": "Skupi sveske",
+      "expand": "Proširi sveske"
+    },
+    "sort": {
+      "alphaNone": "Sortiraj A→Š",
+      "alphaAsc": "Sortirano A→Š",
+      "alphaDesc": "Sortirano Š→A",
+      "dateUpdated": "Nedavno ažurirano",
+      "dateNewest": "Najnovije",
+      "dateOldest": "Najstarije",
+      "expandAll": "Proširi sve",
+      "collapseAll": "Skupi sve"
+    },
+    "recents": {
+      "empty": "Nema nedavnih aktivnosti",
+      "viewAll": "Prikaži sve →"
+    },
+    "plan": {
+      "suffix": "plan",
+      "upgrade": "Nadogradite za više funkcija"
+    },
+    "workspaceSuffix": " — Asistent za znanje",
+    "expandSidebar": "Proširi bočnu traku",
+    "notifications": "Obaveštenja"
   }
 }

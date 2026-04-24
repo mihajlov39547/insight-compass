@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   ChevronLeft, ChevronRight, Plus, Search, MessageSquare, FolderOpen,
   MoreHorizontal, Bell, ChevronDown, ChevronUp,
@@ -56,6 +57,7 @@ export function AppSidebar() {
   } = useApp();
 
   const { user: authUser, profile } = useAuth();
+  const { t } = useTranslation();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: notebooks = [] } = useNotebooks();
@@ -138,8 +140,8 @@ export function AppSidebar() {
     if (next !== 'updated') setAlphaSort('none');
   };
 
-  const alphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[alphaSort];
-  const dateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[dateSort];
+  const alphaLabel = { none: t('sidebar.sort.alphaNone'), asc: t('sidebar.sort.alphaAsc'), desc: t('sidebar.sort.alphaDesc') }[alphaSort];
+  const dateLabel = { updated: t('sidebar.sort.dateUpdated'), newest: t('sidebar.sort.dateNewest'), oldest: t('sidebar.sort.dateOldest') }[dateSort];
 
   const expandAll = () => setExpandedProjects(new Set(projects.map(p => p.id)));
   const collapseAll = () => setExpandedProjects(new Set());
@@ -164,8 +166,8 @@ export function AppSidebar() {
     if (next !== 'updated') setNbAlphaSort('none');
   };
 
-  const nbAlphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[nbAlphaSort];
-  const nbDateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[nbDateSort];
+  const nbAlphaLabel = { none: t('sidebar.sort.alphaNone'), asc: t('sidebar.sort.alphaAsc'), desc: t('sidebar.sort.alphaDesc') }[nbAlphaSort];
+  const nbDateLabel = { updated: t('sidebar.sort.dateUpdated'), newest: t('sidebar.sort.dateNewest'), oldest: t('sidebar.sort.dateOldest') }[nbDateSort];
 
   // Recents data — notebooks and chats only, 2 items in sidebar
   const recentItems = useMemo(() => {
@@ -491,26 +493,26 @@ export function AppSidebar() {
           <Button variant="ghost" size="icon" className="text-sidebar-foreground hover:bg-sidebar-accent mb-3" onClick={() => setSidebarCollapsed(false)}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Expand sidebar</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.expandSidebar')}</TooltipContent></Tooltip>
 
         {/* Global nav */}
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'home' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('home')}>
             <Home className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Home</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.home')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'search' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('search')}>
             <Search className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Search</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.search')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'resources' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('resources')}>
             <FileText className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Resources</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.resources')}</TooltipContent></Tooltip>
 
         <div className="w-6 border-t border-sidebar-border my-2" />
 
@@ -519,13 +521,13 @@ export function AppSidebar() {
           <Button variant="ghost" size="icon" className="text-sidebar-primary hover:bg-sidebar-accent mb-1" onClick={() => setShowNewProject(true)}>
             <FolderPlus className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">New Project</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.projects.newTooltip')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className="text-sidebar-primary hover:bg-sidebar-accent mb-1" onClick={handleCreateNotebook}>
             <BookPlus className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">New Notebook</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.notebooks.newTooltip')}</TooltipContent></Tooltip>
 
         <div className="w-6 border-t border-sidebar-border my-2" />
 
@@ -533,19 +535,19 @@ export function AppSidebar() {
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'starred' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('starred')}>
             <Star className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Starred</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.starred')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'shared' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('shared')}>
             <Users className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Shared with me</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.sharedWithMe')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'recents' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('recents')}>
             <Clock className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Recents</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.recents')}</TooltipContent></Tooltip>
 
         <div className="flex-1" />
 
@@ -555,13 +557,13 @@ export function AppSidebar() {
             <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `plan-badge-${currentPlan}`)}>
               <PlanIcon className="h-4 w-4" />
             </div>
-          </TooltipTrigger><TooltipContent side="right">{planLabels[currentPlan]} Plan</TooltipContent></Tooltip>
+          </TooltipTrigger><TooltipContent side="right">{planLabels[currentPlan]} {t('sidebar.plan.suffix')}</TooltipContent></Tooltip>
           <Tooltip><TooltipTrigger asChild>
             <Button variant="ghost" size="icon" className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent" onClick={() => setShowNotifications(true)}>
               <Bell className="h-4 w-4" />
               {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center">{unreadCount}</span>}
             </Button>
-          </TooltipTrigger><TooltipContent side="right">Notifications</TooltipContent></Tooltip>
+          </TooltipTrigger><TooltipContent side="right">{t('sidebar.notifications')}</TooltipContent></Tooltip>
           <Avatar className="h-8 w-8 cursor-pointer">
             {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
             <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">{initials}</AvatarFallback>
@@ -583,7 +585,7 @@ export function AppSidebar() {
           <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
           </div>
-          <span className="text-sm font-semibold text-sidebar-foreground truncate">{firstName}'s Knowledge Assistant</span>
+          <span className="text-sm font-semibold text-sidebar-foreground truncate">{firstName}{t('sidebar.workspaceSuffix')}</span>
         </div>
         <Button variant="ghost" size="icon" className="ml-2 text-sidebar-foreground/70 hover:bg-sidebar-accent flex-shrink-0 h-7 w-7" onClick={() => setSidebarCollapsed(true)}>
           <ChevronLeft className="h-4 w-4" />
@@ -600,7 +602,7 @@ export function AppSidebar() {
           onClick={() => navigateTo('home')}
         >
           <Home className="h-4 w-4 flex-shrink-0" />
-          <span>Home</span>
+          <span>{t('sidebar.nav.home')}</span>
         </button>
 
         <button
@@ -611,7 +613,7 @@ export function AppSidebar() {
           onClick={() => navigateTo('search')}
         >
           <Search className="h-4 w-4 flex-shrink-0" />
-          <span>Search</span>
+          <span>{t('sidebar.nav.search')}</span>
         </button>
 
         <button
@@ -622,7 +624,7 @@ export function AppSidebar() {
           onClick={() => navigateTo('resources')}
         >
           <FileText className="h-4 w-4 flex-shrink-0" />
-          <span>Resources</span>
+          <span>{t('sidebar.nav.resources')}</span>
         </button>
       </div>
 
@@ -635,7 +637,7 @@ export function AppSidebar() {
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
                   {projectsSectionOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                  My Projects
+                  {t('sidebar.projects.section')}
                 </button>
               </CollapsibleTrigger>
               <div className="flex items-center gap-0.5">
@@ -653,7 +655,7 @@ export function AppSidebar() {
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={(e) => { e.stopPropagation(); if (expandedProjects.size === projects.length) { collapseAll(); } else { expandAll(); } }}>
                     {expandedProjects.size === projects.length ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
                   </Button>
-                </TooltipTrigger><TooltipContent side="top" className="text-xs">{expandedProjects.size === projects.length ? 'Collapse all' : 'Expand all'}</TooltipContent></Tooltip>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{expandedProjects.size === projects.length ? t('sidebar.sort.collapseAll') : t('sidebar.sort.expandAll')}</TooltipContent></Tooltip>
               </div>
             </div>
 
@@ -671,16 +673,16 @@ export function AppSidebar() {
                   <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'projects' ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
                     <FolderOpen className="h-3.5 w-3.5" />
                   </div>
-                  <span className="truncate">All projects</span>
+                  <span className="truncate">{t('sidebar.projects.all')}</span>
                 </button>
                 <Tooltip><TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent flex-shrink-0" onClick={() => setShowNewProject(true)}>
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
-                </TooltipTrigger><TooltipContent>New Project</TooltipContent></Tooltip>
+                </TooltipTrigger><TooltipContent>{t('sidebar.projects.newTooltip')}</TooltipContent></Tooltip>
               </div>
 
-              {projectsLoading && <p className="text-xs text-sidebar-muted px-2 py-4 text-center">Loading projects...</p>}
+              {projectsLoading && <p className="text-xs text-sidebar-muted px-2 py-4 text-center">{t('sidebar.projects.loading')}</p>}
 
               {sortedProjects.map((project) => (
                 <ProjectItem
@@ -700,7 +702,7 @@ export function AppSidebar() {
                   onRenameChat={(chatId, currentName) => { setRenameChatId(chatId); setRenameChatValue(currentName); }}
                 />
               ))}
-              {!projectsLoading && projects.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No projects yet</p>}
+              {!projectsLoading && projects.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.projects.empty')}</p>}
             </CollapsibleContent>
           </Collapsible>
 
@@ -710,7 +712,7 @@ export function AppSidebar() {
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
                   {notebooksSectionOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                  My Notebooks
+                  {t('sidebar.notebooks.section')}
                 </button>
               </CollapsibleTrigger>
               <div className="flex items-center gap-0.5">
@@ -728,7 +730,7 @@ export function AppSidebar() {
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={(e) => { e.stopPropagation(); setNotebooksListOpen(prev => !prev); }}>
                     {notebooksListOpen ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
                   </Button>
-                </TooltipTrigger><TooltipContent side="top" className="text-xs">{notebooksListOpen ? 'Collapse notebooks' : 'Expand notebooks'}</TooltipContent></Tooltip>
+                </TooltipTrigger><TooltipContent side="top" className="text-xs">{notebooksListOpen ? t('sidebar.notebooks.collapse') : t('sidebar.notebooks.expand')}</TooltipContent></Tooltip>
               </div>
             </div>
 
@@ -746,13 +748,13 @@ export function AppSidebar() {
                   <div className={cn("h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0", activeView === 'notebooks' && !selectedNotebookId ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70")}>
                     <BookOpenCheck className="h-3.5 w-3.5" />
                   </div>
-                  <span className="truncate">All notebooks</span>
+                  <span className="truncate">{t('sidebar.notebooks.all')}</span>
                 </button>
                 <Tooltip><TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent flex-shrink-0" onClick={handleCreateNotebook}>
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
-                </TooltipTrigger><TooltipContent>New Notebook</TooltipContent></Tooltip>
+                </TooltipTrigger><TooltipContent>{t('sidebar.notebooks.newTooltip')}</TooltipContent></Tooltip>
               </div>
 
               {notebooksListOpen && (
@@ -777,7 +779,7 @@ export function AppSidebar() {
                       onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id, nb.name)}
                     />
                   ))}
-                  {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No notebooks yet</p>}
+                  {notebooks.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.notebooks.empty')}</p>}
                 </div>
               )}
             </CollapsibleContent>
@@ -793,7 +795,7 @@ export function AppSidebar() {
               onClick={() => navigateTo('starred')}
             >
               <Star className="h-4 w-4 flex-shrink-0" />
-              <span>Starred</span>
+              <span>{t('sidebar.nav.starred')}</span>
             </button>
           </div>
 
@@ -807,7 +809,7 @@ export function AppSidebar() {
               onClick={() => navigateTo('shared')}
             >
               <Users className="h-4 w-4 flex-shrink-0" />
-              <span>Shared with me</span>
+              <span>{t('sidebar.nav.sharedWithMe')}</span>
             </button>
           </div>
 
@@ -817,13 +819,13 @@ export function AppSidebar() {
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
                   <Clock className="h-3 w-3" />
-                  Recents
+                  {t('sidebar.nav.recents')}
                 </button>
               </CollapsibleTrigger>
             </div>
             <CollapsibleContent className="space-y-0.5 animate-fade-in">
               {recentItems.length === 0 ? (
-                <p className="text-xs text-sidebar-muted px-2 py-1">No recent activity</p>
+                <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.recents.empty')}</p>
               ) : (
                 recentItems.map((item) => (
                   <Tooltip key={`${item.type}-${item.id}`}>
@@ -848,7 +850,7 @@ export function AppSidebar() {
                   className="w-full text-xs text-sidebar-muted hover:text-sidebar-foreground px-2.5 py-1 transition-colors text-left"
                   onClick={() => navigateTo('recents')}
                 >
-                  View all →
+                  {t('sidebar.recents.viewAll')}
                 </button>
               )}
             </CollapsibleContent>
@@ -861,8 +863,8 @@ export function AppSidebar() {
         <div className={cn("rounded-lg p-3 flex items-center gap-3", `plan-badge-${currentPlan}`)}>
           <PlanIcon className="h-5 w-5" />
           <div className="flex-1">
-            <p className="text-sm font-medium">{planLabels[currentPlan]} Plan</p>
-            {currentPlan !== 'enterprise' && <p className="text-xs opacity-80">Upgrade for more features</p>}
+            <p className="text-sm font-medium">{planLabels[currentPlan]} {t('sidebar.plan.suffix')}</p>
+            {currentPlan !== 'enterprise' && <p className="text-xs opacity-80">{t('sidebar.plan.upgrade')}</p>}
           </div>
         </div>
         <div className="flex items-center gap-3">
