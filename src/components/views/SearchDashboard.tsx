@@ -236,14 +236,14 @@ export function SearchDashboard() {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="px-6 pt-6 pb-4 border-b border-border">
-        <h1 className="text-2xl font-bold text-foreground mb-4">Search</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-4">{t('search.title')}</h1>
         <div className="relative max-w-2xl">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             ref={inputRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search projects, notebooks…"
+            placeholder={t('search.placeholder')}
             className="pl-10 pr-9 h-11 text-base"
           />
           {searchQuery && (
