@@ -267,5 +267,18 @@
   },
   "chat": {
     "welcomeMessage": "Welcome! I can help you explore and work with the information in this project. You can upload files, build a knowledge base, ask questions about your documents, and get grounded answers based on the content available here. To get started, add files to this chat or project, then ask a question, request a summary, or explore key insights."
+  },
+  "resources": {
+    "title": "Resources",
+    "subtitle": "All documents and resources across your projects and notebooks",
+    "addSource": "Add source",
+    "stats": {
+      "total": "Total",
+      "ready": "Ready",
+      "processing": "Processing",
+      "failed": "Failed",
+      "mine": "Mine",
+      "shared": "Shared"
+    }
   }
 }

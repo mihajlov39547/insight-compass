@@ -273,5 +273,18 @@
   },
   "chat": {
     "welcomeMessage": "Dobrodošli! Mogu da vam pomognem da istražite i radite sa informacijama u ovom projektu. Možete otpremati datoteke, izgraditi bazu znanja, postavljati pitanja o vašim dokumentima i dobijati utemeljene odgovore zasnovane na dostupnom sadržaju. Da biste započeli, dodajte datoteke u ovo ćaskanje ili projekat, pa zatim postavite pitanje, zatražite sažetak ili istražite ključne uvide."
+  },
+  "resources": {
+    "title": "Resursi",
+    "subtitle": "Svi dokumenti i resursi u vašim projektima i sveskama",
+    "addSource": "Dodaj izvor",
+    "stats": {
+      "total": "Ukupno",
+      "ready": "Spremno",
+      "processing": "U obradi",
+      "failed": "Neuspešno",
+      "mine": "Moji",
+      "shared": "Deljeno"
+    }
   }
 }
