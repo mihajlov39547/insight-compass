@@ -1278,7 +1278,7 @@ function ResourceDetailsDrawer({
 
                   {/* Metadata */}
                   <section className="space-y-2">
-                    <h3 className="text-sm font-medium">Metadata</h3>
+                    <h3 className="text-sm font-medium">{t('resources.drawer.sections.metadata')}</h3>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <MetaCell label="Resource ID" value={resource.id} mono />
                       <MetaCell label="File size" value={formatFileSize(resource.sizeBytes)} />
