@@ -183,7 +183,7 @@ export default function ProfileSettings() {
     const nextState = buildSavedProfile({ authUser, profile: data ?? null });
     setSavedProfile(nextState);
     applyProfileState(nextState);
-  }, [applyProfileState, authUser]);
+  }, [applyProfileState, authUser, t]);
 
   useEffect(() => {
     if (authUser) {
