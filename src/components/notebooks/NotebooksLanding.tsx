@@ -139,7 +139,7 @@ export function NotebooksLanding() {
     if (!createName.trim()) return;
     createNotebook.mutate({ name: createName.trim(), description: createDescription.trim(), language: createLanguage }, {
       onSuccess: () => {
-        toast.success('Notebook created');
+        toast.success(t('notebooksLanding.create.success'));
         setShowCreate(false);
         setCreateName('');
         setCreateDescription('');
@@ -159,14 +159,14 @@ export function NotebooksLanding() {
     if (!editNotebook || !editName.trim()) return;
     updateNotebook.mutate({ id: editNotebook.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
       onSuccess: () => {
-        toast.success('Notebook updated');
+        toast.success(t('notebooksLanding.manage.updated'));
         setEditNotebook(null);
       },
     });
   };
 
   const handleArchive = (id: string) => {
-    archiveNotebook.mutate(id, { onSuccess: () => toast.success('Notebook archived') });
+    archiveNotebook.mutate(id, { onSuccess: () => toast.success(t('notebooksLanding.delete.archived')) });
   };
 
   const handleDelete = (id: string) => {
@@ -177,7 +177,7 @@ export function NotebooksLanding() {
     if (!pendingDeleteId) return;
     deleteNotebook.mutate(pendingDeleteId, {
       onSuccess: () => {
-        toast.success('Notebook and all its data deleted');
+        toast.success(t('notebooksLanding.delete.success'));
         setPendingDeleteId(null);
       },
     });
@@ -198,11 +198,11 @@ export function NotebooksLanding() {
       <div className="max-w-6xl mx-auto px-6 py-10 animate-fade-in">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">My Notebooks</h1>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">{t('notebooksLanding.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {hasNotebooks
-              ? `${notebooks.length} notebook${notebooks.length !== 1 ? 's' : ''}`
-              : 'No notebooks yet'}
+              ? t('notebooksLanding.count', { count: notebooks.length })
+              : t('notebooksLanding.empty')}
           </p>
         </div>
 
@@ -217,7 +217,7 @@ export function NotebooksLanding() {
               <Plus className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
             </div>
             <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              {hasNotebooks ? 'Create new notebook' : 'Create your first notebook'}
+              {hasNotebooks ? t('notebooksLanding.createNew') : t('notebooksLanding.createFirst')}
             </span>
           </button>
 
@@ -263,11 +263,11 @@ export function NotebooksLanding() {
                   </h3>
                 </div>
                 <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
-                  <span>{formatLastActivity(notebook.updated_at)}</span>
+                  <span>{formatLastActivity(notebook.updated_at, t, dateLocale)}</span>
                   <span>·</span>
                   <div className="flex items-center gap-1">
                     <FileText className="h-3 w-3" />
-                    <span>{docCount} source{docCount !== 1 ? 's' : ''}</span>
+                    <span>{t('notebooksLanding.sources', { count: docCount })}</span>
                   </div>
                 </div>
               </div>
