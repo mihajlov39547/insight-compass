@@ -1188,6 +1188,7 @@ function ResourceDetailsDrawer({
   isRetryingTranscript: boolean;
   isDeleting: boolean;
 }) {
+  const { t } = useTranslation();
   const resourceId = resource?.id ?? null;
   const [detailsTab, setDetailsTab] = useState<'overview' | 'content'>('overview');
 
