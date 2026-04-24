@@ -269,6 +269,88 @@
       "title": "Dodajte izvor da biste započeli",
       "description": "Otpremite dokument ili dodajte URL veb-sajta da počnete sa postavljanjem pitanja.",
       "hint": "Još nema dodatih izvora. Pogledajte panel Izvori sa leve strane."
+    },
+    "sources": {
+      "title": "Izvori",
+      "addSource": "Dodaj izvor",
+      "expand": "Proširi izvore",
+      "collapse": "Skupi izvore",
+      "empty": {
+        "title": "Još nema izvora",
+        "description": "Otpremite dokumente ili dodajte video zapise da biste počeli sa pitanjima",
+        "upload": "Otpremi"
+      },
+      "enableSource": "Omogući izvor",
+      "disableSource": "Onemogući izvor",
+      "retryTranscript": "Pokušaj transkript ponovo",
+      "transcriptStatus": "transkript {{status}}",
+      "footerEnabled_one": "{{count}} izvor omogućen",
+      "footerEnabled_few": "{{count}} izvora omogućeno",
+      "footerEnabled_other": "{{count}} izvora omogućeno"
+    },
+    "notes": {
+      "title": "Beleške",
+      "addNote": "Dodaj belešku",
+      "expand": "Proširi beleške",
+      "collapse": "Skupi beleške",
+      "empty": {
+        "title": "Još nema beleški",
+        "description": "Sačuvajte uvide iz ćaskanja ili kreirajte sopstvenu belešku."
+      },
+      "emptyNote": "Prazna beleška",
+      "untitled": "Beleška bez naslova",
+      "aiInsight": "AI uvid",
+      "modal": {
+        "editTitle": "Izmeni belešku",
+        "viewTitle": "Pregled beleške",
+        "srDescription": "Izmenite svoju belešku",
+        "titlePlaceholder": "Naslov beleške",
+        "contentPlaceholder": "Napišite svoju belešku…",
+        "addToSources": "Dodaj u izvore",
+        "delete": "Obriši",
+        "cancel": "Otkaži",
+        "close": "Zatvori",
+        "save": "Sačuvaj"
+      },
+      "toasts": {
+        "savedFromChat": "Sačuvano u beleške — sada možete da uređujete",
+        "copied": "Kopirano u privremenu memoriju",
+        "noteSourceUpdated": "Izvor beleške ažuriran — započeta ponovna obrada",
+        "noteSourceUpdatedReprocessing": "Izvor beleške ažuriran — ponovna obrada",
+        "noteAddedToSources": "Beleška dodata u izvore",
+        "addToSourcesFailed": "Neuspešno dodavanje beleške u izvore"
+      },
+      "permissions": {
+        "createDenied": "Nemate dozvolu za kreiranje beleški",
+        "editDenied": "Nemate dozvolu za izmenu beleški",
+        "deleteDenied": "Nemate dozvolu za brisanje beleški",
+        "manageSourcesDenied": "Nemate dozvolu za upravljanje izvorima sveske"
+      }
+    },
+    "chat": {
+      "loading": "Učitavanje…",
+      "askTitle": "Postavljajte pitanja o vašim izvorima",
+      "askDescription": "Koristite ćaskanje da sažmete, uporedite, izvučete uvide ili istražite ideje iz priloženog materijala.",
+      "researching": "Istraživanje veba…",
+      "searching": "Pretraživanje veba…",
+      "working": "Radim…",
+      "failed": "Neuspešno dobijanje odgovora",
+      "dismiss": "Odbaci",
+      "readOnly": "Imate pristup samo za čitanje ovoj svesci.",
+      "save": "Sačuvaj u belešku",
+      "copy": "Kopiraj",
+      "delete": "Obriši",
+      "deleteDialog": {
+        "title": "Obriši poruku",
+        "description": "Ovo će trajno obrisati ovo pitanje i odgovarajući odgovor iz sistema i baze podataka. Ova radnja se ne može poništiti.",
+        "cancel": "Otkaži",
+        "confirm": "Obriši"
+      }
+    },
+    "toasts": {
+      "renamed": "Sveska preimenovana",
+      "youtubeAdded": "Dodato u izvore — izvlačenje transkripta",
+      "youtubeFailed": "Neuspešno dodavanje videa u izvore"
     }
   },
   "chat": {
