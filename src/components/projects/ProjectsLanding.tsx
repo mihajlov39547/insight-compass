@@ -221,7 +221,7 @@ export function ProjectsLanding() {
           setSelectedProjectId(null);
           setSelectedChatId(null);
         }
-        toast.success('Project archived');
+        toast.success(t('projectsLanding.delete.archived'));
       },
     });
   };
