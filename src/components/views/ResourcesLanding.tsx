@@ -1375,32 +1375,32 @@ function ResourceDetailsDrawer({
           <div className="border-t border-border px-6 py-3 flex items-center gap-2 flex-wrap">
             {canOpenWorkspace && (
               <Button size="sm" className="gap-1.5" onClick={() => onOpenResource(resource)}>
-                <ExternalLink className="h-3.5 w-3.5" /> Open workspace
+                <ExternalLink className="h-3.5 w-3.5" /> {t('resources.actions.openWorkspace')}
               </Button>
             )}
             {!canOpenWorkspace && canFallbackPersonalOpen && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onOpenPersonalFallback(resource)}>
-                <Globe className="h-3.5 w-3.5" /> View in personal resources
+                <Globe className="h-3.5 w-3.5" /> {t('resources.actions.viewInPersonal')}
               </Button>
             )}
             {resource.canDownload && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
-                <Download className="h-3.5 w-3.5" /> Download
+                <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
               </Button>
             )}
             {resource.canRename && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRename(resource)}>
-                <FileType className="h-3.5 w-3.5" /> Rename
+                <FileType className="h-3.5 w-3.5" /> {t('resources.actions.rename')}
               </Button>
             )}
             {resource.canRetry && resource.readiness === 'failed' && !canRetryTranscript && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRetry(resource)} disabled={isRetrying}>
-                <RotateCcw className="h-3.5 w-3.5" /> Retry
+                <RotateCcw className="h-3.5 w-3.5" /> {t('resources.actions.retry')}
               </Button>
             )}
             {canRetryTranscript && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onRetryTranscript(resource)} disabled={isRetryingTranscript}>
-                <RotateCcw className="h-3.5 w-3.5" /> Retry transcript
+                <RotateCcw className="h-3.5 w-3.5" /> {t('resources.actions.retryTranscript')}
               </Button>
             )}
             {resource.canDelete && (
@@ -1409,7 +1409,7 @@ function ResourceDetailsDrawer({
                 className="gap-1.5 text-destructive border-destructive/30 hover:text-destructive"
                 onClick={() => onDelete(resource)} disabled={isDeleting}
               >
-                <Trash2 className="h-3.5 w-3.5" /> Delete
+                <Trash2 className="h-3.5 w-3.5" /> {t('resources.actions.delete')}
               </Button>
             )}
           </div>
