@@ -563,11 +563,11 @@ export function ResourcesLanding() {
             <div className="space-y-1">
               {/* Table header */}
               <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-                <span>Resource</span>
-                <span>Type</span>
-                <span>Location</span>
-                <span>Status</span>
-                <span>Updated</span>
+                <span>{t('resources.table.resource')}</span>
+                <span>{t('resources.table.type')}</span>
+                <span>{t('resources.table.location')}</span>
+                <span>{t('resources.table.status')}</span>
+                <span>{t('resources.table.updated')}</span>
                 <span></span>
               </div>
 
