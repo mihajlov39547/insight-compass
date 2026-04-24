@@ -841,25 +841,25 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
               {canOpen && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onOpen}>
                   <ExternalLink className="h-3.5 w-3.5" />
-                  Open workspace
+                  {t('resources.actions.openWorkspace')}
                 </DropdownMenuItem>
               )}
               {canViewDetails && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onViewDetails}>
                   <Eye className="h-3.5 w-3.5" />
-                  View details
+                  {t('resources.actions.viewDetails')}
                 </DropdownMenuItem>
               )}
               {canDownload && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onDownload}>
                   <Download className="h-3.5 w-3.5" />
-                  Download
+                  {t('resources.actions.download')}
                 </DropdownMenuItem>
               )}
               {canRename && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onRename}>
                   <FileType className="h-3.5 w-3.5" />
-                  Rename
+                  {t('resources.actions.rename')}
                 </DropdownMenuItem>
               )}
               {canRetry && (
@@ -877,7 +877,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
                     disabled={isDeleting}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    Delete
+                    {t('resources.actions.delete')}
                   </DropdownMenuItem>
                 </>
               )}
