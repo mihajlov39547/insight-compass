@@ -795,7 +795,7 @@ export function AppSidebar() {
               onClick={() => navigateTo('starred')}
             >
               <Star className="h-4 w-4 flex-shrink-0" />
-              <span>Starred</span>
+              <span>{t('sidebar.nav.starred')}</span>
             </button>
           </div>
 
@@ -809,7 +809,7 @@ export function AppSidebar() {
               onClick={() => navigateTo('shared')}
             >
               <Users className="h-4 w-4 flex-shrink-0" />
-              <span>Shared with me</span>
+              <span>{t('sidebar.nav.sharedWithMe')}</span>
             </button>
           </div>
 
@@ -819,13 +819,13 @@ export function AppSidebar() {
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-1 text-xs font-medium text-sidebar-muted uppercase tracking-wider hover:text-sidebar-foreground transition-colors">
                   <Clock className="h-3 w-3" />
-                  Recents
+                  {t('sidebar.nav.recents')}
                 </button>
               </CollapsibleTrigger>
             </div>
             <CollapsibleContent className="space-y-0.5 animate-fade-in">
               {recentItems.length === 0 ? (
-                <p className="text-xs text-sidebar-muted px-2 py-1">No recent activity</p>
+                <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.recents.empty')}</p>
               ) : (
                 recentItems.map((item) => (
                   <Tooltip key={`${item.type}-${item.id}`}>
@@ -850,7 +850,7 @@ export function AppSidebar() {
                   className="w-full text-xs text-sidebar-muted hover:text-sidebar-foreground px-2.5 py-1 transition-colors text-left"
                   onClick={() => navigateTo('recents')}
                 >
-                  View all →
+                  {t('sidebar.recents.viewAll')}
                 </button>
               )}
             </CollapsibleContent>
@@ -863,8 +863,8 @@ export function AppSidebar() {
         <div className={cn("rounded-lg p-3 flex items-center gap-3", `plan-badge-${currentPlan}`)}>
           <PlanIcon className="h-5 w-5" />
           <div className="flex-1">
-            <p className="text-sm font-medium">{planLabels[currentPlan]} Plan</p>
-            {currentPlan !== 'enterprise' && <p className="text-xs opacity-80">Upgrade for more features</p>}
+            <p className="text-sm font-medium">{planLabels[currentPlan]} {t('sidebar.plan.suffix')}</p>
+            {currentPlan !== 'enterprise' && <p className="text-xs opacity-80">{t('sidebar.plan.upgrade')}</p>}
           </div>
         </div>
         <div className="flex items-center gap-3">
