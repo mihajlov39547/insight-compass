@@ -1337,14 +1337,14 @@ function ResourceDetailsDrawer({
 
                   {/* Permissions */}
                   <section className="space-y-2">
-                    <h3 className="text-sm font-medium">Permissions</h3>
+                    <h3 className="text-sm font-medium">{t('resources.drawer.sections.permissions')}</h3>
                     <div className="grid grid-cols-1 gap-2">
-                      <PermissionRow label="Open" enabled={resource.canOpen} />
-                      <PermissionRow label="View details" enabled={resource.canViewDetails} />
-                      <PermissionRow label="Download" enabled={resource.canDownload} />
-                      <PermissionRow label="Rename" enabled={resource.canRename} />
-                      <PermissionRow label="Delete" enabled={resource.canDelete} />
-                      <PermissionRow label="Retry processing" enabled={resource.canRetry} />
+                      <PermissionRow label={t('resources.drawer.permissions.open')} enabled={resource.canOpen} />
+                      <PermissionRow label={t('resources.drawer.permissions.viewDetails')} enabled={resource.canViewDetails} />
+                      <PermissionRow label={t('resources.drawer.permissions.download')} enabled={resource.canDownload} />
+                      <PermissionRow label={t('resources.drawer.permissions.rename')} enabled={resource.canRename} />
+                      <PermissionRow label={t('resources.drawer.permissions.delete')} enabled={resource.canDelete} />
+                      <PermissionRow label={t('resources.drawer.permissions.retryProcessing')} enabled={resource.canRetry} />
                     </div>
                   </section>
                 </TabsContent>
