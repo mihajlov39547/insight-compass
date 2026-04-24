@@ -114,5 +114,68 @@
       "semantic": "semantičko",
       "keyword": "ključna reč"
     }
+  },
+  "projectsLanding": {
+    "title": "Moji projekti",
+    "count_one": "{{count}} projekat",
+    "count_few": "{{count}} projekta",
+    "count_other": "{{count}} projekata",
+    "empty": "Još nema projekata",
+    "createNew": "Kreiraj novi projekat",
+    "createFirst": "Kreirajte vaš prvi projekat",
+    "intro": "Kreirajte projekat da organizujete dokumente, izgradite bazu znanja i dobijate utemeljene odgovore.",
+    "features": {
+      "documentAnalysis": {
+        "title": "Analiza dokumenata",
+        "description": "Pretražujte sve vaše otpremljene dokumente"
+      },
+      "instantAnswers": {
+        "title": "Trenutni odgovori",
+        "description": "Dobijte tačne odgovore sa pretragom svesnom izvora"
+      },
+      "secure": {
+        "title": "Bezbedno i privatno",
+        "description": "Vaši podaci ostaju u vašem radnom prostoru i kontekstu projekta"
+      }
+    },
+    "time": {
+      "today": "Danas",
+      "yesterday": "Juče"
+    },
+    "manage": {
+      "title": "Upravljanje projektom",
+      "description": "Ažurirajte detalje projekta. Opis pomaže AI-u da pruži bolje odgovore.",
+      "nameLabel": "Naziv projekta",
+      "namePlaceholder": "Naziv projekta",
+      "descriptionLabel": "Opis",
+      "descriptionPlaceholder": "Opišite o čemu je ovaj projekat...",
+      "descriptionHint": "Ovo pomaže AI-u da razume kontekst projekta i pruži bolje odgovore.",
+      "improving": "Poboljšavanje…",
+      "improveWithAi": "Poboljšaj uz AI",
+      "languageLabel": "Jezik",
+      "languageEn": "Engleski",
+      "languageSr": "Srpski (Latinica)",
+      "cancel": "Otkaži",
+      "save": "Sačuvaj izmene",
+      "updated": "Projekat ažuriran",
+      "improveSuccess": "Opis poboljšan",
+      "improveFailed": "Poboljšavanje opisa nije uspelo"
+    },
+    "delete": {
+      "title": "Obriši projekat",
+      "intro": "Ovo će trajno obrisati projekat i sve njegove podatke, uključujući:",
+      "items": {
+        "chats": "Sva ćaskanja i poruke",
+        "documents": "Sve otpremljene dokumente i datoteke",
+        "extracted": "Sav izdvojeni tekst, sažetke i obrađene podatke",
+        "resources": "Sve povezane resurse i transkripte",
+        "sharing": "Sva podešavanja deljenja"
+      },
+      "irreversible": "Ova radnja se ne može poništiti.",
+      "cancel": "Otkaži",
+      "confirm": "Obriši projekat",
+      "success": "Projekat i svi njegovi podaci su obrisani",
+      "archived": "Projekat arhiviran"
+    }
   }
 }

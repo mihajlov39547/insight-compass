@@ -111,5 +111,67 @@
       "semantic": "semantic",
       "keyword": "keyword"
     }
+  },
+  "projectsLanding": {
+    "title": "My Projects",
+    "count_one": "{{count}} project",
+    "count_other": "{{count}} projects",
+    "empty": "No projects yet",
+    "createNew": "Create new project",
+    "createFirst": "Create your first project",
+    "intro": "Create a project to organize your documents, build a knowledge base, and get grounded answers.",
+    "features": {
+      "documentAnalysis": {
+        "title": "Document Analysis",
+        "description": "Query across all your uploaded documents"
+      },
+      "instantAnswers": {
+        "title": "Instant Answers",
+        "description": "Get accurate responses with source-aware retrieval"
+      },
+      "secure": {
+        "title": "Secure & Private",
+        "description": "Your data stays inside your workspace and project context"
+      }
+    },
+    "time": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "manage": {
+      "title": "Manage Project",
+      "description": "Update your project details. The description helps the AI provide better answers.",
+      "nameLabel": "Project name",
+      "namePlaceholder": "Project name",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Describe what this project is about...",
+      "descriptionHint": "This helps the AI understand the project context and provide better answers.",
+      "improving": "Improving…",
+      "improveWithAi": "Improve with AI",
+      "languageLabel": "Language",
+      "languageEn": "English",
+      "languageSr": "Serbian (Latin)",
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "updated": "Project updated",
+      "improveSuccess": "Description improved",
+      "improveFailed": "Failed to improve description"
+    },
+    "delete": {
+      "title": "Delete Project",
+      "intro": "This will permanently delete this project and all of its data, including:",
+      "items": {
+        "chats": "All chats and messages",
+        "documents": "All uploaded documents and files",
+        "extracted": "All extracted text, summaries, and processed data",
+        "resources": "All linked resources and transcripts",
+        "sharing": "All sharing settings"
+      },
+      "irreversible": "This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete Project",
+      "success": "Project and all its data deleted",
+      "archived": "Project archived"
+    }
   }
 }

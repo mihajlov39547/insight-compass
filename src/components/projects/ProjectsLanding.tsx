@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Plus, FileText, Zap, Shield, MessageSquare,
   Atom, FlaskConical, Microscope, Scale, Landmark,
@@ -70,23 +71,25 @@ function hashCode(str: string): number {
   return Math.abs(hash);
 }
 
-function formatLastActivity(dateStr: string): string {
+function formatLastActivity(dateStr: string, t: (key: string) => string, locale: string): string {
   try {
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
+    if (diffDays === 0) return t('projectsLanding.time.today');
+    if (diffDays === 1) return t('projectsLanding.time.yesterday');
     if (diffDays < 7) return formatDistanceToNow(date, { addSuffix: true });
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   } catch {
     return '';
   }
 }
 
 export function ProjectsLanding() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.resolvedLanguage === 'sr' ? 'sr-Latn' : 'en-US';
   const {
     setShowNewProject,
     setSelectedProjectId,
@@ -149,7 +152,7 @@ export function ProjectsLanding() {
       language: editLanguage,
     }, {
       onSuccess: () => {
-        toast.success('Project updated');
+        toast.success(t('projectsLanding.manage.updated'));
         setEditProject(null);
       },
     });
@@ -195,11 +198,11 @@ export function ProjectsLanding() {
       if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
       if (data.description) {
         setEditDescription(data.description);
-        toast.success('Description improved');
+        toast.success(t('projectsLanding.manage.improveSuccess'));
       }
     } catch (err: any) {
       console.error('Improve description error:', err);
-      toast.error(err.message || 'Failed to improve description');
+      toast.error(err.message || t('projectsLanding.manage.improveFailed'));
     } finally {
       setIsImprovingDesc(false);
     }
@@ -218,7 +221,7 @@ export function ProjectsLanding() {
           setSelectedProjectId(null);
           setSelectedChatId(null);
         }
-        toast.success('Project archived');
+        toast.success(t('projectsLanding.delete.archived'));
       },
     });
   };
@@ -235,7 +238,7 @@ export function ProjectsLanding() {
           setSelectedProjectId(null);
           setSelectedChatId(null);
         }
-        toast.success('Project and all its data deleted');
+        toast.success(t('projectsLanding.delete.success'));
         setPendingDeleteId(null);
       },
     });
@@ -256,11 +259,11 @@ export function ProjectsLanding() {
       <div className="max-w-6xl mx-auto px-6 py-10 animate-fade-in">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">My Projects</h1>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">{t('projectsLanding.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {hasProjects
-              ? `${projects.length} project${projects.length !== 1 ? 's' : ''}`
-              : 'No projects yet'}
+              ? t('projectsLanding.count', { count: projects.length })
+              : t('projectsLanding.empty')}
           </p>
         </div>
 
@@ -276,7 +279,7 @@ export function ProjectsLanding() {
                 <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
               <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                Create new project
+                {t('projectsLanding.createNew')}
               </span>
             </button>
 
@@ -328,7 +331,7 @@ export function ProjectsLanding() {
                       <FileText className="h-3.5 w-3.5" />
                       <span>{docCount}</span>
                     </div>
-                    <span className="ml-auto">{formatLastActivity(project.updated_at)}</span>
+                    <span className="ml-auto">{formatLastActivity(project.updated_at, t, dateLocale)}</span>
                   </div>
                 </div>
               );
@@ -346,30 +349,30 @@ export function ProjectsLanding() {
                   <Plus className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
                 <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                  Create your first project
+                  {t('projectsLanding.createFirst')}
                 </span>
               </button>
             </div>
 
             <div className="max-w-3xl mx-auto">
               <p className="text-center text-muted-foreground text-sm mb-8">
-                Create a project to organize your documents, build a knowledge base, and get grounded answers.
+                {t('projectsLanding.intro')}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FeatureBlock
                   icon={<FileText className="h-5 w-5" />}
-                  title="Document Analysis"
-                  description="Query across all your uploaded documents"
+                  title={t('projectsLanding.features.documentAnalysis.title')}
+                  description={t('projectsLanding.features.documentAnalysis.description')}
                 />
                 <FeatureBlock
                   icon={<Zap className="h-5 w-5" />}
-                  title="Instant Answers"
-                  description="Get accurate responses with source-aware retrieval"
+                  title={t('projectsLanding.features.instantAnswers.title')}
+                  description={t('projectsLanding.features.instantAnswers.description')}
                 />
                 <FeatureBlock
                   icon={<Shield className="h-5 w-5" />}
-                  title="Secure & Private"
-                  description="Your data stays inside your workspace and project context"
+                  title={t('projectsLanding.features.secure.title')}
+                  description={t('projectsLanding.features.secure.description')}
                 />
               </div>
             </div>
@@ -380,23 +383,23 @@ export function ProjectsLanding() {
       <Dialog open={!!editProject} onOpenChange={(open) => !open && setEditProject(null)}>
         <DialogContent className="sm:max-w-[480px]" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>Manage Project</DialogTitle>
-            <DialogDescription>Update your project details. The description helps the AI provide better answers.</DialogDescription>
+            <DialogTitle>{t('projectsLanding.manage.title')}</DialogTitle>
+            <DialogDescription>{t('projectsLanding.manage.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="card-edit-project-name">Project name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="card-edit-project-name">{t('projectsLanding.manage.nameLabel')} <span className="text-destructive">*</span></Label>
               <Input
                 id="card-edit-project-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Project name"
+                placeholder={t('projectsLanding.manage.namePlaceholder')}
                 autoFocus
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="card-edit-project-desc">Description <span className="text-destructive">*</span></Label>
+                <Label htmlFor="card-edit-project-desc">{t('projectsLanding.manage.descriptionLabel')} <span className="text-destructive">*</span></Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -410,35 +413,35 @@ export function ProjectsLanding() {
                   ) : (
                     <Sparkles className="h-3 w-3" />
                   )}
-                  {isImprovingDesc ? 'Improving…' : 'Improve with AI'}
+                  {isImprovingDesc ? t('projectsLanding.manage.improving') : t('projectsLanding.manage.improveWithAi')}
                 </Button>
               </div>
               <Textarea
                 id="card-edit-project-desc"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Describe what this project is about..."
+                placeholder={t('projectsLanding.manage.descriptionPlaceholder')}
                 rows={3}
                 className="resize-none"
               />
-              <p className="text-xs text-muted-foreground">This helps the AI understand the project context and provide better answers.</p>
+              <p className="text-xs text-muted-foreground">{t('projectsLanding.manage.descriptionHint')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="card-edit-project-lang">Language</Label>
+              <Label htmlFor="card-edit-project-lang">{t('projectsLanding.manage.languageLabel')}</Label>
               <Select value={editLanguage} onValueChange={(val: 'en' | 'sr') => setEditLanguage(val)}>
                 <SelectTrigger id="card-edit-project-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                  <SelectItem value="en">{t('projectsLanding.manage.languageEn')}</SelectItem>
+                  <SelectItem value="sr">{t('projectsLanding.manage.languageSr')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditProject(null)}>Cancel</Button>
-            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditProject(null)}>{t('projectsLanding.manage.cancel')}</Button>
+            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>{t('projectsLanding.manage.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -446,26 +449,26 @@ export function ProjectsLanding() {
       <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogTitle>{t('projectsLanding.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this project and all of its data, including:
+              {t('projectsLanding.delete.intro')}
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>All chats and messages</li>
-                <li>All uploaded documents and files</li>
-                <li>All extracted text, summaries, and processed data</li>
-                <li>All linked resources and transcripts</li>
-                <li>All sharing settings</li>
+                <li>{t('projectsLanding.delete.items.chats')}</li>
+                <li>{t('projectsLanding.delete.items.documents')}</li>
+                <li>{t('projectsLanding.delete.items.extracted')}</li>
+                <li>{t('projectsLanding.delete.items.resources')}</li>
+                <li>{t('projectsLanding.delete.items.sharing')}</li>
               </ul>
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">{t('projectsLanding.delete.irreversible')}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('projectsLanding.delete.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteProject}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Project
+              {t('projectsLanding.delete.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
