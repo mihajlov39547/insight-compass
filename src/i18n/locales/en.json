@@ -1019,5 +1019,93 @@
     "code": "Inline code",
     "bullet": "Bullet list",
     "numbered": "Numbered list"
+  },
+  "profileSettings": {
+    "title": "Profile Settings",
+    "tabs": {
+      "profile": "Profile",
+      "settings": "App Settings"
+    },
+    "banner": "Profile Banner",
+    "actions": {
+      "edit": "Edit Profile",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "fields": {
+      "name": "Name",
+      "bio": "Bio",
+      "bioPlaceholder": "Tell us about yourself",
+      "location": "Location",
+      "locationPlaceholder": "City, Country",
+      "website": "Website",
+      "websitePlaceholder": "https://...",
+      "phone": "Phone number",
+      "phoneFormat": "Format: 381 60 345-2323",
+      "bannerUrl": "Banner URL",
+      "bannerUrlHelp": "Direct link to a banner image",
+      "avatarUrl": "Avatar URL",
+      "avatarUrlPlaceholder": "Managed by Google — or paste a URL",
+      "avatarUrlHelp": "Your Google profile picture is used by default"
+    },
+    "username": {
+      "title": "Username",
+      "description": "Your public identifier and profile URL.",
+      "placeholder": "username",
+      "update": "Update",
+      "updating": "Saving...",
+      "rules": "Lowercase letters and numbers only.",
+      "errors": {
+        "required": "Username is required.",
+        "pattern": "Username can only contain lowercase letters and numbers.",
+        "taken": "Username is already taken",
+        "saveFailed": "Failed to update username"
+      },
+      "saved": "Username updated"
+    },
+    "email": {
+      "title": "Email",
+      "googleManaged": "Managed by Google — cannot be changed here."
+    },
+    "subscription": {
+      "title": "Subscription",
+      "active": "Active",
+      "comingSoon": "Plan management and upgrades coming soon.",
+      "planSuffix": "Plan",
+      "plans": {
+        "free": { "name": "Free", "description": "Perfect for getting started", "price": "$0 / forever" },
+        "basic": { "name": "Basic", "description": "For individuals and small teams", "price": "$19 / month" },
+        "premium": { "name": "Premium", "description": "For growing teams", "price": "$49 / month" },
+        "enterprise": { "name": "Enterprise", "description": "For large organizations", "price": "Custom" }
+      }
+    },
+    "linkedAccounts": {
+      "title": "Linked Accounts",
+      "googlePrimary": "{{email}} — Primary sign-in method",
+      "connected": "Connected"
+    },
+    "password": {
+      "title": "Password",
+      "googleManaged": "Authentication is managed by Google. Password login is not available.",
+      "change": "Change Password"
+    },
+    "danger": {
+      "title": "Danger Zone",
+      "description": "Permanently delete your account and all associated data. This action cannot be undone.",
+      "deleteButton": "Delete Account",
+      "dialogTitle": "Delete Account",
+      "dialogDescription": "This will permanently delete your account, all your projects, and data. This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Yes, delete my account"
+    },
+    "toasts": {
+      "loadFailed": "Failed to load profile",
+      "saved": "Profile saved",
+      "saveFailed": "Failed to save profile",
+      "phoneInvalid": "Enter a valid phone number in all 3 fields.",
+      "deleted": "Account data deleted. You have been signed out.",
+      "deleteFailed": "Failed to delete account data."
+    }
   }
 }
