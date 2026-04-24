@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AVAILABLE_LANGUAGES, type AvailableLanguageCode } from '@/lib/languages';
+import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, type AvailableLanguageCode } from '@/lib/languages';
 
 interface NewProjectDialogProps {
   open: boolean;
@@ -30,7 +30,7 @@ interface NewProjectDialogProps {
 export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewProjectDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [language, setLanguage] = useState<AvailableLanguageCode>('en');
+  const [language, setLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
   const [nameError, setNameError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
 
@@ -53,7 +53,7 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
   const handleClose = () => {
     setName('');
     setDescription('');
-    setLanguage('en');
+    setLanguage(DEFAULT_LANGUAGE);
     setNameError('');
     setDescriptionError('');
     onOpenChange(false);

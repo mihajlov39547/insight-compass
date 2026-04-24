@@ -45,7 +45,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useRecentChats } from '@/hooks/useRecentChats';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
-import { AVAILABLE_LANGUAGES, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
+import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
 
 export function AppSidebar() {
   const { 
@@ -76,14 +76,14 @@ export function AppSidebar() {
   const [editProject, setEditProject] = useState<DbProject | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editLanguage, setEditLanguage] = useState<AvailableLanguageCode>('en');
+  const [editLanguage, setEditLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
   const [isImprovingDesc, setIsImprovingDesc] = useState(false);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
   const [showCreateNotebook, setShowCreateNotebook] = useState(false);
   const [createNbName, setCreateNbName] = useState('');
   const [createNbDescription, setCreateNbDescription] = useState('');
-  const [createNbLanguage, setCreateNbLanguage] = useState<AvailableLanguageCode>('en');
+  const [createNbLanguage, setCreateNbLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
@@ -105,7 +105,7 @@ export function AppSidebar() {
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editNbName, setEditNbName] = useState('');
   const [editNbDescription, setEditNbDescription] = useState('');
-  const [editNbLanguage, setEditNbLanguage] = useState<AvailableLanguageCode>('en');
+  const [editNbLanguage, setEditNbLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
   const [isImprovingNbDesc, setIsImprovingNbDesc] = useState(false);
   const updateNotebook = useUpdateNotebook();
   const [pendingDeleteChat, setPendingDeleteChat] = useState<{ id: string; projectId: string; name: string } | null>(null);
@@ -211,7 +211,7 @@ export function AppSidebar() {
     createChat.mutate({
       projectId,
       name: `New Chat`,
-      language: project?.language || 'en',
+      language: normalizeLanguageCode(project?.language),
     }, {
       onSuccess: (chat) => {
         setSelectedProjectId(projectId);
@@ -287,7 +287,7 @@ export function AppSidebar() {
         setSelectedProjectId(null); setSelectedChatId(null);
         setSelectedNotebookId(nb.id); setActiveView('notebook-workspace');
         toast.success('Notebook created');
-        setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage('en');
+        setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE);
       }
     });
   };
@@ -360,7 +360,7 @@ export function AppSidebar() {
   const sharedDialogs = (
     <>
       {/* Create Notebook Dialog */}
-      <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage('en'); } }}>
+      <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); } }}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>Create Notebook</DialogTitle>
@@ -392,7 +392,7 @@ export function AppSidebar() {
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage('en'); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); }}>Cancel</Button>
             <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>Create Notebook</Button>
           </DialogFooter>
         </DialogContent>

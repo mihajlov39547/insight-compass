@@ -35,7 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AVAILABLE_LANGUAGES, getDateLocale, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
+import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, getDateLocale, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
 
 const ICONS = [
   Atom, FlaskConical, Microscope, Scale, Landmark, Scroll,
@@ -109,12 +109,12 @@ export function NotebooksLanding() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [createName, setCreateName] = useState('');
   const [createDescription, setCreateDescription] = useState('');
-  const [createLanguage, setCreateLanguage] = useState<AvailableLanguageCode>('en');
+  const [createLanguage, setCreateLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
 
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editLanguage, setEditLanguage] = useState<AvailableLanguageCode>('en');
+  const [editLanguage, setEditLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
   const [improvingDescription, setImprovingDescription] = useState(false);
 
   // Get document counts per notebook
@@ -144,7 +144,7 @@ export function NotebooksLanding() {
         setShowCreate(false);
         setCreateName('');
         setCreateDescription('');
-        setCreateLanguage('en');
+        setCreateLanguage(DEFAULT_LANGUAGE);
       },
     });
   };

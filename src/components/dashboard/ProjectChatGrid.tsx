@@ -12,10 +12,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import type { ItemPermissions } from '@/lib/permissions';
+import { getDateLocale } from '@/lib/languages';
+import { useTranslation } from 'react-i18next';
 
 const BATCH_SIZE = 6;
 
-function formatActivity(dateStr: string): string {
+function formatActivity(dateStr: string, locale: string): string {
   try {
     const date = new Date(dateStr);
     const now = new Date();
@@ -24,7 +26,7 @@ function formatActivity(dateStr: string): string {
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return formatDistanceToNow(date, { addSuffix: true });
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   } catch {
     return '';
   }
@@ -36,6 +38,8 @@ interface Props {
 }
 
 export function ProjectChatGrid({ chats, permissions }: Props) {
+  const { i18n } = useTranslation();
+  const dateLocale = getDateLocale(i18n.resolvedLanguage || i18n.language);
   const { selectedChatId, setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
@@ -148,7 +152,7 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
                   <FileText className="h-3 w-3" />
                   <span>{docCount} doc{docCount !== 1 ? 's' : ''}</span>
                 </div>
-                <span className="ml-auto">{formatActivity(chat.updated_at)}</span>
+                <span className="ml-auto">{formatActivity(chat.updated_at, dateLocale)}</span>
               </div>
             </div>
           );

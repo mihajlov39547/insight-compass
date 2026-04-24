@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
+import { DEFAULT_LANGUAGE } from '@/lib/languages';
 
 export interface GeneralSettings {
   response_length: string;
@@ -29,7 +30,7 @@ const DEFAULTS: GeneralSettings = {
   show_suggested_prompts: true,
   enable_answer_formatting: true,
   layout_preference: 'comfortable',
-  language_preference: 'en',
+  language_preference: DEFAULT_LANGUAGE,
   retrieval_chunk_weight: 0.50,
   retrieval_question_weight: 0.30,
   retrieval_keyword_weight: 0.20,

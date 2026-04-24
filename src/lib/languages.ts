@@ -1,8 +1,10 @@
+export const DEFAULT_DATE_LOCALE = 'en-US';
+
 export const AVAILABLE_LANGUAGES = [
   {
     code: 'en',
     label: 'English',
-    dateLocale: 'en-US',
+    dateLocale: DEFAULT_DATE_LOCALE,
     translationKey: 'languages.en',
   },
   {
@@ -31,5 +33,5 @@ export function normalizeLanguageCode(value?: string | null): AvailableLanguageC
 
 export function getDateLocale(languageCode?: string | null): string {
   const code = normalizeLanguageCode(languageCode);
-  return AVAILABLE_LANGUAGES.find((language) => language.code === code)?.dateLocale ?? 'en-US';
+  return AVAILABLE_LANGUAGES.find((language) => language.code === code)?.dateLocale ?? DEFAULT_DATE_LOCALE;
 }

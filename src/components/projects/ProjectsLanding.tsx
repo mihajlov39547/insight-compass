@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { AVAILABLE_LANGUAGES, getDateLocale, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
+import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, getDateLocale, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
 
 const ICONS = [
   Atom, FlaskConical, Microscope, Scale, Landmark, Scroll,
@@ -110,7 +110,7 @@ export function ProjectsLanding() {
   const [editProject, setEditProject] = React.useState<DbProject | null>(null);
   const [editName, setEditName] = React.useState('');
   const [editDescription, setEditDescription] = React.useState('');
-  const [editLanguage, setEditLanguage] = React.useState<AvailableLanguageCode>('en');
+  const [editLanguage, setEditLanguage] = React.useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
   const [isImprovingDesc, setIsImprovingDesc] = React.useState(false);
 
   const { data: allDocCounts = {} } = useQuery({
