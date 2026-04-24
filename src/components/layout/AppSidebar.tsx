@@ -82,7 +82,7 @@ export function AppSidebar() {
   const [showCreateNotebook, setShowCreateNotebook] = useState(false);
   const [createNbName, setCreateNbName] = useState('');
   const [createNbDescription, setCreateNbDescription] = useState('');
-  const [createNbLanguage, setCreateNbLanguage] = useState<'en' | 'sr-lat'>('en');
+  const [createNbLanguage, setCreateNbLanguage] = useState<'en' | 'sr'>('en');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
