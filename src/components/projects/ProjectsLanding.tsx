@@ -198,11 +198,11 @@ export function ProjectsLanding() {
       if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
       if (data.description) {
         setEditDescription(data.description);
-        toast.success('Description improved');
+        toast.success(t('projectsLanding.manage.improveSuccess'));
       }
     } catch (err: any) {
       console.error('Improve description error:', err);
-      toast.error(err.message || 'Failed to improve description');
+      toast.error(err.message || t('projectsLanding.manage.improveFailed'));
     } finally {
       setIsImprovingDesc(false);
     }
