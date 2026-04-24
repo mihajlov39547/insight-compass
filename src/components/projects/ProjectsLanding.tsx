@@ -279,7 +279,7 @@ export function ProjectsLanding() {
                 <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
               <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                Create new project
+                {t('projectsLanding.createNew')}
               </span>
             </button>
 
