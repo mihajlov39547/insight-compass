@@ -890,13 +890,14 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
 }
 
 function EmptyState({ hasResources, hasFilters }: { hasResources: boolean; hasFilters: boolean }) {
+  const { t } = useTranslation();
   if (hasFilters) {
     return (
       <div className="text-center py-20">
         <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-        <h3 className="text-sm font-medium text-foreground mb-1">No matching resources</h3>
+        <h3 className="text-sm font-medium text-foreground mb-1">{t('resources.empty.noMatches.title')}</h3>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-          Try adjusting your filters or search query to find what you're looking for.
+          {t('resources.empty.noMatches.description')}
         </p>
       </div>
     );
@@ -904,9 +905,9 @@ function EmptyState({ hasResources, hasFilters }: { hasResources: boolean; hasFi
   return (
     <div className="text-center py-20">
       <Globe className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-      <h3 className="text-sm font-medium text-foreground mb-1">No resources yet</h3>
+      <h3 className="text-sm font-medium text-foreground mb-1">{t('resources.empty.none.title')}</h3>
       <p className="text-sm text-muted-foreground max-w-md mx-auto">
-        Upload documents to your projects or notebooks to see them here. Resources from shared workspaces will also appear once available.
+        {t('resources.empty.none.description')}
       </p>
     </div>
   );
