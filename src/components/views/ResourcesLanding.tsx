@@ -675,29 +675,30 @@ function StatPill({ label, value, variant }: {
 }
 
 function ReadinessBadge({ readiness }: { readiness: ReadinessStatus }) {
+  const { t } = useTranslation();
   switch (readiness) {
     case 'ready':
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-green-500/10 text-green-700 border-green-500/20">
-          <CheckCircle2 className="h-2.5 w-2.5" /> Ready
+          <CheckCircle2 className="h-2.5 w-2.5" /> {t('resources.badges.ready')}
         </Badge>
       );
     case 'processing':
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-amber-500/10 text-amber-700 border-amber-500/20">
-          <Loader2 className="h-2.5 w-2.5 animate-spin" /> Processing
+          <Loader2 className="h-2.5 w-2.5 animate-spin" /> {t('resources.badges.processing')}
         </Badge>
       );
     case 'failed':
       return (
         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-destructive/10 text-destructive border-destructive/20">
-          <AlertCircle className="h-2.5 w-2.5" /> Failed
+          <AlertCircle className="h-2.5 w-2.5" /> {t('resources.badges.failed')}
         </Badge>
       );
     default:
       return (
         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-          Unknown
+          {t('resources.badges.unknown')}
         </Badge>
       );
   }
