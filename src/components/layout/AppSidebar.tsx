@@ -493,26 +493,26 @@ export function AppSidebar() {
           <Button variant="ghost" size="icon" className="text-sidebar-foreground hover:bg-sidebar-accent mb-3" onClick={() => setSidebarCollapsed(false)}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Expand sidebar</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.expandSidebar')}</TooltipContent></Tooltip>
 
         {/* Global nav */}
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'home' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('home')}>
             <Home className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Home</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.home')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'search' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('search')}>
             <Search className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Search</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.search')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'resources' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('resources')}>
             <FileText className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Resources</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.resources')}</TooltipContent></Tooltip>
 
         <div className="w-6 border-t border-sidebar-border my-2" />
 
@@ -521,13 +521,13 @@ export function AppSidebar() {
           <Button variant="ghost" size="icon" className="text-sidebar-primary hover:bg-sidebar-accent mb-1" onClick={() => setShowNewProject(true)}>
             <FolderPlus className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">New Project</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.projects.newTooltip')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className="text-sidebar-primary hover:bg-sidebar-accent mb-1" onClick={handleCreateNotebook}>
             <BookPlus className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">New Notebook</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.notebooks.newTooltip')}</TooltipContent></Tooltip>
 
         <div className="w-6 border-t border-sidebar-border my-2" />
 
@@ -535,19 +535,19 @@ export function AppSidebar() {
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'starred' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('starred')}>
             <Star className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Starred</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.starred')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'shared' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('shared')}>
             <Users className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Shared with me</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.sharedWithMe')}</TooltipContent></Tooltip>
 
         <Tooltip><TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'recents' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('recents')}>
             <Clock className="h-4 w-4" />
           </Button>
-        </TooltipTrigger><TooltipContent side="right">Recents</TooltipContent></Tooltip>
+        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.recents')}</TooltipContent></Tooltip>
 
         <div className="flex-1" />
 
