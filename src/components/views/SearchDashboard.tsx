@@ -365,7 +365,7 @@ export function SearchDashboard() {
                         </div>
                         {n.matchSource !== 'name' && (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
-                            {n.matchSource === 'message' ? 'chat match' : 'note match'}
+                            {n.matchSource === 'message' ? t('search.badges.chatMatch') : t('search.badges.noteMatch')}
                           </Badge>
                         )}
                       </button>
