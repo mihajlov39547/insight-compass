@@ -554,16 +554,16 @@ export function NotebookWorkspace() {
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-foreground"
               onClick={() => setSourcesCollapsed(false)}
-              title="Expand sources"
+              title={t('notebookWorkspace.sources.expand')}
             >
               <PanelLeftOpen className="h-4 w-4" />
             </Button>
             <button
               onClick={() => setSourcesCollapsed(false)}
               className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide mt-2"
-              title="Expand sources"
+              title={t('notebookWorkspace.sources.expand')}
             >
-              Sources {hasSources ? `(${documents.length + linkedVideos.length})` : ''}
+              {t('notebookWorkspace.sources.title')} {hasSources ? `(${documents.length + linkedVideos.length})` : ''}
             </button>
           </div>
         ) : (
@@ -576,15 +576,15 @@ export function NotebookWorkspace() {
                   size="icon"
                   className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
                   onClick={() => setSourcesCollapsed(true)}
-                  title="Collapse sources"
+                  title={t('notebookWorkspace.sources.collapse')}
                 >
                   <PanelLeftClose className="h-4 w-4" />
                 </Button>
-                <h2 className="text-sm font-semibold text-foreground">Sources</h2>
+                <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.sources.title')}</h2>
               </div>
               {permissions.canUploadDocuments && (
                 <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setShowUpload(true)}>
-                  <Plus className="h-3 w-3" /> Add source
+                  <Plus className="h-3 w-3" /> {t('notebookWorkspace.sources.addSource')}
                 </Button>
               )}
             </div>
@@ -594,11 +594,11 @@ export function NotebookWorkspace() {
                   <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
                     <FileText className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <p className="text-sm font-medium text-foreground mb-1">No sources yet</p>
-                  <p className="text-xs text-muted-foreground mb-3">Upload documents or attach videos to start asking questions</p>
+                  <p className="text-sm font-medium text-foreground mb-1">{t('notebookWorkspace.sources.empty.title')}</p>
+                  <p className="text-xs text-muted-foreground mb-3">{t('notebookWorkspace.sources.empty.description')}</p>
                   {permissions.canUploadDocuments && (
                     <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => setShowUpload(true)}>
-                      <Upload className="h-3 w-3" /> Upload
+                      <Upload className="h-3 w-3" /> {t('notebookWorkspace.sources.empty.upload')}
                     </Button>
                   )}
                 </div>
@@ -615,7 +615,7 @@ export function NotebookWorkspace() {
                           <button
                             onClick={() => handleToggleSource(doc)}
                             className="mt-0.5 shrink-0"
-                            title={enabled ? 'Disable source' : 'Enable source'}
+                            title={enabled ? t('notebookWorkspace.sources.disableSource') : t('notebookWorkspace.sources.enableSource')}
                           >
                             {enabled ? (
                               <ToggleRight className="h-4 w-4 text-accent" />
@@ -664,7 +664,7 @@ export function NotebookWorkspace() {
                             size="icon"
                             className="h-6 w-6 shrink-0 text-muted-foreground hover:text-accent"
                             onClick={() => retryTranscript.mutate(toResourceActionInput(video))}
-                            title="Retry transcript"
+                            title={t('notebookWorkspace.sources.retryTranscript')}
                           >
                             <RotateCcw className="h-3 w-3" />
                           </Button>
@@ -717,16 +717,16 @@ export function NotebookWorkspace() {
                     {messagesLoading ? (
                       <div className="text-center py-12">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto" />
-                        <p className="text-sm text-muted-foreground mt-2">Loading…</p>
+                        <p className="text-sm text-muted-foreground mt-2">{t('notebookWorkspace.chat.loading')}</p>
                       </div>
                     ) : messages.length === 0 ? (
                       <div className="text-center py-12 animate-fade-in">
                         <div className="w-14 h-14 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
                           <MessageSquare className="h-7 w-7 text-muted-foreground" />
                         </div>
-                        <h3 className="text-lg font-medium text-foreground mb-2">Ask questions about your sources</h3>
+                        <h3 className="text-lg font-medium text-foreground mb-2">{t('notebookWorkspace.chat.askTitle')}</h3>
                         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                          Use the chat to summarize, compare, extract insights, or explore ideas from your attached materials.
+                          {t('notebookWorkspace.chat.askDescription')}
                         </p>
                       </div>
                     ) : (
@@ -770,7 +770,7 @@ export function NotebookWorkspace() {
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                                   <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                 </div>
-                                <span>{activeMode === 'research' ? 'Researching the web…' : activeMode === 'web_search' ? 'Searching the web…' : 'Working…'}</span>
+                                <span>{activeMode === 'research' ? t('notebookWorkspace.chat.researching') : activeMode === 'web_search' ? t('notebookWorkspace.chat.searching') : t('notebookWorkspace.chat.working')}</span>
                               </div>
                             )}
                           </div>
@@ -782,10 +782,10 @@ export function NotebookWorkspace() {
                       <div className="flex items-center gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5 animate-fade-in">
                         <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-destructive">Failed to get response</p>
+                          <p className="text-sm font-medium text-destructive">{t('notebookWorkspace.chat.failed')}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">{error}</p>
                         </div>
-                        <Button variant="ghost" size="sm" className="text-xs" onClick={clearError}>Dismiss</Button>
+                        <Button variant="ghost" size="sm" className="text-xs" onClick={clearError}>{t('notebookWorkspace.chat.dismiss')}</Button>
                       </div>
                     )}
                       <div className="h-0.5" />
@@ -817,13 +817,13 @@ export function NotebookWorkspace() {
                     variant="notebook"
                     footerLeft={
                       <span className="text-xs text-muted-foreground">
-                        {enabledSourceCount} source{enabledSourceCount !== 1 ? 's' : ''} enabled
+                        {t('notebookWorkspace.sources.footerEnabled', { count: enabledSourceCount })}
                       </span>
                     }
                   />
                 ) : (
                   <div className="px-4 py-3 border-t border-border text-xs text-muted-foreground">
-                    You have read-only access to this notebook.
+                    {t('notebookWorkspace.chat.readOnly')}
                   </div>
                 )}
               </>
@@ -841,16 +841,16 @@ export function NotebookWorkspace() {
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-foreground"
               onClick={() => setNotesCollapsed(false)}
-              title="Expand notes"
+              title={t('notebookWorkspace.notes.expand')}
             >
               <PanelRightOpen className="h-4 w-4" />
             </Button>
             <button
               onClick={() => setNotesCollapsed(false)}
               className="[writing-mode:vertical-rl] text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide mt-2"
-              title="Expand notes"
+              title={t('notebookWorkspace.notes.expand')}
             >
-              Notes {notes.length > 0 ? `(${notes.length})` : ''}
+              {t('notebookWorkspace.notes.title')} {notes.length > 0 ? `(${notes.length})` : ''}
             </button>
           </div>
         ) : (
@@ -863,15 +863,15 @@ export function NotebookWorkspace() {
                   size="icon"
                   className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
                   onClick={() => setNotesCollapsed(true)}
-                  title="Collapse notes"
+                  title={t('notebookWorkspace.notes.collapse')}
                 >
                   <PanelRightClose className="h-4 w-4" />
                 </Button>
-                <h2 className="text-sm font-semibold text-foreground">Notes</h2>
+                <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.notes.title')}</h2>
               </div>
               {permissions.canCreateNotes && (
                 <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddNote} disabled={createNote.isPending}>
-                  <Plus className="h-3 w-3" /> Add note
+                  <Plus className="h-3 w-3" /> {t('notebookWorkspace.notes.addNote')}
                 </Button>
               )}
             </div>
@@ -881,8 +881,8 @@ export function NotebookWorkspace() {
                   <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
                     <StickyNote className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <p className="text-sm font-medium text-foreground mb-1">No notes yet</p>
-                  <p className="text-xs text-muted-foreground">Save insights from chat or create your own note.</p>
+                  <p className="text-sm font-medium text-foreground mb-1">{t('notebookWorkspace.notes.empty.title')}</p>
+                  <p className="text-xs text-muted-foreground">{t('notebookWorkspace.notes.empty.description')}</p>
                 </div>
               ) : (
                 <div className="p-2 space-y-2">
@@ -893,7 +893,7 @@ export function NotebookWorkspace() {
                       onClick={() => permissions.canEditNotes && handleStartEdit(note)}
                     >
                       {note.title && <p className="text-sm font-medium text-foreground mb-1 truncate">{note.title}</p>}
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">{note.content || 'Empty note'}</p>
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">{note.content || t('notebookWorkspace.notes.emptyNote')}</p>
                       <div className="flex items-center gap-1 mt-2">
                         <Pencil className="h-3 w-3 text-muted-foreground" />
                         <span className="text-[10px] text-muted-foreground ml-auto">
@@ -914,14 +914,14 @@ export function NotebookWorkspace() {
       <Dialog open={noteModalOpen} onOpenChange={(open) => { if (!open) { setNoteModalOpen(false); setEditingNote(null); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{permissions.canEditNotes ? 'Edit Note' : 'View Note'}</DialogTitle>
-            <DialogDescription className="sr-only">Edit your notebook note</DialogDescription>
+            <DialogTitle>{permissions.canEditNotes ? t('notebookWorkspace.notes.modal.editTitle') : t('notebookWorkspace.notes.modal.viewTitle')}</DialogTitle>
+            <DialogDescription className="sr-only">{t('notebookWorkspace.notes.modal.srDescription')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <Input
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              placeholder="Note title"
+              placeholder={t('notebookWorkspace.notes.modal.titlePlaceholder')}
               className="text-base font-medium"
               autoFocus
               readOnly={!permissions.canEditNotes}
@@ -937,7 +937,7 @@ export function NotebookWorkspace() {
               ref={noteTextareaRef}
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              placeholder="Write your note…"
+              placeholder={t('notebookWorkspace.notes.modal.contentPlaceholder')}
               className="min-h-[200px] resize-none text-sm leading-relaxed font-mono"
               readOnly={!permissions.canEditNotes}
             />
@@ -953,7 +953,7 @@ export function NotebookWorkspace() {
                   disabled={addingToSources || !editContent.trim()}
                 >
                   {addingToSources ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileUp className="h-3 w-3" />}
-                  Add to sources
+                  {t('notebookWorkspace.notes.modal.addToSources')}
                 </Button>
               )}
               {editingNote && permissions.canDeleteNotes && (
@@ -963,18 +963,18 @@ export function NotebookWorkspace() {
                   className="gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => editingNote && handleDeleteNote(editingNote)}
                 >
-                  <Trash2 className="h-3 w-3" /> Delete
+                  <Trash2 className="h-3 w-3" /> {t('notebookWorkspace.notes.modal.delete')}
                 </Button>
               )}
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={() => { setNoteModalOpen(false); setEditingNote(null); }}>
-                {permissions.canEditNotes ? 'Cancel' : 'Close'}
+                {permissions.canEditNotes ? t('notebookWorkspace.notes.modal.cancel') : t('notebookWorkspace.notes.modal.close')}
               </Button>
               {permissions.canEditNotes && (
                 <Button size="sm" className="gap-1 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleSaveNote} disabled={updateNote.isPending}>
                   {updateNote.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                  Save
+                  {t('notebookWorkspace.notes.modal.save')}
                 </Button>
               )}
             </div>
