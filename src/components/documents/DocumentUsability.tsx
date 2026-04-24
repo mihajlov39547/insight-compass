@@ -4,6 +4,7 @@ import { DbDocument } from '@/hooks/useDocuments';
 import type { ChunkStats } from '@/hooks/useDocumentChunkStats';
 import type { QuestionStats } from '@/hooks/useDocumentQuestionStats';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   doc: DbDocument;
@@ -38,6 +39,7 @@ function Row({ label, available, detail, hint }: { label: string; available: boo
 }
 
 export function DocumentUsability({ doc, chunkStats, questionStats }: Props) {
+  const { t } = useTranslation();
   const toSafeInt = (value: unknown): number => {
     const n = Number(value);
     return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
@@ -60,98 +62,98 @@ export function DocumentUsability({ doc, chunkStats, questionStats }: Props) {
     : 0;
 
   const questionRetrievalStatus = questionCount === 0
-    ? 'Not ready'
-    : (allQuestionsEmbedded && semanticReady ? 'Ready' : 'Partial');
+    ? t('documentUsability.notReady')
+    : (allQuestionsEmbedded && semanticReady ? t('documentUsability.ready') : t('documentUsability.partial'));
 
   return (
     <div className="space-y-3 pt-2 border-t border-border">
       {/* Content analysis */}
       <div className="space-y-1.5">
-        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Content analysis</p>
-        <Row label="Extracted text" available={isCompleted} hint="Raw text has been extracted from the document" />
-        <Row label="Summary" available={!!doc.summary} hint="An AI-generated summary of the document content" />
-        <Row label="Detected language" available={!!doc.detected_language} detail={doc.detected_language?.toUpperCase()} />
+        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentUsability.contentAnalysis')}</p>
+        <Row label={t('documentUsability.extractedText')} available={isCompleted} hint={t('documentUsability.extractedTextHint')} />
+        <Row label={t('documentUsability.summary')} available={!!doc.summary} hint={t('documentUsability.summaryHint')} />
+        <Row label={t('documentUsability.detectedLanguage')} available={!!doc.detected_language} detail={doc.detected_language?.toUpperCase()} />
       </div>
 
       {/* Retrieval pipeline */}
       <div className="space-y-1.5">
-        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Retrieval pipeline</p>
+        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentUsability.retrievalPipeline')}</p>
         <Row
-          label="Chunked for retrieval"
+          label={t('documentUsability.chunkedForRetrieval')}
           available={hasChunks}
-          detail={hasChunks ? `${chunkStats!.chunkCount} chunks` : undefined}
-          hint="Document split into smaller passages for precise retrieval"
+          detail={hasChunks ? t('documentUsability.chunksDetail', { count: chunkStats!.chunkCount }) : undefined}
+          hint={t('documentUsability.chunkedHint')}
         />
         <Row
-          label="Embeddings created"
+          label={t('documentUsability.embeddingsCreated')}
           available={hasEmbeddings}
           detail={hasEmbeddings ? `${chunkStats!.embeddedCount}/${chunkStats!.chunkCount} (${embeddingCoverage}%)` : undefined}
-          hint="Document prepared for meaning-based search, not only exact keywords"
+          hint={t('documentUsability.embeddingsHint')}
         />
         {hasChunks && chunkStats!.avgTokenCount != null && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground/70 pl-5">
-            Avg. chunk size: ~{Math.round(chunkStats!.avgTokenCount)} tokens
+            {t('documentUsability.avgChunkSize', { tokens: Math.round(chunkStats!.avgTokenCount) })}
           </div>
         )}
       </div>
 
       {/* Question enrichment */}
       <div className="space-y-1.5">
-        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Question enrichment</p>
+        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentUsability.questionEnrichment')}</p>
         <Row
-          label="Generated questions"
+          label={t('documentUsability.generatedQuestions')}
           available={questionCount > 0}
           detail={questionCount.toLocaleString()}
-          hint="Total generated question rows for this document"
+          hint={t('documentUsability.generatedQuestionsHint')}
         />
         <Row
-          label="Question embeddings created"
+          label={t('documentUsability.questionEmbeddingsCreated')}
           available={embeddedQuestionCount > 0}
           detail={questionCount > 0 ? `${embeddedQuestionCount}/${questionCount}` : '0/0'}
-          hint="Question rows with non-null embedding vectors"
+          hint={t('documentUsability.questionEmbeddingsHint')}
         />
         <Row
-          label="Question embedding coverage"
+          label={t('documentUsability.questionEmbeddingCoverage')}
           available={questionCount > 0}
           detail={`${questionEmbeddingCoverage}%`}
-          hint="Percentage of question rows that have embeddings"
+          hint={t('documentUsability.questionEmbeddingCoverageHint')}
         />
         <Row
-          label="Question retrieval"
-          available={questionRetrievalStatus === 'Ready'}
+          label={t('documentUsability.questionRetrieval')}
+          available={questionRetrievalStatus === t('documentUsability.ready')}
           detail={questionRetrievalStatus}
-          hint="Ready: all questions embedded and chunk retrieval ready. Partial: some embeddings missing. Not ready: no questions."
+          hint={t('documentUsability.questionRetrievalHint')}
         />
       </div>
 
       {/* Search capabilities */}
       <div className="space-y-1.5">
-        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Search capabilities</p>
-        <Row label="Keyword search" available={isCompleted} hint="Find documents by exact words and phrases" />
+        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentUsability.searchCapabilities')}</p>
+        <Row label={t('documentUsability.keywordSearch')} available={isCompleted} hint={t('documentUsability.keywordSearchHint')} />
         <Row
-          label="Semantic search"
+          label={t('documentUsability.semanticSearch')}
           available={semanticReady}
-          hint="AI finds relevant passages even when wording differs from your query"
+          hint={t('documentUsability.semanticSearchHint')}
         />
         <Row
-          label="Hybrid retrieval"
+          label={t('documentUsability.hybridRetrieval')}
           available={semanticReady}
-          hint="Combines keyword and semantic search for the best results"
+          hint={t('documentUsability.hybridRetrievalHint')}
         />
       </div>
 
       {/* AI readiness */}
       <div className="space-y-1.5">
-        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">AI readiness</p>
+        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('documentUsability.aiReadiness')}</p>
         <Row
-          label="Usable in grounded chat"
+          label={t('documentUsability.usableInGrounded')}
           available={semanticReady}
-          hint="AI answers can reference this document's content for more accurate responses"
+          hint={t('documentUsability.usableInGroundedHint')}
         />
         <Row
-          label="Ready for AI answers"
+          label={t('documentUsability.readyForAi')}
           available={semanticReady}
-          hint="All retrieval stages complete — this document fully supports AI-powered Q&A"
+          hint={t('documentUsability.readyForAiHint')}
         />
       </div>
     </div>
