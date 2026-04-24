@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   ChevronLeft, ChevronRight, Plus, Search, MessageSquare, FolderOpen,
   MoreHorizontal, Bell, ChevronDown, ChevronUp,
@@ -56,6 +57,7 @@ export function AppSidebar() {
   } = useApp();
 
   const { user: authUser, profile } = useAuth();
+  const { t } = useTranslation();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: notebooks = [] } = useNotebooks();
