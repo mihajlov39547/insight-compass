@@ -55,5 +55,32 @@
     "workspaceSuffix": " — Asistent za znanje",
     "expandSidebar": "Proširi bočnu traku",
     "notifications": "Obaveštenja"
+  },
+  "home": {
+    "welcome": "Dobrodošli nazad, {{name}}",
+    "subtitle": "Vaš radni prostor za znanje je spreman. Šta želite da radite?",
+    "fallbackName": "korisniče",
+    "cards": {
+      "projects": {
+        "title": "Moji projekti",
+        "count_one": "{{count}} projekat",
+        "count_few": "{{count}} projekta",
+        "count_other": "{{count}} projekata"
+      },
+      "notebooks": {
+        "title": "Moje sveske",
+        "count_one": "{{count}} sveska",
+        "count_few": "{{count}} sveske",
+        "count_other": "{{count}} svesaka"
+      },
+      "newProject": {
+        "title": "Novi projekat",
+        "description": "Započnite novi istraživački projekat"
+      },
+      "resources": {
+        "title": "Resursi",
+        "description": "Pregledajte vaše dokumente"
+      }
+    }
   }
 }
