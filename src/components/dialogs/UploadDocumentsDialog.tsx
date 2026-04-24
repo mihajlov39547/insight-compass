@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useApp } from '@/contexts/useApp';
 import { useUploadDocuments, isFileAllowed } from '@/hooks/useDocuments';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface UploadDocumentsDialogProps {
   open: boolean;
@@ -62,6 +63,7 @@ export function UploadDocumentsDialog({
   onUploadComplete,
   context,
 }: UploadDocumentsDialogProps) {
+  const { t } = useTranslation();
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const { selectedProjectId, selectedChatId, selectedNotebookId } = useApp();
@@ -73,7 +75,7 @@ export function UploadDocumentsDialog({
       id: `${Date.now()}-${Math.random()}`,
       file,
       valid: isFileAllowed(file.name),
-      error: isFileAllowed(file.name) ? undefined : 'Unsupported file type',
+      error: isFileAllowed(file.name) ? undefined : t('uploadDialog.unsupported'),
       status: 'pending' as const,
     }));
     setPendingFiles(prev => [...prev, ...newPending]);
@@ -146,10 +148,10 @@ export function UploadDocumentsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5 text-accent" />
-            Upload Documents
+            {t('uploadDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Upload documents to attach to this {context}. Files will be analyzed and indexed in the background.
+            {t('uploadDialog.description', { context: t(`uploadDialog.context.${context}`) })}
           </DialogDescription>
         </DialogHeader>
 
@@ -174,8 +176,8 @@ export function UploadDocumentsDialog({
               className="hidden"
             />
             <Upload className={cn('h-10 w-10 mx-auto mb-3', isDragging ? 'text-accent' : 'text-muted-foreground')} />
-            <p className="text-sm font-medium text-foreground mb-1">Drop files here or click to browse</p>
-            <p className="text-xs text-muted-foreground">Supported: PDF, DOC/DOCX, CSV/XLS/XLSX, JPG/JPEG/PNG, PPTX, EML/MSG, TXT/TXTX/MD/RTF/XML/JSON/LOG • Max 20 MB</p>
+            <p className="text-sm font-medium text-foreground mb-1">{t('uploadDialog.dropHint')}</p>
+            <p className="text-xs text-muted-foreground">{t('uploadDialog.supported')}</p>
           </div>
 
           {/* File list */}
@@ -202,12 +204,12 @@ export function UploadDocumentsDialog({
                         {pf.error && <span className="text-destructive ml-1">• {pf.error}</span>}
                         {pf.status === 'uploading' && (
                           <span className="text-accent ml-1 flex items-center gap-1">
-                            <Loader2 className="h-3 w-3 animate-spin" /> Uploading…
+                            <Loader2 className="h-3 w-3 animate-spin" /> {t('uploadDialog.uploading')}
                           </span>
                         )}
                         {pf.status === 'failed' && !pf.error && (
                           <span className="text-destructive ml-1 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" /> Upload failed
+                            <AlertCircle className="h-3 w-3" /> {t('uploadDialog.uploadFailed')}
                           </span>
                         )}
                       </p>
@@ -226,7 +228,7 @@ export function UploadDocumentsDialog({
 
         <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button variant="outline" onClick={() => { if (!isBusy) { setPendingFiles([]); onOpenChange(false); } }} disabled={isBusy}>
-            Cancel
+            {t('uploadDialog.cancel')}
           </Button>
           <Button
             onClick={handleDone}
@@ -234,9 +236,9 @@ export function UploadDocumentsDialog({
             className="bg-accent hover:bg-accent/90 text-accent-foreground"
           >
             {isBusy ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Uploading…</>
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> {t('uploadDialog.uploading')}</>
             ) : (
-              <>Upload ({validFiles.length})</>
+              <>{t('uploadDialog.upload', { count: validFiles.length })}</>
             )}
           </Button>
         </div>
