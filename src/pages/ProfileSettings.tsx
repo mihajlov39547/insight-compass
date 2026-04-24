@@ -335,13 +335,13 @@ export default function ProfileSettings() {
             <div className="pt-8 flex justify-end">
               {!isProfileEditing ? (
                 <Button variant="outline" size="sm" onClick={() => setIsProfileEditing(true)}>
-                  Edit Profile
+                  {t('profileSettings.actions.edit')}
                 </Button>
               ) : (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleCancelProfile}>Cancel</Button>
+                  <Button variant="outline" size="sm" onClick={handleCancelProfile}>{t('profileSettings.actions.cancel')}</Button>
                   <Button size="sm" onClick={handleSaveProfile} disabled={isSavingProfile}>
-                    {isSavingProfile ? 'Saving...' : 'Save'}
+                    {isSavingProfile ? t('profileSettings.actions.saving') : t('profileSettings.actions.save')}
                   </Button>
                 </div>
               )}
