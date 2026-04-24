@@ -930,23 +930,24 @@ function RenameResourceDialog({
   onValueChange: (value: string) => void;
   onSubmit: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Rename resource</DialogTitle>
+          <DialogTitle>{t('resources.rename.title')}</DialogTitle>
           <DialogDescription>
-            Update the resource title shown across Resources and related workspaces.
+            {t('resources.rename.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Current title</p>
-          <p className="text-sm truncate" title={currentTitle}>{currentTitle || 'Untitled resource'}</p>
+          <p className="text-xs text-muted-foreground">{t('resources.rename.currentTitle')}</p>
+          <p className="text-sm truncate" title={currentTitle}>{currentTitle || t('resources.rename.untitled')}</p>
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">New title</p>
+          <p className="text-xs text-muted-foreground">{t('resources.rename.newTitle')}</p>
           <Input
             value={value}
             onChange={(e) => onValueChange(e.target.value)}
@@ -956,15 +957,15 @@ function RenameResourceDialog({
                 onSubmit();
               }
             }}
-            placeholder="Enter new title"
+            placeholder={t('resources.rename.placeholder')}
             autoFocus
           />
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('resources.rename.cancel')}</Button>
           <Button onClick={onSubmit} disabled={submitting || !value.trim()}>
-            {submitting ? 'Renaming...' : 'Rename'}
+            {submitting ? t('resources.rename.submitting') : t('resources.rename.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>
