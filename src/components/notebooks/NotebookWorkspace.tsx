@@ -88,8 +88,15 @@ function NotebookVideoSourceStatus({ resource }: { resource: Resource }) {
   return (
     <div className="flex items-center gap-1 mt-0.5 flex-wrap">
       <DocumentStatusBadge status={display} />
-      <span className="text-[10px] text-muted-foreground">• transcript {status}</span>
+      <TranscriptStatusLabel status={status} />
     </div>
+  );
+}
+
+function TranscriptStatusLabel({ status }: { status: string }) {
+  const { t } = useTranslation();
+  return (
+    <span className="text-[10px] text-muted-foreground">• {t('notebookWorkspace.sources.transcriptStatus', { status })}</span>
   );
 }
 
@@ -173,9 +180,9 @@ export function NotebookWorkspace() {
         containerType: 'notebook',
         containerId: selectedNotebookId,
       });
-      toast.success('Added to sources — extracting transcript');
+      toast.success(t('notebookWorkspace.toasts.youtubeAdded'));
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to add video to sources');
+      toast.error(err?.message || t('notebookWorkspace.toasts.youtubeFailed'));
     } finally {
       setAddingYouTubeUrl(null);
     }
@@ -233,7 +240,7 @@ export function NotebookWorkspace() {
 
   const handleToggleSource = async (doc: DbDocument) => {
     if (!permissions.canManageDocumentState) {
-      toast.error('You do not have permission to manage notebook sources');
+      toast.error(t('notebookWorkspace.notes.permissions.manageSourcesDenied'));
       return;
     }
 
@@ -246,14 +253,14 @@ export function NotebookWorkspace() {
 
   const handleSaveToNote = (content: string) => {
     if (!permissions.canCreateNotes) {
-      toast.error('You do not have permission to create notes');
+      toast.error(t('notebookWorkspace.notes.permissions.createDenied'));
       return;
     }
 
     if (!selectedNotebookId) return;
     createNote.mutate({
       notebookId: selectedNotebookId,
-      title: 'AI Insight',
+      title: t('notebookWorkspace.notes.aiInsight'),
       content,
     }, {
       onSuccess: (note) => {
@@ -261,19 +268,19 @@ export function NotebookWorkspace() {
         setEditTitle(note.title);
         setEditContent(note.content);
         setNoteModalOpen(true);
-        toast.success('Saved to notes — you can edit it now');
+        toast.success(t('notebookWorkspace.notes.toasts.savedFromChat'));
       },
     });
   };
 
   const handleCopyContent = (content: string) => {
     navigator.clipboard.writeText(content);
-    toast.success('Copied to clipboard');
+    toast.success(t('notebookWorkspace.notes.toasts.copied'));
   };
 
   const handleAddNote = () => {
     if (!permissions.canCreateNotes) {
-      toast.error('You do not have permission to create notes');
+      toast.error(t('notebookWorkspace.notes.permissions.createDenied'));
       return;
     }
 
@@ -301,7 +308,7 @@ export function NotebookWorkspace() {
 
   const handleSaveNote = async () => {
     if (!permissions.canEditNotes) {
-      toast.error('You do not have permission to edit notes');
+      toast.error(t('notebookWorkspace.notes.permissions.editDenied'));
       return;
     }
 
@@ -327,7 +334,7 @@ export function NotebookWorkspace() {
 
             if (existingDocs && existingDocs.length > 0) {
               const documentId = existingDocs[0].id;
-              const noteTitle = editTitle || 'Untitled Note';
+              const noteTitle = editTitle || t('notebookWorkspace.notes.untitled');
               const markdownContent = `# ${noteTitle}\n\n${editContent || ''}`;
               const blob = new Blob([markdownContent], { type: 'text/plain' });
 
@@ -374,7 +381,7 @@ export function NotebookWorkspace() {
               ).catch(() => {});
 
               queryClient.invalidateQueries({ queryKey: ['notebook-documents', selectedNotebookId] });
-              toast.success('Note source updated — reprocessing started');
+              toast.success(t('notebookWorkspace.notes.toasts.noteSourceUpdated'));
             }
           }
         } catch (err) {
@@ -388,7 +395,7 @@ export function NotebookWorkspace() {
 
   const handleDeleteNote = (note: DbNotebookNote) => {
     if (!permissions.canDeleteNotes) {
-      toast.error('You do not have permission to delete notes');
+      toast.error(t('notebookWorkspace.notes.permissions.deleteDenied'));
       return;
     }
 
@@ -402,7 +409,7 @@ export function NotebookWorkspace() {
 
   const handleAddNoteToSources = async () => {
     if (!permissions.canManageDocumentState) {
-      toast.error('You do not have permission to manage notebook sources');
+      toast.error(t('notebookWorkspace.notes.permissions.manageSourcesDenied'));
       return;
     }
 
@@ -418,7 +425,7 @@ export function NotebookWorkspace() {
     }
     setAddingToSources(true);
     try {
-      const noteTitle = editTitle || 'Untitled Note';
+      const noteTitle = editTitle || t('notebookWorkspace.notes.untitled');
       const noteBody = editContent || '';
       // Build markdown content with title as heading
       const markdownContent = `# ${noteTitle}\n\n${noteBody}`;
@@ -458,7 +465,7 @@ export function NotebookWorkspace() {
           word_count: null,
           char_count: null,
         }).eq('id', documentId);
-        toast.success('Note source updated — re-processing');
+        toast.success(t('notebookWorkspace.notes.toasts.noteSourceUpdatedReprocessing'));
       } else {
         // Create new document
         const { data: docData, error: docError } = await supabase.from('documents').insert({
@@ -474,7 +481,7 @@ export function NotebookWorkspace() {
         }).select('id').single();
         if (docError) throw docError;
         documentId = docData.id;
-        toast.success('Note added to sources');
+        toast.success(t('notebookWorkspace.notes.toasts.noteAddedToSources'));
       }
 
       // Trigger processing via workflow
@@ -505,7 +512,7 @@ export function NotebookWorkspace() {
       setEditingNote(null);
     } catch (err: any) {
       console.error('Add note to sources error:', err);
-      toast.error('Failed to add note to sources');
+      toast.error(t('notebookWorkspace.notes.toasts.addToSourcesFailed'));
     } finally {
       setAddingToSources(false);
     }
@@ -523,7 +530,7 @@ export function NotebookWorkspace() {
               value={notebook.name}
               onSave={async (name) => {
                 await updateNotebook.mutateAsync({ id: notebook.id, name });
-                toast.success('Notebook renamed');
+                toast.success(t('notebookWorkspace.toasts.renamed'));
               }}
               as="h1"
               className="text-lg font-semibold text-foreground"
