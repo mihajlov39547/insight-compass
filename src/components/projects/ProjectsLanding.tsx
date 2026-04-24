@@ -331,7 +331,7 @@ export function ProjectsLanding() {
                       <FileText className="h-3.5 w-3.5" />
                       <span>{docCount}</span>
                     </div>
-                    <span className="ml-auto">{formatLastActivity(project.updated_at)}</span>
+                    <span className="ml-auto">{formatLastActivity(project.updated_at, t, dateLocale)}</span>
                   </div>
                 </div>
               );
