@@ -140,8 +140,8 @@ export function AppSidebar() {
     if (next !== 'updated') setAlphaSort('none');
   };
 
-  const alphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[alphaSort];
-  const dateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[dateSort];
+  const alphaLabel = { none: t('sidebar.sort.alphaNone'), asc: t('sidebar.sort.alphaAsc'), desc: t('sidebar.sort.alphaDesc') }[alphaSort];
+  const dateLabel = { updated: t('sidebar.sort.dateUpdated'), newest: t('sidebar.sort.dateNewest'), oldest: t('sidebar.sort.dateOldest') }[dateSort];
 
   const expandAll = () => setExpandedProjects(new Set(projects.map(p => p.id)));
   const collapseAll = () => setExpandedProjects(new Set());
@@ -166,8 +166,8 @@ export function AppSidebar() {
     if (next !== 'updated') setNbAlphaSort('none');
   };
 
-  const nbAlphaLabel = { none: 'Sort A→Z', asc: 'Sorted A→Z', desc: 'Sorted Z→A' }[nbAlphaSort];
-  const nbDateLabel = { updated: 'Recently updated', newest: 'Newest first', oldest: 'Oldest first' }[nbDateSort];
+  const nbAlphaLabel = { none: t('sidebar.sort.alphaNone'), asc: t('sidebar.sort.alphaAsc'), desc: t('sidebar.sort.alphaDesc') }[nbAlphaSort];
+  const nbDateLabel = { updated: t('sidebar.sort.dateUpdated'), newest: t('sidebar.sort.dateNewest'), oldest: t('sidebar.sort.dateOldest') }[nbDateSort];
 
   // Recents data — notebooks and chats only, 2 items in sidebar
   const recentItems = useMemo(() => {
