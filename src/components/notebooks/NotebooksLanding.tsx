@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -77,22 +78,24 @@ function hashCode(str: string): number {
   return Math.abs(hash);
 }
 
-function formatLastActivity(dateStr: string): string {
+function formatLastActivity(dateStr: string, t: any, locale: string): string {
   try {
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
+    if (diffDays === 0) return t('notebooksLanding.time.today');
+    if (diffDays === 1) return t('notebooksLanding.time.yesterday');
     if (diffDays < 7) return formatDistanceToNow(date, { addSuffix: true });
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   } catch {
     return '';
   }
 }
 
 export function NotebooksLanding() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.resolvedLanguage === 'sr' ? 'sr-Latn' : 'en-US';
   const { user } = useAuth();
   const { setSelectedNotebookId, setActiveView } = useApp();
   const { data: notebooks = [], isLoading } = useNotebooks();
@@ -136,7 +139,7 @@ export function NotebooksLanding() {
     if (!createName.trim()) return;
     createNotebook.mutate({ name: createName.trim(), description: createDescription.trim(), language: createLanguage }, {
       onSuccess: () => {
-        toast.success('Notebook created');
+        toast.success(t('notebooksLanding.create.success'));
         setShowCreate(false);
         setCreateName('');
         setCreateDescription('');
@@ -156,14 +159,14 @@ export function NotebooksLanding() {
     if (!editNotebook || !editName.trim()) return;
     updateNotebook.mutate({ id: editNotebook.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
       onSuccess: () => {
-        toast.success('Notebook updated');
+        toast.success(t('notebooksLanding.manage.updated'));
         setEditNotebook(null);
       },
     });
   };
 
   const handleArchive = (id: string) => {
-    archiveNotebook.mutate(id, { onSuccess: () => toast.success('Notebook archived') });
+    archiveNotebook.mutate(id, { onSuccess: () => toast.success(t('notebooksLanding.delete.archived')) });
   };
 
   const handleDelete = (id: string) => {
@@ -174,7 +177,7 @@ export function NotebooksLanding() {
     if (!pendingDeleteId) return;
     deleteNotebook.mutate(pendingDeleteId, {
       onSuccess: () => {
-        toast.success('Notebook and all its data deleted');
+        toast.success(t('notebooksLanding.delete.success'));
         setPendingDeleteId(null);
       },
     });
@@ -195,11 +198,11 @@ export function NotebooksLanding() {
       <div className="max-w-6xl mx-auto px-6 py-10 animate-fade-in">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">My Notebooks</h1>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">{t('notebooksLanding.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {hasNotebooks
-              ? `${notebooks.length} notebook${notebooks.length !== 1 ? 's' : ''}`
-              : 'No notebooks yet'}
+              ? t('notebooksLanding.count', { count: notebooks.length })
+              : t('notebooksLanding.empty')}
           </p>
         </div>
 
@@ -214,7 +217,7 @@ export function NotebooksLanding() {
               <Plus className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
             </div>
             <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              {hasNotebooks ? 'Create new notebook' : 'Create your first notebook'}
+              {hasNotebooks ? t('notebooksLanding.createNew') : t('notebooksLanding.createFirst')}
             </span>
           </button>
 
@@ -260,11 +263,11 @@ export function NotebooksLanding() {
                   </h3>
                 </div>
                 <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
-                  <span>{formatLastActivity(notebook.updated_at)}</span>
+                  <span>{formatLastActivity(notebook.updated_at, t, dateLocale)}</span>
                   <span>·</span>
                   <div className="flex items-center gap-1">
                     <FileText className="h-3 w-3" />
-                    <span>{docCount} source{docCount !== 1 ? 's' : ''}</span>
+                    <span>{t('notebooksLanding.sources', { count: docCount })}</span>
                   </div>
                 </div>
               </div>
@@ -276,7 +279,7 @@ export function NotebooksLanding() {
         {!hasNotebooks && (
           <div className="max-w-xl mx-auto mt-10 text-center">
             <p className="text-muted-foreground text-sm">
-              Create a notebook to organize your research, collect sources, and explore topics with AI-powered analysis.
+              {t('notebooksLanding.intro')}
             </p>
           </div>
         )}
@@ -286,48 +289,48 @@ export function NotebooksLanding() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Create Notebook</DialogTitle>
-            <DialogDescription>Give your notebook a name and optional description.</DialogDescription>
+            <DialogTitle>{t('notebooksLanding.create.title')}</DialogTitle>
+            <DialogDescription>{t('notebooksLanding.create.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="create-nb-name">Notebook name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="create-nb-name">{t('notebooksLanding.create.nameLabel')} <span className="text-destructive">*</span></Label>
               <Input
                 id="create-nb-name"
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
-                placeholder="e.g. Research on AI Safety"
+                placeholder={t('notebooksLanding.create.namePlaceholder')}
                 autoFocus
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-nb-desc">Description</Label>
+              <Label htmlFor="create-nb-desc">{t('notebooksLanding.create.descriptionLabel')}</Label>
               <Textarea
                 id="create-nb-desc"
                 value={createDescription}
                 onChange={(e) => setCreateDescription(e.target.value)}
-                placeholder="What is this notebook about?"
+                placeholder={t('notebooksLanding.create.descriptionPlaceholder')}
                 rows={3}
                 className="resize-none"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-nb-lang">Language</Label>
+              <Label htmlFor="create-nb-lang">{t('notebooksLanding.create.languageLabel')}</Label>
               <Select value={createLanguage} onValueChange={(val: 'en' | 'sr') => setCreateLanguage(val)}>
                 <SelectTrigger id="create-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                  <SelectItem value="en">{t('notebooksLanding.create.languageEn')}</SelectItem>
+                  <SelectItem value="sr">{t('notebooksLanding.create.languageSr')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={!createName.trim()}>Create Notebook</Button>
+            <Button variant="outline" onClick={() => setShowCreate(false)}>{t('notebooksLanding.create.cancel')}</Button>
+            <Button onClick={handleCreate} disabled={!createName.trim()}>{t('notebooksLanding.create.submit')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -336,23 +339,23 @@ export function NotebooksLanding() {
       <Dialog open={!!editNotebook} onOpenChange={(open) => !open && setEditNotebook(null)}>
         <DialogContent className="sm:max-w-[480px]" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>Manage Notebook</DialogTitle>
-            <DialogDescription>Update your notebook details.</DialogDescription>
+            <DialogTitle>{t('notebooksLanding.manage.title')}</DialogTitle>
+            <DialogDescription>{t('notebooksLanding.manage.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-name">Notebook name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="edit-nb-name">{t('notebooksLanding.manage.nameLabel')} <span className="text-destructive">*</span></Label>
               <Input
                 id="edit-nb-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Notebook name"
+                placeholder={t('notebooksLanding.manage.namePlaceholder')}
                 autoFocus
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="edit-nb-desc">Description</Label>
+                <Label htmlFor="edit-nb-desc">{t('notebooksLanding.manage.descriptionLabel')}</Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -384,49 +387,49 @@ export function NotebooksLanding() {
                       });
 
                       const data = await resp.json();
-                      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+                      if (!resp.ok) throw new Error(data.error || t('notebooksLanding.manage.improveFailed'));
                       if (data.description) {
                         setEditDescription(data.description);
-                        toast.success('Description improved');
+                        toast.success(t('notebooksLanding.manage.improveSuccess'));
                       }
                     } catch (err: any) {
                       console.error('Improve description error:', err);
-                      toast.error(err.message || 'Failed to improve description');
+                      toast.error(err.message || t('notebooksLanding.manage.improveFailed'));
                     } finally {
                       setImprovingDescription(false);
                     }
                   }}
                 >
                   {improvingDescription ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  {improvingDescription ? 'Improving…' : 'Improve with AI'}
+                  {improvingDescription ? t('notebooksLanding.manage.improving') : t('notebooksLanding.manage.improveWithAi')}
                 </Button>
               </div>
               <Textarea
                 id="edit-nb-desc"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Describe what this notebook is about..."
+                placeholder={t('notebooksLanding.manage.descriptionPlaceholder')}
                 rows={3}
                 className="resize-none"
               />
-              <p className="text-xs text-muted-foreground">This helps the AI understand the notebook context and provide better answers.</p>
+              <p className="text-xs text-muted-foreground">{t('notebooksLanding.manage.descriptionHint')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-lang">Language</Label>
+              <Label htmlFor="edit-nb-lang">{t('notebooksLanding.manage.languageLabel')}</Label>
               <Select value={editLanguage} onValueChange={(val: string) => setEditLanguage(val)}>
                 <SelectTrigger id="edit-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                  <SelectItem value="en">{t('notebooksLanding.manage.languageEn')}</SelectItem>
+                  <SelectItem value="sr">{t('notebooksLanding.manage.languageSr')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditNotebook(null)}>Cancel</Button>
-            <Button onClick={handleManageSubmit} disabled={!editName.trim()}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditNotebook(null)}>{t('notebooksLanding.manage.cancel')}</Button>
+            <Button onClick={handleManageSubmit} disabled={!editName.trim()}>{t('notebooksLanding.manage.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -434,27 +437,27 @@ export function NotebooksLanding() {
       <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Notebook</AlertDialogTitle>
+            <AlertDialogTitle>{t('notebooksLanding.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this notebook and all of its data, including:
+              {t('notebooksLanding.delete.intro')}
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>All chat messages and history</li>
-                <li>All uploaded documents and files</li>
-                <li>All notes</li>
-                <li>All extracted text, summaries, and processed data</li>
-                <li>All linked resources and transcripts</li>
-                <li>All sharing settings</li>
+                <li>{t('notebooksLanding.delete.items.chats')}</li>
+                <li>{t('notebooksLanding.delete.items.documents')}</li>
+                <li>{t('notebooksLanding.delete.items.notes')}</li>
+                <li>{t('notebooksLanding.delete.items.extracted')}</li>
+                <li>{t('notebooksLanding.delete.items.resources')}</li>
+                <li>{t('notebooksLanding.delete.items.sharing')}</li>
               </ul>
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">{t('notebooksLanding.delete.irreversible')}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('notebooksLanding.delete.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteNotebook}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Notebook
+              {t('notebooksLanding.delete.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
