@@ -1320,7 +1320,7 @@ function ResourceDetailsDrawer({
 
                   {/* Processing */}
                   <section className="space-y-2">
-                    <h3 className="text-sm font-medium">Processing</h3>
+                    <h3 className="text-sm font-medium">{t('resources.drawer.sections.processing')}</h3>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <MetaCell label="Status" value={resource.processingStatus} />
                       <MetaCell label="Language" value={resource.detectedLanguage || 'Unknown'} />
