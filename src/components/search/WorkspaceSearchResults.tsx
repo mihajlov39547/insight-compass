@@ -3,6 +3,7 @@ import { FolderOpen, MessageSquare, FileText, X, Loader2, AlertCircle, Search } 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/useApp';
 import { useWorkspaceSearch } from '@/hooks/useWorkspaceSearch';
 import { useProjects } from '@/hooks/useProjects';
@@ -22,16 +23,18 @@ function truncateDocName(name: string, maxChars = 35): string {
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   if (status === 'completed') {
-    return <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-emerald-500/30 text-emerald-600">Searchable</Badge>;
+    return <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-emerald-500/30 text-emerald-600">{t('workspaceSearch.status.searchable')}</Badge>;
   }
   if (status === 'failed') {
-    return <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-destructive/30 text-destructive">Failed</Badge>;
+    return <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-destructive/30 text-destructive">{t('workspaceSearch.status.failed')}</Badge>;
   }
-  return <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-yellow-500/30 text-yellow-600">Processing</Badge>;
+  return <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-yellow-500/30 text-yellow-600">{t('workspaceSearch.status.processing')}</Badge>;
 }
 
 export function WorkspaceSearchResults({ query, onClose }: WorkspaceSearchResultsProps) {
+  const { t } = useTranslation();
   const { setSelectedProjectId, setSelectedChatId, setDocumentScope } = useApp();
   const { data, isLoading, isError } = useWorkspaceSearch(query);
   const { data: allProjects = [] } = useProjects();
@@ -49,7 +52,7 @@ export function WorkspaceSearchResults({ query, onClose }: WorkspaceSearchResult
     <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-sidebar border border-sidebar-border rounded-lg shadow-lg overflow-hidden animate-fade-in">
       <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border">
         <span className="text-xs font-medium text-sidebar-muted">
-          {isLoading ? 'Searching…' : tooShort ? 'Type at least 2 characters' : `${totalResults} results`}
+          {isLoading ? t('workspaceSearch.searching') : tooShort ? t('workspaceSearch.tooShort') : t('workspaceSearch.results', { count: totalResults })}
         </span>
         <Button variant="ghost" size="icon" className="h-5 w-5 text-sidebar-muted hover:text-sidebar-foreground" onClick={onClose}>
           <X className="h-3 w-3" />
@@ -59,21 +62,21 @@ export function WorkspaceSearchResults({ query, onClose }: WorkspaceSearchResult
         {isLoading && (
           <div className="px-3 py-6 flex items-center justify-center gap-2 text-sm text-sidebar-muted">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Searching workspace…
+            {t('workspaceSearch.searchingWorkspace')}
           </div>
         )}
 
         {isError && (
           <div className="px-3 py-6 flex items-center justify-center gap-2 text-sm text-destructive">
             <AlertCircle className="h-4 w-4" />
-            Search failed. Please try again.
+            {t('workspaceSearch.failed')}
           </div>
         )}
 
         {!isLoading && !isError && !tooShort && totalResults === 0 && (
           <div className="px-3 py-6 text-center text-sm text-sidebar-muted">
             <Search className="h-5 w-5 mx-auto mb-2 opacity-40" />
-            No results found for "{query}"
+            {t('workspaceSearch.noResults', { query })}
           </div>
         )}
 
@@ -82,7 +85,7 @@ export function WorkspaceSearchResults({ query, onClose }: WorkspaceSearchResult
             {/* Projects */}
             {data.projects.length > 0 && (
               <div className="mb-1">
-                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">Projects</div>
+                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">{t('workspaceSearch.sections.projects')}</div>
                 {data.projects.map(p => (
                   <button
                     key={p.id}
@@ -102,7 +105,7 @@ export function WorkspaceSearchResults({ query, onClose }: WorkspaceSearchResult
             {/* Chats */}
             {data.chats.length > 0 && (
               <div className="mb-1">
-                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">Chats</div>
+                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">{t('workspaceSearch.sections.chats')}</div>
                 {data.chats.map(c => (
                   <button
                     key={c.id}
@@ -113,7 +116,7 @@ export function WorkspaceSearchResults({ query, onClose }: WorkspaceSearchResult
                     <div className="flex-1 min-w-0">
                       <span className="text-sm truncate block">{c.name}</span>
                       <p className="text-[10px] text-sidebar-muted truncate mt-0.5">
-                        {projectMap.get(c.project_id) ?? 'Unknown project'}
+                        {projectMap.get(c.project_id) ?? t('workspaceSearch.unknownProject')}
                       </p>
                     </div>
                   </button>
@@ -124,7 +127,7 @@ export function WorkspaceSearchResults({ query, onClose }: WorkspaceSearchResult
             {/* Documents */}
             {data.documents.length > 0 && (
               <div className="mb-1">
-                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">Documents</div>
+                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">{t('workspaceSearch.sections.documents')}</div>
                 {data.documents.map(doc => (
                   <button
                     key={doc.document_id}
@@ -148,7 +151,7 @@ export function WorkspaceSearchResults({ query, onClose }: WorkspaceSearchResult
                         <StatusBadge status={doc.processing_status} />
                       </div>
                       <p className="text-[10px] text-sidebar-muted truncate mt-0.5">
-                        {doc.chat_id ? 'Chat document' : 'Project document'} · {projectMap.get(doc.project_id) ?? 'Unknown'}
+                        {doc.chat_id ? t('workspaceSearch.chatDocument') : t('workspaceSearch.projectDocument')} · {projectMap.get(doc.project_id) ?? t('workspaceSearch.unknown')}
                       </p>
                       {doc.snippet && (
                         <p className="text-[10px] text-sidebar-muted/70 line-clamp-2 mt-0.5 leading-relaxed">{doc.snippet}</p>
