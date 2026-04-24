@@ -120,6 +120,7 @@ function buildSavedProfile({
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user: authUser, profile, signOut } = useAuth();
 
   // Profile state
@@ -147,10 +148,10 @@ export default function ProfileSettings() {
     : displayEmail?.[0]?.toUpperCase() || '?';
 
   const usernameValidationMessage = useMemo(() => {
-    if (!username) return 'Username is required.';
-    if (!usernamePattern.test(username)) return 'Username can only contain lowercase letters and numbers.';
+    if (!username) return t('profileSettings.username.errors.required');
+    if (!usernamePattern.test(username)) return t('profileSettings.username.errors.pattern');
     return '';
-  }, [username]);
+  }, [username, t]);
 
   const applyProfileState = useCallback((nextState: SavedProfileState) => {
     setFullName(nextState.fullName);
