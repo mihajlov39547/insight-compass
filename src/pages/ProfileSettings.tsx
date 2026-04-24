@@ -176,7 +176,7 @@ export default function ProfileSettings() {
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
-      toast.error('Failed to load profile');
+      toast.error(t('profileSettings.toasts.loadFailed'));
       return;
     }
 
