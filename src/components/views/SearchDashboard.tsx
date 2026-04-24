@@ -327,7 +327,7 @@ export function SearchDashboard() {
               {/* Project Chats */}
               {grouped.chats.length > 0 && (filter === 'all' || filter === 'projects') && (
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Project Chats</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('search.sections.projectChats')}</h3>
                   <div className="space-y-1">
                     {grouped.chats.map(c => (
                       <button key={c.id} className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors" onClick={() => handleChatClick(c.id, c.projectId)}>
