@@ -286,5 +286,74 @@
       "mine": "Moji",
       "shared": "Deljeno"
     }
+  },
+  "projectDashboard": {
+    "share": "Podeli",
+    "noDescription": "Nema opisa",
+    "searchInChat": "Pretraži u ovom ćaskanju",
+    "features": {
+      "documentAnalysis": {
+        "title": "Analiza dokumenata",
+        "description": "Pretražujte sve vaše otpremljene dokumente"
+      },
+      "instantAnswers": {
+        "title": "Trenutni odgovori",
+        "description": "Dobijte tačne odgovore sa citatima izvora"
+      },
+      "secure": {
+        "title": "Bezbedno i privatno",
+        "description": "Vaši podaci ostaju u vašem radnom prostoru"
+      }
+    },
+    "createNewChat": "Kreiraj novo ćaskanje",
+    "creating": "Kreiranje...",
+    "noChatsYet": "Još nema ćaskanja. Zatražite od urednika ili administratora da kreira jedno.",
+    "loadingMessages": "Učitavanje poruka...",
+    "noMessagesYet": {
+      "title": "Još nema poruka",
+      "description": "Započnite razgovor postavljanjem pitanja o vašim dokumentima."
+    },
+    "thinking": "Razmišljanje...",
+    "researching": "Istraživanje veba…",
+    "searchingWeb": "Pretraga veba…",
+    "searchingNotebook": "Pretraga sveske…",
+    "failedResponse": "Nije moguće dobiti odgovor",
+    "retry": "Pokušaj ponovo",
+    "dismiss": "Odbaci",
+    "chats": {
+      "heading_one": "Ćaskanja ({{count}})",
+      "heading_few": "Ćaskanja ({{count}})",
+      "heading_other": "Ćaskanja ({{count}})",
+      "noMessagesYet": "Još nema poruka",
+      "docs_one": "{{count}} dokument",
+      "docs_few": "{{count}} dokumenta",
+      "docs_other": "{{count}} dokumenata",
+      "viewAll": "Prikaži svih {{count}} ćaskanja",
+      "allShown": "Sva ćaskanja su prikazana",
+      "rename": {
+        "title": "Preimenuj ćaskanje",
+        "placeholder": "Naziv ćaskanja",
+        "cancel": "Otkaži",
+        "save": "Sačuvaj",
+        "success": "Ćaskanje preimenovano"
+      },
+      "delete": {
+        "title": "Obriši ćaskanje",
+        "intro": "Ovo će trajno obrisati ovo ćaskanje i sve njegove podatke, uključujući:",
+        "items": {
+          "messages": "Sve poruke i istoriju razgovora",
+          "documents": "Sve otpremljene dokumente i datoteke",
+          "extracted": "Sav izdvojeni tekst, sažetke i obrađene podatke"
+        },
+        "irreversible": "Ova radnja se ne može poništiti.",
+        "cancel": "Otkaži",
+        "confirm": "Obriši ćaskanje",
+        "success": "Ćaskanje i svi njegovi podaci su obrisani"
+      },
+      "time": {
+        "today": "Danas",
+        "yesterday": "Juče"
+      }
+    }
   }
 }
