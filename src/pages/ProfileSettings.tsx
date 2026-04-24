@@ -349,25 +349,25 @@ export default function ProfileSettings() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Name</Label>
+                <Label>{t('profileSettings.fields.name')}</Label>
                 <Input value={fullName} onChange={e => setFullName(e.target.value)} disabled={!isProfileEditing} />
               </div>
               <div className="space-y-2">
-                <Label>Bio</Label>
-                <Textarea value={bio} onChange={e => setBio(e.target.value)} disabled={!isProfileEditing} placeholder="Tell us about yourself" className="resize-none min-h-[80px]" />
+                <Label>{t('profileSettings.fields.bio')}</Label>
+                <Textarea value={bio} onChange={e => setBio(e.target.value)} disabled={!isProfileEditing} placeholder={t('profileSettings.fields.bioPlaceholder')} className="resize-none min-h-[80px]" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Location</Label>
-                  <Input value={location} onChange={e => setLocation(e.target.value)} disabled={!isProfileEditing} placeholder="City, Country" />
+                  <Label>{t('profileSettings.fields.location')}</Label>
+                  <Input value={location} onChange={e => setLocation(e.target.value)} disabled={!isProfileEditing} placeholder={t('profileSettings.fields.locationPlaceholder')} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Website</Label>
-                  <Input value={website} onChange={e => setWebsite(e.target.value)} disabled={!isProfileEditing} placeholder="https://..." />
+                  <Label>{t('profileSettings.fields.website')}</Label>
+                  <Input value={website} onChange={e => setWebsite(e.target.value)} disabled={!isProfileEditing} placeholder={t('profileSettings.fields.websitePlaceholder')} />
                 </div>
               </div>
                 <div className="space-y-2">
-                  <Label>Phone number</Label>
+                  <Label>{t('profileSettings.fields.phone')}</Label>
                   <div className="grid grid-cols-[minmax(0,110px)_minmax(0,100px)_minmax(0,1fr)] gap-3 max-sm:grid-cols-1">
                     <Input
                       inputMode="numeric"
@@ -391,18 +391,18 @@ export default function ProfileSettings() {
                       disabled={!isProfileEditing}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Format: 381 60 345-2323</p>
+                  <p className="text-xs text-muted-foreground">{t('profileSettings.fields.phoneFormat')}</p>
                 </div>
               <Separator />
               <div className="space-y-2">
-                <Label>Banner URL</Label>
+                <Label>{t('profileSettings.fields.bannerUrl')}</Label>
                 <Input value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} disabled={!isProfileEditing} placeholder="https://..." />
-                <p className="text-xs text-muted-foreground">Direct link to a banner image</p>
+                <p className="text-xs text-muted-foreground">{t('profileSettings.fields.bannerUrlHelp')}</p>
               </div>
               <div className="space-y-2">
-                <Label>Avatar URL</Label>
-                <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} disabled={!isProfileEditing} placeholder="Managed by Google — or paste a URL" />
-                <p className="text-xs text-muted-foreground">Your Google profile picture is used by default</p>
+                <Label>{t('profileSettings.fields.avatarUrl')}</Label>
+                <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} disabled={!isProfileEditing} placeholder={t('profileSettings.fields.avatarUrlPlaceholder')} />
+                <p className="text-xs text-muted-foreground">{t('profileSettings.fields.avatarUrlHelp')}</p>
               </div>
             </div>
           </TabsContent>
