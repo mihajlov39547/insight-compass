@@ -715,6 +715,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   isDeleting: boolean;
   isRetrying: boolean;
 }) {
+  const { t } = useTranslation();
   const Icon = RESOURCE_ICONS[resource.resourceType] || File;
   const color = RESOURCE_COLORS[resource.resourceType] || 'text-muted-foreground';
   const ContainerIcon = CONTAINER_ICONS[resource.containerType] || Globe;
@@ -729,8 +730,8 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   const isLinkedResource = resource.resourceType === 'link' || resource.sourceType === 'linked';
   const previewImage = resource.mediaThumbnailUrl || resource.previewFaviconUrl;
   const retryLabel = resource.provider === 'youtube' && resource.transcriptStatus === 'failed'
-    ? 'Retry transcript'
-    : 'Retry processing';
+    ? t('resources.actions.retryTranscript')
+    : t('resources.actions.retryProcessing');
   const locationText = formatResourceLocation(resource);
 
   const relativeDate = useMemo(() => {
@@ -738,14 +739,14 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1) return t('resources.time.justNow');
+    if (diffMins < 60) return t('resources.time.minutesAgo', { count: diffMins });
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return t('resources.time.hoursAgo', { count: diffHours });
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 30) return `${diffDays}d ago`;
+    if (diffDays < 30) return t('resources.time.daysAgo', { count: diffDays });
     return d.toLocaleDateString();
-  }, [resource.updatedAt]);
+  }, [resource.updatedAt, t]);
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors group">
