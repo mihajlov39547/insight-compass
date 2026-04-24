@@ -376,13 +376,13 @@ export function AppSidebar() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="create-nb-lang">Language</Label>
-              <Select value={createNbLanguage} onValueChange={(val: 'en' | 'sr-lat') => setCreateNbLanguage(val)}>
+              <Select value={createNbLanguage} onValueChange={(val: 'en' | 'sr') => setCreateNbLanguage(val)}>
                 <SelectTrigger id="create-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
