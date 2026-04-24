@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Settings, 
@@ -41,7 +42,24 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
 
   const { user: authUser, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [showAuth, setShowAuth] = useState(false);
+
+  // Map app language ('en' | 'sr-lat') to i18n language ('en' | 'sr-latn')
+  const toI18nLang = (lang: 'en' | 'sr-lat') => (lang === 'sr-lat' ? 'sr-latn' : 'en');
+
+  const handleLanguageChange = (lang: 'en' | 'sr-lat') => {
+    setLanguage(lang);
+    i18n.changeLanguage(toI18nLang(lang));
+  };
+
+  // Keep i18n in sync if app language changes elsewhere
+  React.useEffect(() => {
+    const target = toI18nLang(language);
+    if (i18n.language !== target) {
+      i18n.changeLanguage(target);
+    }
+  }, [language, i18n]);
 
   const PlanIcon = planIcons[appUser.plan];
 
@@ -98,13 +116,13 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Language</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t('header.language.label')}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setLanguage('en')}>
-                    <span className={cn(language === 'en' && 'font-medium')}>English</span>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
+                    <span className={cn(language === 'en' && 'font-medium')}>{t('header.language.en')}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLanguage('sr-lat')}>
-                    <span className={cn(language === 'sr-lat' && 'font-medium')}>Serbian (Latin)</span>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('sr-lat')}>
+                    <span className={cn(language === 'sr-lat' && 'font-medium')}>{t('header.language.sr-latn')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
