@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, FolderOpen, MessageSquare, BookOpenCheck, StickyNote, FileText, Filter, X, Sparkles, Type } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -193,6 +194,7 @@ function useSearchDashboard(query: string, filter: SearchFilter) {
 }
 
 export function SearchDashboard() {
+  const { t } = useTranslation();
   const { searchQuery, setSearchQuery, setSelectedProjectId, setSelectedChatId, setSelectedNotebookId, setActiveView } = useApp();
   const [filter, setFilter] = useState<SearchFilter>('all');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -209,10 +211,10 @@ export function SearchDashboard() {
   }, [results]);
 
   const filters: { key: SearchFilter; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'projects', label: 'Projects' },
-    { key: 'notebooks', label: 'Notebooks' },
-    { key: 'documents', label: 'Documents' },
+    { key: 'all', label: t('search.filters.all') },
+    { key: 'projects', label: t('search.filters.projects') },
+    { key: 'notebooks', label: t('search.filters.notebooks') },
+    { key: 'documents', label: t('search.filters.documents') },
   ];
 
   const handleProjectClick = (id: string) => {
@@ -234,14 +236,14 @@ export function SearchDashboard() {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="px-6 pt-6 pb-4 border-b border-border">
-        <h1 className="text-2xl font-bold text-foreground mb-4">Search</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-4">{t('search.title')}</h1>
         <div className="relative max-w-2xl">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             ref={inputRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search projects, notebooks…"
+            placeholder={t('search.placeholder')}
             className="pl-10 pr-9 h-11 text-base"
           />
           {searchQuery && (
@@ -278,34 +280,34 @@ export function SearchDashboard() {
           {!hasQuery && (
             <div className="text-center py-16">
               <Search className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground text-sm">Search across your projects, chats, notebooks, and notes</p>
-              <p className="text-muted-foreground/60 text-xs mt-1">Type at least 2 characters to start</p>
+              <p className="text-muted-foreground text-sm">{t('search.emptyHint')}</p>
+              <p className="text-muted-foreground/60 text-xs mt-1">{t('search.minChars')}</p>
             </div>
           )}
 
           {/* Loading */}
           {hasQuery && isLoading && (
-            <div className="text-center py-12 text-muted-foreground text-sm">Searching…</div>
+            <div className="text-center py-12 text-muted-foreground text-sm">{t('search.loading')}</div>
           )}
 
           {/* No results */}
           {hasQuery && !isLoading && totalResults === 0 && (
             <div className="text-center py-16">
               <Search className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">No results found for "{searchQuery}"</p>
-              <p className="text-muted-foreground/60 text-xs mt-1">Try a different search term or filter</p>
+              <p className="text-muted-foreground text-sm">{t('search.noResults', { query: searchQuery })}</p>
+              <p className="text-muted-foreground/60 text-xs mt-1">{t('search.noResultsHint')}</p>
             </div>
           )}
 
           {/* Results */}
           {hasQuery && !isLoading && totalResults > 0 && (
             <div className="space-y-6">
-              <p className="text-xs text-muted-foreground">{totalResults} result{totalResults !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-muted-foreground">{t('search.resultCount', { count: totalResults })}</p>
 
               {/* Projects */}
               {grouped.projects.length > 0 && (filter === 'all' || filter === 'projects') && (
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Projects</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('search.sections.projects')}</h3>
                   <div className="space-y-1">
                     {grouped.projects.map(p => (
                       <button key={p.id} className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors" onClick={() => handleProjectClick(p.id)}>
@@ -325,7 +327,7 @@ export function SearchDashboard() {
               {/* Project Chats */}
               {grouped.chats.length > 0 && (filter === 'all' || filter === 'projects') && (
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Project Chats</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('search.sections.projectChats')}</h3>
                   <div className="space-y-1">
                     {grouped.chats.map(c => (
                       <button key={c.id} className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors" onClick={() => handleChatClick(c.id, c.projectId)}>
@@ -338,7 +340,7 @@ export function SearchDashboard() {
                           {c.snippet && <p className="text-xs text-muted-foreground/70 line-clamp-2 mt-1">{c.snippet}</p>}
                         </div>
                         {c.matchSource === 'message' && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">message match</Badge>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">{t('search.badges.messageMatch')}</Badge>
                         )}
                       </button>
                     ))}
@@ -349,7 +351,7 @@ export function SearchDashboard() {
               {/* Notebooks */}
               {grouped.notebooks.length > 0 && (filter === 'all' || filter === 'notebooks') && (
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Notebooks</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('search.sections.notebooks')}</h3>
                   <div className="space-y-1">
                     {grouped.notebooks.map(n => (
                       <button key={n.id} className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-muted/50 transition-colors" onClick={() => handleNotebookClick(n.id)}>
@@ -363,7 +365,7 @@ export function SearchDashboard() {
                         </div>
                         {n.matchSource !== 'name' && (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
-                            {n.matchSource === 'message' ? 'chat match' : 'note match'}
+                            {n.matchSource === 'message' ? t('search.badges.chatMatch') : t('search.badges.noteMatch')}
                           </Badge>
                         )}
                       </button>
@@ -375,7 +377,7 @@ export function SearchDashboard() {
               {/* Documents */}
               {grouped.documents.length > 0 && (filter === 'all' || filter === 'documents') && (
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Documents</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('search.sections.documents')}</h3>
                   <div className="space-y-1">
                     {grouped.documents.map(d => (
                       <button
@@ -400,11 +402,11 @@ export function SearchDashboard() {
                         </div>
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
                           {d.matchType === 'hybrid' ? (
-                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />hybrid</span>
+                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />{t('search.badges.hybrid')}</span>
                           ) : d.matchType === 'semantic' ? (
-                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />semantic</span>
+                            <span className="flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />{t('search.badges.semantic')}</span>
                           ) : (
-                            <span className="flex items-center gap-0.5"><Type className="h-2.5 w-2.5" />keyword</span>
+                            <span className="flex items-center gap-0.5"><Type className="h-2.5 w-2.5" />{t('search.badges.keyword')}</span>
                           )}
                         </Badge>
                       </button>

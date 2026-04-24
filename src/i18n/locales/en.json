@@ -80,5 +80,36 @@
         "description": "Browse your documents"
       }
     }
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search projects, notebooks…",
+    "filters": {
+      "all": "All",
+      "projects": "Projects",
+      "notebooks": "Notebooks",
+      "documents": "Documents"
+    },
+    "emptyHint": "Search across your projects, chats, notebooks, and notes",
+    "minChars": "Type at least 2 characters to start",
+    "loading": "Searching…",
+    "noResults": "No results found for \"{{query}}\"",
+    "noResultsHint": "Try a different search term or filter",
+    "resultCount_one": "{{count}} result",
+    "resultCount_other": "{{count}} results",
+    "sections": {
+      "projects": "Projects",
+      "projectChats": "Project Chats",
+      "notebooks": "Notebooks",
+      "documents": "Documents"
+    },
+    "badges": {
+      "messageMatch": "message match",
+      "chatMatch": "chat match",
+      "noteMatch": "note match",
+      "hybrid": "hybrid",
+      "semantic": "semantic",
+      "keyword": "keyword"
+    }
   }
 }

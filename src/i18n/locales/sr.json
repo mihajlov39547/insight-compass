@@ -82,5 +82,37 @@
         "description": "Pregledajte vaše dokumente"
       }
     }
+  },
+  "search": {
+    "title": "Pretraga",
+    "placeholder": "Pretražite projekte, sveske…",
+    "filters": {
+      "all": "Sve",
+      "projects": "Projekti",
+      "notebooks": "Sveske",
+      "documents": "Dokumenti"
+    },
+    "emptyHint": "Pretražujte vaše projekte, ćaskanja, sveske i beleške",
+    "minChars": "Unesite najmanje 2 karaktera za početak",
+    "loading": "Pretraga u toku…",
+    "noResults": "Nema rezultata za \"{{query}}\"",
+    "noResultsHint": "Pokušajte sa drugim pojmom ili filterom",
+    "resultCount_one": "{{count}} rezultat",
+    "resultCount_few": "{{count}} rezultata",
+    "resultCount_other": "{{count}} rezultata",
+    "sections": {
+      "projects": "Projekti",
+      "projectChats": "Ćaskanja u projektima",
+      "notebooks": "Sveske",
+      "documents": "Dokumenti"
+    },
+    "badges": {
+      "messageMatch": "podudaranje u poruci",
+      "chatMatch": "podudaranje u ćaskanju",
+      "noteMatch": "podudaranje u belešci",
+      "hybrid": "hibridno",
+      "semantic": "semantičko",
+      "keyword": "ključna reč"
+    }
   }
 }
