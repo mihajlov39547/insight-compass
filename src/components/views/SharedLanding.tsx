@@ -6,8 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { useSharedItems, SharedItem } from '@/hooks/useSharedItems';
 import { useApp } from '@/contexts/useApp';
 import { formatDistanceToNow } from 'date-fns';
+import { srLatn as srLatnLocale, enUS as enUSLocale } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 function SharedItemCard({ item }: { item: SharedItem }) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.resolvedLanguage === 'sr' ? srLatnLocale : enUSLocale;
   const { setSelectedProjectId, setSelectedChatId, setSelectedNotebookId, setActiveView } = useApp();
 
   const handleClick = () => {
