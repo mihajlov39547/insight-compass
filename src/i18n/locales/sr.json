@@ -176,5 +176,72 @@
       "success": "Projekat i svi njegovi podaci su obrisani",
       "archived": "Projekat arhiviran"
     }
+  },
+  "notebooksLanding": {
+    "title": "Moje sveske",
+    "count_one": "{{count}} sveska",
+    "count_few": "{{count}} sveske",
+    "count_other": "{{count}} svesaka",
+    "empty": "Još nema svesaka",
+    "createNew": "Kreiraj novu svesku",
+    "createFirst": "Kreirajte vašu prvu svesku",
+    "intro": "Kreirajte svesku da organizujete istraživanje, prikupljate izvore i istražujete teme uz AI analizu.",
+    "sources_one": "{{count}} izvor",
+    "sources_few": "{{count}} izvora",
+    "sources_other": "{{count}} izvora",
+    "time": {
+      "today": "Danas",
+      "yesterday": "Juče"
+    },
+    "create": {
+      "title": "Kreiraj svesku",
+      "description": "Dajte svesci naziv i opcioni opis.",
+      "nameLabel": "Naziv sveske",
+      "namePlaceholder": "npr. Istraživanje o bezbednosti AI",
+      "descriptionLabel": "Opis",
+      "descriptionPlaceholder": "O čemu je ova sveska?",
+      "languageLabel": "Jezik",
+      "languageEn": "Engleski",
+      "languageSr": "Srpski (Latinica)",
+      "cancel": "Otkaži",
+      "submit": "Kreiraj svesku",
+      "success": "Sveska kreirana"
+    },
+    "manage": {
+      "title": "Upravljanje sveskom",
+      "description": "Ažurirajte detalje sveske.",
+      "nameLabel": "Naziv sveske",
+      "namePlaceholder": "Naziv sveske",
+      "descriptionLabel": "Opis",
+      "descriptionPlaceholder": "Opišite o čemu je ova sveska...",
+      "descriptionHint": "Ovo pomaže AI-u da razume kontekst sveske i pruži bolje odgovore.",
+      "improving": "Poboljšavanje…",
+      "improveWithAi": "Poboljšaj uz AI",
+      "improveSuccess": "Opis poboljšan",
+      "improveFailed": "Poboljšavanje opisa nije uspelo",
+      "languageLabel": "Jezik",
+      "languageEn": "Engleski",
+      "languageSr": "Srpski (Latinica)",
+      "cancel": "Otkaži",
+      "save": "Sačuvaj izmene",
+      "updated": "Sveska ažurirana"
+    },
+    "delete": {
+      "title": "Obriši svesku",
+      "intro": "Ovo će trajno obrisati ovu svesku i sve njene podatke, uključujući:",
+      "items": {
+        "chats": "Sve poruke i istoriju ćaskanja",
+        "documents": "Sve otpremljene dokumente i datoteke",
+        "notes": "Sve beleške",
+        "extracted": "Sav izdvojeni tekst, sažetke i obrađene podatke",
+        "resources": "Sve povezane resurse i transkripte",
+        "sharing": "Sva podešavanja deljenja"
+      },
+      "irreversible": "Ova radnja se ne može poništiti.",
+      "cancel": "Otkaži",
+      "confirm": "Obriši svesku",
+      "success": "Sveska i svi njeni podaci su obrisani",
+      "archived": "Sveska arhivirana"
+    }
   }
 }

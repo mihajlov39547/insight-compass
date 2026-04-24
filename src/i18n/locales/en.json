@@ -172,5 +172,70 @@
       "success": "Project and all its data deleted",
       "archived": "Project archived"
     }
+  },
+  "notebooksLanding": {
+    "title": "My Notebooks",
+    "count_one": "{{count}} notebook",
+    "count_other": "{{count}} notebooks",
+    "empty": "No notebooks yet",
+    "createNew": "Create new notebook",
+    "createFirst": "Create your first notebook",
+    "intro": "Create a notebook to organize your research, collect sources, and explore topics with AI-powered analysis.",
+    "sources_one": "{{count}} source",
+    "sources_other": "{{count}} sources",
+    "time": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "create": {
+      "title": "Create Notebook",
+      "description": "Give your notebook a name and optional description.",
+      "nameLabel": "Notebook name",
+      "namePlaceholder": "e.g. Research on AI Safety",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What is this notebook about?",
+      "languageLabel": "Language",
+      "languageEn": "English",
+      "languageSr": "Serbian (Latin)",
+      "cancel": "Cancel",
+      "submit": "Create Notebook",
+      "success": "Notebook created"
+    },
+    "manage": {
+      "title": "Manage Notebook",
+      "description": "Update your notebook details.",
+      "nameLabel": "Notebook name",
+      "namePlaceholder": "Notebook name",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Describe what this notebook is about...",
+      "descriptionHint": "This helps the AI understand the notebook context and provide better answers.",
+      "improving": "Improving…",
+      "improveWithAi": "Improve with AI",
+      "improveSuccess": "Description improved",
+      "improveFailed": "Failed to improve description",
+      "languageLabel": "Language",
+      "languageEn": "English",
+      "languageSr": "Serbian (Latin)",
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "updated": "Notebook updated"
+    },
+    "delete": {
+      "title": "Delete Notebook",
+      "intro": "This will permanently delete this notebook and all of its data, including:",
+      "items": {
+        "chats": "All chat messages and history",
+        "documents": "All uploaded documents and files",
+        "notes": "All notes",
+        "extracted": "All extracted text, summaries, and processed data",
+        "resources": "All linked resources and transcripts",
+        "sharing": "All sharing settings"
+      },
+      "irreversible": "This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete Notebook",
+      "success": "Notebook and all its data deleted",
+      "archived": "Notebook archived"
+    }
   }
 }
