@@ -776,7 +776,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
                   />
                 )}
                 <p className="text-[11px] text-muted-foreground truncate">
-                  {resource.previewDomain || resource.normalizedUrl || resource.linkUrl || 'Linked resource'}
+                  {resource.previewDomain || resource.normalizedUrl || resource.linkUrl || t('resources.row.linkedResource')}
                 </p>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -784,10 +784,10 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">{formatProvider(resource.provider)}</Badge>
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">{resource.processingStatus}</Badge>
                 {resource.transcriptStatus && resource.transcriptStatus !== 'none' && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">transcript {resource.transcriptStatus}</Badge>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t('resources.row.transcriptStatus', { status: resource.transcriptStatus })}</Badge>
                 )}
                 {resource.isSharedWithMe && (
-                  <span className="text-[10px] text-muted-foreground">by {resource.ownerDisplayName}</span>
+                  <span className="text-[10px] text-muted-foreground">{t('resources.row.by', { name: resource.ownerDisplayName })}</span>
                 )}
               </div>
             </div>
@@ -795,7 +795,7 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
             <p className="text-[11px] text-muted-foreground truncate">
               {resource.extension.toUpperCase()} • {formatFileSize(resource.sizeBytes)}
               {resource.isSharedWithMe && (
-                <span> • by {resource.ownerDisplayName}</span>
+                <span> • {t('resources.row.by', { name: resource.ownerDisplayName })}</span>
               )}
             </p>
           )}
