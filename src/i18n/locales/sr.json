@@ -771,5 +771,269 @@
         }
       }
     }
+  },
+  "chatInput": {
+    "placeholders": {
+      "waiting": "Čekanje odgovora...",
+      "research": "Postavite pitanje za detaljno istraživanje…",
+      "youtube": "Pretraži YouTube za video snimke…",
+      "notebookGrounded": "Pitajte u kontekstu sveske \"{{name}}\"…",
+      "notebookSelect": "Izaberite svesku ispod, pa pitajte…",
+      "default": "Postavite pitanje o vašim dokumentima..."
+    },
+    "notebook": {
+      "required": "Sveska je obavezna — izaberite svesku za uzemljenje upita.",
+      "remove": "Ukloni svesku",
+      "missingToast": "Izaberite svesku za uzemljenje upita"
+    },
+    "modes": {
+      "webSearch": "Web pretraga",
+      "webSearchDesc": "Dodajte brze isečke web rezultata kao kontekst.",
+      "research": "Istraživanje",
+      "researchDesc": "Pokreni detaljno web istraživanje. Sporije, temeljnije.",
+      "youtube": "YouTube pretraga",
+      "youtubeDesc": "Pretraži YouTube video snimke za ovaj upit.",
+      "notebook": "Sveska",
+      "notebookDesc": "Uzemlji upit u izvorima izabrane sveske.",
+      "noNotebooks": "Nema dostupnih svesaka. Kreirajte jednu da biste koristili ovaj režim.",
+      "searchPlaceholder": "Pretraži sveske…",
+      "noMatches": "Nema rezultata",
+      "appliesNext": "Primenjuje se samo na sledeću poruku."
+    },
+    "improve": "Poboljšaj",
+    "improving": "Poboljšavanje…",
+    "improveTooltip": "Poboljšaj upit pomoću AI",
+    "improveError": "Neuspešno poboljšanje upita",
+    "attach": "Priloži datoteke",
+    "generating": "Generisanje…",
+    "pressEnter": "Pritisnite",
+    "pressEnterSuffix": "za slanje",
+    "imageMaxToast": "Najviše {{count}} slika dozvoljeno",
+    "imageRemainingToast_one": "Još samo {{count}} slika može biti priložena",
+    "imageRemainingToast_few": "Još samo {{count}} slike mogu biti priložene",
+    "imageRemainingToast_other": "Još samo {{count}} slika može biti priloženo",
+    "imageAlt": "Priloženo {{index}}"
+  },
+  "actionsMenu": {
+    "manageProject": "Upravljaj projektom",
+    "manageNotebook": "Upravljaj sveskom",
+    "manageDocuments": "Upravljaj dokumentima",
+    "viewDocuments": "Pregledaj dokumente",
+    "shareProject": "Podeli projekat",
+    "shareNotebook": "Podeli svesku",
+    "archiveProject": "Arhiviraj projekat",
+    "archiveNotebook": "Arhiviraj svesku",
+    "deleteProject": "Obriši projekat",
+    "deleteNotebook": "Obriši svesku",
+    "renameChat": "Preimenuj ćaskanje",
+    "deleteChat": "Obriši ćaskanje"
+  },
+  "workspaceSearch": {
+    "searching": "Pretraživanje…",
+    "tooShort": "Unesite najmanje 2 znaka",
+    "results": "{{count}} rezultata",
+    "searchingWorkspace": "Pretraživanje radnog prostora…",
+    "failed": "Pretraga nije uspela. Pokušajte ponovo.",
+    "noResults": "Nema rezultata za \"{{query}}\"",
+    "sections": {
+      "projects": "Projekti",
+      "chats": "Ćaskanja",
+      "documents": "Dokumenti"
+    },
+    "unknownProject": "Nepoznat projekat",
+    "unknown": "Nepoznato",
+    "chatDocument": "Dokument ćaskanja",
+    "projectDocument": "Dokument projekta",
+    "status": {
+      "searchable": "Pretraživo",
+      "failed": "Neuspešno",
+      "processing": "U obradi"
+    }
+  },
+  "inlineRename": {
+    "rename": "Preimenuj"
+  },
+  "documentDashboard": {
+    "back": "← Nazad",
+    "manageProjectDocs": "Upravljaj dokumentima projekta",
+    "manageChatDocs": "Upravljaj dokumentima ćaskanja",
+    "manageNotebookDocs": "Upravljaj dokumentima sveske",
+    "uploadDocuments": "Otpremi dokumente",
+    "inProject": "u {{name}}",
+    "stats": {
+      "total": "Ukupno",
+      "searchable": "Pretraživo",
+      "processing": "U obradi",
+      "failed": "Neuspešno"
+    },
+    "filterByName": "Filtriraj po imenu…",
+    "filters": {
+      "all": "Sve",
+      "searchable": "Pretraživo",
+      "processing": "U obradi",
+      "failed": "Neuspešno"
+    },
+    "sort": {
+      "recent": "Najnovije",
+      "oldest": "Najstarije",
+      "name": "Ime",
+      "status": "Status"
+    },
+    "noMatch": "Nijedan dokument ne odgovara filterima",
+    "noMatchSources": "Nijedan izvor ne odgovara filterima",
+    "noDocuments": "Još nema dokumenata",
+    "noSources": "Još nema izvora",
+    "emptyProject": "Dokumenti projekta su dostupni u svim ćaskanjima ovog projekta. Otpremite dokumente da omogućite AI pretragu i analizu.",
+    "emptyChat": "Dokumenti ćaskanja su priloženi ovom ćaskanju. Otpremite dokumente da pružite kontekst razgovoru.",
+    "emptyNotebook": "Dodajte dokumente ili povezane video snimke ovoj svesci da omogućite AI pretragu i analizu kroz vaše izvore.",
+    "partiallyReady": "Delimično spremno",
+    "deleted": "{{name}} obrisan",
+    "deleteFailed": "Brisanje nije uspelo",
+    "transcriptRetried": "Ponovni pokušaj transkripta zakazan",
+    "transcriptRetriedDesc": "Obrada transkripta je ponovo pokrenuta.",
+    "transcriptRetryFailed": "Ponovni pokušaj transkripta nije uspeo",
+    "retryProcessing": "Pokušaj obradu ponovo",
+    "wordsSuffix": "reči",
+    "summary": "Sažetak",
+    "errorLabel": "Greška:",
+    "meta": {
+      "fileType": "Tip datoteke",
+      "mimeType": "MIME tip",
+      "size": "Veličina",
+      "uploaded": "Otpremljeno",
+      "language": "Jezik",
+      "words": "Reči",
+      "characters": "Znakovi",
+      "pages": "Strane",
+      "chunksCreated": "Kreirano segmenata",
+      "embeddingsCreated": "Kreirano embedinga",
+      "embeddingCoverage": "Pokrivenost embedinzima",
+      "semanticRetrieval": "Semantičko pretraživanje",
+      "ready": "Spremno",
+      "retryAttempts": "Broj pokušaja",
+      "lastRetry": "Poslednji pokušaj",
+      "provider": "Provajder",
+      "videoId": "ID video snimka",
+      "channel": "Kanal",
+      "transcriptStatus": "Status transkripta"
+    }
+  },
+  "documentStatus": {
+    "searchable": "Pretraživo",
+    "failed": "Neuspešno",
+    "processing": "U obradi",
+    "stages": {
+      "uploaded": "U redu",
+      "extracting_metadata": "Izvlačenje metapodataka",
+      "extracting_content": "Analiza sadržaja",
+      "detecting_language": "Detekcija jezika",
+      "summarizing": "Generisanje sažetka",
+      "indexing": "Kreiranje indeksa pretrage",
+      "chunking": "Segmentiranje teksta",
+      "generating_embeddings": "Generisanje embedinga",
+      "embedding": "Generisanje embedinga",
+      "generating_chunk_questions": "Generisanje predloženih pitanja"
+    }
+  },
+  "aiReady": "AI spreman",
+  "documentProcessing": {
+    "runningNow": "Trenutno radi:",
+    "background": "U pozadini:",
+    "lastCompleted": "Poslednje završeno:",
+    "elapsed": "Proteklo:",
+    "retries": "Pokušaji:",
+    "readiness": "Spremnost",
+    "metrics": "Metrike",
+    "activityTimeline": "Vremenska linija aktivnosti",
+    "optional": "opciono",
+    "items": {
+      "textExtracted": "Tekst izvučen",
+      "languageDetected": "Jezik detektovan",
+      "summary": "Sažetak",
+      "keywordSearch": "Pretraga po ključnim rečima",
+      "semanticSearch": "Semantička pretraga",
+      "hybridRetrieval": "Hibridno pretraživanje",
+      "groundedChat": "Uzemljeno ćaskanje",
+      "questionEnrichment": "Obogaćivanje pitanjima"
+    },
+    "metricLabels": {
+      "chunks": "Segmenti:",
+      "embeddings": "Embedinzi:",
+      "coverage": "Pokrivenost:",
+      "questions": "Pitanja:"
+    }
+  },
+  "documentUsability": {
+    "contentAnalysis": "Analiza sadržaja",
+    "extractedText": "Izvučen tekst",
+    "extractedTextHint": "Sirovi tekst je izvučen iz dokumenta",
+    "summary": "Sažetak",
+    "summaryHint": "AI generisani sažetak sadržaja dokumenta",
+    "detectedLanguage": "Detektovan jezik",
+    "retrievalPipeline": "Tok pretraživanja",
+    "chunkedForRetrieval": "Segmentirano za pretraživanje",
+    "chunkedHint": "Dokument podeljen u manje pasuse za precizno pretraživanje",
+    "chunksDetail_one": "{{count}} segment",
+    "chunksDetail_few": "{{count}} segmenta",
+    "chunksDetail_other": "{{count}} segmenata",
+    "embeddingsCreated": "Embedinzi kreirani",
+    "embeddingsHint": "Dokument pripremljen za pretragu po značenju, ne samo po ključnim rečima",
+    "avgChunkSize": "Pros. veličina segmenta: ~{{tokens}} tokena",
+    "questionEnrichment": "Obogaćivanje pitanjima",
+    "generatedQuestions": "Generisana pitanja",
+    "generatedQuestionsHint": "Ukupno generisanih pitanja za ovaj dokument",
+    "questionEmbeddingsCreated": "Embedinzi pitanja kreirani",
+    "questionEmbeddingsHint": "Pitanja sa generisanim embedinzima",
+    "questionEmbeddingCoverage": "Pokrivenost embedinzima pitanja",
+    "questionEmbeddingCoverageHint": "Procenat pitanja koja imaju embedinge",
+    "questionRetrieval": "Pretraživanje pitanja",
+    "questionRetrievalHint": "Spremno: sva pitanja imaju embedinge i pretraživanje segmenata je spremno. Delimično: neki embedinzi nedostaju. Nije spremno: nema pitanja.",
+    "ready": "Spremno",
+    "partial": "Delimično",
+    "notReady": "Nije spremno",
+    "searchCapabilities": "Mogućnosti pretrage",
+    "keywordSearch": "Pretraga po ključnim rečima",
+    "keywordSearchHint": "Pronađi dokumente po tačnim rečima i frazama",
+    "semanticSearch": "Semantička pretraga",
+    "semanticSearchHint": "AI pronalazi relevantne pasuse i kada se reči razlikuju od upita",
+    "hybridRetrieval": "Hibridno pretraživanje",
+    "hybridRetrievalHint": "Kombinuje pretragu po ključnim rečima i semantičku za najbolje rezultate",
+    "aiReadiness": "AI spremnost",
+    "usableInGrounded": "Upotrebljivo u uzemljenom ćaskanju",
+    "usableInGroundedHint": "AI odgovori mogu referencirati sadržaj ovog dokumenta za tačnije odgovore",
+    "readyForAi": "Spremno za AI odgovore",
+    "readyForAiHint": "Sve faze pretraživanja završene — dokument u potpunosti podržava AI pitanja i odgovore"
+  },
+  "linkedVideo": {
+    "video": "VIDEO",
+    "linked": "povezano",
+    "retryTranscript": "Pokušaj transkript ponovo",
+    "stages": {
+      "fetching": "Preuzimanje transkripta",
+      "metadataProbe": "Provera metapodataka",
+      "chunking": "Segmentiranje za pretraživanje",
+      "embeddings": "Generisanje embedinga",
+      "questions": "Generisanje predloženih pitanja",
+      "finalize": "Finalizacija"
+    },
+    "details": {
+      "chunksFmt_one": "{{count}} segment",
+      "chunksFmt_few": "{{count}} segmenta",
+      "chunksFmt_other": "{{count}} segmenata",
+      "questionsFmt_one": "{{count}} pitanje",
+      "questionsFmt_few": "{{count}} pitanja",
+      "questionsFmt_other": "{{count}} pitanja"
+    }
+  },
+  "noteToolbar": {
+    "normal": "Običan tekst",
+    "h1": "Naslov 1",
+    "h2": "Naslov 2",
+    "h3": "Naslov 3",
+    "bold": "Podebljano",
+    "italic": "Kurziv",
+    "code": "Inline kod",
+    "bullet": "Lista sa znakovima",
+    "numbered": "Numerisana lista"
   }
 }
