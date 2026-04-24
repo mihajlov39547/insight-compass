@@ -129,10 +129,10 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                   onClick={() => setShowPricing(true)}
                 >
                   <PlanIcon className="h-4 w-4" />
-                  <span className="text-sm font-medium">{planLabels[appUser.plan]}</span>
+                  <span className="text-sm font-medium">{t(`header.plans.${appUser.plan}`)}</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{planLabels[appUser.plan]} Plan</TooltipContent>
+              <TooltipContent>{t(`header.plans.${appUser.plan}`)} {t('profileSettings.subscription.planSuffix')}</TooltipContent>
             </Tooltip>
 
             {/* General Settings - hide in minimal mode */}
