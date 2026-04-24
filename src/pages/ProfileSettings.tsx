@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Trash2, Shield, AlertTriangle, Sparkles, Zap, Crown, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -119,6 +120,7 @@ function buildSavedProfile({
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user: authUser, profile, signOut } = useAuth();
 
   // Profile state
@@ -146,10 +148,10 @@ export default function ProfileSettings() {
     : displayEmail?.[0]?.toUpperCase() || '?';
 
   const usernameValidationMessage = useMemo(() => {
-    if (!username) return 'Username is required.';
-    if (!usernamePattern.test(username)) return 'Username can only contain lowercase letters and numbers.';
+    if (!username) return t('profileSettings.username.errors.required');
+    if (!usernamePattern.test(username)) return t('profileSettings.username.errors.pattern');
     return '';
-  }, [username]);
+  }, [username, t]);
 
   const applyProfileState = useCallback((nextState: SavedProfileState) => {
     setFullName(nextState.fullName);
@@ -174,14 +176,14 @@ export default function ProfileSettings() {
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
-      toast.error('Failed to load profile');
+      toast.error(t('profileSettings.toasts.loadFailed'));
       return;
     }
 
     const nextState = buildSavedProfile({ authUser, profile: data ?? null });
     setSavedProfile(nextState);
     applyProfileState(nextState);
-  }, [applyProfileState, authUser]);
+  }, [applyProfileState, authUser, t]);
 
   useEffect(() => {
     if (authUser) {
@@ -206,7 +208,7 @@ export default function ProfileSettings() {
     const formattedPhone = [phoneCountry, phoneArea, phoneNumber].filter(Boolean).join(' ');
 
     if ((phoneCountry || phoneArea || phoneNumber) && (!phoneCountry || !phoneArea || phoneNumber.replace(/\D/g, '').length < 6)) {
-      toast.error('Enter a valid phone number in all 3 fields.');
+      toast.error(t('profileSettings.toasts.phoneInvalid'));
       return;
     }
 
@@ -227,7 +229,7 @@ export default function ProfileSettings() {
       .upsert(payload, { onConflict: 'user_id' });
     setIsSavingProfile(false);
     if (error) {
-      toast.error('Failed to save profile');
+      toast.error(t('profileSettings.toasts.saveFailed'));
     } else {
       const nextState = {
         fullName,
@@ -242,7 +244,7 @@ export default function ProfileSettings() {
         phoneNumber,
       };
       setSavedProfile(nextState);
-      toast.success('Profile saved');
+      toast.success(t('profileSettings.toasts.saved'));
       setIsProfileEditing(false);
       void loadProfile();
     }
@@ -263,13 +265,13 @@ export default function ProfileSettings() {
     setIsSavingUsername(false);
     if (error) {
       if (error.code === '23505') {
-        toast.error('Username is already taken');
+        toast.error(t('profileSettings.username.errors.taken'));
       } else {
-        toast.error('Failed to update username');
+        toast.error(t('profileSettings.username.errors.saveFailed'));
       }
     } else {
       setSavedProfile((current) => ({ ...current, username }));
-      toast.success('Username updated');
+      toast.success(t('profileSettings.username.saved'));
       void loadProfile();
     }
   };
@@ -282,10 +284,10 @@ export default function ProfileSettings() {
       await supabase.from('user_settings').delete().eq('user_id', authUser.id);
       await supabase.from('profiles').delete().eq('user_id', authUser.id);
       await signOut();
-      toast.success('Account data deleted. You have been signed out.');
+      toast.success(t('profileSettings.toasts.deleted'));
       navigate('/');
     } catch {
-      toast.error('Failed to delete account data.');
+      toast.error(t('profileSettings.toasts.deleteFailed'));
     }
   };
 
@@ -301,14 +303,14 @@ export default function ProfileSettings() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-base font-semibold text-foreground">Profile Settings</h1>
+        <h1 className="text-base font-semibold text-foreground">{t('profileSettings.title')}</h1>
       </header>
 
       <div className="max-w-2xl mx-auto py-8 px-4">
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="w-full mb-6">
-            <TabsTrigger value="profile" className="flex-1">Profile</TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1">App Settings</TabsTrigger>
+            <TabsTrigger value="profile" className="flex-1">{t('profileSettings.tabs.profile')}</TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1">{t('profileSettings.tabs.settings')}</TabsTrigger>
           </TabsList>
 
           {/* ===================== PROFILE TAB ===================== */}
@@ -319,7 +321,7 @@ export default function ProfileSettings() {
                 className="h-32 rounded-xl bg-muted flex items-center justify-center"
                 style={bannerUrl ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
               >
-                {!bannerUrl && <span className="text-muted-foreground text-sm">Profile Banner</span>}
+                {!bannerUrl && <span className="text-muted-foreground text-sm">{t('profileSettings.banner')}</span>}
               </div>
               {/* Avatar overlay — positioned below the banner, not clipped */}
               <div className="absolute -bottom-10 left-6 z-10">
@@ -333,13 +335,13 @@ export default function ProfileSettings() {
             <div className="pt-8 flex justify-end">
               {!isProfileEditing ? (
                 <Button variant="outline" size="sm" onClick={() => setIsProfileEditing(true)}>
-                  Edit Profile
+                  {t('profileSettings.actions.edit')}
                 </Button>
               ) : (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleCancelProfile}>Cancel</Button>
+                  <Button variant="outline" size="sm" onClick={handleCancelProfile}>{t('profileSettings.actions.cancel')}</Button>
                   <Button size="sm" onClick={handleSaveProfile} disabled={isSavingProfile}>
-                    {isSavingProfile ? 'Saving...' : 'Save'}
+                    {isSavingProfile ? t('profileSettings.actions.saving') : t('profileSettings.actions.save')}
                   </Button>
                 </div>
               )}
@@ -347,25 +349,25 @@ export default function ProfileSettings() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Name</Label>
+                <Label>{t('profileSettings.fields.name')}</Label>
                 <Input value={fullName} onChange={e => setFullName(e.target.value)} disabled={!isProfileEditing} />
               </div>
               <div className="space-y-2">
-                <Label>Bio</Label>
-                <Textarea value={bio} onChange={e => setBio(e.target.value)} disabled={!isProfileEditing} placeholder="Tell us about yourself" className="resize-none min-h-[80px]" />
+                <Label>{t('profileSettings.fields.bio')}</Label>
+                <Textarea value={bio} onChange={e => setBio(e.target.value)} disabled={!isProfileEditing} placeholder={t('profileSettings.fields.bioPlaceholder')} className="resize-none min-h-[80px]" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Location</Label>
-                  <Input value={location} onChange={e => setLocation(e.target.value)} disabled={!isProfileEditing} placeholder="City, Country" />
+                  <Label>{t('profileSettings.fields.location')}</Label>
+                  <Input value={location} onChange={e => setLocation(e.target.value)} disabled={!isProfileEditing} placeholder={t('profileSettings.fields.locationPlaceholder')} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Website</Label>
-                  <Input value={website} onChange={e => setWebsite(e.target.value)} disabled={!isProfileEditing} placeholder="https://..." />
+                  <Label>{t('profileSettings.fields.website')}</Label>
+                  <Input value={website} onChange={e => setWebsite(e.target.value)} disabled={!isProfileEditing} placeholder={t('profileSettings.fields.websitePlaceholder')} />
                 </div>
               </div>
                 <div className="space-y-2">
-                  <Label>Phone number</Label>
+                  <Label>{t('profileSettings.fields.phone')}</Label>
                   <div className="grid grid-cols-[minmax(0,110px)_minmax(0,100px)_minmax(0,1fr)] gap-3 max-sm:grid-cols-1">
                     <Input
                       inputMode="numeric"
@@ -389,18 +391,18 @@ export default function ProfileSettings() {
                       disabled={!isProfileEditing}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Format: 381 60 345-2323</p>
+                  <p className="text-xs text-muted-foreground">{t('profileSettings.fields.phoneFormat')}</p>
                 </div>
               <Separator />
               <div className="space-y-2">
-                <Label>Banner URL</Label>
+                <Label>{t('profileSettings.fields.bannerUrl')}</Label>
                 <Input value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} disabled={!isProfileEditing} placeholder="https://..." />
-                <p className="text-xs text-muted-foreground">Direct link to a banner image</p>
+                <p className="text-xs text-muted-foreground">{t('profileSettings.fields.bannerUrlHelp')}</p>
               </div>
               <div className="space-y-2">
-                <Label>Avatar URL</Label>
-                <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} disabled={!isProfileEditing} placeholder="Managed by Google — or paste a URL" />
-                <p className="text-xs text-muted-foreground">Your Google profile picture is used by default</p>
+                <Label>{t('profileSettings.fields.avatarUrl')}</Label>
+                <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} disabled={!isProfileEditing} placeholder={t('profileSettings.fields.avatarUrlPlaceholder')} />
+                <p className="text-xs text-muted-foreground">{t('profileSettings.fields.avatarUrlHelp')}</p>
               </div>
             </div>
           </TabsContent>
@@ -409,15 +411,15 @@ export default function ProfileSettings() {
           <TabsContent value="settings" className="space-y-8">
             {/* Username */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Username</h3>
-              <p className="text-xs text-muted-foreground">Your public identifier and profile URL.</p>
+              <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.username.title')}</h3>
+              <p className="text-xs text-muted-foreground">{t('profileSettings.username.description')}</p>
               <div className="flex gap-2">
-                <Input value={username} onChange={e => setUsername(sanitizeUsername(e.target.value))} placeholder="username" />
+                <Input value={username} onChange={e => setUsername(sanitizeUsername(e.target.value))} placeholder={t('profileSettings.username.placeholder')} />
                 <Button variant="outline" size="sm" onClick={handleSaveUsername} disabled={isSavingUsername}>
-                  {isSavingUsername ? 'Saving...' : 'Update'}
+                  {isSavingUsername ? t('profileSettings.username.updating') : t('profileSettings.username.update')}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Lowercase letters and numbers only.</p>
+              <p className="text-xs text-muted-foreground">{t('profileSettings.username.rules')}</p>
               {usernameValidationMessage ? (
                 <p className="text-xs text-destructive">{usernameValidationMessage}</p>
               ) : null}
@@ -427,11 +429,11 @@ export default function ProfileSettings() {
 
             {/* Email */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Email</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.email.title')}</h3>
               <Input value={displayEmail} disabled />
               {googleProvider && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Shield className="h-3 w-3" /> Managed by Google — cannot be changed here.
+                  <Shield className="h-3 w-3" /> {t('profileSettings.email.googleManaged')}
                 </p>
               )}
             </section>
@@ -446,7 +448,7 @@ export default function ProfileSettings() {
 
             {/* Linked Accounts */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Linked Accounts</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.linkedAccounts.title')}</h3>
               <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/40">
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -456,9 +458,9 @@ export default function ProfileSettings() {
                 </svg>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground">Google</p>
-                  <p className="text-xs text-muted-foreground">{displayEmail} — Primary sign-in method</p>
+                  <p className="text-xs text-muted-foreground">{t('profileSettings.linkedAccounts.googlePrimary', { email: displayEmail })}</p>
                 </div>
-                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">Connected</span>
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('profileSettings.linkedAccounts.connected')}</span>
               </div>
             </section>
 
@@ -466,13 +468,13 @@ export default function ProfileSettings() {
 
             {/* Password */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Password</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.password.title')}</h3>
               {googleProvider ? (
                 <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                  <Shield className="h-4 w-4" /> Authentication is managed by Google. Password login is not available.
+                  <Shield className="h-4 w-4" /> {t('profileSettings.password.googleManaged')}
                 </p>
               ) : (
-                <Button variant="outline" size="sm">Change Password</Button>
+                <Button variant="outline" size="sm">{t('profileSettings.password.change')}</Button>
               )}
             </section>
 
@@ -480,30 +482,30 @@ export default function ProfileSettings() {
 
             {/* Delete Account */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
+              <h3 className="text-sm font-semibold text-destructive">{t('profileSettings.danger.title')}</h3>
               <p className="text-xs text-muted-foreground">
-                Permanently delete your account and all associated data. This action cannot be undone.
+                {t('profileSettings.danger.description')}
               </p>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" className="gap-2">
-                    <Trash2 className="h-4 w-4" /> Delete Account
+                    <Trash2 className="h-4 w-4" /> {t('profileSettings.danger.deleteButton')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-destructive" />
-                      Delete Account
+                      {t('profileSettings.danger.dialogTitle')}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete your account, all your projects, and data. This action cannot be undone.
+                      {t('profileSettings.danger.dialogDescription')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t('profileSettings.danger.cancel')}</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Yes, delete my account
+                      {t('profileSettings.danger.confirm')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -517,37 +519,40 @@ export default function ProfileSettings() {
 }
 
 
-const planMeta: Record<string, { name: string; description: string; icon: React.ElementType; price: string }> = {
-  free: { name: 'Free', description: 'Perfect for getting started', icon: Sparkles, price: '$0 / forever' },
-  basic: { name: 'Basic', description: 'For individuals and small teams', icon: Zap, price: '$19 / month' },
-  premium: { name: 'Premium', description: 'For growing teams', icon: Crown, price: '$49 / month' },
-  enterprise: { name: 'Enterprise', description: 'For large organizations', icon: Building2, price: 'Custom' },
+const planIcons: Record<string, React.ElementType> = {
+  free: Sparkles,
+  basic: Zap,
+  premium: Crown,
+  enterprise: Building2,
 };
 
 function SubscriptionSection({ plan }: { plan: string }) {
-  const meta = planMeta[plan] || planMeta.free;
-  const Icon = meta.icon;
+  const { t } = useTranslation();
+  const planKey = planIcons[plan] ? plan : 'free';
+  const Icon = planIcons[planKey];
 
   return (
     <section className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">Subscription</h3>
+      <h3 className="text-sm font-semibold text-foreground">{t('profileSettings.subscription.title')}</h3>
       <div className="rounded-lg border border-border p-4 space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <Icon className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">{meta.name} Plan</p>
-            <p className="text-xs text-muted-foreground">{meta.description}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {t(`profileSettings.subscription.plans.${planKey}.name`)} {t('profileSettings.subscription.planSuffix')}
+            </p>
+            <p className="text-xs text-muted-foreground">{t(`profileSettings.subscription.plans.${planKey}.description`)}</p>
           </div>
-          <span className="text-sm font-medium text-foreground">{meta.price}</span>
+          <span className="text-sm font-medium text-foreground">{t(`profileSettings.subscription.plans.${planKey}.price`)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>
+          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('profileSettings.subscription.active')}</span>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Plan management and upgrades coming soon.
+        {t('profileSettings.subscription.comingSoon')}
       </p>
     </section>
   );
