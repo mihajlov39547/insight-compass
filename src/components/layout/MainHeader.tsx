@@ -116,13 +116,13 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Language</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t('header.language.label')}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setLanguage('en')}>
-                    <span className={cn(language === 'en' && 'font-medium')}>English</span>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
+                    <span className={cn(language === 'en' && 'font-medium')}>{t('header.language.en')}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLanguage('sr-lat')}>
-                    <span className={cn(language === 'sr-lat' && 'font-medium')}>Serbian (Latin)</span>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('sr-lat')}>
+                    <span className={cn(language === 'sr-lat' && 'font-medium')}>{t('header.language.sr-latn')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
