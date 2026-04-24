@@ -280,5 +280,72 @@
       "mine": "Mine",
       "shared": "Shared"
     }
+  },
+  "projectDashboard": {
+    "share": "Share",
+    "noDescription": "No description",
+    "searchInChat": "Search in this chat",
+    "features": {
+      "documentAnalysis": {
+        "title": "Document Analysis",
+        "description": "Query across all your uploaded documents"
+      },
+      "instantAnswers": {
+        "title": "Instant Answers",
+        "description": "Get accurate responses with source citations"
+      },
+      "secure": {
+        "title": "Secure & Private",
+        "description": "Your data stays within your workspace"
+      }
+    },
+    "createNewChat": "Create New Chat",
+    "creating": "Creating...",
+    "noChatsYet": "No chats yet. Ask an editor or admin to create one.",
+    "loadingMessages": "Loading messages...",
+    "noMessagesYet": {
+      "title": "No messages yet",
+      "description": "Start the conversation by asking a question about your documents."
+    },
+    "thinking": "Thinking...",
+    "researching": "Researching the web…",
+    "searchingWeb": "Searching the web…",
+    "searchingNotebook": "Searching notebook…",
+    "failedResponse": "Failed to get response",
+    "retry": "Retry",
+    "dismiss": "Dismiss",
+    "chats": {
+      "heading_one": "Chats ({{count}})",
+      "heading_other": "Chats ({{count}})",
+      "noMessagesYet": "No messages yet",
+      "docs_one": "{{count}} doc",
+      "docs_other": "{{count}} docs",
+      "viewAll": "View all {{count}} chats",
+      "allShown": "All chats shown",
+      "rename": {
+        "title": "Rename Chat",
+        "placeholder": "Chat name",
+        "cancel": "Cancel",
+        "save": "Save",
+        "success": "Chat renamed"
+      },
+      "delete": {
+        "title": "Delete Chat",
+        "intro": "This will permanently delete this chat and all of its data, including:",
+        "items": {
+          "messages": "All messages and conversation history",
+          "documents": "All uploaded documents and files",
+          "extracted": "All extracted text, summaries, and processed data"
+        },
+        "irreversible": "This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete Chat",
+        "success": "Chat and all its data deleted"
+      },
+      "time": {
+        "today": "Today",
+        "yesterday": "Yesterday"
+      }
+    }
   }
 }
