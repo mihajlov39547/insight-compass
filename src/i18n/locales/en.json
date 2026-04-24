@@ -759,5 +759,265 @@
         }
       }
     }
+  },
+  "chatInput": {
+    "placeholders": {
+      "waiting": "Waiting for response...",
+      "research": "Ask a deep research question…",
+      "youtube": "Search YouTube for videos…",
+      "notebookGrounded": "Ask grounded in \"{{name}}\"…",
+      "notebookSelect": "Select a notebook below, then ask…",
+      "default": "Ask a question about your documents..."
+    },
+    "notebook": {
+      "required": "Notebook required — select a notebook to ground this prompt.",
+      "remove": "Remove notebook",
+      "missingToast": "Select a notebook to ground this prompt"
+    },
+    "modes": {
+      "webSearch": "Web search",
+      "webSearchDesc": "Add quick web result snippets to ground this prompt.",
+      "research": "Research",
+      "researchDesc": "Run deep web research for this prompt. Slower, more thorough.",
+      "youtube": "YouTube Search",
+      "youtubeDesc": "Search YouTube videos for this prompt.",
+      "notebook": "Notebook",
+      "notebookDesc": "Ground this prompt in a selected notebook's sources.",
+      "noNotebooks": "No notebooks available. Create one to use this mode.",
+      "searchPlaceholder": "Search notebooks…",
+      "noMatches": "No matches",
+      "appliesNext": "Applies only to the next message."
+    },
+    "improve": "Improve",
+    "improving": "Improving…",
+    "improveTooltip": "Improve prompt with AI",
+    "improveError": "Failed to improve prompt",
+    "attach": "Attach files",
+    "generating": "Generating…",
+    "pressEnter": "Press",
+    "pressEnterSuffix": "to send",
+    "imageMaxToast": "Maximum {{count}} images allowed",
+    "imageRemainingToast_one": "Only {{count}} more image can be attached",
+    "imageRemainingToast_other": "Only {{count}} more images can be attached",
+    "imageAlt": "Attached {{index}}"
+  },
+  "actionsMenu": {
+    "manageProject": "Manage project",
+    "manageNotebook": "Manage notebook",
+    "manageDocuments": "Manage documents",
+    "viewDocuments": "View documents",
+    "shareProject": "Share project",
+    "shareNotebook": "Share notebook",
+    "archiveProject": "Archive project",
+    "archiveNotebook": "Archive notebook",
+    "deleteProject": "Delete project",
+    "deleteNotebook": "Delete notebook",
+    "renameChat": "Rename chat",
+    "deleteChat": "Delete chat"
+  },
+  "workspaceSearch": {
+    "searching": "Searching…",
+    "tooShort": "Type at least 2 characters",
+    "results": "{{count}} results",
+    "searchingWorkspace": "Searching workspace…",
+    "failed": "Search failed. Please try again.",
+    "noResults": "No results found for \"{{query}}\"",
+    "sections": {
+      "projects": "Projects",
+      "chats": "Chats",
+      "documents": "Documents"
+    },
+    "unknownProject": "Unknown project",
+    "unknown": "Unknown",
+    "chatDocument": "Chat document",
+    "projectDocument": "Project document",
+    "status": {
+      "searchable": "Searchable",
+      "failed": "Failed",
+      "processing": "Processing"
+    }
+  },
+  "inlineRename": {
+    "rename": "Rename"
+  },
+  "documentDashboard": {
+    "back": "← Back",
+    "manageProjectDocs": "Manage Project Documents",
+    "manageChatDocs": "Manage Chat Documents",
+    "manageNotebookDocs": "Manage Notebook Documents",
+    "uploadDocuments": "Upload Documents",
+    "inProject": "in {{name}}",
+    "stats": {
+      "total": "Total",
+      "searchable": "Searchable",
+      "processing": "Processing",
+      "failed": "Failed"
+    },
+    "filterByName": "Filter by name…",
+    "filters": {
+      "all": "All",
+      "searchable": "Searchable",
+      "processing": "Processing",
+      "failed": "Failed"
+    },
+    "sort": {
+      "recent": "Most recent",
+      "oldest": "Oldest",
+      "name": "Name",
+      "status": "Status"
+    },
+    "noMatch": "No documents match your filters",
+    "noMatchSources": "No sources match your filters",
+    "noDocuments": "No documents yet",
+    "noSources": "No sources yet",
+    "emptyProject": "Project documents are available across all chats in this project. Upload documents to enable AI-powered search and analysis.",
+    "emptyChat": "Chat documents are attached to this specific chat. Upload documents to provide context for this conversation.",
+    "emptyNotebook": "Add documents or linked videos to this notebook to enable AI-powered search and analysis across your sources.",
+    "partiallyReady": "Partially ready",
+    "deleted": "{{name}} deleted",
+    "deleteFailed": "Delete failed",
+    "transcriptRetried": "Transcript retry queued",
+    "transcriptRetriedDesc": "Transcript ingestion is running again.",
+    "transcriptRetryFailed": "Transcript retry failed",
+    "retryProcessing": "Retry processing",
+    "wordsSuffix": "words",
+    "summary": "Summary",
+    "errorLabel": "Error:",
+    "meta": {
+      "fileType": "File type",
+      "mimeType": "MIME type",
+      "size": "Size",
+      "uploaded": "Uploaded",
+      "language": "Language",
+      "words": "Words",
+      "characters": "Characters",
+      "pages": "Pages",
+      "chunksCreated": "Chunks created",
+      "embeddingsCreated": "Embeddings created",
+      "embeddingCoverage": "Embedding coverage",
+      "semanticRetrieval": "Semantic retrieval",
+      "ready": "Ready",
+      "retryAttempts": "Retry attempts",
+      "lastRetry": "Last retry",
+      "provider": "Provider",
+      "videoId": "Video ID",
+      "channel": "Channel",
+      "transcriptStatus": "Transcript status"
+    }
+  },
+  "documentStatus": {
+    "searchable": "Searchable",
+    "failed": "Failed",
+    "processing": "Processing",
+    "stages": {
+      "uploaded": "Queued",
+      "extracting_metadata": "Extracting metadata",
+      "extracting_content": "Analyzing content",
+      "detecting_language": "Detecting language",
+      "summarizing": "Generating summary",
+      "indexing": "Creating search index",
+      "chunking": "Chunking text",
+      "generating_embeddings": "Generating embeddings",
+      "embedding": "Generating embeddings",
+      "generating_chunk_questions": "Generating suggested questions"
+    }
+  },
+  "aiReady": "AI ready",
+  "documentProcessing": {
+    "runningNow": "Running now:",
+    "background": "Background:",
+    "lastCompleted": "Last completed:",
+    "elapsed": "Elapsed:",
+    "retries": "Retries:",
+    "readiness": "Readiness",
+    "metrics": "Metrics",
+    "activityTimeline": "Activity timeline",
+    "optional": "optional",
+    "items": {
+      "textExtracted": "Text extracted",
+      "languageDetected": "Language detected",
+      "summary": "Summary",
+      "keywordSearch": "Keyword search",
+      "semanticSearch": "Semantic search",
+      "hybridRetrieval": "Hybrid retrieval",
+      "groundedChat": "Grounded chat",
+      "questionEnrichment": "Question enrichment"
+    },
+    "metricLabels": {
+      "chunks": "Chunks:",
+      "embeddings": "Embeddings:",
+      "coverage": "Coverage:",
+      "questions": "Questions:"
+    }
+  },
+  "documentUsability": {
+    "contentAnalysis": "Content analysis",
+    "extractedText": "Extracted text",
+    "extractedTextHint": "Raw text has been extracted from the document",
+    "summary": "Summary",
+    "summaryHint": "An AI-generated summary of the document content",
+    "detectedLanguage": "Detected language",
+    "retrievalPipeline": "Retrieval pipeline",
+    "chunkedForRetrieval": "Chunked for retrieval",
+    "chunkedHint": "Document split into smaller passages for precise retrieval",
+    "chunksDetail_one": "{{count}} chunk",
+    "chunksDetail_other": "{{count}} chunks",
+    "embeddingsCreated": "Embeddings created",
+    "embeddingsHint": "Document prepared for meaning-based search, not only exact keywords",
+    "avgChunkSize": "Avg. chunk size: ~{{tokens}} tokens",
+    "questionEnrichment": "Question enrichment",
+    "generatedQuestions": "Generated questions",
+    "generatedQuestionsHint": "Total generated question rows for this document",
+    "questionEmbeddingsCreated": "Question embeddings created",
+    "questionEmbeddingsHint": "Question rows with non-null embedding vectors",
+    "questionEmbeddingCoverage": "Question embedding coverage",
+    "questionEmbeddingCoverageHint": "Percentage of question rows that have embeddings",
+    "questionRetrieval": "Question retrieval",
+    "questionRetrievalHint": "Ready: all questions embedded and chunk retrieval ready. Partial: some embeddings missing. Not ready: no questions.",
+    "ready": "Ready",
+    "partial": "Partial",
+    "notReady": "Not ready",
+    "searchCapabilities": "Search capabilities",
+    "keywordSearch": "Keyword search",
+    "keywordSearchHint": "Find documents by exact words and phrases",
+    "semanticSearch": "Semantic search",
+    "semanticSearchHint": "AI finds relevant passages even when wording differs from your query",
+    "hybridRetrieval": "Hybrid retrieval",
+    "hybridRetrievalHint": "Combines keyword and semantic search for the best results",
+    "aiReadiness": "AI readiness",
+    "usableInGrounded": "Usable in grounded chat",
+    "usableInGroundedHint": "AI answers can reference this document's content for more accurate responses",
+    "readyForAi": "Ready for AI answers",
+    "readyForAiHint": "All retrieval stages complete — this document fully supports AI-powered Q&A"
+  },
+  "linkedVideo": {
+    "video": "VIDEO",
+    "linked": "linked",
+    "retryTranscript": "Retry transcript",
+    "stages": {
+      "fetching": "Fetching transcript",
+      "metadataProbe": "Metadata probe",
+      "chunking": "Chunking for retrieval",
+      "embeddings": "Generating embeddings",
+      "questions": "Generating suggested questions",
+      "finalize": "Finalizing"
+    },
+    "details": {
+      "chunksFmt_one": "{{count}} chunk",
+      "chunksFmt_other": "{{count}} chunks",
+      "questionsFmt_one": "{{count}} question",
+      "questionsFmt_other": "{{count}} questions"
+    }
+  },
+  "noteToolbar": {
+    "normal": "Normal text",
+    "h1": "Heading 1",
+    "h2": "Heading 2",
+    "h3": "Heading 3",
+    "bold": "Bold",
+    "italic": "Italic",
+    "code": "Inline code",
+    "bullet": "Bullet list",
+    "numbered": "Numbered list"
   }
 }
