@@ -19,17 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { AVAILABLE_LANGUAGES, type AvailableLanguageCode } from '@/lib/languages';
 
 interface NewProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateProject: (name: string, description: string, language: 'en' | 'sr') => void;
+  onCreateProject: (name: string, description: string, language: AvailableLanguageCode) => void;
 }
 
 export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewProjectDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [language, setLanguage] = useState<'en' | 'sr'>('en');
+  const [language, setLanguage] = useState<AvailableLanguageCode>('en');
   const [nameError, setNameError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
 
@@ -125,13 +126,16 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
 
           <div className="space-y-2">
             <Label htmlFor="project-language">Language</Label>
-            <Select value={language} onValueChange={(val: 'en' | 'sr') => setLanguage(val)}>
+            <Select value={language} onValueChange={(val: AvailableLanguageCode) => setLanguage(val)}>
               <SelectTrigger id="project-language">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                {AVAILABLE_LANGUAGES.map((availableLanguage) => (
+                  <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
+                    {availableLanguage.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

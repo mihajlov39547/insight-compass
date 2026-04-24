@@ -23,6 +23,7 @@ import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/u
 import { toast } from 'sonner';
 import { RetrievalWeightsSection } from '@/components/settings/RetrievalWeightsSection';
 import { supabase } from '@/integrations/supabase/client';
+import { AVAILABLE_LANGUAGES } from '@/lib/languages';
 
 export function SettingsDialog() {
   const { showSettings, setShowSettings } = useApp();
@@ -156,8 +157,10 @@ export function SettingsDialog() {
             <SettingSelect
               label="Language"
               value={local.language_preference}
-              options={['en', 'sr']}
-              optionLabels={{ en: 'English', 'sr': 'Serbian (Latin)' }}
+              options={AVAILABLE_LANGUAGES.map((language) => language.code)}
+              optionLabels={Object.fromEntries(
+                AVAILABLE_LANGUAGES.map((language) => [language.code, language.label]),
+              )}
               onChange={v => update('language_preference', v)}
             />
             <SettingSelect

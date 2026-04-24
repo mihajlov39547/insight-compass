@@ -4,17 +4,22 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import en from './locales/en.json';
 import srLatn from './locales/sr.json';
+import {
+  AVAILABLE_LANGUAGE_CODES,
+  DEFAULT_LANGUAGE,
+  normalizeLanguageCode,
+  type AvailableLanguageCode,
+} from '@/lib/languages';
 
-export const SUPPORTED_LANGUAGES = ['en', 'sr'] as const;
-export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+export const SUPPORTED_LANGUAGES = AVAILABLE_LANGUAGE_CODES;
+export type SupportedLanguage = AvailableLanguageCode;
 
-export const DEFAULT_LANGUAGE: SupportedLanguage = 'en';
-
-if (
-  typeof window !== 'undefined' &&
-  (window.localStorage.getItem('i18nextLng') || '').toLowerCase().startsWith('sr')
-) {
-  window.localStorage.setItem('i18nextLng', 'sr');
+if (typeof window !== 'undefined') {
+  const storedLanguage = window.localStorage.getItem('i18nextLng');
+  const normalizedLanguage = normalizeLanguageCode(storedLanguage);
+  if (storedLanguage && storedLanguage !== normalizedLanguage) {
+    window.localStorage.setItem('i18nextLng', normalizedLanguage);
+  }
 }
 
 i18n

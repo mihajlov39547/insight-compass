@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { AVAILABLE_LANGUAGES, getDateLocale, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
 
 const ICONS = [
   Atom, FlaskConical, Microscope, Scale, Landmark, Scroll,
@@ -95,7 +96,7 @@ function formatLastActivity(dateStr: string, t: any, locale: string): string {
 
 export function NotebooksLanding() {
   const { t, i18n } = useTranslation();
-  const dateLocale = i18n.resolvedLanguage === 'sr' ? 'sr-Latn' : 'en-US';
+  const dateLocale = getDateLocale(i18n.resolvedLanguage || i18n.language);
   const { user } = useAuth();
   const { setSelectedNotebookId, setActiveView } = useApp();
   const { data: notebooks = [], isLoading } = useNotebooks();
@@ -108,12 +109,12 @@ export function NotebooksLanding() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [createName, setCreateName] = useState('');
   const [createDescription, setCreateDescription] = useState('');
-  const [createLanguage, setCreateLanguage] = useState<'en' | 'sr'>('en');
+  const [createLanguage, setCreateLanguage] = useState<AvailableLanguageCode>('en');
 
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editLanguage, setEditLanguage] = useState<string>('en');
+  const [editLanguage, setEditLanguage] = useState<AvailableLanguageCode>('en');
   const [improvingDescription, setImprovingDescription] = useState(false);
 
   // Get document counts per notebook
@@ -152,7 +153,7 @@ export function NotebooksLanding() {
     setEditNotebook(nb);
     setEditName(nb.name);
     setEditDescription(nb.description || '');
-    setEditLanguage(nb.language || 'en');
+    setEditLanguage(normalizeLanguageCode(nb.language));
   };
 
   const handleManageSubmit = () => {
@@ -317,13 +318,16 @@ export function NotebooksLanding() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="create-nb-lang">{t('notebooksLanding.create.languageLabel')}</Label>
-              <Select value={createLanguage} onValueChange={(val: 'en' | 'sr') => setCreateLanguage(val)}>
+              <Select value={createLanguage} onValueChange={(val: AvailableLanguageCode) => setCreateLanguage(val)}>
                 <SelectTrigger id="create-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">{t('notebooksLanding.create.languageEn')}</SelectItem>
-                  <SelectItem value="sr">{t('notebooksLanding.create.languageSr')}</SelectItem>
+                  {AVAILABLE_LANGUAGES.map((availableLanguage) => (
+                    <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
+                      {t(availableLanguage.translationKey)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -416,13 +420,16 @@ export function NotebooksLanding() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-nb-lang">{t('notebooksLanding.manage.languageLabel')}</Label>
-              <Select value={editLanguage} onValueChange={(val: string) => setEditLanguage(val)}>
+              <Select value={editLanguage} onValueChange={(val: AvailableLanguageCode) => setEditLanguage(val)}>
                 <SelectTrigger id="edit-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">{t('notebooksLanding.manage.languageEn')}</SelectItem>
-                  <SelectItem value="sr">{t('notebooksLanding.manage.languageSr')}</SelectItem>
+                  {AVAILABLE_LANGUAGES.map((availableLanguage) => (
+                    <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
+                      {t(availableLanguage.translationKey)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

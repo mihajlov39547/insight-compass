@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
+import type { AvailableLanguageCode } from '@/lib/languages';
 
 export interface DbChat {
   id: string;
@@ -38,7 +39,7 @@ export function useCreateChat() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ projectId, name, language }: { projectId: string; name: string; language: string }) => {
+    mutationFn: async ({ projectId, name, language }: { projectId: string; name: string; language: AvailableLanguageCode }) => {
       const { data, error } = await supabase
         .from('chats')
         .insert({ project_id: projectId, user_id: user!.id, name, language })

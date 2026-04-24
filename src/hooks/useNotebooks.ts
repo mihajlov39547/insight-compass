@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
+import type { AvailableLanguageCode } from '@/lib/languages';
 
 export interface DbNotebook {
   id: string;
@@ -47,7 +48,7 @@ export function useCreateNotebook() {
     }: {
       name: string;
       description: string;
-      language: 'en' | 'sr';
+      language: AvailableLanguageCode;
       icon?: string;
       color?: string;
     }) => {

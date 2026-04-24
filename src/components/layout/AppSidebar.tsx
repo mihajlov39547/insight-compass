@@ -45,6 +45,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useRecentChats } from '@/hooks/useRecentChats';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
+import { AVAILABLE_LANGUAGES, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
 
 export function AppSidebar() {
   const { 
@@ -75,14 +76,14 @@ export function AppSidebar() {
   const [editProject, setEditProject] = useState<DbProject | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editLanguage, setEditLanguage] = useState<'en' | 'sr'>('en');
+  const [editLanguage, setEditLanguage] = useState<AvailableLanguageCode>('en');
   const [isImprovingDesc, setIsImprovingDesc] = useState(false);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
   const [showCreateNotebook, setShowCreateNotebook] = useState(false);
   const [createNbName, setCreateNbName] = useState('');
   const [createNbDescription, setCreateNbDescription] = useState('');
-  const [createNbLanguage, setCreateNbLanguage] = useState<'en' | 'sr'>('en');
+  const [createNbLanguage, setCreateNbLanguage] = useState<AvailableLanguageCode>('en');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
@@ -104,7 +105,7 @@ export function AppSidebar() {
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editNbName, setEditNbName] = useState('');
   const [editNbDescription, setEditNbDescription] = useState('');
-  const [editNbLanguage, setEditNbLanguage] = useState<string>('en');
+  const [editNbLanguage, setEditNbLanguage] = useState<AvailableLanguageCode>('en');
   const [isImprovingNbDesc, setIsImprovingNbDesc] = useState(false);
   const updateNotebook = useUpdateNotebook();
   const [pendingDeleteChat, setPendingDeleteChat] = useState<{ id: string; projectId: string; name: string } | null>(null);
@@ -241,7 +242,7 @@ export function AppSidebar() {
     setEditProject(project);
     setEditName(project.name);
     setEditDescription(project.description || '');
-    setEditLanguage((project.language as 'en' | 'sr') || 'en');
+    setEditLanguage(normalizeLanguageCode(project.language));
   };
 
   const handleManageSubmit = () => {
@@ -292,7 +293,7 @@ export function AppSidebar() {
   };
 
   const handleManageNotebook = (nb: DbNotebook) => {
-    setEditNotebook(nb); setEditNbName(nb.name); setEditNbDescription(nb.description || ''); setEditNbLanguage(nb.language || 'en');
+    setEditNotebook(nb); setEditNbName(nb.name); setEditNbDescription(nb.description || ''); setEditNbLanguage(normalizeLanguageCode(nb.language));
   };
 
   const handleManageNotebookSubmit = () => {
@@ -376,13 +377,16 @@ export function AppSidebar() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="create-nb-lang">Language</Label>
-              <Select value={createNbLanguage} onValueChange={(val: 'en' | 'sr') => setCreateNbLanguage(val)}>
+              <Select value={createNbLanguage} onValueChange={(val: AvailableLanguageCode) => setCreateNbLanguage(val)}>
                 <SelectTrigger id="create-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                  {AVAILABLE_LANGUAGES.map((availableLanguage) => (
+                    <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
+                      {availableLanguage.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -465,13 +469,16 @@ export function AppSidebar() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-nb-lang-sidebar">Language</Label>
-              <Select value={editNbLanguage} onValueChange={(val: string) => setEditNbLanguage(val)}>
+              <Select value={editNbLanguage} onValueChange={(val: AvailableLanguageCode) => setEditNbLanguage(val)}>
                 <SelectTrigger id="edit-nb-lang-sidebar">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                  {AVAILABLE_LANGUAGES.map((availableLanguage) => (
+                    <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
+                      {availableLanguage.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -909,11 +916,14 @@ export function AppSidebar() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-project-lang">Language</Label>
-              <Select value={editLanguage} onValueChange={(val: 'en' | 'sr') => setEditLanguage(val)}>
+              <Select value={editLanguage} onValueChange={(val: AvailableLanguageCode) => setEditLanguage(val)}>
                 <SelectTrigger id="edit-project-lang"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
+                  {AVAILABLE_LANGUAGES.map((availableLanguage) => (
+                    <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
+                      {availableLanguage.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

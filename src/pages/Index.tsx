@@ -27,6 +27,7 @@ import { SearchDashboard } from '@/components/views/SearchDashboard';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/useApp';
 import { useCreateProject } from '@/hooks/useProjects';
+import type { AvailableLanguageCode } from '@/lib/languages';
 
 function MainContent() {
   const { activeView } = useApp();
@@ -70,7 +71,7 @@ function AppContent() {
   const currentPlan = (profile?.plan || 'free') as import('@/data/mockData').Plan;
   const sidebarLanguageKey = i18n.resolvedLanguage || i18n.language || 'en';
 
-  const handleCreateProject = async (name: string, description: string, language: 'en' | 'sr') => {
+  const handleCreateProject = async (name: string, description: string, language: AvailableLanguageCode) => {
     createProject.mutate({ name, description, language });
   };
 

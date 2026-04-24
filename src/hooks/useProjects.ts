@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
+import type { AvailableLanguageCode } from '@/lib/languages';
 
 export interface DbProject {
   id: string;
@@ -36,7 +37,7 @@ export function useCreateProject() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ name, description, language }: { name: string; description: string; language: string }) => {
+    mutationFn: async ({ name, description, language }: { name: string; description: string; language: AvailableLanguageCode }) => {
       const { data, error } = await supabase
         .from('projects')
         .insert({ user_id: user!.id, name, description, language })

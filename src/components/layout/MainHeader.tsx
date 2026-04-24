@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { SupportedLanguage } from '@/i18n/config';
+import { AVAILABLE_LANGUAGES, normalizeLanguageCode } from '@/lib/languages';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Settings, 
@@ -44,10 +45,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
   const { t, i18n } = useTranslation();
   const [showAuth, setShowAuth] = useState(false);
 
-  const normalizeLanguage = (lang?: string): SupportedLanguage =>
-    (lang?.toLowerCase().startsWith('sr') ? 'sr' : 'en');
-
-  const language = normalizeLanguage(i18n.resolvedLanguage || i18n.language);
+  const language = normalizeLanguageCode(i18n.resolvedLanguage || i18n.language);
 
   const handleLanguageChange = async (lang: SupportedLanguage) => {
     await i18n.changeLanguage(lang);
@@ -107,12 +105,13 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>{t('header.language.label')}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
-                    <span className={cn(language === 'en' && 'font-medium')}>{t('header.language.en')}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleLanguageChange('sr')}>
-                    <span className={cn(language === 'sr' && 'font-medium')}>{t('header.language.sr')}</span>
-                  </DropdownMenuItem>
+                  {AVAILABLE_LANGUAGES.map((availableLanguage) => (
+                    <DropdownMenuItem key={availableLanguage.code} onClick={() => handleLanguageChange(availableLanguage.code)}>
+                      <span className={cn(language === availableLanguage.code && 'font-medium')}>
+                        {t(availableLanguage.translationKey)}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

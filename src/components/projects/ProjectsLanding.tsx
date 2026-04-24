@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { AVAILABLE_LANGUAGES, getDateLocale, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
 
 const ICONS = [
   Atom, FlaskConical, Microscope, Scale, Landmark, Scroll,
@@ -89,7 +90,7 @@ function formatLastActivity(dateStr: string, t: (key: string) => string, locale:
 
 export function ProjectsLanding() {
   const { t, i18n } = useTranslation();
-  const dateLocale = i18n.resolvedLanguage === 'sr' ? 'sr-Latn' : 'en-US';
+  const dateLocale = getDateLocale(i18n.resolvedLanguage || i18n.language);
   const {
     setShowNewProject,
     setSelectedProjectId,
@@ -109,7 +110,7 @@ export function ProjectsLanding() {
   const [editProject, setEditProject] = React.useState<DbProject | null>(null);
   const [editName, setEditName] = React.useState('');
   const [editDescription, setEditDescription] = React.useState('');
-  const [editLanguage, setEditLanguage] = React.useState<'en' | 'sr'>('en');
+  const [editLanguage, setEditLanguage] = React.useState<AvailableLanguageCode>('en');
   const [isImprovingDesc, setIsImprovingDesc] = React.useState(false);
 
   const { data: allDocCounts = {} } = useQuery({
@@ -140,7 +141,7 @@ export function ProjectsLanding() {
     setEditProject(project);
     setEditName(project.name);
     setEditDescription(project.description || '');
-    setEditLanguage((project.language as 'en' | 'sr') || 'en');
+    setEditLanguage(normalizeLanguageCode(project.language));
   };
 
   const handleManageSubmit = () => {
@@ -428,13 +429,16 @@ export function ProjectsLanding() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="card-edit-project-lang">{t('projectsLanding.manage.languageLabel')}</Label>
-              <Select value={editLanguage} onValueChange={(val: 'en' | 'sr') => setEditLanguage(val)}>
+              <Select value={editLanguage} onValueChange={(val: AvailableLanguageCode) => setEditLanguage(val)}>
                 <SelectTrigger id="card-edit-project-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">{t('projectsLanding.manage.languageEn')}</SelectItem>
-                  <SelectItem value="sr">{t('projectsLanding.manage.languageSr')}</SelectItem>
+                  {AVAILABLE_LANGUAGES.map((availableLanguage) => (
+                    <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
+                      {t(availableLanguage.translationKey)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

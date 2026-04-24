@@ -1,4 +1,8 @@
 {
+  "languages": {
+    "en": "Engleski",
+    "sr": "Srpski (Latinica)"
+  },
   "header": {
     "language": {
       "label": "Jezik",
@@ -152,8 +156,6 @@
       "improving": "Poboljšavanje…",
       "improveWithAi": "Poboljšaj uz AI",
       "languageLabel": "Jezik",
-      "languageEn": "Engleski",
-      "languageSr": "Srpski (Latinica)",
       "cancel": "Otkaži",
       "save": "Sačuvaj izmene",
       "updated": "Projekat ažuriran",
@@ -201,8 +203,6 @@
       "descriptionLabel": "Opis",
       "descriptionPlaceholder": "O čemu je ova sveska?",
       "languageLabel": "Jezik",
-      "languageEn": "Engleski",
-      "languageSr": "Srpski (Latinica)",
       "cancel": "Otkaži",
       "submit": "Kreiraj svesku",
       "success": "Sveska kreirana"
@@ -220,8 +220,6 @@
       "improveSuccess": "Opis poboljšan",
       "improveFailed": "Poboljšavanje opisa nije uspelo",
       "languageLabel": "Jezik",
-      "languageEn": "Engleski",
-      "languageSr": "Srpski (Latinica)",
       "cancel": "Otkaži",
       "save": "Sačuvaj izmene",
       "updated": "Sveska ažurirana"

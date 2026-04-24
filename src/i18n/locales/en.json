@@ -1,4 +1,8 @@
 {
+  "languages": {
+    "en": "English",
+    "sr": "Serbian (Latin)"
+  },
   "header": {
     "language": {
       "label": "Language",
@@ -148,8 +152,6 @@
       "improving": "Improving…",
       "improveWithAi": "Improve with AI",
       "languageLabel": "Language",
-      "languageEn": "English",
-      "languageSr": "Serbian (Latin)",
       "cancel": "Cancel",
       "save": "Save Changes",
       "updated": "Project updated",
@@ -195,8 +197,6 @@
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "What is this notebook about?",
       "languageLabel": "Language",
-      "languageEn": "English",
-      "languageSr": "Serbian (Latin)",
       "cancel": "Cancel",
       "submit": "Create Notebook",
       "success": "Notebook created"
@@ -214,8 +214,6 @@
       "improveSuccess": "Description improved",
       "improveFailed": "Failed to improve description",
       "languageLabel": "Language",
-      "languageEn": "English",
-      "languageSr": "Serbian (Latin)",
       "cancel": "Cancel",
       "save": "Save Changes",
       "updated": "Notebook updated"
