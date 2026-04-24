@@ -55,5 +55,30 @@
     "workspaceSuffix": "'s Knowledge Assistant",
     "expandSidebar": "Expand sidebar",
     "notifications": "Notifications"
+  },
+  "home": {
+    "welcome": "Welcome back, {{name}}",
+    "subtitle": "Your knowledge workspace is ready. What would you like to work on?",
+    "fallbackName": "there",
+    "cards": {
+      "projects": {
+        "title": "My Projects",
+        "count_one": "{{count}} project",
+        "count_other": "{{count}} projects"
+      },
+      "notebooks": {
+        "title": "My Notebooks",
+        "count_one": "{{count}} notebook",
+        "count_other": "{{count}} notebooks"
+      },
+      "newProject": {
+        "title": "New Project",
+        "description": "Start a new research project"
+      },
+      "resources": {
+        "title": "Resources",
+        "description": "Browse your documents"
+      }
+    }
   }
 }

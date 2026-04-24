@@ -82,7 +82,7 @@ export function AppSidebar() {
   const [showCreateNotebook, setShowCreateNotebook] = useState(false);
   const [createNbName, setCreateNbName] = useState('');
   const [createNbDescription, setCreateNbDescription] = useState('');
-  const [createNbLanguage, setCreateNbLanguage] = useState<'en' | 'sr-lat'>('en');
+  const [createNbLanguage, setCreateNbLanguage] = useState<'en' | 'sr'>('en');
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
@@ -376,13 +376,13 @@ export function AppSidebar() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="create-nb-lang">Language</Label>
-              <Select value={createNbLanguage} onValueChange={(val: 'en' | 'sr-lat') => setCreateNbLanguage(val)}>
+              <Select value={createNbLanguage} onValueChange={(val: 'en' | 'sr') => setCreateNbLanguage(val)}>
                 <SelectTrigger id="create-nb-lang">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
