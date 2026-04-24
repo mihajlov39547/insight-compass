@@ -363,6 +363,7 @@ function DocumentRow({
   isDeleting: boolean;
   isRetrying: boolean;
 }) {
+  const { t } = useTranslation();
   const Icon = fileIcons[doc.file_type] || FileIcon;
   const color = fileColors[doc.file_type] || 'text-muted-foreground';
   const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
@@ -406,14 +407,14 @@ function DocumentRow({
                 />
                 {isPartiallyReady && statusPresentation?.primaryTone !== 'ready' && (
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 bg-blue-500/10 text-blue-700 border-blue-500/20">
-                    <Zap className="h-2.5 w-2.5" /> Partially ready
+                    <Zap className="h-2.5 w-2.5" /> {t('documentDashboard.partiallyReady')}
                   </Badge>
                 )}
                 <AIReadyBadge isReady={isAIReady} />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
-                {doc.word_count ? ` • ${doc.word_count.toLocaleString()} words` : ''}
+                {doc.word_count ? ` • ${doc.word_count.toLocaleString()} ${t('documentDashboard.wordsSuffix')}` : ''}
                 {statusPresentation?.primaryTone === 'ready' && statusPresentation.secondaryLabel && (
                   <span className="text-muted-foreground"> • {statusPresentation.secondaryLabel}</span>
                 )}
@@ -432,7 +433,7 @@ function DocumentRow({
                     role="button"
                     tabIndex={isRetrying ? -1 : 0}
                     aria-disabled={isRetrying}
-                    title="Retry processing"
+                    title={t('documentDashboard.retryProcessing')}
                     onClick={(e) => { e.stopPropagation(); if (!isRetrying) onRetry(); }}
                     onKeyDown={(e) => {
                       if (isRetrying) return;
@@ -473,25 +474,25 @@ function DocumentRow({
         <CollapsibleContent>
           <div className="px-3 pb-3 pt-0 border-t border-border">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 py-3 text-xs">
-              <MetaItem label="File type" value={doc.file_type.toUpperCase()} />
-              <MetaItem label="MIME type" value={doc.mime_type} />
-              <MetaItem label="Size" value={formatFileSize(doc.file_size)} />
-              <MetaItem label="Uploaded" value={new Date(doc.created_at).toLocaleString()} />
-              {doc.detected_language && <MetaItem label="Language" value={doc.detected_language.toUpperCase()} />}
-              {doc.word_count != null && <MetaItem label="Words" value={doc.word_count.toLocaleString()} />}
-              {doc.char_count != null && <MetaItem label="Characters" value={doc.char_count.toLocaleString()} />}
-              {doc.page_count != null && <MetaItem label="Pages" value={doc.page_count.toString()} />}
+              <MetaItem label={t('documentDashboard.meta.fileType')} value={doc.file_type.toUpperCase()} />
+              <MetaItem label={t('documentDashboard.meta.mimeType')} value={doc.mime_type} />
+              <MetaItem label={t('documentDashboard.meta.size')} value={formatFileSize(doc.file_size)} />
+              <MetaItem label={t('documentDashboard.meta.uploaded')} value={new Date(doc.created_at).toLocaleString()} />
+              {doc.detected_language && <MetaItem label={t('documentDashboard.meta.language')} value={doc.detected_language.toUpperCase()} />}
+              {doc.word_count != null && <MetaItem label={t('documentDashboard.meta.words')} value={doc.word_count.toLocaleString()} />}
+              {doc.char_count != null && <MetaItem label={t('documentDashboard.meta.characters')} value={doc.char_count.toLocaleString()} />}
+              {doc.page_count != null && <MetaItem label={t('documentDashboard.meta.pages')} value={doc.page_count.toString()} />}
             </div>
 
             {doc.processing_error && (
               <div className="text-xs text-destructive bg-destructive/5 rounded p-2 mb-3">
-                <span className="font-medium">Error: </span>{doc.processing_error}
+                <span className="font-medium">{t('documentDashboard.errorLabel')} </span>{doc.processing_error}
               </div>
             )}
 
             {doc.summary && (
               <div className="mb-3">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Summary</p>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('documentDashboard.summary')}</p>
                 <p className="text-xs text-foreground leading-relaxed">{doc.summary}</p>
               </div>
             )}
