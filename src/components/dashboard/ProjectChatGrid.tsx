@@ -17,14 +17,14 @@ import { useTranslation } from 'react-i18next';
 
 const BATCH_SIZE = 6;
 
-function formatActivity(dateStr: string, locale: string): string {
+function formatActivity(dateStr: string, locale: string, t: (key: string) => string): string {
   try {
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
+    if (diffDays === 0) return t('projectDashboard.chats.time.today');
+    if (diffDays === 1) return t('projectDashboard.chats.time.yesterday');
     if (diffDays < 7) return formatDistanceToNow(date, { addSuffix: true });
     return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   } catch {
@@ -38,7 +38,7 @@ interface Props {
 }
 
 export function ProjectChatGrid({ chats, permissions }: Props) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dateLocale = getDateLocale(i18n.resolvedLanguage || i18n.language);
   const { selectedChatId, setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
@@ -75,7 +75,7 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
     deleteChat.mutate({ id: pendingDeleteChat.id, projectId: pendingDeleteChat.project_id }, {
       onSuccess: () => {
         if (selectedChatId === pendingDeleteChat.id) setSelectedChatId(null);
-        toast.success('Chat and all its data deleted');
+        toast.success(t('projectDashboard.chats.delete.success'));
         setPendingDeleteChat(null);
       },
     });
@@ -85,7 +85,7 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
     <div className="mt-4 pt-4 border-t border-border">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-foreground">
-          Chats ({chats.length})
+          {t('projectDashboard.chats.heading', { count: chats.length })}
         </h3>
       </div>
 
@@ -144,15 +144,15 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
               </div>
 
               <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2rem] mb-2.5">
-                {lastMessage || 'No messages yet'}
+                {lastMessage || t('projectDashboard.chats.noMessagesYet')}
               </p>
 
               <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <FileText className="h-3 w-3" />
-                  <span>{docCount} doc{docCount !== 1 ? 's' : ''}</span>
+                  <span>{t('projectDashboard.chats.docs', { count: docCount })}</span>
                 </div>
-                <span className="ml-auto">{formatActivity(chat.updated_at, dateLocale)}</span>
+                <span className="ml-auto">{formatActivity(chat.updated_at, dateLocale, t)}</span>
               </div>
             </div>
           );
@@ -166,18 +166,18 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
           className="mt-3 text-accent hover:text-accent/80 gap-1"
           onClick={() => setVisibleCount(prev => prev + BATCH_SIZE)}
         >
-          View all {chats.length} chats
+          {t('projectDashboard.chats.viewAll', { count: chats.length })}
           <ChevronRight className="h-3.5 w-3.5" />
         </Button>
       )}
       {allShown && chats.length > BATCH_SIZE && (
-        <p className="mt-3 text-xs text-muted-foreground text-center">All chats shown</p>
+        <p className="mt-3 text-xs text-muted-foreground text-center">{t('projectDashboard.chats.allShown')}</p>
       )}
 
       <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
         <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>Rename Chat</DialogTitle>
+            <DialogTitle>{t('projectDashboard.chats.rename.title')}</DialogTitle>
           </DialogHeader>
           <Input
             value={renameChatValue}
@@ -186,29 +186,29 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
               if (e.key === 'Enter' && renameChatId && renameChatValue.trim()) {
                 updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
                   onSuccess: () => {
-                    toast.success('Chat renamed');
+                    toast.success(t('projectDashboard.chats.rename.success'));
                     setRenameChatId(null);
                   },
                 });
               }
             }}
-            placeholder="Chat name"
+            placeholder={t('projectDashboard.chats.rename.placeholder')}
             autoFocus
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameChatId(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRenameChatId(null)}>{t('projectDashboard.chats.rename.cancel')}</Button>
             <Button
               disabled={!renameChatValue.trim()}
               onClick={() => {
                 if (!renameChatId || !renameChatValue.trim()) return;
                 updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, {
                   onSuccess: () => {
-                    toast.success('Chat renamed');
+                    toast.success(t('projectDashboard.chats.rename.success'));
                     setRenameChatId(null);
                   },
                 });
               }}
-            >Save</Button>
+            >{t('projectDashboard.chats.rename.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -216,24 +216,24 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
       <AlertDialog open={!!pendingDeleteChat} onOpenChange={(open) => !open && setPendingDeleteChat(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+            <AlertDialogTitle>{t('projectDashboard.chats.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this chat and all of its data, including:
+              {t('projectDashboard.chats.delete.intro')}
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>All messages and conversation history</li>
-                <li>All uploaded documents and files</li>
-                <li>All extracted text, summaries, and processed data</li>
+                <li>{t('projectDashboard.chats.delete.items.messages')}</li>
+                <li>{t('projectDashboard.chats.delete.items.documents')}</li>
+                <li>{t('projectDashboard.chats.delete.items.extracted')}</li>
               </ul>
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">{t('projectDashboard.chats.delete.irreversible')}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('projectDashboard.chats.delete.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteChat}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Chat
+              {t('projectDashboard.chats.delete.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
