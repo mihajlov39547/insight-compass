@@ -76,10 +76,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
             <Sparkles className="h-4 w-4 text-accent-foreground" />
           </div>
           <div className="text-left">
-            <h1 className="text-base font-semibold text-foreground leading-tight">
-              Insight <span className="gradient-text">Navigator</span>
-            </h1>
-            <p className="text-[10px] text-muted-foreground leading-tight">Knowledge Assistant</p>
+            <h1 className="text-base font-semibold text-foreground leading-tight">Researcher</h1>
           </div>
         </div>
       </div>

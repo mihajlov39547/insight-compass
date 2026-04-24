@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "insight-navigator",
+      "name": "researcher",
       "dependencies": {
         "@hookform/resolvers": "^3.10.0",
         "@lovable.dev/cloud-auth-js": "^1.0.0",

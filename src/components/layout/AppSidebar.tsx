@@ -585,7 +585,7 @@ export function AppSidebar() {
           <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
           </div>
-          <span className="text-sm font-semibold text-sidebar-foreground truncate">{firstName}{t('sidebar.workspaceSuffix')}</span>
+          <span className="text-sm font-semibold text-sidebar-foreground truncate">Researcher</span>
         </div>
         <Button variant="ghost" size="icon" className="ml-2 text-sidebar-foreground/70 hover:bg-sidebar-accent flex-shrink-0 h-7 w-7" onClick={() => setSidebarCollapsed(true)}>
           <ChevronLeft className="h-4 w-4" />

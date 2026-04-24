@@ -54,7 +54,7 @@ export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScree
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
             <Sparkles className="h-4 w-4" />
-            <span className="text-sm font-medium">AI-Powered Knowledge Assistant</span>
+            <span className="text-sm font-medium">Researcher</span>
           </div>
           
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
@@ -159,7 +159,7 @@ export function OnboardingScreen({ onStartFree, onViewPricing }: OnboardingScree
         <div className="py-8 border-t border-border/50">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              What You Can Do with Insight Navigator
+              What You Can Do with Researcher
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Practical ways to get value from your documents and knowledge.

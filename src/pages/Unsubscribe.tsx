@@ -59,7 +59,7 @@ export default function Unsubscribe() {
           <>
             <MailX className="h-12 w-12 mx-auto text-accent" />
             <h1 className="text-xl font-semibold text-foreground">Unsubscribe</h1>
-            <p className="text-muted-foreground">Are you sure you want to unsubscribe from Insight Navigator emails?</p>
+            <p className="text-muted-foreground">Are you sure you want to unsubscribe from Researcher emails?</p>
             <Button onClick={handleConfirm} disabled={submitting} className="bg-accent hover:bg-accent/90 text-accent-foreground">
               {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing…</> : 'Confirm Unsubscribe'}
             </Button>

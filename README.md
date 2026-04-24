@@ -1,6 +1,6 @@
-# Insight Navigator
+# Researcher
 
-Insight Navigator is a notebook-style LLM workspace for creating projects, uploading source documents, and asking questions grounded in those files.
+Researcher is a notebook-style LLM workspace for creating projects, uploading source documents, and asking questions grounded in those files.
 
 ## What it does
 
