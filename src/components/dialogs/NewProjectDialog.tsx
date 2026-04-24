@@ -23,13 +23,13 @@ import {
 interface NewProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateProject: (name: string, description: string, language: 'en' | 'sr-lat') => void;
+  onCreateProject: (name: string, description: string, language: 'en' | 'sr') => void;
 }
 
 export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewProjectDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [language, setLanguage] = useState<'en' | 'sr-lat'>('en');
+  const [language, setLanguage] = useState<'en' | 'sr'>('en');
   const [nameError, setNameError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
 
@@ -125,13 +125,13 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
 
           <div className="space-y-2">
             <Label htmlFor="project-language">Language</Label>
-            <Select value={language} onValueChange={(val: 'en' | 'sr-lat') => setLanguage(val)}>
+            <Select value={language} onValueChange={(val: 'en' | 'sr') => setLanguage(val)}>
               <SelectTrigger id="project-language">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="en">English</SelectItem>
-                <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                <SelectItem value="sr">Serbian (Latin)</SelectItem>
               </SelectContent>
             </Select>
           </div>

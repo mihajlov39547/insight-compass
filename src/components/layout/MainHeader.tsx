@@ -45,7 +45,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
   const [showAuth, setShowAuth] = useState(false);
 
   const normalizeLanguage = (lang?: string): SupportedLanguage =>
-    (lang === 'sr' || lang === 'sr-lat' || lang === 'sr' || lang === 'sr') ? 'sr' : 'en';
+    (lang?.toLowerCase().startsWith('sr') ? 'sr' : 'en');
 
   const language = normalizeLanguage(i18n.resolvedLanguage || i18n.language);
 

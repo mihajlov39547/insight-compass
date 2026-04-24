@@ -75,7 +75,7 @@ export function AppSidebar() {
   const [editProject, setEditProject] = useState<DbProject | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editLanguage, setEditLanguage] = useState<'en' | 'sr-lat'>('en');
+  const [editLanguage, setEditLanguage] = useState<'en' | 'sr'>('en');
   const [isImprovingDesc, setIsImprovingDesc] = useState(false);
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
@@ -241,7 +241,7 @@ export function AppSidebar() {
     setEditProject(project);
     setEditName(project.name);
     setEditDescription(project.description || '');
-    setEditLanguage((project.language as 'en' | 'sr-lat') || 'en');
+    setEditLanguage((project.language as 'en' | 'sr') || 'en');
   };
 
   const handleManageSubmit = () => {
@@ -471,7 +471,7 @@ export function AppSidebar() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -909,11 +909,11 @@ export function AppSidebar() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-project-lang">Language</Label>
-              <Select value={editLanguage} onValueChange={(val: 'en' | 'sr-lat') => setEditLanguage(val)}>
+              <Select value={editLanguage} onValueChange={(val: 'en' | 'sr') => setEditLanguage(val)}>
                 <SelectTrigger id="edit-project-lang"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sr-lat">Serbian (Latin)</SelectItem>
+                  <SelectItem value="sr">Serbian (Latin)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

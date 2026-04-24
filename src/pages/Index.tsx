@@ -70,7 +70,7 @@ function AppContent() {
   const currentPlan = (profile?.plan || 'free') as import('@/data/mockData').Plan;
   const sidebarLanguageKey = i18n.resolvedLanguage || i18n.language || 'en';
 
-  const handleCreateProject = async (name: string, description: string, language: 'en' | 'sr-lat') => {
+  const handleCreateProject = async (name: string, description: string, language: 'en' | 'sr') => {
     createProject.mutate({ name, description, language });
   };
 
