@@ -1034,6 +1034,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onDeleteChat: (chat: DbChat) => void;
   onRenameChat: (chatId: string, currentName: string) => void;
 }) {
+  const { t } = useTranslation();
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
   const { data: myRole } = useItemRole(project.id, 'project');
   const permissions = getItemPermissions(myRole);
