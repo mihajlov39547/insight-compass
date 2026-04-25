@@ -46,6 +46,7 @@ import { useRecentChats } from '@/hooks/useRecentChats';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
 import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
+import { isDefaultChatName } from '@/lib/chatNames';
 
 export function AppSidebar() {
   const { 
@@ -1102,10 +1103,10 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedChatId === chat.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
                     <MessageSquare className="h-3 w-3" />
                   </div>
-                  <span className="truncate">{chat.name === 'New Chat' ? t('sidebar.newChatName') : chat.name}</span>
+                  <span className="truncate">{isDefaultChatName(chat.name) ? t('sidebar.newChatName') : chat.name}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{chat.name === 'New Chat' ? t('sidebar.newChatName') : chat.name}</TooltipContent>
+              <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{isDefaultChatName(chat.name) ? t('sidebar.newChatName') : chat.name}</TooltipContent>
             </Tooltip>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

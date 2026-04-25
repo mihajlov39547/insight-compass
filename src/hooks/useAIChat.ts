@@ -22,6 +22,7 @@ import {
   type ResearchTraceState,
 } from '@/services/research/tavilyResearch';
 import { runYouTubeSearch, youtubeSourcesToUnified } from '@/services/youtube-search';
+import { isDefaultChatName } from '@/lib/chatNames';
 
 const CHAT_URL = getFunctionUrl('/functions/v1/chat');
 const TITLE_URL = getFunctionUrl('/functions/v1/generate-chat-title');
@@ -198,7 +199,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
           .update({ updated_at: new Date().toISOString() })
           .eq('id', chatId);
 
-        if (chatName === 'New Chat' && researchResult.finalText) {
+        if (isDefaultChatName(chatName) && researchResult.finalText) {
           fetch(TITLE_URL, {
             method: 'POST',
             headers: {
@@ -268,7 +269,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
           .update({ updated_at: new Date().toISOString() })
           .eq('id', chatId);
 
-        if (chatName === 'New Chat' && ytResult.synthesizedAnswer) {
+        if (isDefaultChatName(chatName) && ytResult.synthesizedAnswer) {
           fetch(TITLE_URL, {
             method: 'POST',
             headers: {
@@ -536,7 +537,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       });
 
       // 7. Auto-rename chat if still "New Chat"
-      if (chatName === 'New Chat' && fullContent) {
+      if (isDefaultChatName(chatName) && fullContent) {
         fetch(TITLE_URL, {
           method: 'POST',
           headers: {
