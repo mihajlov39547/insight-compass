@@ -28,6 +28,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { useApp } from '@/contexts/useApp';
 import { useCreateProject } from '@/hooks/useProjects';
 import { DEFAULT_LANGUAGE, type AvailableLanguageCode } from '@/lib/languages';
+import { normalizePlan } from '@/types/app';
 
 function MainContent() {
   const { activeView } = useApp();
@@ -68,7 +69,7 @@ function AppContent() {
   const { user: authUser, profile, loading } = useAuth();
   const { i18n } = useTranslation();
   const createProject = useCreateProject();
-  const currentPlan = (profile?.plan || 'free') as import('@/data/mockData').Plan;
+  const currentPlan = normalizePlan(profile?.plan);
   const sidebarLanguageKey = i18n.resolvedLanguage || i18n.language || DEFAULT_LANGUAGE;
 
   const handleCreateProject = async (name: string, description: string, language: AvailableLanguageCode) => {

@@ -4,7 +4,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { modelOptions } from '@/config/modelOptions';
-import { Message } from '@/data/mockData';
+import type { ChatDisplayMessage } from '@/types/chat';
 import { cn } from '@/lib/utils';
 import { MarkdownContent } from './MarkdownContent';
 import { SourceAttribution, SourceItem } from './SourceAttribution';
@@ -17,7 +17,7 @@ import type { ExtractSelection, CrawlSelectionInput } from './SourceAttribution'
 import { useApp } from '@/contexts/useApp';
 
 interface ChatMessageProps {
-  message: Message;
+  message: ChatDisplayMessage;
   onRetry?: () => void;
   onDeletePair?: (id: string) => void;
   onExtract?: (selections: ExtractSelection[], question: string | null, depth?: ExtractDepth) => void | Promise<void>;

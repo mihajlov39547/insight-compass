@@ -1,9 +1,9 @@
 import React, { useState, ReactNode, useCallback } from 'react';
 import {
+  AppUser,
+  DEFAULT_APP_USER,
   Plan,
-  currentUser,
-  User
-} from '@/data/mockData';
+} from '@/types/app';
 import { DbProject } from '@/hooks/useProjects';
 import { DbChat } from '@/hooks/useChats';
 import { AppContext } from '@/contexts/app-context';
@@ -12,7 +12,7 @@ export type ActiveView = 'default' | 'home' | 'projects' | 'project-documents' |
 
 export interface AppContextType {
   // User
-  user: User;
+  user: AppUser;
   setUserPlan: (plan: Plan) => void;
   
   // Onboarding
@@ -64,7 +64,7 @@ export interface AppContextType {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User>(currentUser);
+  const [user, setUser] = useState<AppUser>(DEFAULT_APP_USER);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedProjectId, setSelectedProjectIdRaw] = useState<string | null>(null);

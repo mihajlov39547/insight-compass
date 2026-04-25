@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Plan } from '@/data/mockData';
+import type { Plan } from '@/types/app';
 import { planIcons } from '@/lib/planConfig';
 import { useTranslation } from 'react-i18next';
 

@@ -1,5 +1,5 @@
 import { Sparkles, Zap, Crown, Building2 } from 'lucide-react';
-import type { Plan } from '@/data/mockData';
+import type { Plan } from '@/types/app';
 
 export const planIcons: Record<Plan, typeof Sparkles> = {
   free: Sparkles,
