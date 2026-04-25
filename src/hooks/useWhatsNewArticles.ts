@@ -36,11 +36,11 @@ function pickLocalization(
   );
 }
 
-export function useWhatsNewArticles(language?: string, enabled = true) {
+export function useWhatsNewArticles(language?: string, enabled = true, limit = 7) {
   const languageCode = normalizeLanguageCode(language);
 
   return useQuery({
-    queryKey: ['whats-new-articles', languageCode],
+    queryKey: ['whats-new-articles', languageCode, limit],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('whats_new_articles' as any)
@@ -57,7 +57,8 @@ export function useWhatsNewArticles(language?: string, enabled = true) {
         `)
         .eq('is_published', true)
         .lte('published_at', new Date().toISOString())
-        .order('published_at', { ascending: false });
+        .order('published_at', { ascending: false })
+        .limit(limit);
 
       if (error) throw error;
 

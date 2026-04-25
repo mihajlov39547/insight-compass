@@ -54,7 +54,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative ml-auto w-full max-w-md bg-card border-l border-border shadow-xl flex flex-col animate-slide-in-right">
+      <div className="relative ml-auto h-full w-full max-w-md bg-card border-l border-border shadow-xl flex flex-col animate-slide-in-right">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <h2 className="text-base font-semibold text-foreground">{t('notifications.title')}</h2>
@@ -79,8 +79,8 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
           </div>
 
           {/* Inbox Tab */}
-          <TabsContent value="inbox" className="flex-1 m-0">
-            <ScrollArea className="h-full">
+          <TabsContent value="inbox" className="flex-1 min-h-0 m-0">
+            <ScrollArea className="h-full min-h-0">
               <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
                   <Inbox className="h-5 w-5 text-muted-foreground" />
@@ -96,8 +96,8 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
           </TabsContent>
 
           {/* What's New Tab */}
-          <TabsContent value="whats-new" className="flex-1 m-0">
-            <ScrollArea className="h-full">
+          <TabsContent value="whats-new" className="flex-1 min-h-0 m-0">
+            <ScrollArea className="h-full min-h-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-20">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
