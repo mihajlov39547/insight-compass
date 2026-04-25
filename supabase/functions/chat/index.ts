@@ -383,8 +383,11 @@ Final answer-shaping instruction (baseline, not an absolute lock):
     );
     console.log("[chat:length] provider-call", {
       strategy: responseLengthConfig.strategy,
-      maxOutputTokens: responseLengthConfig.maxOutputTokens,
-      usedField: "max_tokens,max_completion_tokens",
+      model: resolvedModel,
+      visibleBudget: responseLengthConfig.maxOutputTokens,
+      effectiveMaxTokens,
+      isReasoningModel,
+      usedField: isOpenAI ? "max_completion_tokens" : "max_tokens",
     });
 
     if (!response.ok) {
