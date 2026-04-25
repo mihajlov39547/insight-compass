@@ -780,11 +780,11 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
                 </p>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">{resource.sourceType}</Badge>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t(`resources.sourceType.${resource.sourceType}`, resource.sourceType)}</Badge>
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">{formatProvider(resource.provider)}</Badge>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">{resource.processingStatus}</Badge>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t(`resources.processingStatus.${resource.processingStatus}`, resource.processingStatus)}</Badge>
                 {resource.transcriptStatus && resource.transcriptStatus !== 'none' && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t('resources.row.transcriptStatus', { status: resource.transcriptStatus })}</Badge>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t(`resources.transcriptStatusLabel.${resource.transcriptStatus}`, t('resources.row.transcriptStatus', { status: resource.transcriptStatus }))}</Badge>
                 )}
                 {resource.isSharedWithMe && (
                   <span className="text-[10px] text-muted-foreground">{t('resources.row.by', { name: resource.ownerDisplayName })}</span>
@@ -1238,7 +1238,7 @@ function ResourceDetailsDrawer({
             </SheetDescription>
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t(`resources.types.${resource.resourceType}`)}</Badge>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{resource.sourceType}</Badge>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t(`resources.sourceType.${resource.sourceType}`, resource.sourceType)}</Badge>
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{formatProvider(resource.provider)}</Badge>
               <ReadinessBadge readiness={resource.readiness} />
             </div>
