@@ -3,9 +3,14 @@
     "en": "English",
     "sr": "Serbian (Latin)"
   },
+  "workspace": {
+    "languageBadge": "{{language}} workspace"
+  },
   "header": {
     "language": {
       "label": "Language",
+      "workingIn": "Interface: {{language}}",
+      "changeInSettings": "Change interface language in General Settings",
       "en": "English",
       "sr": "Serbian (Latin)",
       "short": {

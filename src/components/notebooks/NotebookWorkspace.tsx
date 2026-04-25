@@ -540,6 +540,7 @@ export function NotebookWorkspace() {
           )
         )}
         subtitle={notebook.description}
+        language={notebook.language}
         showShare={permissions.canManageSharing}
         onShare={permissions.canManageSharing ? () => setShowShare(true) : undefined}
       />

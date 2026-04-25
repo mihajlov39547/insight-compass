@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import type { ItemPermissions } from '@/lib/permissions';
-import { getDateLocale } from '@/lib/languages';
+import { AVAILABLE_LANGUAGES, getDateLocale, normalizeLanguageCode } from '@/lib/languages';
 import { useTranslation } from 'react-i18next';
 
 const BATCH_SIZE = 6;
@@ -94,6 +94,8 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
           const preview = previews[chat.id];
           const docCount = preview?.docCount || 0;
           const lastMessage = preview?.lastMessage;
+          const chatLanguage = normalizeLanguageCode(chat.language);
+          const chatLanguageConfig = AVAILABLE_LANGUAGES.find(item => item.code === chatLanguage);
 
           return (
             <div
@@ -136,10 +138,13 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
                 </div>
               )}
 
-              <div className="flex items-center gap-2 mb-1.5 pr-8">
-                <MessageSquare className="h-3.5 w-3.5 text-accent shrink-0" />
-                <span className="font-medium text-sm text-foreground truncate">
+              <div className="mb-1.5 flex items-center gap-2 pr-8">
+                <MessageSquare className="h-3.5 w-3.5 shrink-0 text-accent" />
+                <span className="truncate text-sm font-medium text-foreground">
                   {chat.name}
+                </span>
+                <span className="ml-auto inline-flex shrink-0 items-center rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  {t(chatLanguageConfig?.translationKey || 'languages.en')}
                 </span>
               </div>
 

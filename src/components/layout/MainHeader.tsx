@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { SupportedLanguage } from '@/i18n/config';
 import { AVAILABLE_LANGUAGES, normalizeLanguageCode } from '@/lib/languages';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Settings, 
-  ChevronDown,
   Sparkles,
   Globe,
   LogOut
@@ -46,10 +44,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
   const [showAuth, setShowAuth] = useState(false);
 
   const language = normalizeLanguageCode(i18n.resolvedLanguage || i18n.language);
-
-  const handleLanguageChange = async (lang: SupportedLanguage) => {
-    await i18n.changeLanguage(lang);
-  };
+  const languageLabel = AVAILABLE_LANGUAGES.find(item => item.code === language)?.translationKey;
 
   const PlanIcon = planIcons[appUser.plan];
 
@@ -92,28 +87,17 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
         {/* Logged in actions */}
         {authUser && (
           <>
-            {/* Language Selector - hide in minimal mode */}
+            {/* Interface language indicator - language changes live in Settings. */}
             {!minimal && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 text-muted-foreground hover:text-foreground rounded-lg">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground">
                     <Globe className="h-4 w-4" />
-                    <span className="text-sm">{t(`header.language.short.${language}`)}</span>
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>{t('header.language.label')}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {AVAILABLE_LANGUAGES.map((availableLanguage) => (
-                    <DropdownMenuItem key={availableLanguage.code} onClick={() => handleLanguageChange(availableLanguage.code)}>
-                      <span className={cn(language === availableLanguage.code && 'font-medium')}>
-                        {t(availableLanguage.translationKey)}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <span>{t('header.language.workingIn', { language: t(languageLabel || 'languages.en') })}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{t('header.language.changeInSettings')}</TooltipContent>
+              </Tooltip>
             )}
 
             {/* Plan Badge with label */}

@@ -47,6 +47,7 @@ export function ContextualHeader() {
         </span>
       )}
       subtitle={selectedProject.description}
+      language={selectedProject.language}
       showShare={permissions.canManageSharing}
     />
   );

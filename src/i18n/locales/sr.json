@@ -3,9 +3,14 @@
     "en": "Engleski",
     "sr": "Srpski (Latinica)"
   },
+  "workspace": {
+    "languageBadge": "Radni prostor: {{language}}"
+  },
   "header": {
     "language": {
       "label": "Jezik",
+      "workingIn": "Interfejs: {{language}}",
+      "changeInSettings": "Jezik interfejsa se menja u opstim podesavanjima",
       "en": "Engleski",
       "sr": "Srpski (Latinica)",
       "short": {

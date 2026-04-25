@@ -23,11 +23,11 @@ import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/u
 import { toast } from 'sonner';
 import { RetrievalWeightsSection } from '@/components/settings/RetrievalWeightsSection';
 import { supabase } from '@/integrations/supabase/client';
-import { AVAILABLE_LANGUAGES } from '@/lib/languages';
+import { AVAILABLE_LANGUAGES, normalizeLanguageCode } from '@/lib/languages';
 import { useTranslation } from 'react-i18next';
 
 export function SettingsDialog() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { showSettings, setShowSettings } = useApp();
   const { data: settings } = useUserSettings();
   const saveSettings = useSaveUserSettings();
@@ -53,6 +53,10 @@ export function SettingsDialog() {
   const handleSave = async () => {
     try {
       await saveSettings.mutateAsync(local);
+      const nextLanguage = normalizeLanguageCode(local.language_preference);
+      if (normalizeLanguageCode(i18n.resolvedLanguage || i18n.language) !== nextLanguage) {
+        await i18n.changeLanguage(nextLanguage);
+      }
       toast.success(t('settingsDialog.saved'));
       setShowSettings(null);
     } catch {
@@ -174,9 +178,9 @@ export function SettingsDialog() {
               value={local.language_preference}
               options={AVAILABLE_LANGUAGES.map((language) => language.code)}
               optionLabels={Object.fromEntries(
-                AVAILABLE_LANGUAGES.map((language) => [language.code, language.label]),
+                AVAILABLE_LANGUAGES.map((language) => [language.code, t(language.translationKey)]),
               )}
-              onChange={v => update('language_preference', v)}
+              onChange={v => update('language_preference', normalizeLanguageCode(v))}
             />
             <SettingSelect
               label={t('settingsDialog.layout')}
