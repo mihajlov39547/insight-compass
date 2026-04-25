@@ -8,13 +8,21 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function getResponseLanguageInstruction(value: unknown): string {
+  const code = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (code.startsWith("sr")) {
+    return "Write the description in Serbian using Latin script, even if the current description, documents, chats, or context are in another language.";
+  }
+  return "Write the description in English, even if the current description, documents, chats, or context are in another language.";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { projectName, currentDescription, documents, chats } = await req.json();
+    const { projectName, currentDescription, documents, chats, responseLanguage } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -62,6 +70,7 @@ serve(async (req) => {
 
 Rules:
 - Output ONLY the description text, nothing else
+- ${getResponseLanguageInstruction(responseLanguage)}
 - 1 to 3 sentences maximum
 - Plain text, no markdown, no bullet points, no quotation marks
 - Professional and clear

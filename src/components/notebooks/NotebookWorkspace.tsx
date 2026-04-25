@@ -127,6 +127,7 @@ export function NotebookWorkspace() {
     notebookId: selectedNotebookId ?? '',
     notebookName: notebook?.name,
     notebookDescription: notebook?.description,
+    notebookLanguage: notebook?.language,
   });
   const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook'>('none');
 
@@ -817,6 +818,7 @@ export function NotebookWorkspace() {
                     previousUserMessage={previousUserMessage}
                     previousAssistantMessage={previousAssistantMessage}
                     variant="notebook"
+                    responseLanguage={notebook?.language}
                     footerLeft={
                       <span className="text-xs text-muted-foreground">
                         {t('notebookWorkspace.sources.footerEnabled', { count: enabledSourceCount })}

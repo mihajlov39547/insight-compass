@@ -8,13 +8,21 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function getResponseLanguageInstruction(value: unknown): string {
+  const code = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (code.startsWith("sr")) {
+    return "Write all generated title and description text in Serbian using Latin script, even if the notebook context or sources are in another language.";
+  }
+  return "Write all generated title and description text in English, even if the notebook context or sources are in another language.";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { notebookName, currentDescription, documents, userMessage, assistantMessage, mode } = await req.json();
+    const { notebookName, currentDescription, documents, userMessage, assistantMessage, mode, responseLanguage } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -43,6 +51,7 @@ serve(async (req) => {
 
 Rules:
 - Output ONLY the description text, nothing else
+- ${getResponseLanguageInstruction(responseLanguage)}
 - 1 to 3 sentences maximum
 - Plain text, no markdown, no bullet points, no quotation marks
 - Professional and clear
@@ -78,6 +87,7 @@ Rules:
 
 Rules:
 - Return a JSON object with "title" and "description" fields ONLY
+- ${getResponseLanguageInstruction(responseLanguage)}
 - Title: 3 to 7 words, clear and descriptive, no generic words like "Notebook" or "Research" unless truly fitting
 - Description: 1 to 3 sentences, plain text, no markdown
 - Refine the user's original title intent, do not replace it with something unrelated

@@ -8,13 +8,21 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function getResponseLanguageInstruction(value: unknown): string {
+  const code = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (code.startsWith("sr")) {
+    return "Return the improved prompt in Serbian using Latin script, even if the draft or conversation context is in another language.";
+  }
+  return "Return the improved prompt in English, even if the draft or conversation context is in another language.";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { prompt, previousUserMessage, previousAssistantMessage } = await req.json();
+    const { prompt, previousUserMessage, previousAssistantMessage, responseLanguage } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -32,6 +40,7 @@ serve(async (req) => {
 
 Rules:
 - Output ONLY the improved prompt text, nothing else
+- ${getResponseLanguageInstruction(responseLanguage)}
 - Fix typos, grammar, and clarity issues
 - Preserve the original intent and meaning exactly
 - Keep a natural, conversational tone

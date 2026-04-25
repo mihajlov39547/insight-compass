@@ -124,6 +124,22 @@ function buildSynthesisPrompt(query: string, sources: YouTubeSearchSource[]): st
   return lines.join("\n");
 }
 
+function getResponseLanguageInstruction(value: unknown): string {
+  const code = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (code.startsWith("sr")) {
+    return "Respond in Serbian using Latin script. Use Serbian even if the user's query or video metadata are in another language. Translate and summarize the provided metadata into Serbian.";
+  }
+  return "Respond in English. Use English even if the user's query or video metadata are in another language. Translate and summarize the provided metadata into English.";
+}
+
+function getNoResultsMessage(query: string, value: unknown): string {
+  const code = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (code.startsWith("sr")) {
+    return `Nije pronadjen nijedan YouTube video za **${query}**. Pokusajte da preformulisete pretragu.`;
+  }
+  return `No YouTube videos were found for **${query}**. Try rephrasing your search.`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -147,6 +163,7 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => null);
     const rawQuery = body?.query;
+    const responseLanguage = body?.responseLanguage;
 
     if (typeof rawQuery !== "string" || !rawQuery.trim()) {
       return new Response(
@@ -205,7 +222,7 @@ serve(async (req) => {
           augmentationMode: "youtube_search",
           query: trimmedQuery,
           sources: [],
-          synthesizedAnswer: `No YouTube videos were found for **${trimmedQuery}**. Try rephrasing your search.`,
+          synthesizedAnswer: getNoResultsMessage(trimmedQuery, responseLanguage),
           synthesisError: null,
           synthesisModel: null,
         }),
@@ -227,6 +244,7 @@ serve(async (req) => {
           "Use ONLY the provided video metadata (title, channel, views, length, description, published date). " +
           "Do not invent details or fabricate URLs. " +
           "Write a concise, useful overview in Markdown that helps the user decide which videos are worth watching. " +
+          getResponseLanguageInstruction(responseLanguage) + " " +
           "Highlight the strongest matches, mention notable channels or recency when useful, " +
           "and call out duration or popularity if it's relevant. " +
           "Do NOT include a 'References' or 'Sources' or 'Links' section — the videos are listed separately in the UI. " +

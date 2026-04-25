@@ -59,6 +59,7 @@ interface UseNotebookAIChatOptions {
   notebookId: string;
   notebookName?: string;
   notebookDescription?: string;
+  notebookLanguage?: string;
 }
 
 interface MessageOptions {
@@ -67,6 +68,7 @@ interface MessageOptions {
   researchModel?: ResearchModel;
   notebookId?: string;
   notebookName?: string;
+  notebookLanguage?: string;
 }
 
 interface NotebookSourceMetadata {
@@ -93,7 +95,15 @@ async function retrieveNotebookDocContext(notebookId: string, userMessage: strin
   }
 }
 
-export function useNotebookAIChat({ notebookId, notebookName, notebookDescription }: UseNotebookAIChatOptions) {
+function buildNotebookScopeRefusal(topicHint: string, reason: string, language?: string) {
+  const isSerbian = language?.toLowerCase().startsWith('sr');
+  if (isSerbian) {
+    return `Mogu da odgovaram samo na pitanja koja su povezana sa temom i izvorima ove beleznice. Ova beleznica je o temi **${topicHint}**, pa postavite pitanje koje je povezano sa tim.${reason ? `\n\n_Razlog: ${reason}_` : ''}`;
+  }
+  return `I can only answer questions grounded in this notebook's topic and sources. This notebook is about **${topicHint}**, so please ask a related question.${reason ? `\n\n_Reason: ${reason}_` : ''}`;
+}
+
+export function useNotebookAIChat({ notebookId, notebookName, notebookDescription, notebookLanguage }: UseNotebookAIChatOptions) {
   const { user } = useAuth();
   const { data: userSettings } = useUserSettings();
   const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
@@ -141,6 +151,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         const researchResult = await runTavilyResearch({
           input: content,
           model: options.researchModel ?? 'auto',
+          responseLanguage: notebookLanguage,
           onEvent: (evt) => {
             if (evt.type === 'content_delta') {
               setStreamingContent((prev) => (prev ?? '') + evt.text);
@@ -177,7 +188,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
 
       // 1c. YOUTUBE SEARCH MODE — bypass scope check + RAG.
       if (options?.augmentationMode === 'youtube_search') {
-        const ytResult = await runYouTubeSearch(content);
+        const ytResult = await runYouTubeSearch(content, notebookLanguage);
         const youtubeSources = youtubeSourcesToUnified(ytResult.sources);
 
         await (supabase.from('notebook_messages' as any) as any).insert({
@@ -241,7 +252,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       // If not aligned, return a notebook-scoped refusal
       if (scopeAlignment === 'not_aligned') {
         const topicHint = notebookName || notebookDescription || 'this notebook\'s topic';
-        const refusalContent = `I can only answer questions grounded in this notebook's topic and sources. This notebook is about **${topicHint}**, so please ask a related question.${scopeReason ? `\n\n_Reason: ${scopeReason}_` : ''}`;
+        const refusalContent = buildNotebookScopeRefusal(topicHint, scopeReason, notebookLanguage);
 
         await (supabase.from('notebook_messages' as any) as any).insert({
           notebook_id: notebookId,
@@ -388,6 +399,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           webContext,
           notebookScope: !options?.useWebSearch,
           responseLength,
+          responseLanguage: notebookLanguage,
           messageOptions: options ?? { useWebSearch: false },
           notebookSourceInventory,
         }),
@@ -501,6 +513,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
                 userMessage: content,
                 assistantMessage: fullContent,
                 mode: 'auto',
+                responseLanguage: notebookLanguage,
               }),
             }
           );
@@ -532,7 +545,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       setResearchTrace(null);
       setWebSearchTrace(null);
     }
-  }, [user, notebookId, notebookName, notebookDescription, isGenerating, qc, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
+  }, [user, notebookId, notebookName, notebookDescription, notebookLanguage, isGenerating, qc, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
   const clearError = useCallback(() => setError(null), []);
 

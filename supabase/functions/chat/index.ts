@@ -106,13 +106,21 @@ function getResponseLengthConfig(value: unknown): { strategy: ResponseLengthStra
   };
 }
 
+function getResponseLanguageInstruction(value: unknown): string {
+  const code = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (code.startsWith("sr")) {
+    return "Respond in Serbian using Latin script. Use Serbian even if the user's message or provided sources are in another language. Translate and summarize source information into Serbian unless the user explicitly asks for a verbatim quote.";
+  }
+  return "Respond in English. Use English even if the user's message or provided sources are in another language. Translate and summarize source information into English unless the user explicitly asks for a verbatim quote.";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength, notebookSourceInventory } = await req.json();
+    const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength, responseLanguage, notebookSourceInventory } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -152,6 +160,7 @@ serve(async (req) => {
       ? resolveModelForTask(autoTask, autoDecision.normalizedContext)
       : (VALID_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL);
     const responseLengthConfig = getResponseLengthConfig(responseLength);
+    const responseLanguageInstruction = getResponseLanguageInstruction(responseLanguage);
     console.log("[chat:length] resolved", {
       incoming: responseLength ?? null,
       requestedModel: requestedModel || null,
@@ -316,6 +325,7 @@ ${projectDescription ? `The user is working in a project described as: "${projec
 
 Guidelines:
 - Be clear, accurate, and concise
+- ${responseLanguageInstruction}
 - Use markdown formatting judiciously: bold for emphasis, headings only for multi-section answers, bullet lists when listing items
 - Keep responses conversational and well-structured without over-formatting
 - Prefer short paragraphs over dense walls of text

@@ -68,7 +68,7 @@ export function useUpdateNotebook() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<DbNotebook> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: Partial<Omit<DbNotebook, 'id' | 'user_id' | 'language' | 'created_at' | 'updated_at'>> & { id: string }) => {
       const { data, error } = await supabase
         .from('notebooks' as any)
         .update(updates)

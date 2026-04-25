@@ -27,6 +27,8 @@ export interface ChatPromptOptions {
   notebookId?: string;
   /** Display name for selected notebook (used for chip + downstream metadata) */
   notebookName?: string;
+  /** Language for selected notebook, used to keep responses in notebook language. */
+  notebookLanguage?: string;
 }
 
 export interface PastedImage {
@@ -53,9 +55,11 @@ interface ChatInputProps {
   variant?: 'project' | 'notebook';
   /** Optional footer left content (e.g. source count) */
   footerLeft?: React.ReactNode;
+  /** Language the improved draft should be written in. */
+  responseLanguage?: string;
 }
 
-export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage, variant = 'project', footerLeft }: ChatInputProps) {
+export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage, variant = 'project', footerLeft, responseLanguage }: ChatInputProps) {
   const { t } = useTranslation();
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -178,21 +182,23 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       // Clear notebook selection when leaving notebook mode
       notebookId: mode === 'notebook' ? prev.notebookId : undefined,
       notebookName: mode === 'notebook' ? prev.notebookName : undefined,
+      notebookLanguage: mode === 'notebook' ? prev.notebookLanguage : undefined,
     }));
   }, []);
 
-  const selectNotebook = useCallback((id: string, name: string) => {
+  const selectNotebook = useCallback((id: string, name: string, language?: string | null) => {
     setPromptOptions((prev) => ({
       ...prev,
       augmentationMode: 'notebook',
       useWebSearch: false,
       notebookId: id,
       notebookName: name,
+      notebookLanguage: language ?? undefined,
     }));
   }, []);
 
   const clearNotebook = useCallback(() => {
-    setPromptOptions((prev) => ({ ...prev, notebookId: undefined, notebookName: undefined }));
+    setPromptOptions((prev) => ({ ...prev, notebookId: undefined, notebookName: undefined, notebookLanguage: undefined }));
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -262,6 +268,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
             prompt: message,
             previousUserMessage: previousUserMessage || undefined,
             previousAssistantMessage: previousAssistantMessage || undefined,
+            responseLanguage: promptOptions.augmentationMode === 'notebook'
+              ? promptOptions.notebookLanguage ?? responseLanguage
+              : responseLanguage,
           }),
         }
       );
@@ -481,7 +490,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                                       <button
                                         type="button"
                                         key={nb.id}
-                                        onClick={() => selectNotebook(nb.id, nb.name)}
+                                        onClick={() => selectNotebook(nb.id, nb.name, nb.language)}
                                         className={cn(
                                           'w-full flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors',
                                           active ? 'bg-accent/15 text-accent-foreground' : 'hover:bg-muted'

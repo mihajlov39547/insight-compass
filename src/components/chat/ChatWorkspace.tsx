@@ -51,6 +51,7 @@ export function ChatWorkspace() {
     chatName: selectedChat?.name,
     projectId: selectedProjectId ?? undefined,
     projectDescription: selectedProject?.description,
+    responseLanguage: selectedChat?.language || selectedProject?.language,
   });
 
   const { runExtract, extractingMessageId } = useExtractFollowUp();
@@ -333,7 +334,13 @@ export function ChatWorkspace() {
         )}
       </div>
       {permissions.canSendMessages && (
-        <ChatInput onSend={handleSend} isGenerating={isGenerating} previousUserMessage={previousUserMessage} previousAssistantMessage={previousAssistantMessage} />
+        <ChatInput
+          onSend={handleSend}
+          isGenerating={isGenerating}
+          previousUserMessage={previousUserMessage}
+          previousAssistantMessage={previousAssistantMessage}
+          responseLanguage={selectedChat?.language || selectedProject?.language}
+        />
       )}
     </div>
   );

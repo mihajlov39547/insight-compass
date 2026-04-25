@@ -159,7 +159,7 @@ export function NotebooksLanding() {
 
   const handleManageSubmit = () => {
     if (!editNotebook || !editName.trim()) return;
-    updateNotebook.mutate({ id: editNotebook.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
+    updateNotebook.mutate({ id: editNotebook.id, name: editName.trim(), description: editDescription.trim() }, {
       onSuccess: () => {
         toast.success(t('notebooksLanding.manage.updated'));
         setEditNotebook(null);
@@ -393,16 +393,18 @@ export function NotebooksLanding() {
                         .eq('processing_status', 'completed')
                         .limit(15);
 
-                      const resp = await fetch(getFunctionUrl('/functions/v1/improve-description'), {
+                      const resp = await fetch(getFunctionUrl('/functions/v1/improve-notebook'), {
                         method: 'POST',
                         headers: {
                           'Content-Type': 'application/json',
                           Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
                         },
                         body: JSON.stringify({
-                          projectName: editName,
+                          notebookName: editName,
                           currentDescription: editDescription,
                           documents: (nbDocs || []).map((d: any) => ({ fileName: d.file_name, summary: d.summary })),
+                          mode: 'description',
+                          responseLanguage: editLanguage,
                         }),
                       });
 
@@ -436,7 +438,7 @@ export function NotebooksLanding() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-nb-lang">{t('notebooksLanding.manage.languageLabel')}</Label>
-              <Select value={editLanguage} onValueChange={(val: AvailableLanguageCode) => setEditLanguage(val)}>
+              <Select value={editLanguage} disabled>
                 <SelectTrigger id="edit-nb-lang">
                   <SelectValue />
                 </SelectTrigger>

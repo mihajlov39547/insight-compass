@@ -71,6 +71,14 @@ function sseFrame(payload: Record<string, unknown>): string {
   return `data: ${JSON.stringify(payload)}\n\n`;
 }
 
+function getResponseLanguageInstruction(value: unknown): string {
+  const code = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (code.startsWith("sr")) {
+    return "Write the final answer in Serbian using Latin script. Use Serbian even if the user question or sources are in another language. Translate and summarize source information into Serbian unless the user explicitly asks for a verbatim quote.";
+  }
+  return "Write the final answer in English. Use English even if the user question or sources are in another language. Translate and summarize source information into English unless the user explicitly asks for a verbatim quote.";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -117,6 +125,7 @@ serve(async (req) => {
 
   const requestedModel = typeof body?.model === "string" ? body.model.trim().toLowerCase() : "";
   const model = VALID_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
+  const inputWithLanguageInstruction = `${getResponseLanguageInstruction(body?.responseLanguage)}\n\n${rawInput}`;
 
   // Always stream from Tavily; we re-stream to client.
   let upstream: Response;
@@ -129,7 +138,7 @@ serve(async (req) => {
         Accept: "text/event-stream",
       },
       body: JSON.stringify({
-        input: rawInput,
+        input: inputWithLanguageInstruction,
         model,
         stream: true,
         citation_format: "numbered",

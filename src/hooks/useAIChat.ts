@@ -32,6 +32,7 @@ interface UseAIChatOptions {
   chatName?: string;
   projectId?: string;
   projectDescription?: string;
+  responseLanguage?: string;
 }
 
 interface MessageOptions {
@@ -41,6 +42,7 @@ interface MessageOptions {
   /** When augmentationMode === 'notebook', the notebook to ground retrieval in. */
   notebookId?: string;
   notebookName?: string;
+  notebookLanguage?: string;
 }
 
 interface UnifiedSource {
@@ -98,7 +100,7 @@ function toWebSources(results: WebSearchResult[]): UnifiedSource[] {
   });
 }
 
-export function useAIChat({ chatId, chatName, projectId, projectDescription }: UseAIChatOptions) {
+export function useAIChat({ chatId, chatName, projectId, projectDescription, responseLanguage }: UseAIChatOptions) {
   const { user } = useAuth();
   const { data: userSettings } = useUserSettings();
   const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
@@ -153,6 +155,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
         const researchResult = await runTavilyResearch({
           input: content,
           model: options.researchModel ?? 'auto',
+          responseLanguage,
           onEvent: (evt) => {
             if (evt.type === 'content_delta') {
               setStreamingContent((prev) => (prev ?? '') + evt.text);
@@ -235,7 +238,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       // persists the synthesized summary + 5 video sources as a single
       // assistant message. No RAG, no LLM streaming.
       if (options?.augmentationMode === 'youtube_search') {
-        const ytResult = await runYouTubeSearch(content);
+        const ytResult = await runYouTubeSearch(content, responseLanguage);
         const youtubeSources = youtubeSourcesToUnified(ytResult.sources);
 
         const ytSourceMetadata: AssistantSourceMetadata = {
@@ -439,6 +442,9 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       const notebookProjectDescription = isNotebookMode && options?.notebookName
         ? `Notebook: ${options.notebookName}`
         : (projectDescription ?? '');
+      const requestResponseLanguage = isNotebookMode
+        ? options?.notebookLanguage ?? responseLanguage
+        : responseLanguage;
 
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
@@ -454,6 +460,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
           webContext,
           notebookScope: isNotebookMode,
           responseLength,
+          responseLanguage: requestResponseLanguage,
           messageOptions: options ?? { useWebSearch: false },
         }),
       });
@@ -584,7 +591,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription }: U
       setResearchTrace(null);
       setWebSearchTrace(null);
     }
-  }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
+  }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, responseLanguage, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
   const retry = useCallback(() => {
     if (failedPrompt) {

@@ -249,7 +249,7 @@ export function AppSidebar() {
 
   const handleManageSubmit = () => {
     if (!editProject || !editName.trim() || !editDescription.trim()) return;
-    updateProject.mutate({ id: editProject.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
+    updateProject.mutate({ id: editProject.id, name: editName.trim(), description: editDescription.trim() }, {
       onSuccess: () => { toast.success(t('sidebar.toasts.projectUpdated')); setEditProject(null); }
     });
   };
@@ -267,6 +267,7 @@ export function AppSidebar() {
           projectName: editName, currentDescription: editDescription,
           documents: (docs ?? []).map(d => ({ fileName: d.file_name, summary: d.summary })),
           chats: (chatList ?? []).map(c => ({ name: c.name })),
+          responseLanguage: editLanguage,
         }),
       });
       const data = await resp.json();
@@ -303,7 +304,7 @@ export function AppSidebar() {
 
   const handleManageNotebookSubmit = () => {
     if (!editNotebook || !editNbName.trim()) return;
-    updateNotebook.mutate({ id: editNotebook.id, name: editNbName.trim(), description: editNbDescription.trim(), language: editNbLanguage }, {
+    updateNotebook.mutate({ id: editNotebook.id, name: editNbName.trim(), description: editNbDescription.trim() }, {
       onSuccess: () => { toast.success(t('sidebar.toasts.notebookUpdated')); setEditNotebook(null); },
     });
   };
@@ -435,7 +436,7 @@ export function AppSidebar() {
                         .limit(15);
 
                       const resp = await fetch(
-                        getFunctionUrl('/functions/v1/improve-description'),
+                        getFunctionUrl('/functions/v1/improve-notebook'),
                         {
                           method: 'POST',
                           headers: {
@@ -443,9 +444,11 @@ export function AppSidebar() {
                             Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
                           },
                           body: JSON.stringify({
-                            projectName: editNbName,
+                            notebookName: editNbName,
                             currentDescription: editNbDescription,
                             documents: (nbDocs || []).map((d: any) => ({ fileName: d.file_name, summary: d.summary })),
+                            mode: 'description',
+                            responseLanguage: editNbLanguage,
                           }),
                         }
                       );
@@ -474,7 +477,7 @@ export function AppSidebar() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-nb-lang-sidebar">{t('sidebar.manageNotebook.languageLabel')}</Label>
-              <Select value={editNbLanguage} onValueChange={(val: AvailableLanguageCode) => setEditNbLanguage(val)}>
+              <Select value={editNbLanguage} disabled>
                 <SelectTrigger id="edit-nb-lang-sidebar">
                   <SelectValue />
                 </SelectTrigger>
@@ -921,7 +924,7 @@ export function AppSidebar() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-project-lang">{t('sidebar.manageProject.languageLabel')}</Label>
-              <Select value={editLanguage} onValueChange={(val: AvailableLanguageCode) => setEditLanguage(val)}>
+              <Select value={editLanguage} disabled>
                 <SelectTrigger id="edit-project-lang"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {AVAILABLE_LANGUAGES.map((availableLanguage) => (

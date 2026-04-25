@@ -150,7 +150,6 @@ export function ProjectsLanding() {
       id: editProject.id,
       name: editName.trim(),
       description: editDescription.trim(),
-      language: editLanguage,
     }, {
       onSuccess: () => {
         toast.success(t('projectsLanding.manage.updated'));
@@ -191,6 +190,7 @@ export function ProjectsLanding() {
             currentDescription: editDescription,
             documents: (docs ?? []).map(d => ({ fileName: d.file_name, summary: d.summary })),
             chats: (chatList ?? []).map(c => ({ name: c.name })),
+            responseLanguage: editLanguage,
           }),
         }
       );
@@ -429,7 +429,7 @@ export function ProjectsLanding() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="card-edit-project-lang">{t('projectsLanding.manage.languageLabel')}</Label>
-              <Select value={editLanguage} onValueChange={(val: AvailableLanguageCode) => setEditLanguage(val)}>
+              <Select value={editLanguage} disabled>
                 <SelectTrigger id="card-edit-project-lang">
                   <SelectValue />
                 </SelectTrigger>

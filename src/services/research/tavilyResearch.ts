@@ -61,6 +61,7 @@ export interface ResearchTraceState {
 export interface RunResearchOptions {
   input: string;
   model?: ResearchModel;
+  responseLanguage?: string;
   signal?: AbortSignal;
   onEvent?: (event: ResearchEvent) => void;
   onTrace?: (state: ResearchTraceState) => void;
@@ -250,6 +251,7 @@ class TraceBuilder {
 export async function runTavilyResearch({
   input,
   model = 'mini',
+  responseLanguage,
   signal,
   onEvent,
   onTrace,
@@ -264,7 +266,7 @@ export async function runTavilyResearch({
         'Content-Type': 'application/json',
         Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ input, model }),
+      body: JSON.stringify({ input, model, responseLanguage }),
       signal,
     });
   } catch (err) {

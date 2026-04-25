@@ -54,7 +54,7 @@ export function useUpdateProject() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<DbProject> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: Partial<Omit<DbProject, 'id' | 'user_id' | 'language' | 'created_at' | 'updated_at'>> & { id: string }) => {
       const { data, error } = await supabase
         .from('projects')
         .update(updates)

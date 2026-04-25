@@ -31,14 +31,18 @@ export interface YouTubeSearchResponse {
   synthesisModel: string | null;
 }
 
-export async function runYouTubeSearch(query: string, signal?: AbortSignal): Promise<YouTubeSearchResponse> {
+export async function runYouTubeSearch(
+  query: string,
+  responseLanguage?: string,
+  signal?: AbortSignal
+): Promise<YouTubeSearchResponse> {
   const resp = await fetch(YOUTUBE_SEARCH_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query, responseLanguage }),
     signal,
   });
 
