@@ -38,11 +38,36 @@ export const currentUser: User = {
 // Mock notifications
 export const mockNotifications: Notification[] = [
   {
-    id: 'notif-1',
-    title: 'New Feature: Multi-language Support',
-    message: 'You can now set language preferences at both project and chat levels.',
+    id: 'notif-web-search',
+    title: "What's new: Web Search",
+    message:
+      'Ground answers in fresh information from across the web. Toggle Web Search in the chat input to let the assistant fetch live results, cite sources inline, and blend them with your project documents for up-to-date, verifiable responses.',
     read: false,
-    createdAt: '2024-01-15T08:00:00Z',
+    createdAt: '2024-01-20T09:00:00Z',
+  },
+  {
+    id: 'notif-research',
+    title: "What's new: Deep Research",
+    message:
+      'Tackle complex questions with the new Research mode. The assistant plans a multi-step investigation, runs parallel web searches, follows up on the strongest leads, and returns a structured synthesis with a transparent trace of every source consulted.',
+    read: false,
+    createdAt: '2024-01-18T09:00:00Z',
+  },
+  {
+    id: 'notif-youtube-search',
+    title: "What's new: YouTube Search",
+    message:
+      'Bring video knowledge into your chats. Search YouTube directly from the assistant, preview matching videos, and link them as sources — transcripts are fetched and indexed automatically so you can ask questions grounded in the spoken content.',
+    read: false,
+    createdAt: '2024-01-16T09:00:00Z',
+  },
+  {
+    id: 'notif-notebooks-in-prompt',
+    title: "What's new: Notebooks as Context",
+    message:
+      'Reference an entire notebook in any prompt. Pick a notebook from the chat input and the assistant will use its sources, notes, and extracted text as grounded context — perfect for reusing curated research across multiple conversations.',
+    read: false,
+    createdAt: '2024-01-14T09:00:00Z',
   },
   {
     id: 'notif-2',
@@ -59,3 +84,4 @@ export const mockNotifications: Notification[] = [
     createdAt: '2024-01-10T12:00:00Z',
   },
 ];
+
