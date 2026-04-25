@@ -2,8 +2,6 @@ import React, { useState, ReactNode, useCallback } from 'react';
 import {
   Plan,
   currentUser,
-  mockNotifications,
-  Notification,
   User
 } from '@/data/mockData';
 import { DbProject } from '@/hooks/useProjects';
@@ -46,7 +44,6 @@ export interface AppContextType {
   setSearchQuery: (query: string) => void;
   
   // Notifications
-  notifications: Notification[];
   unreadCount: number;
   
   // Dialogs
@@ -83,7 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [showPricing, setShowPricing] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const unreadCount = mockNotifications.filter(n => !n.read).length;
+  const unreadCount = 0;
 
   const setUserPlan = useCallback((plan: Plan) => {
     setUser(prev => ({ ...prev, plan }));
@@ -122,7 +119,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setActiveView,
         searchQuery,
         setSearchQuery,
-        notifications: mockNotifications,
         unreadCount,
         showSettings,
         setShowSettings,

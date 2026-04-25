@@ -781,6 +781,12 @@
     "inbox": {
       "emptyTitle": "No messages or invites pending",
       "emptyDescription": "Messages, workspace and project invitations will appear here"
+    },
+    "whatsNew": {
+      "emptyTitle": "No updates published yet",
+      "emptyDescription": "Product updates and release notes will appear here",
+      "errorTitle": "Updates could not load",
+      "errorDescription": "Please try opening notifications again in a moment"
     }
   },
   "auth": {

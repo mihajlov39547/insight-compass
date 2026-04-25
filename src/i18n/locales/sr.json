@@ -790,6 +790,12 @@
     "inbox": {
       "emptyTitle": "Nema poruka ni poziva na čekanju",
       "emptyDescription": "Poruke, pozivi za radni prostor i projekte pojaviće se ovde"
+    },
+    "whatsNew": {
+      "emptyTitle": "Jos nema objavljenih novosti",
+      "emptyDescription": "Novosti o proizvodu i beleske o izdanjima pojavice se ovde",
+      "errorTitle": "Novosti nisu ucitane",
+      "errorDescription": "Pokusajte ponovo da otvorite obavestenja za nekoliko trenutaka"
     }
   },
   "auth": {
