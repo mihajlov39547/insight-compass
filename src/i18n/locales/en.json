@@ -69,7 +69,101 @@
       "upgrade": "Upgrade for more features"
     },
     "expandSidebar": "Expand sidebar",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "workspace": "Researcher",
+    "noChats": "No chats yet",
+    "newChat": "New Chat",
+    "newChatName": "New Chat",
+    "createNotebook": {
+      "title": "Create Notebook",
+      "description": "Create a new notebook to organize your research and documents.",
+      "nameLabel": "Notebook name",
+      "namePlaceholder": "My Notebook",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What is this notebook about?",
+      "languageLabel": "Language",
+      "cancel": "Cancel",
+      "submit": "Create Notebook"
+    },
+    "manageProject": {
+      "title": "Manage Project",
+      "description": "Update your project details. The description helps the AI provide better answers.",
+      "nameLabel": "Project name",
+      "namePlaceholder": "Project name",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Describe what this project is about...",
+      "descriptionHint": "This helps the AI understand the project context and provide better answers.",
+      "improveWithAi": "Improve with AI",
+      "improving": "Improving…",
+      "improveSuccess": "Description improved",
+      "improveFailed": "Failed to improve description",
+      "languageLabel": "Language",
+      "cancel": "Cancel",
+      "save": "Save Changes"
+    },
+    "manageNotebook": {
+      "title": "Manage Notebook",
+      "description": "Update your notebook details.",
+      "nameLabel": "Notebook name",
+      "namePlaceholder": "Notebook name",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Describe what this notebook is about...",
+      "descriptionHint": "This helps the AI understand the notebook context and provide better answers.",
+      "improveWithAi": "Improve with AI",
+      "improving": "Improving…",
+      "improveSuccess": "Description improved",
+      "improveFailed": "Failed to improve description",
+      "languageLabel": "Language",
+      "cancel": "Cancel",
+      "save": "Save Changes"
+    },
+    "renameChat": {
+      "title": "Rename Chat",
+      "placeholder": "Chat name",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "deleteChat": {
+      "title": "Delete Chat",
+      "intro": "This will permanently delete chat {{name}} and all of its data, including:",
+      "introNoName": "This will permanently delete this chat and all of its data, including:",
+      "items": {
+        "messages": "All messages and conversation history",
+        "documents": "All uploaded documents and files",
+        "extracted": "All extracted text, summaries, and processed data"
+      },
+      "irreversible": "This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete Chat"
+    },
+    "deleteNotebook": {
+      "title": "Delete Notebook",
+      "intro": "This will permanently delete notebook {{name}} and all of its data, including:",
+      "introNoName": "This will permanently delete this notebook and all of its data, including:",
+      "items": {
+        "chats": "All chat messages and history",
+        "documents": "All uploaded documents and files",
+        "notes": "All notes",
+        "extracted": "All extracted text, summaries, and processed data",
+        "resources": "All linked resources and transcripts",
+        "sharing": "All sharing settings"
+      },
+      "irreversible": "This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete Notebook"
+    },
+    "toasts": {
+      "projectDeleted": "Project and all its chats deleted",
+      "projectArchived": "Project archived",
+      "projectUpdated": "Project updated",
+      "notebookCreated": "Notebook created",
+      "notebookUpdated": "Notebook updated",
+      "notebookArchived": "Notebook archived",
+      "notebookDeleted": "Notebook and all its data deleted",
+      "chatRenamed": "Chat renamed",
+      "chatDeleted": "Chat and all its data deleted"
+    },
+    "user": "User"
   },
   "home": {
     "welcome": "Welcome back, {{name}}",
@@ -573,6 +667,42 @@
         "extractedEmpty": "No extracted text available for this document.",
         "noErrorDetails": "No additional error details available."
       }
+    },
+    "sourceType": {
+      "uploaded": "Uploaded",
+      "linked": "Linked",
+      "synced": "Synced",
+      "generated": "Generated",
+      "imported": "Imported"
+    },
+    "processingStatus": {
+      "completed": "Ready",
+      "metadata_ready": "Metadata ready",
+      "transcript_ready": "Transcript ready",
+      "failed": "Failed",
+      "uploaded": "Uploaded",
+      "extracting_metadata": "Extracting metadata",
+      "extracting_content": "Extracting content",
+      "detecting_language": "Detecting language",
+      "summarizing": "Summarizing",
+      "indexing": "Indexing",
+      "chunking": "Chunking",
+      "generating_embeddings": "Generating embeddings",
+      "generating_chunk_questions": "Generating questions",
+      "pending": "Pending",
+      "queued": "Queued",
+      "claimed": "Claimed",
+      "linked": "Linked",
+      "running": "Running",
+      "waiting_retry": "Waiting retry",
+      "none": "None"
+    },
+    "transcriptStatusLabel": {
+      "ready": "Transcript ready",
+      "failed": "Transcript failed",
+      "queued": "Transcript queued",
+      "running": "Transcript running",
+      "none": "No transcript"
     }
   },
   "projectDashboard": {
@@ -1287,10 +1417,26 @@
       "comingSoon": "Plan management and upgrades coming soon.",
       "planSuffix": "Plan",
       "plans": {
-        "free": { "name": "Free", "description": "Perfect for getting started", "price": "$0 / forever" },
-        "basic": { "name": "Basic", "description": "For individuals and small teams", "price": "$19 / month" },
-        "premium": { "name": "Premium", "description": "For growing teams", "price": "$49 / month" },
-        "enterprise": { "name": "Enterprise", "description": "For large organizations", "price": "Custom" }
+        "free": {
+          "name": "Free",
+          "description": "Perfect for getting started",
+          "price": "$0 / forever"
+        },
+        "basic": {
+          "name": "Basic",
+          "description": "For individuals and small teams",
+          "price": "$19 / month"
+        },
+        "premium": {
+          "name": "Premium",
+          "description": "For growing teams",
+          "price": "$49 / month"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "description": "For large organizations",
+          "price": "Custom"
+        }
       }
     },
     "linkedAccounts": {
