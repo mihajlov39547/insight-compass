@@ -15,4 +15,6 @@ export const modelOptions: ModelOption[] = [
   { id: 'google/gemini-2.5-flash-lite', name: 'gemini-2.5-flash-lite', description: 'Fastest and cheapest for simple tasks' },
   { id: 'google/gemini-2.5-pro', name: 'gemini-2.5-pro', description: 'Best for hard reasoning' },
   { id: 'openai/gpt-5-mini', name: 'gpt-5-mini', description: 'Good alternative for concise general tasks' },
+  { id: 'openai/gpt-5', name: 'gpt-5', description: 'Accuracy-critical tasks, complex decision-making, and high-quality reasoning.' },
+  { id: 'openai/gpt-5.2', name: 'gpt-5.2', description: 'Complex reasoning, deep coding and analytical workflows, and long-context knowledge tasks.' },
 ];
