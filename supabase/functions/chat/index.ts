@@ -339,18 +339,28 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       hasLengthInstruction,
     });
 
-    // OpenAI gpt-5 / gpt-5.2 reject the legacy `max_tokens` param and
-    // use reasoning tokens that count against max_completion_tokens.
-    // Bump the limit for OpenAI reasoning models so internal chain-of-thought
-    // doesn't consume the entire budget, leaving nothing for the answer.
+    // Reasoning-style models spend a (sometimes large) portion of the budget on
+    // hidden chain-of-thought tokens. If we cap them at the visible-answer budget
+    // they often emit truncated or empty answers. Detect those models and grant
+    // them a much larger ceiling so the user-visible answer always fits.
+    //
+    // - All OpenAI gpt-5 family (incl. mini/nano) reject `max_tokens` and use
+    //   `max_completion_tokens`, which counts reasoning tokens.
+    // - Gemini 2.5 Pro and Gemini 3.x preview models also do internal reasoning.
     const isOpenAI = resolvedModel.startsWith("openai/");
-    const isOpenAIReasoning = isOpenAI && !resolvedModel.includes("nano") && !resolvedModel.includes("mini");
-    const effectiveMaxTokens = isOpenAIReasoning
-      ? Math.max(responseLengthConfig.maxOutputTokens * 4, 1024)
-      : responseLengthConfig.maxOutputTokens;
+    const isReasoningModel =
+      isOpenAI ||
+      resolvedModel.includes("gemini-2.5-pro") ||
+      resolvedModel.includes("gemini-3");
+    const reasoningMultiplier = isReasoningModel ? 6 : 1;
+    const reasoningFloor = isReasoningModel ? 2048 : 0;
+    const effectiveMaxTokens = Math.max(
+      responseLengthConfig.maxOutputTokens * reasoningMultiplier,
+      reasoningFloor || responseLengthConfig.maxOutputTokens,
+    );
     const tokenLimitField = isOpenAI
       ? { max_completion_tokens: effectiveMaxTokens }
-      : { max_tokens: responseLengthConfig.maxOutputTokens };
+      : { max_tokens: effectiveMaxTokens };
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -373,8 +383,11 @@ Final answer-shaping instruction (baseline, not an absolute lock):
     );
     console.log("[chat:length] provider-call", {
       strategy: responseLengthConfig.strategy,
-      maxOutputTokens: responseLengthConfig.maxOutputTokens,
-      usedField: "max_tokens,max_completion_tokens",
+      model: resolvedModel,
+      visibleBudget: responseLengthConfig.maxOutputTokens,
+      effectiveMaxTokens,
+      isReasoningModel,
+      usedField: isOpenAI ? "max_completion_tokens" : "max_tokens",
     });
 
     if (!response.ok) {
