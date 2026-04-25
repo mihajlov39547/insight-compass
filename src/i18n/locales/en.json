@@ -780,7 +780,12 @@
     },
     "inbox": {
       "emptyTitle": "No messages or invites pending",
-      "emptyDescription": "Messages, workspace and project invitations will appear here"
+      "emptyDescription": "Messages, workspace and project invitations will appear here",
+      "errorTitle": "Inbox could not load",
+      "errorDescription": "Please try opening notifications again in a moment",
+      "openAction": "Open",
+      "markRead": "Mark read",
+      "markUnread": "Mark unread"
     },
     "whatsNew": {
       "emptyTitle": "No updates published yet",

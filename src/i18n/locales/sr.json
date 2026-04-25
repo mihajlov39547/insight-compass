@@ -789,7 +789,12 @@
     },
     "inbox": {
       "emptyTitle": "Nema poruka ni poziva na čekanju",
-      "emptyDescription": "Poruke, pozivi za radni prostor i projekte pojaviće se ovde"
+      "emptyDescription": "Poruke, pozivi za radni prostor i projekte pojaviće se ovde",
+      "errorTitle": "Prijemno sanduce nije ucitano",
+      "errorDescription": "Pokusajte ponovo da otvorite obavestenja za nekoliko trenutaka",
+      "openAction": "Otvori",
+      "markRead": "Oznaci kao procitano",
+      "markUnread": "Oznaci kao neprocitano"
     },
     "whatsNew": {
       "emptyTitle": "Jos nema objavljenih novosti",

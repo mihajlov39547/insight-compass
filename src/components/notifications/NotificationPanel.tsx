@@ -1,10 +1,11 @@
 import React from 'react';
-import { Inbox, Loader2, Sparkles, X } from 'lucide-react';
+import { ExternalLink, Inbox, Loader2, Mail, MailOpen, Sparkles, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { useWhatsNewArticles } from '@/hooks/useWhatsNewArticles';
+import { useInboxMessages, useSetInboxMessageReadState, type InboxMessage } from '@/hooks/useInboxMessages';
 
 interface NotificationPanelProps {
   open: boolean;
@@ -41,12 +42,24 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage || i18n.language || 'en';
   const {
+    data: inboxMessages = [],
+    isLoading: inboxLoading,
+    isError: inboxError,
+  } = useInboxMessages(open);
+  const setInboxMessageReadState = useSetInboxMessageReadState();
+  const {
     data: whatsNewItems = [],
     isLoading,
     isError,
   } = useWhatsNewArticles(language, open);
 
   if (!open) return null;
+
+  const openInboxAction = (message: InboxMessage) => {
+    if (!message.action_url) return;
+    setInboxMessageReadState.mutate({ id: message.id, read: true });
+    window.location.href = message.action_url;
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex">
@@ -64,7 +77,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="whats-new" className="flex-1 flex flex-col min-h-0">
+        <Tabs defaultValue="inbox" className="flex-1 flex flex-col min-h-0">
           <div className="px-5 pt-3 shrink-0">
             <TabsList className="w-full">
               <TabsTrigger value="inbox" className="flex-1 gap-1.5">
@@ -81,17 +94,96 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
           {/* Inbox Tab */}
           <TabsContent value="inbox" className="flex-1 min-h-0 m-0">
             <ScrollArea className="h-full min-h-0">
-              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Inbox className="h-5 w-5 text-muted-foreground" />
+              {inboxLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-                <p className="text-sm font-medium text-foreground mb-1">
-                  {t('notifications.inbox.emptyTitle')}
-                </p>
-                <p className="text-xs text-muted-foreground max-w-[240px]">
-                  {t('notifications.inbox.emptyDescription')}
-                </p>
-              </div>
+              ) : inboxError ? (
+                <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <Inbox className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    {t('notifications.inbox.errorTitle')}
+                  </p>
+                  <p className="text-xs text-muted-foreground max-w-[240px]">
+                    {t('notifications.inbox.errorDescription')}
+                  </p>
+                </div>
+              ) : inboxMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <Inbox className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    {t('notifications.inbox.emptyTitle')}
+                  </p>
+                  <p className="text-xs text-muted-foreground max-w-[240px]">
+                    {t('notifications.inbox.emptyDescription')}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1 p-2">
+                  {inboxMessages.map((message) => {
+                    const isUnread = !message.read_at;
+                    return (
+                      <div
+                        key={message.id}
+                        className="rounded-lg p-3 transition-colors hover:bg-muted/50"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isUnread ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
+                            {isUnread ? <Mail className="h-4 w-4" /> : <MailOpen className="h-4 w-4" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className={`text-sm leading-snug ${isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
+                                {message.title}
+                              </h3>
+                              {isUnread && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-accent" />}
+                            </div>
+                            {message.body && (
+                              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                {message.body}
+                              </p>
+                            )}
+                            <p className="mt-2 text-[11px] text-muted-foreground/70">
+                              {formatRelativeDate(message.created_at, language)}
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              {message.action_url && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 gap-1.5 px-2 text-xs"
+                                  onClick={() => openInboxAction(message)}
+                                >
+                                  {message.action_label || t('notifications.inbox.openAction')}
+                                  <ExternalLink className="h-3 w-3" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs text-muted-foreground"
+                                disabled={setInboxMessageReadState.isPending}
+                                onClick={() => setInboxMessageReadState.mutate({
+                                  id: message.id,
+                                  read: isUnread,
+                                })}
+                              >
+                                {isUnread
+                                  ? t('notifications.inbox.markRead')
+                                  : t('notifications.inbox.markUnread')}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </ScrollArea>
           </TabsContent>
 

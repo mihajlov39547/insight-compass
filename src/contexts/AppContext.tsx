@@ -7,6 +7,7 @@ import {
 import { DbProject } from '@/hooks/useProjects';
 import { DbChat } from '@/hooks/useChats';
 import { AppContext } from '@/contexts/app-context';
+import { useInboxUnreadCount } from '@/hooks/useInboxMessages';
 
 export type ActiveView = 'default' | 'home' | 'projects' | 'project-documents' | 'chat-documents' | 'notebooks' | 'notebook-documents' | 'notebook-workspace' | 'resources' | 'starred' | 'recents' | 'shared' | 'search';
 
@@ -80,7 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [showPricing, setShowPricing] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const unreadCount = 0;
+  const { data: unreadCount = 0 } = useInboxUnreadCount();
 
   const setUserPlan = useCallback((plan: Plan) => {
     setUser(prev => ({ ...prev, plan }));
