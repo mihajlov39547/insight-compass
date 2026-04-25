@@ -1103,6 +1103,7 @@ export type Database = {
           media_video_id: string | null
           metadata: Json
           normalized_url: string | null
+          notebook_enabled: boolean
           notebook_id: string | null
           preview_domain: string | null
           preview_favicon_url: string | null
@@ -1130,6 +1131,7 @@ export type Database = {
           media_video_id?: string | null
           metadata?: Json
           normalized_url?: string | null
+          notebook_enabled?: boolean
           notebook_id?: string | null
           preview_domain?: string | null
           preview_favicon_url?: string | null
@@ -1157,6 +1159,7 @@ export type Database = {
           media_video_id?: string | null
           metadata?: Json
           normalized_url?: string | null
+          notebook_enabled?: boolean
           notebook_id?: string | null
           preview_domain?: string | null
           preview_favicon_url?: string | null
@@ -1278,6 +1281,57 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+        }
+        Relationships: []
+      }
+      user_inbox_messages: {
+        Row: {
+          action_label: string | null
+          action_url: string | null
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          kind: string
+          metadata: Json
+          read_at: string | null
+          source_id: string | null
+          source_type: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_label?: string | null
+          action_url?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          kind?: string
+          metadata?: Json
+          read_at?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_label?: string | null
+          action_url?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          kind?: string
+          metadata?: Json
+          read_at?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1416,6 +1470,71 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      whats_new_article_localizations: {
+        Row: {
+          article_id: string
+          created_at: string
+          description: string
+          locale: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          description: string
+          locale: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          description?: string
+          locale?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whats_new_article_localizations_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "whats_new_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whats_new_articles: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          is_published: boolean
+          published_at: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          published_at?: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          published_at?: string
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
