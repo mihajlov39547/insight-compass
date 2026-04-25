@@ -210,7 +210,7 @@ export function AppSidebar() {
     const project = projects.find(p => p.id === projectId);
     createChat.mutate({
       projectId,
-      name: `New Chat`,
+      name: t('sidebar.newChatName'),
       language: normalizeLanguageCode(project?.language),
     }, {
       onSuccess: (chat) => {
@@ -224,7 +224,7 @@ export function AppSidebar() {
     deleteProject.mutate(projectId, {
       onSuccess: () => {
         if (selectedProjectId === projectId) { setSelectedProjectId(null); setSelectedChatId(null); }
-        toast.success('Project and all its chats deleted');
+        toast.success(t('sidebar.toasts.projectDeleted'));
       }
     });
   };
@@ -233,7 +233,7 @@ export function AppSidebar() {
     archiveProject.mutate(projectId, {
       onSuccess: () => {
         if (selectedProjectId === projectId) { setSelectedProjectId(null); setSelectedChatId(null); }
-        toast.success('Project archived');
+        toast.success(t('sidebar.toasts.projectArchived'));
       }
     });
   };
@@ -248,7 +248,7 @@ export function AppSidebar() {
   const handleManageSubmit = () => {
     if (!editProject || !editName.trim() || !editDescription.trim()) return;
     updateProject.mutate({ id: editProject.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
-      onSuccess: () => { toast.success('Project updated'); setEditProject(null); }
+      onSuccess: () => { toast.success(t('sidebar.toasts.projectUpdated')); setEditProject(null); }
     });
   };
 
@@ -268,11 +268,11 @@ export function AppSidebar() {
         }),
       });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
-      if (data.description) { setEditDescription(data.description); toast.success('Description improved'); }
+      if (!resp.ok) throw new Error(data.error || t('sidebar.manageProject.improveFailed'));
+      if (data.description) { setEditDescription(data.description); toast.success(t('sidebar.manageProject.improveSuccess')); }
     } catch (err: any) {
       console.error('Improve description error:', err);
-      toast.error(err.message || 'Failed to improve description');
+      toast.error(err.message || t('sidebar.manageProject.improveFailed'));
     } finally { setIsImprovingDesc(false); }
   };
 
@@ -286,7 +286,7 @@ export function AppSidebar() {
       onSuccess: (nb) => {
         setSelectedProjectId(null); setSelectedChatId(null);
         setSelectedNotebookId(nb.id); setActiveView('notebook-workspace');
-        toast.success('Notebook created');
+        toast.success(t('sidebar.toasts.notebookCreated'));
         setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE);
       }
     });
@@ -299,12 +299,12 @@ export function AppSidebar() {
   const handleManageNotebookSubmit = () => {
     if (!editNotebook || !editNbName.trim()) return;
     updateNotebook.mutate({ id: editNotebook.id, name: editNbName.trim(), description: editNbDescription.trim(), language: editNbLanguage }, {
-      onSuccess: () => { toast.success('Notebook updated'); setEditNotebook(null); },
+      onSuccess: () => { toast.success(t('sidebar.toasts.notebookUpdated')); setEditNotebook(null); },
     });
   };
 
   const handleArchiveNotebookSidebar = (id: string) => {
-    archiveNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success('Notebook archived'); } });
+    archiveNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success(t('sidebar.toasts.notebookArchived')); } });
   };
 
   const handleDeleteNotebookSidebar = (id: string, name: string) => {
@@ -317,7 +317,7 @@ export function AppSidebar() {
     deleteNotebook.mutate(id, {
       onSuccess: () => {
         if (selectedNotebookId === id) setSelectedNotebookId(null);
-        toast.success('Notebook and all its data deleted');
+        toast.success(t('sidebar.toasts.notebookDeleted'));
         setPendingDeleteNotebook(null);
       },
     });
@@ -333,7 +333,7 @@ export function AppSidebar() {
     deleteChat.mutate({ id, projectId }, {
       onSuccess: () => {
         if (selectedChatId === id) setSelectedChatId(null);
-        toast.success('Chat and all its data deleted');
+        toast.success(t('sidebar.toasts.chatDeleted'));
         setPendingDeleteChat(null);
       },
     });
