@@ -562,18 +562,25 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                         <p className="text-xs text-muted-foreground">{currentModel.description}</p>
                       </TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuContent align="end" className="w-56">
                       {modelOptions.map((model) => (
-                        <DropdownMenuItem
-                          key={model.id}
-                          onClick={() => setSelectedModel(model.id)}
-                          className={cn(
-                            "text-sm",
-                            selectedModel === model.id && "bg-accent/10 text-accent font-medium"
-                          )}
-                        >
-                          {model.name}
-                        </DropdownMenuItem>
+                        <Tooltip key={model.id}>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuItem
+                              onClick={() => setSelectedModel(model.id)}
+                              className={cn(
+                                "text-sm",
+                                selectedModel === model.id && "bg-accent/10 text-accent font-medium"
+                              )}
+                            >
+                              {model.name}
+                            </DropdownMenuItem>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-[240px]">
+                            <p className="font-medium">{model.name}</p>
+                            <p className="text-xs text-muted-foreground">{model.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
