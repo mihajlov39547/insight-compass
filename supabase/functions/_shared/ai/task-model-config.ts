@@ -130,6 +130,30 @@ export const MODEL_REGISTRY: Record<ModelId, ModelMetadata> = {
     reasoningTier: "advanced",
     suitableTasks: ["chat_default", "chat_grounded"],
   },
+  "openai/gpt-5": {
+    id: "openai/gpt-5",
+    displayName: "gpt-5",
+    visibility: "public",
+    internalOnly: false,
+    selectable: true,
+    costTier: "high",
+    latencyTier: "slow",
+    reasoningTier: "advanced",
+    // Manual-selection only — not used for routed tasks.
+    suitableTasks: [],
+  },
+  "openai/gpt-5.2": {
+    id: "openai/gpt-5.2",
+    displayName: "gpt-5.2",
+    visibility: "public",
+    internalOnly: false,
+    selectable: true,
+    costTier: "high",
+    latencyTier: "slow",
+    reasoningTier: "advanced",
+    // Manual-selection only — not used for routed tasks.
+    suitableTasks: [],
+  },
 };
 
 export const TASK_MODEL_CONFIG: Record<ModelTask, ModelId> = {
@@ -159,6 +183,9 @@ export const CHAT_MODEL_ALLOWLIST: ModelId[] = [
   "google/gemini-2.5-flash-lite",
   // Available for explicit selection and auto-candidate routing for short concise chat.
   "openai/gpt-5-mini",
+  // Manual-selection only — not used by auto routing for any task.
+  "openai/gpt-5",
+  "openai/gpt-5.2",
 ];
 
 export const PUBLIC_SELECTABLE_MODELS: ModelId[] = Object.values(MODEL_REGISTRY)
