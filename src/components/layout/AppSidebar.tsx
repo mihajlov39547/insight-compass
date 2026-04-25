@@ -363,20 +363,20 @@ export function AppSidebar() {
       <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); } }}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Create Notebook</DialogTitle>
-            <DialogDescription>Create a new notebook to organize your research and documents.</DialogDescription>
+            <DialogTitle>{t('sidebar.createNotebook.title')}</DialogTitle>
+            <DialogDescription>{t('sidebar.createNotebook.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="create-nb-name">Notebook name <span className="text-destructive">*</span></Label>
-              <Input id="create-nb-name" value={createNbName} onChange={(e) => setCreateNbName(e.target.value)} placeholder="My Notebook" autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && createNbName.trim()) handleCreateNotebookSubmit(); }} />
+              <Label htmlFor="create-nb-name">{t('sidebar.createNotebook.nameLabel')} <span className="text-destructive">*</span></Label>
+              <Input id="create-nb-name" value={createNbName} onChange={(e) => setCreateNbName(e.target.value)} placeholder={t('sidebar.createNotebook.namePlaceholder')} autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && createNbName.trim()) handleCreateNotebookSubmit(); }} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-nb-desc">Description</Label>
-              <Textarea id="create-nb-desc" value={createNbDescription} onChange={(e) => setCreateNbDescription(e.target.value)} placeholder="What is this notebook about?" rows={3} className="resize-none" />
+              <Label htmlFor="create-nb-desc">{t('sidebar.createNotebook.descriptionLabel')}</Label>
+              <Textarea id="create-nb-desc" value={createNbDescription} onChange={(e) => setCreateNbDescription(e.target.value)} placeholder={t('sidebar.createNotebook.descriptionPlaceholder')} rows={3} className="resize-none" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-nb-lang">Language</Label>
+              <Label htmlFor="create-nb-lang">{t('sidebar.createNotebook.languageLabel')}</Label>
               <Select value={createNbLanguage} onValueChange={(val: AvailableLanguageCode) => setCreateNbLanguage(val)}>
                 <SelectTrigger id="create-nb-lang">
                   <SelectValue />
@@ -384,7 +384,7 @@ export function AppSidebar() {
                 <SelectContent>
                   {AVAILABLE_LANGUAGES.map((availableLanguage) => (
                     <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
-                      {availableLanguage.label}
+                      {t(availableLanguage.translationKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -392,8 +392,8 @@ export function AppSidebar() {
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); }}>Cancel</Button>
-            <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>Create Notebook</Button>
+            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); }}>{t('sidebar.createNotebook.cancel')}</Button>
+            <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>{t('sidebar.createNotebook.submit')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
