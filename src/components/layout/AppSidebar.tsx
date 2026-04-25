@@ -402,17 +402,17 @@ export function AppSidebar() {
       <Dialog open={!!editNotebook} onOpenChange={(open) => !open && setEditNotebook(null)}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Manage Notebook</DialogTitle>
-            <DialogDescription>Update your notebook details.</DialogDescription>
+            <DialogTitle>{t('sidebar.manageNotebook.title')}</DialogTitle>
+            <DialogDescription>{t('sidebar.manageNotebook.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-name-sidebar">Notebook name <span className="text-destructive">*</span></Label>
-              <Input id="edit-nb-name-sidebar" value={editNbName} onChange={(e) => setEditNbName(e.target.value)} placeholder="Notebook name" autoFocus />
+              <Label htmlFor="edit-nb-name-sidebar">{t('sidebar.manageNotebook.nameLabel')} <span className="text-destructive">*</span></Label>
+              <Input id="edit-nb-name-sidebar" value={editNbName} onChange={(e) => setEditNbName(e.target.value)} placeholder={t('sidebar.manageNotebook.namePlaceholder')} autoFocus />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="edit-nb-desc-sidebar">Description</Label>
+                <Label htmlFor="edit-nb-desc-sidebar">{t('sidebar.manageNotebook.descriptionLabel')}</Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -446,14 +446,14 @@ export function AppSidebar() {
                       );
 
                       const data = await resp.json();
-                      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+                      if (!resp.ok) throw new Error(data.error || t('sidebar.manageNotebook.improveFailed'));
                       if (data.description) {
                         setEditNbDescription(data.description);
-                        toast.success('Description improved');
+                        toast.success(t('sidebar.manageNotebook.improveSuccess'));
                       }
                     } catch (err: any) {
                       console.error('Improve description error:', err);
-                      toast.error(err.message || 'Failed to improve description');
+                      toast.error(err.message || t('sidebar.manageNotebook.improveFailed'));
                     } finally {
                       setIsImprovingNbDesc(false);
                     }
@@ -461,14 +461,14 @@ export function AppSidebar() {
                   disabled={isImprovingNbDesc}
                 >
                   {isImprovingNbDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  {isImprovingNbDesc ? 'Improving…' : 'Improve with AI'}
+                  {isImprovingNbDesc ? t('sidebar.manageNotebook.improving') : t('sidebar.manageNotebook.improveWithAi')}
                 </Button>
               </div>
-              <Textarea id="edit-nb-desc-sidebar" value={editNbDescription} onChange={(e) => setEditNbDescription(e.target.value)} placeholder="Describe what this notebook is about..." rows={3} className="resize-none" />
-              <p className="text-xs text-muted-foreground">This helps the AI understand the notebook context and provide better answers.</p>
+              <Textarea id="edit-nb-desc-sidebar" value={editNbDescription} onChange={(e) => setEditNbDescription(e.target.value)} placeholder={t('sidebar.manageNotebook.descriptionPlaceholder')} rows={3} className="resize-none" />
+              <p className="text-xs text-muted-foreground">{t('sidebar.manageNotebook.descriptionHint')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-lang-sidebar">Language</Label>
+              <Label htmlFor="edit-nb-lang-sidebar">{t('sidebar.manageNotebook.languageLabel')}</Label>
               <Select value={editNbLanguage} onValueChange={(val: AvailableLanguageCode) => setEditNbLanguage(val)}>
                 <SelectTrigger id="edit-nb-lang-sidebar">
                   <SelectValue />
@@ -476,7 +476,7 @@ export function AppSidebar() {
                 <SelectContent>
                   {AVAILABLE_LANGUAGES.map((availableLanguage) => (
                     <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
-                      {availableLanguage.label}
+                      {t(availableLanguage.translationKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -484,8 +484,8 @@ export function AppSidebar() {
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditNotebook(null)}>Cancel</Button>
-            <Button onClick={handleManageNotebookSubmit} disabled={!editNbName.trim()}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditNotebook(null)}>{t('sidebar.manageNotebook.cancel')}</Button>
+            <Button onClick={handleManageNotebookSubmit} disabled={!editNbName.trim()}>{t('sidebar.manageNotebook.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
