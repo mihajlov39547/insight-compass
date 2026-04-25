@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AVAILABLE_LANGUAGES, normalizeLanguageCode } from '@/lib/languages';
+import { normalizeLanguageCode } from '@/lib/languages';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Settings, 
@@ -44,7 +44,6 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
   const [showAuth, setShowAuth] = useState(false);
 
   const language = normalizeLanguageCode(i18n.resolvedLanguage || i18n.language);
-  const languageLabel = AVAILABLE_LANGUAGES.find(item => item.code === language)?.translationKey;
 
   const PlanIcon = planIcons[appUser.plan];
 
@@ -93,7 +92,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                 <TooltipTrigger asChild>
                   <div className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground">
                     <Globe className="h-4 w-4" />
-                    <span>{t('header.language.workingIn', { language: t(languageLabel || 'languages.en') })}</span>
+                    <span className="font-medium">{t(`header.language.short.${language}`)}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>{t('header.language.changeInSettings')}</TooltipContent>

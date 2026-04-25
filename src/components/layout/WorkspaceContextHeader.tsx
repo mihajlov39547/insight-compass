@@ -9,6 +9,7 @@ interface WorkspaceContextHeaderProps {
   title: React.ReactNode;
   subtitle?: string | null;
   language?: string | null;
+  languageContext?: 'workspace' | 'notebook';
   showShare?: boolean;
   onShare?: () => void;
 }
@@ -17,6 +18,7 @@ export function WorkspaceContextHeader({
   title,
   subtitle,
   language,
+  languageContext = 'workspace',
   showShare = false,
   onShare,
 }: WorkspaceContextHeaderProps) {
@@ -31,7 +33,7 @@ export function WorkspaceContextHeader({
           <p className="truncate text-xs text-muted-foreground">{subtitle || t('projectDashboard.noDescription')}</p>
           {language && (
             <span className="inline-flex shrink-0 items-center rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-              {t('workspace.languageBadge', { language: t(languageConfig?.translationKey || 'languages.en') })}
+              {t(`workspace.${languageContext}LanguageBadge`, { language: t(languageConfig?.translationKey || 'languages.en') })}
             </span>
           )}
         </div>

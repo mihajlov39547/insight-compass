@@ -9,7 +9,7 @@ export const AVAILABLE_LANGUAGES = [
   },
   {
     code: 'sr',
-    label: 'Serbian (Latin)',
+    label: 'Serbian',
     dateLocale: 'sr-Latn',
     translationKey: 'languages.sr',
   },

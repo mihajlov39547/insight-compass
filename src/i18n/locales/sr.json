@@ -1,21 +1,21 @@
 {
   "languages": {
     "en": "Engleski",
-    "sr": "Srpski (Latinica)"
+    "sr": "Srpski"
   },
   "workspace": {
-    "languageBadge": "Radni prostor: {{language}}"
+    "workspaceLanguageBadge": "Radni prostor: {{language}}",
+    "notebookLanguageBadge": "Beleznica: {{language}}"
   },
   "header": {
     "language": {
       "label": "Jezik",
-      "workingIn": "Interfejs: {{language}}",
       "changeInSettings": "Jezik interfejsa se menja u opstim podesavanjima",
       "en": "Engleski",
-      "sr": "Srpski (Latinica)",
+      "sr": "Srpski",
       "short": {
-        "en": "EN",
-        "sr": "SR"
+        "en": "ENG",
+        "sr": "SRB"
       }
     },
     "userMenu": {
@@ -48,12 +48,12 @@
       "empty": "Još nema projekata"
     },
     "notebooks": {
-      "section": "Moje sveske",
-      "all": "Sve sveske",
-      "newTooltip": "Nova sveska",
-      "empty": "Još nema svesaka",
-      "collapse": "Skupi sveske",
-      "expand": "Proširi sveske"
+      "section": "Moje beleznice",
+      "all": "Sve beleznice",
+      "newTooltip": "Nova beleznica",
+      "empty": "Još nema beleznica",
+      "collapse": "Skupi beleznice",
+      "expand": "Proširi beleznice"
     },
     "sort": {
       "alphaNone": "Sortiraj A→Š",
@@ -80,15 +80,15 @@
     "newChat": "Novi čet",
     "newChatName": "Novi čet",
     "createNotebook": {
-      "title": "Kreiraj notebook",
-      "description": "Kreirajte novi notebook za organizaciju istraživanja i dokumenata.",
-      "nameLabel": "Naziv notebooka",
-      "namePlaceholder": "Moj notebook",
+      "title": "Kreiraj beleznicu",
+      "description": "Kreirajte novu beleznicu za organizaciju istraživanja i dokumenata.",
+      "nameLabel": "Naziv beleznice",
+      "namePlaceholder": "Moja beleznica",
       "descriptionLabel": "Opis",
-      "descriptionPlaceholder": "O čemu je ovaj notebook?",
+      "descriptionPlaceholder": "O čemu je ova beleznica?",
       "languageLabel": "Jezik",
       "cancel": "Otkaži",
-      "submit": "Kreiraj notebook"
+      "submit": "Kreiraj beleznicu"
     },
     "manageProject": {
       "title": "Upravljaj projektom",
@@ -107,13 +107,13 @@
       "save": "Sačuvaj izmene"
     },
     "manageNotebook": {
-      "title": "Upravljaj notebookom",
-      "description": "Ažurirajte detalje notebooka.",
-      "nameLabel": "Naziv notebooka",
-      "namePlaceholder": "Naziv notebooka",
+      "title": "Upravljaj beleznicom",
+      "description": "Ažurirajte detalje beleznice.",
+      "nameLabel": "Naziv beleznice",
+      "namePlaceholder": "Naziv beleznice",
       "descriptionLabel": "Opis",
-      "descriptionPlaceholder": "Opišite o čemu je ovaj notebook...",
-      "descriptionHint": "Ovo pomaže AI-ju da razume kontekst notebooka i pruži bolje odgovore.",
+      "descriptionPlaceholder": "Opišite o čemu je ova beleznica...",
+      "descriptionHint": "Ovo pomaže AI-ju da razume kontekst beleznice i pruži bolje odgovore.",
       "improveWithAi": "Poboljšaj uz AI",
       "improving": "Poboljšavanje…",
       "improveSuccess": "Opis je poboljšan",
@@ -142,9 +142,9 @@
       "confirm": "Obriši čet"
     },
     "deleteNotebook": {
-      "title": "Obriši notebook",
-      "intro": "Ovo će trajno obrisati notebook {{name}} i sve njegove podatke, uključujući:",
-      "introNoName": "Ovo će trajno obrisati ovaj notebook i sve njegove podatke, uključujući:",
+      "title": "Obriši beleznicu",
+      "intro": "Ovo će trajno obrisati beleznicu {{name}} i sve njene podatke, uključujući:",
+      "introNoName": "Ovo će trajno obrisati ovu beleznicu i sve njene podatke, uključujući:",
       "items": {
         "chats": "Sve poruke i istoriju četova",
         "documents": "Sve otpremljene dokumente i datoteke",
@@ -155,16 +155,16 @@
       },
       "irreversible": "Ova radnja se ne može opozvati.",
       "cancel": "Otkaži",
-      "confirm": "Obriši notebook"
+      "confirm": "Obriši beleznicu"
     },
     "toasts": {
       "projectDeleted": "Projekat i svi njegovi četovi su obrisani",
       "projectArchived": "Projekat je arhiviran",
       "projectUpdated": "Projekat je ažuriran",
-      "notebookCreated": "Notebook je kreiran",
-      "notebookUpdated": "Notebook je ažuriran",
-      "notebookArchived": "Notebook je arhiviran",
-      "notebookDeleted": "Notebook i svi njegovi podaci su obrisani",
+      "notebookCreated": "Beleznica je kreirana",
+      "notebookUpdated": "Beleznica je ažurirana",
+      "notebookArchived": "Beleznica je arhivirana",
+      "notebookDeleted": "Beleznica i svi njeni podaci su obrisani",
       "chatRenamed": "Čet je preimenovan",
       "chatDeleted": "Čet i svi njegovi podaci su obrisani"
     },
@@ -182,10 +182,10 @@
         "count_other": "{{count}} projekata"
       },
       "notebooks": {
-        "title": "Moje sveske",
-        "count_one": "{{count}} sveska",
-        "count_few": "{{count}} sveske",
-        "count_other": "{{count}} svesaka"
+        "title": "Moje beleznice",
+        "count_one": "{{count}} beleznica",
+        "count_few": "{{count}} beleznice",
+        "count_other": "{{count}} beleznica"
       },
       "newProject": {
         "title": "Novi projekat",
@@ -199,14 +199,14 @@
   },
   "search": {
     "title": "Pretraga",
-    "placeholder": "Pretražite projekte, sveske…",
+    "placeholder": "Pretražite projekte, beleznice…",
     "filters": {
       "all": "Sve",
       "projects": "Projekti",
-      "notebooks": "Sveske",
+      "notebooks": "Beleznice",
       "documents": "Dokumenti"
     },
-    "emptyHint": "Pretražujte vaše projekte, ćaskanja, sveske i beleške",
+    "emptyHint": "Pretražujte vaše projekte, ćaskanja, beleznice i beleške",
     "minChars": "Unesite najmanje 2 karaktera za početak",
     "loading": "Pretraga u toku…",
     "noResults": "Nema rezultata za \"{{query}}\"",
@@ -217,7 +217,7 @@
     "sections": {
       "projects": "Projekti",
       "projectChats": "Ćaskanja u projektima",
-      "notebooks": "Sveske",
+      "notebooks": "Beleznice",
       "documents": "Dokumenti"
     },
     "badges": {
@@ -275,7 +275,7 @@
     },
     "delete": {
       "title": "Obriši projekat",
-      "intro": "Ovo će trajno obrisati projekat i sve njegove podatke, uključujući:",
+      "intro": "Ovo će trajno obrisati projekat i sve njene podatke, uključujući:",
       "items": {
         "chats": "Sva ćaskanja i poruke",
         "documents": "Sve otpremljene dokumente i datoteke",
@@ -291,14 +291,14 @@
     }
   },
   "notebooksLanding": {
-    "title": "Moje sveske",
-    "count_one": "{{count}} sveska",
-    "count_few": "{{count}} sveske",
-    "count_other": "{{count}} svesaka",
-    "empty": "Još nema svesaka",
-    "createNew": "Kreiraj novu svesku",
-    "createFirst": "Kreirajte vašu prvu svesku",
-    "intro": "Kreirajte svesku da organizujete istraživanje, prikupljate izvore i istražujete teme uz AI analizu.",
+    "title": "Moje beleznice",
+    "count_one": "{{count}} beleznica",
+    "count_few": "{{count}} beleznice",
+    "count_other": "{{count}} beleznica",
+    "empty": "Još nema beleznica",
+    "createNew": "Kreiraj novu beleznicu",
+    "createFirst": "Kreirajte vašu prvu beleznicu",
+    "intro": "Kreirajte beleznicu da organizujete istraživanje, prikupljate izvore i istražujete teme uz AI analizu.",
     "sources_one": "{{count}} izvor",
     "sources_few": "{{count}} izvora",
     "sources_other": "{{count}} izvora",
@@ -307,25 +307,25 @@
       "yesterday": "Juče"
     },
     "create": {
-      "title": "Kreiraj svesku",
-      "description": "Dajte svesci naziv i opcioni opis.",
-      "nameLabel": "Naziv sveske",
+      "title": "Kreiraj beleznicu",
+      "description": "Dajte beleznici naziv i opcioni opis.",
+      "nameLabel": "Naziv beleznice",
       "namePlaceholder": "npr. Istraživanje o bezbednosti AI",
       "descriptionLabel": "Opis",
-      "descriptionPlaceholder": "O čemu je ova sveska?",
+      "descriptionPlaceholder": "O čemu je ova beleznica?",
       "languageLabel": "Jezik",
       "cancel": "Otkaži",
-      "submit": "Kreiraj svesku",
-      "success": "Sveska kreirana"
+      "submit": "Kreiraj beleznicu",
+      "success": "Beleznica kreirana"
     },
     "manage": {
-      "title": "Upravljanje sveskom",
-      "description": "Ažurirajte detalje sveske.",
-      "nameLabel": "Naziv sveske",
-      "namePlaceholder": "Naziv sveske",
+      "title": "Upravljanje beleznicom",
+      "description": "Ažurirajte detalje beleznice.",
+      "nameLabel": "Naziv beleznice",
+      "namePlaceholder": "Naziv beleznice",
       "descriptionLabel": "Opis",
-      "descriptionPlaceholder": "Opišite o čemu je ova sveska...",
-      "descriptionHint": "Ovo pomaže AI-u da razume kontekst sveske i pruži bolje odgovore.",
+      "descriptionPlaceholder": "Opišite o čemu je ova beleznica...",
+      "descriptionHint": "Ovo pomaže AI-u da razume kontekst beleznice i pruži bolje odgovore.",
       "improving": "Poboljšavanje…",
       "improveWithAi": "Poboljšaj uz AI",
       "improveSuccess": "Opis poboljšan",
@@ -333,11 +333,11 @@
       "languageLabel": "Jezik",
       "cancel": "Otkaži",
       "save": "Sačuvaj izmene",
-      "updated": "Sveska ažurirana"
+      "updated": "Beleznica ažurirana"
     },
     "delete": {
-      "title": "Obriši svesku",
-      "intro": "Ovo će trajno obrisati ovu svesku i sve njene podatke, uključujući:",
+      "title": "Obriši beleznicu",
+      "intro": "Ovo će trajno obrisati ovu beleznicu i sve njene podatke, uključujući:",
       "items": {
         "chats": "Sve poruke i istoriju ćaskanja",
         "documents": "Sve otpremljene dokumente i datoteke",
@@ -348,30 +348,30 @@
       },
       "irreversible": "Ova radnja se ne može poništiti.",
       "cancel": "Otkaži",
-      "confirm": "Obriši svesku",
-      "success": "Sveska i svi njeni podaci su obrisani",
-      "archived": "Sveska arhivirana"
+      "confirm": "Obriši beleznicu",
+      "success": "Beleznica i svi njeni podaci su obrisani",
+      "archived": "Beleznica arhivirana"
     }
   },
   "starred": {
     "title": "Označeno zvezdicom",
-    "description": "Vaši označeni projekti, sveske i ćaskanja pojaviće se ovde. Označite važne stavke zvezdicom da biste im brzo pristupili."
+    "description": "Vaši označeni projekti, beleznice i ćaskanja pojaviće se ovde. Označite važne stavke zvezdicom da biste im brzo pristupili."
   },
   "sharedLanding": {
     "title": "Deljeno sa mnom",
-    "subtitle": "Projekti i sveske koje su podelili vaši saradnici",
+    "subtitle": "Projekti i beleznice koje su podelili vaši saradnici",
     "empty": {
       "title": "Deljeno sa mnom",
-      "intro": "Ovde će se pojaviti projekti i sveske koji su podeljeni sa vama.",
-      "hint": "Kada saradnici podele svoje projekte ili sveske sa vama, moći ćete da im pristupite sa ove kontrolne table."
+      "intro": "Ovde će se pojaviti projekti i beleznice koji su podeljeni sa vama.",
+      "hint": "Kada saradnici podele svoje projekte ili beleznice sa vama, moći ćete da im pristupite sa ove kontrolne table."
     },
     "sections": {
       "projects": "Deljeni projekti",
-      "notebooks": "Deljene sveske"
+      "notebooks": "Deljene beleznice"
     },
     "badges": {
       "project": "Projekat",
-      "notebook": "Sveska"
+      "notebook": "Beleznica"
     },
     "sharedBy": "Podelio/la {{name}}"
   },
@@ -435,7 +435,7 @@
         "createDenied": "Nemate dozvolu za kreiranje beleški",
         "editDenied": "Nemate dozvolu za izmenu beleški",
         "deleteDenied": "Nemate dozvolu za brisanje beleški",
-        "manageSourcesDenied": "Nemate dozvolu za upravljanje izvorima sveske"
+        "manageSourcesDenied": "Nemate dozvolu za upravljanje izvorima beleznice"
       }
     },
     "chat": {
@@ -447,7 +447,7 @@
       "working": "Radim…",
       "failed": "Neuspešno dobijanje odgovora",
       "dismiss": "Odbaci",
-      "readOnly": "Imate pristup samo za čitanje ovoj svesci.",
+      "readOnly": "Imate pristup samo za čitanje ovoj beleznici.",
       "save": "Sačuvaj u belešku",
       "copy": "Kopiraj",
       "delete": "Obriši",
@@ -459,7 +459,7 @@
       }
     },
     "toasts": {
-      "renamed": "Sveska preimenovana",
+      "renamed": "Beleznica preimenovana",
       "youtubeAdded": "Dodato u izvore — izvlačenje transkripta",
       "youtubeFailed": "Neuspešno dodavanje videa u izvore"
     }
@@ -469,7 +469,7 @@
   },
   "resources": {
     "title": "Resursi",
-    "subtitle": "Svi dokumenti i resursi u vašim projektima i sveskama",
+    "subtitle": "Svi dokumenti i resursi u vašim projektima i beleznicama",
     "addSource": "Dodaj izvor",
     "stats": {
       "total": "Ukupno",
@@ -510,7 +510,7 @@
         "placeholder": "Lokacija",
         "all": "Sve lokacije",
         "project": "Projekti",
-        "notebook": "Sveske",
+        "notebook": "Beleznice",
         "personal": "Lično"
       },
       "clear": "Očisti"
@@ -573,7 +573,7 @@
       },
       "none": {
         "title": "Još uvek nema resursa",
-        "description": "Otpremite dokumente u svoje projekte ili sveske da biste ih ovde videli. Resursi iz deljenih radnih prostora će se takođe pojaviti kada budu dostupni."
+        "description": "Otpremite dokumente u svoje projekte ili beleznice da biste ih ovde videli. Resursi iz deljenih radnih prostora će se takođe pojaviti kada budu dostupni."
       }
     },
     "rename": {
@@ -608,7 +608,7 @@
       "locations": {
         "personal": "Lično",
         "project": "Projekat",
-        "notebook": "Sveska"
+        "notebook": "Beleznica"
       },
       "target": "Cilj: {{type}}",
       "selectTarget": "Izaberite {{type}}",
@@ -746,7 +746,7 @@
     "thinking": "Razmišljanje...",
     "researching": "Istraživanje veba…",
     "searchingWeb": "Pretraga veba…",
-    "searchingNotebook": "Pretraga sveske…",
+    "searchingNotebook": "Pretraga beleznice…",
     "failedResponse": "Nije moguće dobiti odgovor",
     "retry": "Pokušaj ponovo",
     "dismiss": "Odbaci",
@@ -769,7 +769,7 @@
       },
       "delete": {
         "title": "Obriši ćaskanje",
-        "intro": "Ovo će trajno obrisati ovo ćaskanje i sve njegove podatke, uključujući:",
+        "intro": "Ovo će trajno obrisati ovo ćaskanje i sve njene podatke, uključujući:",
         "items": {
           "messages": "Sve poruke i istoriju razgovora",
           "documents": "Sve otpremljene dokumente i datoteke",
@@ -878,10 +878,10 @@
       }
     },
     "notebooks": {
-      "title": "Organizujte uvide pomoću svesaka",
+      "title": "Organizujte uvide pomoću beleznica",
       "description": "Idite dalje od Q&A — strukturirajte znanje, beležite zaključke i izgradite ponovo upotrebljive istraživačke tokove rada.",
       "build": {
-        "title": "Pravite istraživačke sveske",
+        "title": "Pravite istraživačke beleznice",
         "description": "Organizujte dokumente, pitanja i izvore u fokusirane radne prostore znanja."
       },
       "save": {
@@ -906,7 +906,7 @@
       },
       "organize": {
         "title": "Organizacija znanja",
-        "description": "Pravite ponovo upotrebljive sveske, beleške i baze znanja zasnovane na izvorima."
+        "description": "Pravite ponovo upotrebljive beleznice, beleške i baze znanja zasnovane na izvorima."
       }
     }
   },
@@ -950,10 +950,10 @@
     "pending": "Na čekanju",
     "types": {
       "project": "projekat",
-      "notebook": "sveska"
+      "notebook": "beleznica"
     },
     "fallback": {
-      "notebook": "Sveska",
+      "notebook": "Beleznica",
       "project": "Projekat"
     },
     "toasts": {
@@ -990,7 +990,7 @@
     "context": {
       "project": "projekat",
       "chat": "ćaskanje",
-      "notebook": "sveska"
+      "notebook": "beleznica"
     }
   },
   "documentsDialog": {
@@ -1136,14 +1136,14 @@
       "waiting": "Čekanje odgovora...",
       "research": "Postavite pitanje za detaljno istraživanje…",
       "youtube": "Pretraži YouTube za video snimke…",
-      "notebookGrounded": "Pitajte u kontekstu sveske \"{{name}}\"…",
-      "notebookSelect": "Izaberite svesku ispod, pa pitajte…",
+      "notebookGrounded": "Pitajte u kontekstu beleznice \"{{name}}\"…",
+      "notebookSelect": "Izaberite beleznicu ispod, pa pitajte…",
       "default": "Postavite pitanje o vašim dokumentima..."
     },
     "notebook": {
-      "required": "Sveska je obavezna — izaberite svesku za uzemljenje upita.",
-      "remove": "Ukloni svesku",
-      "missingToast": "Izaberite svesku za uzemljenje upita"
+      "required": "Beleznica je obavezna — izaberite beleznicu za uzemljenje upita.",
+      "remove": "Ukloni beleznicu",
+      "missingToast": "Izaberite beleznicu za uzemljenje upita"
     },
     "modes": {
       "webSearch": "Web pretraga",
@@ -1152,10 +1152,10 @@
       "researchDesc": "Pokreni detaljno web istraživanje. Sporije, temeljnije.",
       "youtube": "YouTube pretraga",
       "youtubeDesc": "Pretraži YouTube video snimke za ovaj upit.",
-      "notebook": "Sveska",
-      "notebookDesc": "Uzemlji upit u izvorima izabrane sveske.",
-      "noNotebooks": "Nema dostupnih svesaka. Kreirajte jednu da biste koristili ovaj režim.",
-      "searchPlaceholder": "Pretraži sveske…",
+      "notebook": "Beleznica",
+      "notebookDesc": "Uzemlji upit u izvorima izabrane beleznice.",
+      "noNotebooks": "Nema dostupnih beleznica. Kreirajte jednu da biste koristili ovaj režim.",
+      "searchPlaceholder": "Pretraži beleznice…",
       "noMatches": "Nema rezultata",
       "appliesNext": "Primenjuje se samo na sledeću poruku."
     },
@@ -1175,15 +1175,15 @@
   },
   "actionsMenu": {
     "manageProject": "Upravljaj projektom",
-    "manageNotebook": "Upravljaj sveskom",
+    "manageNotebook": "Upravljaj beleznicom",
     "manageDocuments": "Upravljaj dokumentima",
     "viewDocuments": "Pregledaj dokumente",
     "shareProject": "Podeli projekat",
-    "shareNotebook": "Podeli svesku",
+    "shareNotebook": "Podeli beleznicu",
     "archiveProject": "Arhiviraj projekat",
-    "archiveNotebook": "Arhiviraj svesku",
+    "archiveNotebook": "Arhiviraj beleznicu",
     "deleteProject": "Obriši projekat",
-    "deleteNotebook": "Obriši svesku",
+    "deleteNotebook": "Obriši beleznicu",
     "renameChat": "Preimenuj ćaskanje",
     "deleteChat": "Obriši ćaskanje"
   },
@@ -1216,7 +1216,7 @@
     "back": "← Nazad",
     "manageProjectDocs": "Upravljaj dokumentima projekta",
     "manageChatDocs": "Upravljaj dokumentima ćaskanja",
-    "manageNotebookDocs": "Upravljaj dokumentima sveske",
+    "manageNotebookDocs": "Upravljaj dokumentima beleznice",
     "uploadDocuments": "Otpremi dokumente",
     "inProject": "u {{name}}",
     "stats": {
@@ -1244,7 +1244,7 @@
     "noSources": "Još nema izvora",
     "emptyProject": "Dokumenti projekta su dostupni u svim ćaskanjima ovog projekta. Otpremite dokumente da omogućite AI pretragu i analizu.",
     "emptyChat": "Dokumenti ćaskanja su priloženi ovom ćaskanju. Otpremite dokumente da pružite kontekst razgovoru.",
-    "emptyNotebook": "Dodajte dokumente ili povezane video snimke ovoj svesci da omogućite AI pretragu i analizu kroz vaše izvore.",
+    "emptyNotebook": "Dodajte dokumente ili povezane video snimke ovoj beleznici da omogućite AI pretragu i analizu kroz vaše izvore.",
     "partiallyReady": "Delimično spremno",
     "deleted": "{{name}} obrisan",
     "deleteFailed": "Brisanje nije uspelo",

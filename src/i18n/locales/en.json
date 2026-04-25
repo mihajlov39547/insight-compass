@@ -1,21 +1,21 @@
 {
   "languages": {
     "en": "English",
-    "sr": "Serbian (Latin)"
+    "sr": "Serbian"
   },
   "workspace": {
-    "languageBadge": "{{language}} workspace"
+    "workspaceLanguageBadge": "{{language}} workspace",
+    "notebookLanguageBadge": "{{language}} notebook"
   },
   "header": {
     "language": {
       "label": "Language",
-      "workingIn": "Interface: {{language}}",
       "changeInSettings": "Change interface language in General Settings",
       "en": "English",
-      "sr": "Serbian (Latin)",
+      "sr": "Serbian",
       "short": {
-        "en": "EN",
-        "sr": "SR"
+        "en": "ENG",
+        "sr": "SRB"
       }
     },
     "userMenu": {
