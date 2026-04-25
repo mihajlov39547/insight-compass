@@ -99,7 +99,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       minHeight: lineHeight + padding + border,
       maxHeight: lineHeight * MAX_TEXTAREA_ROWS + padding + border,
     };
-  }, [t]);
+  }, []);
 
 
   const resizeTextarea = useCallback(() => {
@@ -136,7 +136,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       }
       return [...prev, ...toAdd.map(file => ({ file, previewUrl: URL.createObjectURL(file) }))];
     });
-  }, []);
+  }, [t]);
 
   const removeImage = useCallback((index: number) => {
     setAttachedImages(prev => {

@@ -79,7 +79,7 @@ export function UploadDocumentsDialog({
       status: 'pending' as const,
     }));
     setPendingFiles(prev => [...prev, ...newPending]);
-  }, []);
+  }, [t]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
