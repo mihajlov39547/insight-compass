@@ -111,6 +111,18 @@ export function NotebookWorkspace() {
   const notebook = notebooks.find(n => n.id === selectedNotebookId);
   const { data: documents = [] } = useNotebookDocuments(selectedNotebookId ?? undefined);
   const { data: resources = [] } = useResources();
+  const { data: linkSourceStates = [] } = useQuery({
+    queryKey: ['notebook-link-source-state', selectedNotebookId],
+    queryFn: async () => {
+      if (!selectedNotebookId) return [] as Array<{ id: string; notebook_enabled: boolean }>;
+      const { data, error } = await (supabase.from('resource_links' as any) as any)
+        .select('id, notebook_enabled')
+        .eq('notebook_id', selectedNotebookId);
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; notebook_enabled: boolean }>;
+    },
+    enabled: !!selectedNotebookId,
+  });
   const { data: notes = [] } = useNotebookNotes(selectedNotebookId ?? undefined);
   const { data: messages = [], isLoading: messagesLoading } = useNotebookMessages(selectedNotebookId ?? undefined);
   const deleteDocument = useDeleteDocument();
@@ -144,6 +156,14 @@ export function NotebookWorkspace() {
   const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
   const [notesCollapsed, setNotesCollapsed] = useState(false);
 
+  const linkedVideoEnabledById = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const state of linkSourceStates) {
+      map.set(state.id, state.notebook_enabled !== false);
+    }
+    return map;
+  }, [linkSourceStates]);
+
   const linkedVideos = useMemo(() => {
     if (!selectedNotebookId) return [] as Resource[];
     return resources.filter((r) =>
@@ -155,7 +175,9 @@ export function NotebookWorkspace() {
 
   const hasSources = documents.length > 0 || linkedVideos.length > 0;
   const enabledDocs = documents.filter((d: any) => d.notebook_enabled !== false);
-  const enabledVideoSources = linkedVideos.filter((v) => v.transcriptStatus === 'ready');
+  const enabledVideoSources = linkedVideos.filter((v) => (
+    v.transcriptStatus === 'ready' && linkedVideoEnabledById.get(v.id) !== false
+  ));
   const enabledSourceCount = enabledDocs.length + enabledVideoSources.length;
 
   const addedYouTubeUrls = useMemo(() => {
@@ -250,6 +272,20 @@ export function NotebookWorkspace() {
       .update({ notebook_enabled: !currentEnabled })
       .eq('id', doc.id);
     queryClient.invalidateQueries({ queryKey: ['notebook-documents', selectedNotebookId] });
+  };
+
+  const handleToggleLinkedSource = async (resource: Resource) => {
+    if (!permissions.canManageDocumentState) {
+      toast.error(t('notebookWorkspace.notes.permissions.manageSourcesDenied'));
+      return;
+    }
+
+    const currentEnabled = linkedVideoEnabledById.get(resource.id) !== false;
+    await (supabase.from('resource_links' as any) as any)
+      .update({ notebook_enabled: !currentEnabled })
+      .eq('id', resource.id);
+    queryClient.invalidateQueries({ queryKey: ['notebook-link-source-state', selectedNotebookId] });
+    queryClient.invalidateQueries({ queryKey: ['resources'] });
   };
 
   const handleSaveToNote = (content: string) => {
@@ -651,14 +687,36 @@ export function NotebookWorkspace() {
 
                   {linkedVideos.map((video) => {
                     const isTranscriptReady = video.transcriptStatus === 'ready';
+                    const enabled = linkedVideoEnabledById.get(video.id) !== false;
                     return (
                       <div key={video.id} className={cn(
                         "flex items-start gap-2 p-2 rounded-lg transition-colors",
-                        isTranscriptReady ? "bg-card" : "bg-muted/50"
+                        isTranscriptReady && enabled ? "bg-card" : "bg-muted/50 opacity-60"
                       )}>
-                        <Video className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                        {permissions.canManageDocumentState ? (
+                          <button
+                            onClick={() => handleToggleLinkedSource(video)}
+                            className="mt-0.5 shrink-0"
+                            title={enabled ? t('notebookWorkspace.sources.disableSource') : t('notebookWorkspace.sources.enableSource')}
+                          >
+                            {enabled ? (
+                              <ToggleRight className="h-4 w-4 text-accent" />
+                            ) : (
+                              <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </button>
+                        ) : (
+                          enabled ? (
+                            <ToggleRight className="h-4 w-4 text-accent/50 mt-0.5 shrink-0" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                          )
+                        )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground truncate">{video.title}</p>
+                          <p className="text-xs font-medium text-foreground truncate flex items-center gap-1.5">
+                            <Video className="h-3 w-3 text-red-500 shrink-0" />
+                            <span className="truncate">{video.title}</span>
+                          </p>
                           <NotebookVideoSourceStatus resource={video} />
                         </div>
                         {video.transcriptStatus === 'failed' && permissions.canManageDocumentState && (
