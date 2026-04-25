@@ -880,7 +880,7 @@ export function AppSidebar() {
             <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-sm">{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">{displayName || 'User'}</p>
+            <p className="text-sm font-medium text-sidebar-foreground truncate">{displayName || t('sidebar.user')}</p>
             <p className="text-xs text-sidebar-muted truncate">{displayEmail}</p>
           </div>
           <Button variant="ghost" size="icon" className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent" onClick={() => setShowNotifications(true)}>
@@ -895,33 +895,33 @@ export function AppSidebar() {
       <Dialog open={!!editProject} onOpenChange={(open) => !open && setEditProject(null)}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Manage Project</DialogTitle>
-            <DialogDescription>Update your project details. The description helps the AI provide better answers.</DialogDescription>
+            <DialogTitle>{t('sidebar.manageProject.title')}</DialogTitle>
+            <DialogDescription>{t('sidebar.manageProject.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-project-name">Project name <span className="text-destructive">*</span></Label>
-              <Input id="edit-project-name" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Project name" autoFocus />
+              <Label htmlFor="edit-project-name">{t('sidebar.manageProject.nameLabel')} <span className="text-destructive">*</span></Label>
+              <Input id="edit-project-name" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t('sidebar.manageProject.namePlaceholder')} autoFocus />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="edit-project-desc">Description <span className="text-destructive">*</span></Label>
+                <Label htmlFor="edit-project-desc">{t('sidebar.manageProject.descriptionLabel')} <span className="text-destructive">*</span></Label>
                 <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-accent" onClick={handleImproveDescription} disabled={isImprovingDesc}>
                   {isImprovingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  {isImprovingDesc ? 'Improving…' : 'Improve with AI'}
+                  {isImprovingDesc ? t('sidebar.manageProject.improving') : t('sidebar.manageProject.improveWithAi')}
                 </Button>
               </div>
-              <Textarea id="edit-project-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Describe what this project is about..." rows={3} className="resize-none" />
-              <p className="text-xs text-muted-foreground">This helps the AI understand the project context and provide better answers.</p>
+              <Textarea id="edit-project-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder={t('sidebar.manageProject.descriptionPlaceholder')} rows={3} className="resize-none" />
+              <p className="text-xs text-muted-foreground">{t('sidebar.manageProject.descriptionHint')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-project-lang">Language</Label>
+              <Label htmlFor="edit-project-lang">{t('sidebar.manageProject.languageLabel')}</Label>
               <Select value={editLanguage} onValueChange={(val: AvailableLanguageCode) => setEditLanguage(val)}>
                 <SelectTrigger id="edit-project-lang"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {AVAILABLE_LANGUAGES.map((availableLanguage) => (
                     <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
-                      {availableLanguage.label}
+                      {t(availableLanguage.translationKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -929,8 +929,8 @@ export function AppSidebar() {
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditProject(null)}>Cancel</Button>
-            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditProject(null)}>{t('sidebar.manageProject.cancel')}</Button>
+            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>{t('sidebar.manageProject.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -938,18 +938,18 @@ export function AppSidebar() {
       {/* Rename Chat Dialog */}
       <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Rename Chat</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('sidebar.renameChat.title')}</DialogTitle></DialogHeader>
           <Input value={renameChatValue} onChange={(e) => setRenameChatValue(e.target.value)} onKeyDown={(e) => {
             if (e.key === 'Enter' && renameChatId && renameChatValue.trim()) {
-              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); } });
+              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success(t('sidebar.toasts.chatRenamed')); setRenameChatId(null); } });
             }
-          }} placeholder="Chat name" autoFocus />
+          }} placeholder={t('sidebar.renameChat.placeholder')} autoFocus />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameChatId(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRenameChatId(null)}>{t('sidebar.renameChat.cancel')}</Button>
             <Button disabled={!renameChatValue.trim()} onClick={() => {
               if (!renameChatId || !renameChatValue.trim()) return;
-              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); } });
-            }}>Save</Button>
+              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success(t('sidebar.toasts.chatRenamed')); setRenameChatId(null); } });
+            }}>{t('sidebar.renameChat.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -957,24 +957,26 @@ export function AppSidebar() {
       <AlertDialog open={!!pendingDeleteChat} onOpenChange={(open) => !open && setPendingDeleteChat(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+            <AlertDialogTitle>{t('sidebar.deleteChat.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete chat {pendingDeleteChat?.name ? `"${pendingDeleteChat.name}" ` : ''}and all of its data, including:
+              {pendingDeleteChat?.name
+                ? t('sidebar.deleteChat.intro', { name: `"${pendingDeleteChat.name}"` })
+                : t('sidebar.deleteChat.introNoName')}
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>All messages and conversation history</li>
-                <li>All uploaded documents and files</li>
-                <li>All extracted text, summaries, and processed data</li>
+                <li>{t('sidebar.deleteChat.items.messages')}</li>
+                <li>{t('sidebar.deleteChat.items.documents')}</li>
+                <li>{t('sidebar.deleteChat.items.extracted')}</li>
               </ul>
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">{t('sidebar.deleteChat.irreversible')}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('sidebar.deleteChat.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteChat}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Chat
+              {t('sidebar.deleteChat.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -983,27 +985,29 @@ export function AppSidebar() {
       <AlertDialog open={!!pendingDeleteNotebook} onOpenChange={(open) => !open && setPendingDeleteNotebook(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Notebook</AlertDialogTitle>
+            <AlertDialogTitle>{t('sidebar.deleteNotebook.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete notebook {pendingDeleteNotebook?.name ? `"${pendingDeleteNotebook.name}" ` : ''}and all of its data, including:
+              {pendingDeleteNotebook?.name
+                ? t('sidebar.deleteNotebook.intro', { name: `"${pendingDeleteNotebook.name}"` })
+                : t('sidebar.deleteNotebook.introNoName')}
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>All chat messages and history</li>
-                <li>All uploaded documents and files</li>
-                <li>All notes</li>
-                <li>All extracted text, summaries, and processed data</li>
-                <li>All linked resources and transcripts</li>
-                <li>All sharing settings</li>
+                <li>{t('sidebar.deleteNotebook.items.chats')}</li>
+                <li>{t('sidebar.deleteNotebook.items.documents')}</li>
+                <li>{t('sidebar.deleteNotebook.items.notes')}</li>
+                <li>{t('sidebar.deleteNotebook.items.extracted')}</li>
+                <li>{t('sidebar.deleteNotebook.items.resources')}</li>
+                <li>{t('sidebar.deleteNotebook.items.sharing')}</li>
               </ul>
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">{t('sidebar.deleteNotebook.irreversible')}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('sidebar.deleteNotebook.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteNotebookSidebar}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Notebook
+              {t('sidebar.deleteNotebook.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1069,7 +1073,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
               <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent" onClick={onNewChat}>
                 <Plus className="h-3 w-3" />
               </Button>
-            </TooltipTrigger><TooltipContent>New Chat</TooltipContent></Tooltip>
+            </TooltipTrigger><TooltipContent>{t('sidebar.newChat')}</TooltipContent></Tooltip>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1112,7 +1116,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             </DropdownMenu>
           </div>
         ))}
-        {chats.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No chats yet</p>}
+        {chats.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.noChats')}</p>}
       </CollapsibleContent>
     </Collapsible>
   );
