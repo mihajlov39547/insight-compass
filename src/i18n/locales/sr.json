@@ -69,7 +69,101 @@
       "upgrade": "Nadogradite za više funkcija"
     },
     "expandSidebar": "Proširi bočnu traku",
-    "notifications": "Obaveštenja"
+    "notifications": "Obaveštenja",
+    "workspace": "Researcher",
+    "noChats": "Još nema četova",
+    "newChat": "Novi čet",
+    "newChatName": "Novi čet",
+    "createNotebook": {
+      "title": "Kreiraj notebook",
+      "description": "Kreirajte novi notebook za organizaciju istraživanja i dokumenata.",
+      "nameLabel": "Naziv notebooka",
+      "namePlaceholder": "Moj notebook",
+      "descriptionLabel": "Opis",
+      "descriptionPlaceholder": "O čemu je ovaj notebook?",
+      "languageLabel": "Jezik",
+      "cancel": "Otkaži",
+      "submit": "Kreiraj notebook"
+    },
+    "manageProject": {
+      "title": "Upravljaj projektom",
+      "description": "Ažurirajte detalje projekta. Opis pomaže AI-ju da pruži bolje odgovore.",
+      "nameLabel": "Naziv projekta",
+      "namePlaceholder": "Naziv projekta",
+      "descriptionLabel": "Opis",
+      "descriptionPlaceholder": "Opišite o čemu je ovaj projekat...",
+      "descriptionHint": "Ovo pomaže AI-ju da razume kontekst projekta i pruži bolje odgovore.",
+      "improveWithAi": "Poboljšaj uz AI",
+      "improving": "Poboljšavanje…",
+      "improveSuccess": "Opis je poboljšan",
+      "improveFailed": "Nije moguće poboljšati opis",
+      "languageLabel": "Jezik",
+      "cancel": "Otkaži",
+      "save": "Sačuvaj izmene"
+    },
+    "manageNotebook": {
+      "title": "Upravljaj notebookom",
+      "description": "Ažurirajte detalje notebooka.",
+      "nameLabel": "Naziv notebooka",
+      "namePlaceholder": "Naziv notebooka",
+      "descriptionLabel": "Opis",
+      "descriptionPlaceholder": "Opišite o čemu je ovaj notebook...",
+      "descriptionHint": "Ovo pomaže AI-ju da razume kontekst notebooka i pruži bolje odgovore.",
+      "improveWithAi": "Poboljšaj uz AI",
+      "improving": "Poboljšavanje…",
+      "improveSuccess": "Opis je poboljšan",
+      "improveFailed": "Nije moguće poboljšati opis",
+      "languageLabel": "Jezik",
+      "cancel": "Otkaži",
+      "save": "Sačuvaj izmene"
+    },
+    "renameChat": {
+      "title": "Preimenuj čet",
+      "placeholder": "Naziv četa",
+      "cancel": "Otkaži",
+      "save": "Sačuvaj"
+    },
+    "deleteChat": {
+      "title": "Obriši čet",
+      "intro": "Ovo će trajno obrisati čet {{name}} i sve njegove podatke, uključujući:",
+      "introNoName": "Ovo će trajno obrisati ovaj čet i sve njegove podatke, uključujući:",
+      "items": {
+        "messages": "Sve poruke i istoriju razgovora",
+        "documents": "Sve otpremljene dokumente i datoteke",
+        "extracted": "Sav izdvojeni tekst, sažetke i obrađene podatke"
+      },
+      "irreversible": "Ova radnja se ne može opozvati.",
+      "cancel": "Otkaži",
+      "confirm": "Obriši čet"
+    },
+    "deleteNotebook": {
+      "title": "Obriši notebook",
+      "intro": "Ovo će trajno obrisati notebook {{name}} i sve njegove podatke, uključujući:",
+      "introNoName": "Ovo će trajno obrisati ovaj notebook i sve njegove podatke, uključujući:",
+      "items": {
+        "chats": "Sve poruke i istoriju četova",
+        "documents": "Sve otpremljene dokumente i datoteke",
+        "notes": "Sve beleške",
+        "extracted": "Sav izdvojeni tekst, sažetke i obrađene podatke",
+        "resources": "Sve povezane resurse i transkripte",
+        "sharing": "Sva podešavanja deljenja"
+      },
+      "irreversible": "Ova radnja se ne može opozvati.",
+      "cancel": "Otkaži",
+      "confirm": "Obriši notebook"
+    },
+    "toasts": {
+      "projectDeleted": "Projekat i svi njegovi četovi su obrisani",
+      "projectArchived": "Projekat je arhiviran",
+      "projectUpdated": "Projekat je ažuriran",
+      "notebookCreated": "Notebook je kreiran",
+      "notebookUpdated": "Notebook je ažuriran",
+      "notebookArchived": "Notebook je arhiviran",
+      "notebookDeleted": "Notebook i svi njegovi podaci su obrisani",
+      "chatRenamed": "Čet je preimenovan",
+      "chatDeleted": "Čet i svi njegovi podaci su obrisani"
+    },
+    "user": "Korisnik"
   },
   "home": {
     "welcome": "Dobrodošli nazad, {{name}}",
@@ -580,6 +674,42 @@
         "extractedEmpty": "Nema izdvojenog teksta za ovaj dokument.",
         "noErrorDetails": "Nema dodatnih detalja o grešci."
       }
+    },
+    "sourceType": {
+      "uploaded": "Otpremljeno",
+      "linked": "Povezano",
+      "synced": "Sinhronizovano",
+      "generated": "Generisano",
+      "imported": "Uvezeno"
+    },
+    "processingStatus": {
+      "completed": "Spremno",
+      "metadata_ready": "Metapodaci spremni",
+      "transcript_ready": "Transkript spreman",
+      "failed": "Neuspešno",
+      "uploaded": "Otpremljeno",
+      "extracting_metadata": "Izdvajanje metapodataka",
+      "extracting_content": "Izdvajanje sadržaja",
+      "detecting_language": "Detekcija jezika",
+      "summarizing": "Sažimanje",
+      "indexing": "Indeksiranje",
+      "chunking": "Deljenje na delove",
+      "generating_embeddings": "Generisanje embeddinga",
+      "generating_chunk_questions": "Generisanje pitanja",
+      "pending": "Na čekanju",
+      "queued": "U redu",
+      "claimed": "Preuzeto",
+      "linked": "Povezano",
+      "running": "U toku",
+      "waiting_retry": "Čeka pokušaj",
+      "none": "Nema"
+    },
+    "transcriptStatusLabel": {
+      "ready": "Transkript spreman",
+      "failed": "Transkript neuspešan",
+      "queued": "Transkript u redu",
+      "running": "Transkript u toku",
+      "none": "Nema transkripta"
     }
   },
   "projectDashboard": {
@@ -1303,10 +1433,26 @@
       "comingSoon": "Upravljanje planom i nadogradnje uskoro.",
       "planSuffix": "plan",
       "plans": {
-        "free": { "name": "Besplatan", "description": "Idealno za početak", "price": "$0 / zauvek" },
-        "basic": { "name": "Osnovni", "description": "Za pojedince i male timove", "price": "$19 / mesečno" },
-        "premium": { "name": "Premium", "description": "Za timove u rastu", "price": "$49 / mesečno" },
-        "enterprise": { "name": "Enterprise", "description": "Za velike organizacije", "price": "Po dogovoru" }
+        "free": {
+          "name": "Besplatan",
+          "description": "Idealno za početak",
+          "price": "$0 / zauvek"
+        },
+        "basic": {
+          "name": "Osnovni",
+          "description": "Za pojedince i male timove",
+          "price": "$19 / mesečno"
+        },
+        "premium": {
+          "name": "Premium",
+          "description": "Za timove u rastu",
+          "price": "$49 / mesečno"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "description": "Za velike organizacije",
+          "price": "Po dogovoru"
+        }
       }
     },
     "linkedAccounts": {

@@ -210,7 +210,7 @@ export function AppSidebar() {
     const project = projects.find(p => p.id === projectId);
     createChat.mutate({
       projectId,
-      name: `New Chat`,
+      name: t('sidebar.newChatName'),
       language: normalizeLanguageCode(project?.language),
     }, {
       onSuccess: (chat) => {
@@ -224,7 +224,7 @@ export function AppSidebar() {
     deleteProject.mutate(projectId, {
       onSuccess: () => {
         if (selectedProjectId === projectId) { setSelectedProjectId(null); setSelectedChatId(null); }
-        toast.success('Project and all its chats deleted');
+        toast.success(t('sidebar.toasts.projectDeleted'));
       }
     });
   };
@@ -233,7 +233,7 @@ export function AppSidebar() {
     archiveProject.mutate(projectId, {
       onSuccess: () => {
         if (selectedProjectId === projectId) { setSelectedProjectId(null); setSelectedChatId(null); }
-        toast.success('Project archived');
+        toast.success(t('sidebar.toasts.projectArchived'));
       }
     });
   };
@@ -248,7 +248,7 @@ export function AppSidebar() {
   const handleManageSubmit = () => {
     if (!editProject || !editName.trim() || !editDescription.trim()) return;
     updateProject.mutate({ id: editProject.id, name: editName.trim(), description: editDescription.trim(), language: editLanguage }, {
-      onSuccess: () => { toast.success('Project updated'); setEditProject(null); }
+      onSuccess: () => { toast.success(t('sidebar.toasts.projectUpdated')); setEditProject(null); }
     });
   };
 
@@ -268,11 +268,11 @@ export function AppSidebar() {
         }),
       });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
-      if (data.description) { setEditDescription(data.description); toast.success('Description improved'); }
+      if (!resp.ok) throw new Error(data.error || t('sidebar.manageProject.improveFailed'));
+      if (data.description) { setEditDescription(data.description); toast.success(t('sidebar.manageProject.improveSuccess')); }
     } catch (err: any) {
       console.error('Improve description error:', err);
-      toast.error(err.message || 'Failed to improve description');
+      toast.error(err.message || t('sidebar.manageProject.improveFailed'));
     } finally { setIsImprovingDesc(false); }
   };
 
@@ -286,7 +286,7 @@ export function AppSidebar() {
       onSuccess: (nb) => {
         setSelectedProjectId(null); setSelectedChatId(null);
         setSelectedNotebookId(nb.id); setActiveView('notebook-workspace');
-        toast.success('Notebook created');
+        toast.success(t('sidebar.toasts.notebookCreated'));
         setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE);
       }
     });
@@ -299,12 +299,12 @@ export function AppSidebar() {
   const handleManageNotebookSubmit = () => {
     if (!editNotebook || !editNbName.trim()) return;
     updateNotebook.mutate({ id: editNotebook.id, name: editNbName.trim(), description: editNbDescription.trim(), language: editNbLanguage }, {
-      onSuccess: () => { toast.success('Notebook updated'); setEditNotebook(null); },
+      onSuccess: () => { toast.success(t('sidebar.toasts.notebookUpdated')); setEditNotebook(null); },
     });
   };
 
   const handleArchiveNotebookSidebar = (id: string) => {
-    archiveNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success('Notebook archived'); } });
+    archiveNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success(t('sidebar.toasts.notebookArchived')); } });
   };
 
   const handleDeleteNotebookSidebar = (id: string, name: string) => {
@@ -317,7 +317,7 @@ export function AppSidebar() {
     deleteNotebook.mutate(id, {
       onSuccess: () => {
         if (selectedNotebookId === id) setSelectedNotebookId(null);
-        toast.success('Notebook and all its data deleted');
+        toast.success(t('sidebar.toasts.notebookDeleted'));
         setPendingDeleteNotebook(null);
       },
     });
@@ -333,7 +333,7 @@ export function AppSidebar() {
     deleteChat.mutate({ id, projectId }, {
       onSuccess: () => {
         if (selectedChatId === id) setSelectedChatId(null);
-        toast.success('Chat and all its data deleted');
+        toast.success(t('sidebar.toasts.chatDeleted'));
         setPendingDeleteChat(null);
       },
     });
@@ -363,20 +363,20 @@ export function AppSidebar() {
       <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); } }}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Create Notebook</DialogTitle>
-            <DialogDescription>Create a new notebook to organize your research and documents.</DialogDescription>
+            <DialogTitle>{t('sidebar.createNotebook.title')}</DialogTitle>
+            <DialogDescription>{t('sidebar.createNotebook.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="create-nb-name">Notebook name <span className="text-destructive">*</span></Label>
-              <Input id="create-nb-name" value={createNbName} onChange={(e) => setCreateNbName(e.target.value)} placeholder="My Notebook" autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && createNbName.trim()) handleCreateNotebookSubmit(); }} />
+              <Label htmlFor="create-nb-name">{t('sidebar.createNotebook.nameLabel')} <span className="text-destructive">*</span></Label>
+              <Input id="create-nb-name" value={createNbName} onChange={(e) => setCreateNbName(e.target.value)} placeholder={t('sidebar.createNotebook.namePlaceholder')} autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && createNbName.trim()) handleCreateNotebookSubmit(); }} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-nb-desc">Description</Label>
-              <Textarea id="create-nb-desc" value={createNbDescription} onChange={(e) => setCreateNbDescription(e.target.value)} placeholder="What is this notebook about?" rows={3} className="resize-none" />
+              <Label htmlFor="create-nb-desc">{t('sidebar.createNotebook.descriptionLabel')}</Label>
+              <Textarea id="create-nb-desc" value={createNbDescription} onChange={(e) => setCreateNbDescription(e.target.value)} placeholder={t('sidebar.createNotebook.descriptionPlaceholder')} rows={3} className="resize-none" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-nb-lang">Language</Label>
+              <Label htmlFor="create-nb-lang">{t('sidebar.createNotebook.languageLabel')}</Label>
               <Select value={createNbLanguage} onValueChange={(val: AvailableLanguageCode) => setCreateNbLanguage(val)}>
                 <SelectTrigger id="create-nb-lang">
                   <SelectValue />
@@ -384,7 +384,7 @@ export function AppSidebar() {
                 <SelectContent>
                   {AVAILABLE_LANGUAGES.map((availableLanguage) => (
                     <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
-                      {availableLanguage.label}
+                      {t(availableLanguage.translationKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -392,8 +392,8 @@ export function AppSidebar() {
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); }}>Cancel</Button>
-            <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>Create Notebook</Button>
+            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); }}>{t('sidebar.createNotebook.cancel')}</Button>
+            <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>{t('sidebar.createNotebook.submit')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -402,17 +402,17 @@ export function AppSidebar() {
       <Dialog open={!!editNotebook} onOpenChange={(open) => !open && setEditNotebook(null)}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Manage Notebook</DialogTitle>
-            <DialogDescription>Update your notebook details.</DialogDescription>
+            <DialogTitle>{t('sidebar.manageNotebook.title')}</DialogTitle>
+            <DialogDescription>{t('sidebar.manageNotebook.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-name-sidebar">Notebook name <span className="text-destructive">*</span></Label>
-              <Input id="edit-nb-name-sidebar" value={editNbName} onChange={(e) => setEditNbName(e.target.value)} placeholder="Notebook name" autoFocus />
+              <Label htmlFor="edit-nb-name-sidebar">{t('sidebar.manageNotebook.nameLabel')} <span className="text-destructive">*</span></Label>
+              <Input id="edit-nb-name-sidebar" value={editNbName} onChange={(e) => setEditNbName(e.target.value)} placeholder={t('sidebar.manageNotebook.namePlaceholder')} autoFocus />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="edit-nb-desc-sidebar">Description</Label>
+                <Label htmlFor="edit-nb-desc-sidebar">{t('sidebar.manageNotebook.descriptionLabel')}</Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -446,14 +446,14 @@ export function AppSidebar() {
                       );
 
                       const data = await resp.json();
-                      if (!resp.ok) throw new Error(data.error || 'Failed to improve description');
+                      if (!resp.ok) throw new Error(data.error || t('sidebar.manageNotebook.improveFailed'));
                       if (data.description) {
                         setEditNbDescription(data.description);
-                        toast.success('Description improved');
+                        toast.success(t('sidebar.manageNotebook.improveSuccess'));
                       }
                     } catch (err: any) {
                       console.error('Improve description error:', err);
-                      toast.error(err.message || 'Failed to improve description');
+                      toast.error(err.message || t('sidebar.manageNotebook.improveFailed'));
                     } finally {
                       setIsImprovingNbDesc(false);
                     }
@@ -461,14 +461,14 @@ export function AppSidebar() {
                   disabled={isImprovingNbDesc}
                 >
                   {isImprovingNbDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  {isImprovingNbDesc ? 'Improving…' : 'Improve with AI'}
+                  {isImprovingNbDesc ? t('sidebar.manageNotebook.improving') : t('sidebar.manageNotebook.improveWithAi')}
                 </Button>
               </div>
-              <Textarea id="edit-nb-desc-sidebar" value={editNbDescription} onChange={(e) => setEditNbDescription(e.target.value)} placeholder="Describe what this notebook is about..." rows={3} className="resize-none" />
-              <p className="text-xs text-muted-foreground">This helps the AI understand the notebook context and provide better answers.</p>
+              <Textarea id="edit-nb-desc-sidebar" value={editNbDescription} onChange={(e) => setEditNbDescription(e.target.value)} placeholder={t('sidebar.manageNotebook.descriptionPlaceholder')} rows={3} className="resize-none" />
+              <p className="text-xs text-muted-foreground">{t('sidebar.manageNotebook.descriptionHint')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-nb-lang-sidebar">Language</Label>
+              <Label htmlFor="edit-nb-lang-sidebar">{t('sidebar.manageNotebook.languageLabel')}</Label>
               <Select value={editNbLanguage} onValueChange={(val: AvailableLanguageCode) => setEditNbLanguage(val)}>
                 <SelectTrigger id="edit-nb-lang-sidebar">
                   <SelectValue />
@@ -476,7 +476,7 @@ export function AppSidebar() {
                 <SelectContent>
                   {AVAILABLE_LANGUAGES.map((availableLanguage) => (
                     <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
-                      {availableLanguage.label}
+                      {t(availableLanguage.translationKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -484,8 +484,8 @@ export function AppSidebar() {
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditNotebook(null)}>Cancel</Button>
-            <Button onClick={handleManageNotebookSubmit} disabled={!editNbName.trim()}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditNotebook(null)}>{t('sidebar.manageNotebook.cancel')}</Button>
+            <Button onClick={handleManageNotebookSubmit} disabled={!editNbName.trim()}>{t('sidebar.manageNotebook.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -880,7 +880,7 @@ export function AppSidebar() {
             <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-sm">{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">{displayName || 'User'}</p>
+            <p className="text-sm font-medium text-sidebar-foreground truncate">{displayName || t('sidebar.user')}</p>
             <p className="text-xs text-sidebar-muted truncate">{displayEmail}</p>
           </div>
           <Button variant="ghost" size="icon" className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent" onClick={() => setShowNotifications(true)}>
@@ -895,33 +895,33 @@ export function AppSidebar() {
       <Dialog open={!!editProject} onOpenChange={(open) => !open && setEditProject(null)}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Manage Project</DialogTitle>
-            <DialogDescription>Update your project details. The description helps the AI provide better answers.</DialogDescription>
+            <DialogTitle>{t('sidebar.manageProject.title')}</DialogTitle>
+            <DialogDescription>{t('sidebar.manageProject.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-project-name">Project name <span className="text-destructive">*</span></Label>
-              <Input id="edit-project-name" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Project name" autoFocus />
+              <Label htmlFor="edit-project-name">{t('sidebar.manageProject.nameLabel')} <span className="text-destructive">*</span></Label>
+              <Input id="edit-project-name" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t('sidebar.manageProject.namePlaceholder')} autoFocus />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="edit-project-desc">Description <span className="text-destructive">*</span></Label>
+                <Label htmlFor="edit-project-desc">{t('sidebar.manageProject.descriptionLabel')} <span className="text-destructive">*</span></Label>
                 <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-accent" onClick={handleImproveDescription} disabled={isImprovingDesc}>
                   {isImprovingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  {isImprovingDesc ? 'Improving…' : 'Improve with AI'}
+                  {isImprovingDesc ? t('sidebar.manageProject.improving') : t('sidebar.manageProject.improveWithAi')}
                 </Button>
               </div>
-              <Textarea id="edit-project-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Describe what this project is about..." rows={3} className="resize-none" />
-              <p className="text-xs text-muted-foreground">This helps the AI understand the project context and provide better answers.</p>
+              <Textarea id="edit-project-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder={t('sidebar.manageProject.descriptionPlaceholder')} rows={3} className="resize-none" />
+              <p className="text-xs text-muted-foreground">{t('sidebar.manageProject.descriptionHint')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-project-lang">Language</Label>
+              <Label htmlFor="edit-project-lang">{t('sidebar.manageProject.languageLabel')}</Label>
               <Select value={editLanguage} onValueChange={(val: AvailableLanguageCode) => setEditLanguage(val)}>
                 <SelectTrigger id="edit-project-lang"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {AVAILABLE_LANGUAGES.map((availableLanguage) => (
                     <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
-                      {availableLanguage.label}
+                      {t(availableLanguage.translationKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -929,8 +929,8 @@ export function AppSidebar() {
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditProject(null)}>Cancel</Button>
-            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditProject(null)}>{t('sidebar.manageProject.cancel')}</Button>
+            <Button onClick={handleManageSubmit} disabled={!editName.trim() || !editDescription.trim()}>{t('sidebar.manageProject.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -938,18 +938,18 @@ export function AppSidebar() {
       {/* Rename Chat Dialog */}
       <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Rename Chat</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('sidebar.renameChat.title')}</DialogTitle></DialogHeader>
           <Input value={renameChatValue} onChange={(e) => setRenameChatValue(e.target.value)} onKeyDown={(e) => {
             if (e.key === 'Enter' && renameChatId && renameChatValue.trim()) {
-              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); } });
+              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success(t('sidebar.toasts.chatRenamed')); setRenameChatId(null); } });
             }
-          }} placeholder="Chat name" autoFocus />
+          }} placeholder={t('sidebar.renameChat.placeholder')} autoFocus />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameChatId(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRenameChatId(null)}>{t('sidebar.renameChat.cancel')}</Button>
             <Button disabled={!renameChatValue.trim()} onClick={() => {
               if (!renameChatId || !renameChatValue.trim()) return;
-              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success('Chat renamed'); setRenameChatId(null); } });
-            }}>Save</Button>
+              updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success(t('sidebar.toasts.chatRenamed')); setRenameChatId(null); } });
+            }}>{t('sidebar.renameChat.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -957,24 +957,26 @@ export function AppSidebar() {
       <AlertDialog open={!!pendingDeleteChat} onOpenChange={(open) => !open && setPendingDeleteChat(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+            <AlertDialogTitle>{t('sidebar.deleteChat.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete chat {pendingDeleteChat?.name ? `"${pendingDeleteChat.name}" ` : ''}and all of its data, including:
+              {pendingDeleteChat?.name
+                ? t('sidebar.deleteChat.intro', { name: `"${pendingDeleteChat.name}"` })
+                : t('sidebar.deleteChat.introNoName')}
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>All messages and conversation history</li>
-                <li>All uploaded documents and files</li>
-                <li>All extracted text, summaries, and processed data</li>
+                <li>{t('sidebar.deleteChat.items.messages')}</li>
+                <li>{t('sidebar.deleteChat.items.documents')}</li>
+                <li>{t('sidebar.deleteChat.items.extracted')}</li>
               </ul>
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">{t('sidebar.deleteChat.irreversible')}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('sidebar.deleteChat.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteChat}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Chat
+              {t('sidebar.deleteChat.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -983,27 +985,29 @@ export function AppSidebar() {
       <AlertDialog open={!!pendingDeleteNotebook} onOpenChange={(open) => !open && setPendingDeleteNotebook(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Notebook</AlertDialogTitle>
+            <AlertDialogTitle>{t('sidebar.deleteNotebook.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete notebook {pendingDeleteNotebook?.name ? `"${pendingDeleteNotebook.name}" ` : ''}and all of its data, including:
+              {pendingDeleteNotebook?.name
+                ? t('sidebar.deleteNotebook.intro', { name: `"${pendingDeleteNotebook.name}"` })
+                : t('sidebar.deleteNotebook.introNoName')}
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>All chat messages and history</li>
-                <li>All uploaded documents and files</li>
-                <li>All notes</li>
-                <li>All extracted text, summaries, and processed data</li>
-                <li>All linked resources and transcripts</li>
-                <li>All sharing settings</li>
+                <li>{t('sidebar.deleteNotebook.items.chats')}</li>
+                <li>{t('sidebar.deleteNotebook.items.documents')}</li>
+                <li>{t('sidebar.deleteNotebook.items.notes')}</li>
+                <li>{t('sidebar.deleteNotebook.items.extracted')}</li>
+                <li>{t('sidebar.deleteNotebook.items.resources')}</li>
+                <li>{t('sidebar.deleteNotebook.items.sharing')}</li>
               </ul>
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">{t('sidebar.deleteNotebook.irreversible')}</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('sidebar.deleteNotebook.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteNotebookSidebar}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Notebook
+              {t('sidebar.deleteNotebook.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1030,6 +1034,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onDeleteChat: (chat: DbChat) => void;
   onRenameChat: (chatId: string, currentName: string) => void;
 }) {
+  const { t } = useTranslation();
   const { data: chats = [] } = useChats(isExpanded ? project.id : undefined);
   const { data: myRole } = useItemRole(project.id, 'project');
   const permissions = getItemPermissions(myRole);
@@ -1069,7 +1074,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
               <Button variant="ghost" size="icon" className="h-6 w-6 text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-accent" onClick={onNewChat}>
                 <Plus className="h-3 w-3" />
               </Button>
-            </TooltipTrigger><TooltipContent>New Chat</TooltipContent></Tooltip>
+            </TooltipTrigger><TooltipContent>{t('sidebar.newChat')}</TooltipContent></Tooltip>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1097,10 +1102,10 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <div className={cn("h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0", selectedChatId === chat.id ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground")}>
                     <MessageSquare className="h-3 w-3" />
                   </div>
-                  <span className="truncate">{chat.name}</span>
+                  <span className="truncate">{chat.name === 'New Chat' ? t('sidebar.newChatName') : chat.name}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{chat.name}</TooltipContent>
+              <TooltipContent side="top" align="start" className="max-w-[350px] z-[100]">{chat.name === 'New Chat' ? t('sidebar.newChatName') : chat.name}</TooltipContent>
             </Tooltip>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -1112,7 +1117,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
             </DropdownMenu>
           </div>
         ))}
-        {chats.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">No chats yet</p>}
+        {chats.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.noChats')}</p>}
       </CollapsibleContent>
     </Collapsible>
   );
