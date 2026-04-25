@@ -96,6 +96,7 @@ function formatLastActivity(dateStr: string, t: any, locale: string): string {
 
 export function NotebooksLanding() {
   const { t, i18n } = useTranslation();
+  const currentLanguage = normalizeLanguageCode(i18n.resolvedLanguage || i18n.language);
   const dateLocale = getDateLocale(i18n.resolvedLanguage || i18n.language);
   const { user } = useAuth();
   const { setSelectedNotebookId, setActiveView } = useApp();
@@ -109,7 +110,7 @@ export function NotebooksLanding() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [createName, setCreateName] = useState('');
   const [createDescription, setCreateDescription] = useState('');
-  const [createLanguage, setCreateLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
+  const [createLanguage, setCreateLanguage] = useState<AvailableLanguageCode>(currentLanguage);
 
   const [editNotebook, setEditNotebook] = useState<DbNotebook | null>(null);
   const [editName, setEditName] = useState('');
@@ -144,7 +145,7 @@ export function NotebooksLanding() {
         setShowCreate(false);
         setCreateName('');
         setCreateDescription('');
-        setCreateLanguage(DEFAULT_LANGUAGE);
+        setCreateLanguage(currentLanguage);
       },
     });
   };
@@ -211,7 +212,10 @@ export function NotebooksLanding() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {/* Create Card */}
           <button
-            onClick={() => setShowCreate(true)}
+            onClick={() => {
+              setCreateLanguage(currentLanguage);
+              setShowCreate(true);
+            }}
             className="group relative flex flex-col items-center justify-center min-h-[200px] rounded-xl border-2 border-dashed border-border bg-background hover:border-primary/40 hover:bg-muted/50 transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
             <div className="w-14 h-14 rounded-full border-2 border-muted-foreground/20 flex items-center justify-center mb-3 group-hover:border-primary/40 group-hover:text-primary transition-colors">
@@ -287,7 +291,14 @@ export function NotebooksLanding() {
       </div>
 
       {/* Create Notebook Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(nextOpen) => {
+        setShowCreate(nextOpen);
+        if (!nextOpen) {
+          setCreateName('');
+          setCreateDescription('');
+          setCreateLanguage(currentLanguage);
+        }
+      }}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>{t('notebooksLanding.create.title')}</DialogTitle>
@@ -333,7 +344,12 @@ export function NotebooksLanding() {
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowCreate(false)}>{t('notebooksLanding.create.cancel')}</Button>
+            <Button variant="outline" onClick={() => {
+              setShowCreate(false);
+              setCreateName('');
+              setCreateDescription('');
+              setCreateLanguage(currentLanguage);
+            }}>{t('notebooksLanding.create.cancel')}</Button>
             <Button onClick={handleCreate} disabled={!createName.trim()}>{t('notebooksLanding.create.submit')}</Button>
           </DialogFooter>
         </DialogContent>

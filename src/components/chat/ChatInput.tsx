@@ -99,7 +99,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       minHeight: lineHeight + padding + border,
       maxHeight: lineHeight * MAX_TEXTAREA_ROWS + padding + border,
     };
-  }, []);
+  }, [t]);
 
 
   const resizeTextarea = useCallback(() => {

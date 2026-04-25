@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import type { ChatSendPayload } from './ChatInput';
 import type { SourceItem } from './SourceAttribution';
 import { useTranslation } from 'react-i18next';
+import { normalizeLanguageCode } from '@/lib/languages';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
@@ -160,7 +161,7 @@ export function ChatWorkspace() {
                   className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
                   onClick={() => {
                     createChat.mutate(
-                      { projectId: selectedProjectId!, name: t('sidebar.newChatName'), language: (selectedProject!.language as 'en' | 'sr') },
+                      { projectId: selectedProjectId!, name: t('sidebar.newChatName'), language: normalizeLanguageCode(selectedProject!.language) },
                       { onSuccess: (chat) => setSelectedChatId(chat.id) }
                     );
                   }}
@@ -190,7 +191,7 @@ export function ChatWorkspace() {
               className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
               onClick={() => {
                 createChat.mutate(
-                  { projectId: selectedProjectId!, name: t('sidebar.newChatName'), language: (selectedProject!.language as 'en' | 'sr') },
+                  { projectId: selectedProjectId!, name: t('sidebar.newChatName'), language: normalizeLanguageCode(selectedProject!.language) },
                   { onSuccess: (chat) => setSelectedChatId(chat.id) }
                 );
               }}

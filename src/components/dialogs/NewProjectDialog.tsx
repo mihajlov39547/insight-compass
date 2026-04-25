@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, type AvailableLanguageCode } from '@/lib/languages';
+import { AVAILABLE_LANGUAGES, normalizeLanguageCode, type AvailableLanguageCode } from '@/lib/languages';
 import { useTranslation } from 'react-i18next';
 
 interface NewProjectDialogProps {
@@ -29,12 +29,19 @@ interface NewProjectDialogProps {
 }
 
 export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewProjectDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = normalizeLanguageCode(i18n.resolvedLanguage || i18n.language);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [language, setLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
+  const [language, setLanguage] = useState<AvailableLanguageCode>(currentLanguage);
   const [nameError, setNameError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setLanguage(currentLanguage);
+    }
+  }, [currentLanguage, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +62,7 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
   const handleClose = () => {
     setName('');
     setDescription('');
-    setLanguage(DEFAULT_LANGUAGE);
+    setLanguage(currentLanguage);
     setNameError('');
     setDescriptionError('');
     onOpenChange(false);
@@ -135,7 +142,7 @@ export function NewProjectDialog({ open, onOpenChange, onCreateProject }: NewPro
               <SelectContent>
                 {AVAILABLE_LANGUAGES.map((availableLanguage) => (
                   <SelectItem key={availableLanguage.code} value={availableLanguage.code}>
-                    {availableLanguage.label}
+                    {t(availableLanguage.translationKey)}
                   </SelectItem>
                 ))}
               </SelectContent>

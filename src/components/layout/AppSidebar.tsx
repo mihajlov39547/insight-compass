@@ -59,7 +59,8 @@ export function AppSidebar() {
   } = useApp();
 
   const { user: authUser, profile } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = normalizeLanguageCode(i18n.resolvedLanguage || i18n.language);
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: chats = [] } = useChats(selectedProjectId ?? undefined);
   const { data: notebooks = [] } = useNotebooks();
@@ -84,7 +85,7 @@ export function AppSidebar() {
   const [showCreateNotebook, setShowCreateNotebook] = useState(false);
   const [createNbName, setCreateNbName] = useState('');
   const [createNbDescription, setCreateNbDescription] = useState('');
-  const [createNbLanguage, setCreateNbLanguage] = useState<AvailableLanguageCode>(DEFAULT_LANGUAGE);
+  const [createNbLanguage, setCreateNbLanguage] = useState<AvailableLanguageCode>(currentLanguage);
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
@@ -279,7 +280,10 @@ export function AppSidebar() {
 
   
 
-  const handleCreateNotebook = () => setShowCreateNotebook(true);
+  const handleCreateNotebook = () => {
+    setCreateNbLanguage(currentLanguage);
+    setShowCreateNotebook(true);
+  };
 
   const handleCreateNotebookSubmit = () => {
     if (!createNbName.trim()) return;
@@ -288,7 +292,7 @@ export function AppSidebar() {
         setSelectedProjectId(null); setSelectedChatId(null);
         setSelectedNotebookId(nb.id); setActiveView('notebook-workspace');
         toast.success(t('sidebar.toasts.notebookCreated'));
-        setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE);
+        setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(currentLanguage);
       }
     });
   };
@@ -361,7 +365,7 @@ export function AppSidebar() {
   const sharedDialogs = (
     <>
       {/* Create Notebook Dialog */}
-      <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); } }}>
+      <Dialog open={showCreateNotebook} onOpenChange={(open) => { if (!open) { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(currentLanguage); } }}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>{t('sidebar.createNotebook.title')}</DialogTitle>
@@ -393,7 +397,7 @@ export function AppSidebar() {
             </div>
           </div>
           <DialogFooter className="gap-2 pt-4">
-            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(DEFAULT_LANGUAGE); }}>{t('sidebar.createNotebook.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setShowCreateNotebook(false); setCreateNbName(''); setCreateNbDescription(''); setCreateNbLanguage(currentLanguage); }}>{t('sidebar.createNotebook.cancel')}</Button>
             <Button onClick={handleCreateNotebookSubmit} disabled={!createNbName.trim()}>{t('sidebar.createNotebook.submit')}</Button>
           </DialogFooter>
         </DialogContent>
