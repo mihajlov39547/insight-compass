@@ -1363,6 +1363,7 @@
       "finalize_document": "Finalizacija"
     }
   },
+  "documentUsability": {
     "contentAnalysis": "Analiza sadržaja",
     "extractedText": "Izvučen tekst",
     "extractedTextHint": "Sirovi tekst je izvučen iz dokumenta",
