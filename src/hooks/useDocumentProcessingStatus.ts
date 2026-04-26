@@ -156,7 +156,7 @@ export function deriveDocumentStatusPresentation(
 ): DocumentStatusPresentation {
   if (status.documentStatus === 'failed') {
     return {
-      primaryLabel: 'Failed',
+      primaryLabel: i18n.t('documentProcessing.states.failed'),
       primaryTone: 'failed',
       secondaryLabel: null,
       isCoreReady: false,
