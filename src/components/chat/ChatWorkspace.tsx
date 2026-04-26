@@ -55,6 +55,8 @@ export function ChatWorkspace() {
     responseLanguage: selectedChat?.language || selectedProject?.language,
   });
 
+  useGenerationCompleteSound(isGenerating, !!error);
+
   const { runExtract, extractingMessageId } = useExtractFollowUp();
   const { runCrawl, crawlingMessageId } = useCrawlFollowUp();
   const [crawlingUrl, setCrawlingUrl] = useState<string | null>(null);
