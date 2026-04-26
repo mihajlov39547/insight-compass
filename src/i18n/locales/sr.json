@@ -1063,11 +1063,7 @@
     "save": "Sačuvaj izmene",
     "saving": "Čuvanje...",
     "saved": "Podešavanja sačuvana",
-    "saveFailed": "Neuspešno čuvanje podešavanja",
-    "redeployEdge": "Ponovo objavi Edge",
-    "pinging": "Pingovanje…",
-    "redeployPinged": "Ponovno objavljivanje pingovalo {{ok}}/{{total}} funkcija",
-    "redeployFailed": "Zahtev za ponovno objavljivanje nije uspeo"
+    "saveFailed": "Neuspešno čuvanje podešavanja"
   },
   "pricingDialog": {
     "title": "Izaberite svoj plan",

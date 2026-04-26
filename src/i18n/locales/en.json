@@ -1051,11 +1051,7 @@
     "save": "Save Changes",
     "saving": "Saving...",
     "saved": "Settings saved",
-    "saveFailed": "Failed to save settings",
-    "redeployEdge": "Redeploy Edge",
-    "pinging": "Pinging…",
-    "redeployPinged": "Redeploy pinged {{ok}}/{{total}} functions",
-    "redeployFailed": "Redeploy request failed"
+    "saveFailed": "Failed to save settings"
   },
   "pricingDialog": {
     "title": "Choose Your Plan",
