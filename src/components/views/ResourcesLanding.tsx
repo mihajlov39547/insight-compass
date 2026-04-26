@@ -34,6 +34,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { useResourceTranscriptPreview } from '@/hooks/useResourceTranscriptPreview';
 import { useResourceExtractedText } from '@/hooks/useResourceExtractedText';
+import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { useResourceTranscriptDebug, type TranscriptDebugPayload, type StageDebugEntry } from '@/hooks/useResourceTranscriptDebug';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
@@ -1679,7 +1680,7 @@ function DocumentContentTab({
               <span className="text-[10px] text-muted-foreground">{extractedText.textLength.toLocaleString()} chars</span>
             </div>
             <div className="max-h-[400px] overflow-y-auto p-3">
-              <pre className="text-xs whitespace-pre-wrap leading-relaxed font-sans">{extractedText.extractedText}</pre>
+              <MarkdownContent content={extractedText.extractedText} />
             </div>
           </div>
           <DocumentDebugSection debug={extractedText?.debug ?? null} />
