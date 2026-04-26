@@ -142,8 +142,9 @@ export function SettingsDialog() {
             <SettingToggle
               label={t('settingsDialog.chatSuggestions')}
               description={t('settingsDialog.chatSuggestionsHelp')}
-              checked={local.chat_suggestions}
-              onChange={v => update('chat_suggestions', v)}
+              checked={false}
+              onChange={() => {}}
+              disabled
             />
             <div className="flex items-center justify-between">
               <div>
