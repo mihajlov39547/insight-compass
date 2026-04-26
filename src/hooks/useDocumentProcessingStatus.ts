@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import i18n from 'i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 
