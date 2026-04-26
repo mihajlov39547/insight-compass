@@ -165,8 +165,9 @@ export function SettingsDialog() {
             <SettingToggle
               label={t('settingsDialog.agentNotifications')}
               description={t('settingsDialog.agentNotificationsHelp')}
-              checked={local.agent_action_notifications}
-              onChange={v => update('agent_action_notifications', v)}
+              checked={false}
+              onChange={() => {}}
+              disabled
             />
           </section>
 
@@ -185,16 +186,17 @@ export function SettingsDialog() {
               )}
               onChange={v => update('language_preference', normalizeLanguageCode(v))}
             />
-            <SettingSelect
-              label={t('settingsDialog.layout')}
-              value={local.layout_preference}
-              options={['comfortable', 'compact']}
-              optionLabels={{
-                comfortable: t('settingsDialog.layouts.comfortable'),
-                compact: t('settingsDialog.layouts.compact'),
-              }}
-              onChange={v => update('layout_preference', v)}
-            />
+            <div className="flex items-center justify-between opacity-60">
+              <Label className="text-sm">{t('settingsDialog.layout')}</Label>
+              <Select value="comfortable" disabled onValueChange={() => {}}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="comfortable">{t('settingsDialog.layouts.comfortable')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </section>
 
           <Separator />
