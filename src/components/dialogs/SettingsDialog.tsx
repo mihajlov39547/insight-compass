@@ -106,8 +106,9 @@ export function SettingsDialog() {
             />
             <SettingToggle
               label={t('settingsDialog.citeSources')}
-              checked={local.cite_sources}
-              onChange={v => update('cite_sources', v)}
+              checked={true}
+              onChange={() => {}}
+              disabled
             />
             <div className="flex items-center justify-between">
               <div>
@@ -119,8 +120,9 @@ export function SettingsDialog() {
             <SettingToggle
               label={t('settingsDialog.answerFormatting')}
               description={t('settingsDialog.answerFormattingHelp')}
-              checked={local.enable_answer_formatting}
-              onChange={v => update('enable_answer_formatting', v)}
+              checked={true}
+              onChange={() => {}}
+              disabled
             />
             <RetrievalWeightsSection
               values={{
