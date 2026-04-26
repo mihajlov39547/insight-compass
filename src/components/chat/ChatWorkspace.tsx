@@ -26,6 +26,7 @@ import type { ChatSendPayload } from './ChatInput';
 import type { SourceItem } from './SourceAttribution';
 import { useTranslation } from 'react-i18next';
 import { normalizeLanguageCode } from '@/lib/languages';
+import { useGenerationCompleteSound } from '@/hooks/useGenerationCompleteSound';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
@@ -53,6 +54,8 @@ export function ChatWorkspace() {
     projectDescription: selectedProject?.description,
     responseLanguage: selectedChat?.language || selectedProject?.language,
   });
+
+  useGenerationCompleteSound(isGenerating, !!error);
 
   const { runExtract, extractingMessageId } = useExtractFollowUp();
   const { runCrawl, crawlingMessageId } = useCrawlFollowUp();

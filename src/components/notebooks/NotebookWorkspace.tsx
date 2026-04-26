@@ -49,6 +49,7 @@ import { getItemPermissions } from '@/lib/permissions';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import type { ExtractSelection } from '@/components/chat/SourceAttribution';
 import { useTranslation } from 'react-i18next';
+import { useGenerationCompleteSound } from '@/hooks/useGenerationCompleteSound';
 
 function NotebookSourceStatus({ doc }: { doc: DbDocument }) {
   const isProcessing = !['completed', 'failed'].includes(doc.processing_status);
@@ -142,6 +143,8 @@ export function NotebookWorkspace() {
     notebookLanguage: notebook?.language,
   });
   const [activeMode, setActiveMode] = useState<'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook'>('none');
+
+  useGenerationCompleteSound(isGenerating, !!error);
 
   const [showUpload, setShowUpload] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
