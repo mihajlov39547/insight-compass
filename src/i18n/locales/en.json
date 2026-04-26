@@ -1350,6 +1350,7 @@
       "finalize_document": "Finalizing"
     }
   },
+  "documentUsability": {
     "contentAnalysis": "Content analysis",
     "extractedText": "Extracted text",
     "extractedTextHint": "Raw text has been extracted from the document",
