@@ -174,7 +174,7 @@ export function deriveDocumentStatusPresentation(
 
   if (coreReady || status.readiness.groundedChatReady || status.documentStatus === 'completed') {
     return {
-      primaryLabel: status.readiness.groundedChatReady ? 'Ready for chat' : 'Ready for search and chat',
+      primaryLabel: status.readiness.groundedChatReady ? i18n.t('documentProcessing.states.readyForChat') : i18n.t('documentProcessing.states.ready'),
       primaryTone: 'ready',
       secondaryLabel: backgroundLabel,
       isCoreReady: true,
