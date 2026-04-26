@@ -1307,6 +1307,47 @@
       "embeddings": "Embeddings:",
       "coverage": "Coverage:",
       "questions": "Questions:"
+    },
+    "states": {
+      "completed": "Completed",
+      "failed": "Failed",
+      "queued": "Queued",
+      "ready": "Ready for search and chat",
+      "readyForChat": "Ready for chat",
+      "partiallyReady": "Partially ready",
+      "after": "After {{stage}}"
+    },
+    "background": {
+      "generic": "Enhancing in background: {{stage}}",
+      "questions": "Enhancing retrieval in background"
+    },
+    "activities": {
+      "prepare_run": "Initializing",
+      "load_source": "Loading file",
+      "compute_file_fingerprint": "Computing fingerprint",
+      "detect_file_type": "Detecting file type",
+      "inspect_pdf_text_layer": "Inspecting PDF",
+      "extract_pdf_text": "Extracting PDF text",
+      "extract_docx_text": "Extracting DOCX text",
+      "extract_doc_text": "Extracting DOC text",
+      "extract_spreadsheet_text": "Extracting spreadsheet",
+      "extract_presentation_text": "Extracting presentation",
+      "extract_email_text": "Extracting email",
+      "extract_plain_text_like_content": "Extracting text",
+      "extract_text": "Extracting text",
+      "ocr_pdf": "OCR scanning PDF",
+      "ocr_image": "OCR scanning image",
+      "extract_image_metadata": "Reading image metadata",
+      "normalize_technical_analysis_output": "Normalizing content",
+      "persist_analysis_metadata": "Saving metadata",
+      "assess_quality": "Assessing quality",
+      "detect_language_and_stats": "Detecting language",
+      "generate_summary": "Generating summary",
+      "build_search_index": "Building search index",
+      "chunk_text": "Chunking for retrieval",
+      "generate_chunk_embeddings": "Generating embeddings",
+      "generate_chunk_questions": "Generating suggested questions",
+      "finalize_document": "Finalizing"
     }
   },
   "documentUsability": {

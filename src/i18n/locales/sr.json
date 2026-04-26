@@ -1320,6 +1320,47 @@
       "embeddings": "Embedinzi:",
       "coverage": "Pokrivenost:",
       "questions": "Pitanja:"
+    },
+    "states": {
+      "completed": "Završeno",
+      "failed": "Neuspešno",
+      "queued": "U redu čekanja",
+      "ready": "Spremno za pretragu i ćaskanje",
+      "readyForChat": "Spremno za ćaskanje",
+      "partiallyReady": "Delimično spremno",
+      "after": "Posle: {{stage}}"
+    },
+    "background": {
+      "generic": "Poboljšavanje u pozadini: {{stage}}",
+      "questions": "Poboljšavanje pretrage u pozadini"
+    },
+    "activities": {
+      "prepare_run": "Inicijalizacija",
+      "load_source": "Učitavanje fajla",
+      "compute_file_fingerprint": "Računanje otiska fajla",
+      "detect_file_type": "Detekcija tipa fajla",
+      "inspect_pdf_text_layer": "Pregled PDF-a",
+      "extract_pdf_text": "Izvlačenje teksta iz PDF-a",
+      "extract_docx_text": "Izvlačenje DOCX teksta",
+      "extract_doc_text": "Izvlačenje DOC teksta",
+      "extract_spreadsheet_text": "Izvlačenje tabele",
+      "extract_presentation_text": "Izvlačenje prezentacije",
+      "extract_email_text": "Izvlačenje e-pošte",
+      "extract_plain_text_like_content": "Izvlačenje teksta",
+      "extract_text": "Izvlačenje teksta",
+      "ocr_pdf": "OCR skeniranje PDF-a",
+      "ocr_image": "OCR skeniranje slike",
+      "extract_image_metadata": "Čitanje metapodataka slike",
+      "normalize_technical_analysis_output": "Normalizacija sadržaja",
+      "persist_analysis_metadata": "Čuvanje metapodataka",
+      "assess_quality": "Procena kvaliteta",
+      "detect_language_and_stats": "Detekcija jezika",
+      "generate_summary": "Generisanje sažetka",
+      "build_search_index": "Kreiranje indeksa pretrage",
+      "chunk_text": "Segmentiranje za pretragu",
+      "generate_chunk_embeddings": "Generisanje embedinga",
+      "generate_chunk_questions": "Generisanje predloženih pitanja",
+      "finalize_document": "Finalizacija"
     }
   },
   "documentUsability": {

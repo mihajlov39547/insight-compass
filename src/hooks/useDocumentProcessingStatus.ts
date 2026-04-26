@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import i18n from 'i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 
@@ -91,12 +92,18 @@ const ACTIVITY_LABELS: Record<string, string> = {
 };
 
 export function getActivityLabel(activityKey: string): string {
-  return ACTIVITY_LABELS[activityKey] || activityKey.replace(/^document\./, '').replace(/_/g, ' ');
+  // Strip "document." prefix to derive the i18n key segment.
+  const shortKey = activityKey.replace(/^document\./, '');
+  const i18nKey = `documentProcessing.activities.${shortKey}`;
+  const translated = i18n.t(i18nKey);
+  if (translated && translated !== i18nKey) return translated;
+  // Fallback to English label or humanized key.
+  return ACTIVITY_LABELS[activityKey] || shortKey.replace(/_/g, ' ');
 }
 
 export function getUserFacingStage(status: DocumentProcessingStatus): string {
-  if (status.documentStatus === 'completed') return 'Completed';
-  if (status.documentStatus === 'failed') return 'Failed';
+  if (status.documentStatus === 'completed') return i18n.t('documentProcessing.states.completed');
+  if (status.documentStatus === 'failed') return i18n.t('documentProcessing.states.failed');
 
   if (status.runningActivities.length > 0) {
     return status.runningActivities
@@ -104,10 +111,10 @@ export function getUserFacingStage(status: DocumentProcessingStatus): string {
       .join(', ');
   }
 
-  if (status.currentStage === 'queued') return 'Queued';
+  if (status.currentStage === 'queued') return i18n.t('documentProcessing.states.queued');
   if (status.currentStage.startsWith('after:')) {
     const afterKey = status.currentStage.replace('after:', '');
-    return `After ${getActivityLabel(afterKey).toLowerCase()}`;
+    return i18n.t('documentProcessing.states.after', { stage: getActivityLabel(afterKey).toLowerCase() });
   }
 
   return getActivityLabel(status.currentStage);
@@ -118,12 +125,10 @@ const OPTIONAL_BACKGROUND_KEYS = new Set([
 ]);
 
 function getBackgroundLabel(activityKey: string): string {
-  switch (activityKey) {
-    case 'document.generate_chunk_questions':
-      return 'Enhancing retrieval in background';
-    default:
-      return `Enhancing in background: ${getActivityLabel(activityKey).toLowerCase()}`;
+  if (activityKey === 'document.generate_chunk_questions') {
+    return i18n.t('documentProcessing.background.questions');
   }
+  return i18n.t('documentProcessing.background.generic', { stage: getActivityLabel(activityKey).toLowerCase() });
 }
 
 function getBlockingStageLabel(status: DocumentProcessingStatus): string {
@@ -151,7 +156,7 @@ export function deriveDocumentStatusPresentation(
 ): DocumentStatusPresentation {
   if (status.documentStatus === 'failed') {
     return {
-      primaryLabel: 'Failed',
+      primaryLabel: i18n.t('documentProcessing.states.failed'),
       primaryTone: 'failed',
       secondaryLabel: null,
       isCoreReady: false,
@@ -169,7 +174,7 @@ export function deriveDocumentStatusPresentation(
 
   if (coreReady || status.readiness.groundedChatReady || status.documentStatus === 'completed') {
     return {
-      primaryLabel: status.readiness.groundedChatReady ? 'Ready for chat' : 'Ready for search and chat',
+      primaryLabel: status.readiness.groundedChatReady ? i18n.t('documentProcessing.states.readyForChat') : i18n.t('documentProcessing.states.ready'),
       primaryTone: 'ready',
       secondaryLabel: backgroundLabel,
       isCoreReady: true,
@@ -179,7 +184,7 @@ export function deriveDocumentStatusPresentation(
 
   if (partiallyReady) {
     return {
-      primaryLabel: 'Partially ready',
+      primaryLabel: i18n.t('documentProcessing.states.partiallyReady'),
       primaryTone: 'partial',
       secondaryLabel: backgroundLabel,
       isCoreReady: false,
