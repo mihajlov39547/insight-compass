@@ -106,8 +106,9 @@ export function SettingsDialog() {
             />
             <SettingToggle
               label={t('settingsDialog.citeSources')}
-              checked={local.cite_sources}
-              onChange={v => update('cite_sources', v)}
+              checked={true}
+              onChange={() => {}}
+              disabled
             />
             <div className="flex items-center justify-between">
               <div>
@@ -119,8 +120,9 @@ export function SettingsDialog() {
             <SettingToggle
               label={t('settingsDialog.answerFormatting')}
               description={t('settingsDialog.answerFormattingHelp')}
-              checked={local.enable_answer_formatting}
-              onChange={v => update('enable_answer_formatting', v)}
+              checked={true}
+              onChange={() => {}}
+              disabled
             />
             <RetrievalWeightsSection
               values={{
@@ -140,8 +142,9 @@ export function SettingsDialog() {
             <SettingToggle
               label={t('settingsDialog.chatSuggestions')}
               description={t('settingsDialog.chatSuggestionsHelp')}
-              checked={local.chat_suggestions}
-              onChange={v => update('chat_suggestions', v)}
+              checked={false}
+              onChange={() => {}}
+              disabled
             />
             <div className="flex items-center justify-between">
               <div>
@@ -275,11 +278,13 @@ function SettingToggle({
   description,
   checked,
   onChange,
+  disabled,
 }: {
   label: string;
   description?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between">
@@ -287,7 +292,7 @@ function SettingToggle({
         <Label className="text-sm">{label}</Label>
         {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
+      <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </div>
   );
 }
