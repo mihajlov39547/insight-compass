@@ -30,7 +30,7 @@ import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
 import { useResources } from '@/hooks/useResources';
 import { useDeleteResource, useRetryYouTubeTranscriptIngestion, useCreateLinkResource, type ResourceActionInput } from '@/hooks/useResourceActions';
 import type { Resource } from '@/lib/resourceClassification';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
 import { DocumentStatusBadge } from '@/components/documents/DocumentStatusBadge';
 import { deriveDocumentStatusPresentation, useDocumentProcessingStatus } from '@/hooks/useDocumentProcessingStatus';
