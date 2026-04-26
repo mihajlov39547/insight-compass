@@ -184,7 +184,7 @@ export function deriveDocumentStatusPresentation(
 
   if (partiallyReady) {
     return {
-      primaryLabel: 'Partially ready',
+      primaryLabel: i18n.t('documentProcessing.states.partiallyReady'),
       primaryTone: 'partial',
       secondaryLabel: backgroundLabel,
       isCoreReady: false,
