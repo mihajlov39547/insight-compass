@@ -26,7 +26,9 @@ import { SharedLanding } from '@/components/views/SharedLanding';
 import { SearchDashboard } from '@/components/views/SearchDashboard';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/useApp';
-import { useCreateProject } from '@/hooks/useProjects';
+import { useCreateProject, useProjects } from '@/hooks/useProjects';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { toast } from 'sonner';
 import { DEFAULT_LANGUAGE, type AvailableLanguageCode } from '@/lib/languages';
 import { normalizePlan } from '@/types/app';
 
@@ -69,10 +71,17 @@ function AppContent() {
   const { user: authUser, profile, loading } = useAuth();
   const { i18n } = useTranslation();
   const createProject = useCreateProject();
+  const { data: projects = [] } = useProjects();
+  const { limits, plan } = usePlanLimits();
   const currentPlan = normalizePlan(profile?.plan);
   const sidebarLanguageKey = i18n.resolvedLanguage || i18n.language || DEFAULT_LANGUAGE;
 
   const handleCreateProject = async (name: string, description: string, language: AvailableLanguageCode) => {
+    if (limits.maxProjects !== null && projects.length >= limits.maxProjects) {
+      toast.error(i18n.t('planLimits.projectsReached'));
+      setShowPricing(true);
+      return;
+    }
     createProject.mutate({ name, description, language });
   };
 
