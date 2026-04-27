@@ -15,6 +15,7 @@ import { useNotebooks } from '@/hooks/useNotebooks';
 import { useAuth } from '@/contexts/useAuth';
 import { useItemRole, useShareMembers, ShareMember } from '@/hooks/useItemRole';
 import { getItemPermissions, getRoleLabel, type ItemRole } from '@/lib/permissions';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,8 +23,9 @@ import { useTranslation } from 'react-i18next';
 
 export function ShareDialog() {
   const { t } = useTranslation();
-  const { showShare, setShowShare, selectedProjectId, selectedNotebookId, activeView } = useApp();
+  const { showShare, setShowShare, selectedProjectId, selectedNotebookId, activeView, setShowPricing } = useApp();
   const { data: projects = [] } = useProjects();
+  const { limits: planLimits } = usePlanLimits();
   const { data: notebooks = [] } = useNotebooks();
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -51,6 +53,13 @@ export function ShareDialog() {
 
   const handleInvite = async () => {
     if (!email.trim() || !user || !itemId) return;
+
+    if (!planLimits.canShare) {
+      toast.error(t('planLimits.sharingDisabled'));
+      setShowShare(false);
+      setShowPricing(true);
+      return;
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
