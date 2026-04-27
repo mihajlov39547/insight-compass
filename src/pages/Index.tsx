@@ -72,7 +72,7 @@ function AppContent() {
   const { i18n } = useTranslation();
   const createProject = useCreateProject();
   const { data: projects = [] } = useProjects();
-  const { limits, plan } = usePlanLimits();
+  const { limits } = usePlanLimits();
   const currentPlan = normalizePlan(profile?.plan);
   const sidebarLanguageKey = i18n.resolvedLanguage || i18n.language || DEFAULT_LANGUAGE;
 
