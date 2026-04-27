@@ -1537,5 +1537,12 @@
       "deleted": "Podaci naloga su obrisani. Odjavljeni ste.",
       "deleteFailed": "Neuspešno brisanje podataka naloga."
     }
+  },
+  "planLimits": {
+    "projectsReached": "Dostignut limit Besplatnog plana: do 3 projekta. Nadogradite za više.",
+    "notebooksReached": "Dostignut limit Besplatnog plana: do 3 notesa. Nadogradite za više.",
+    "documentsReached": "Dostignut limit Besplatnog plana: 5 dokumenata po projektu ili notesu. Nadogradite za više.",
+    "sharingDisabled": "Deljenje nije dostupno na Besplatnom planu. Nadogradite da pozovete saradnike.",
+    "modelRestricted": "{{model}} nije dostupan na Besplatnom planu. Nadogradite da ga koristite."
   }
 }
