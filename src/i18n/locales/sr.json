@@ -1539,10 +1539,11 @@
     }
   },
   "planLimits": {
-    "projectsReached": "Dostignut limit Besplatnog plana: do 3 projekta. Nadogradite za više.",
-    "notebooksReached": "Dostignut limit Besplatnog plana: do 3 notesa. Nadogradite za više.",
-    "documentsReached": "Dostignut limit Besplatnog plana: 5 dokumenata po projektu ili notesu. Nadogradite za više.",
-    "sharingDisabled": "Deljenje nije dostupno na Besplatnom planu. Nadogradite da pozovete saradnike.",
-    "modelRestricted": "{{model}} nije dostupan na Besplatnom planu. Nadogradite da ga koristite."
+    "projectsReached": "Dostignut limit plana za projekte. Nadogradite za više.",
+    "notebooksReached": "Dostignut limit plana za noteseve. Nadogradite za više.",
+    "documentsReached": "Dostignut limit plana za dokumente po projektu ili notesu. Nadogradite za više.",
+    "sharingDisabled": "Deljenje nije dostupno na vašem trenutnom planu. Nadogradite da pozovete saradnike.",
+    "shareMembersReached": "Dostignut limit plana: do {{count}} članova po stavci. Nadogradite za više.",
+    "modelRestricted": "{{model}} nije dostupan na vašem trenutnom planu. Nadogradite da ga koristite."
   }
 }

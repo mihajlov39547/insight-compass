@@ -1524,10 +1524,11 @@
     }
   },
   "planLimits": {
-    "projectsReached": "Free plan limit reached: up to 3 projects. Upgrade to create more.",
-    "notebooksReached": "Free plan limit reached: up to 3 notebooks. Upgrade to create more.",
-    "documentsReached": "Free plan limit reached: 5 documents per project or notebook. Upgrade to upload more.",
-    "sharingDisabled": "Sharing is not available on the Free plan. Upgrade to invite collaborators.",
-    "modelRestricted": "{{model}} is not available on the Free plan. Upgrade to use it."
+    "projectsReached": "Plan limit reached for projects. Upgrade to create more.",
+    "notebooksReached": "Plan limit reached for notebooks. Upgrade to create more.",
+    "documentsReached": "Plan limit reached for documents per project or notebook. Upgrade to upload more.",
+    "sharingDisabled": "Sharing is not available on your current plan. Upgrade to invite collaborators.",
+    "shareMembersReached": "Plan limit reached: up to {{count}} members per item. Upgrade to invite more.",
+    "modelRestricted": "{{model}} is not available on your current plan. Upgrade to use it."
   }
 }
