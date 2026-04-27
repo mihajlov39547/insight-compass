@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { useNotebooks, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, useCreateNotebook, DbNotebook } from '@/hooks/useNotebooks';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useAuth } from '@/contexts/useAuth';
 import { useApp } from '@/contexts/useApp';
 import { supabase } from '@/integrations/supabase/client';
@@ -99,7 +100,8 @@ export function NotebooksLanding() {
   const currentLanguage = normalizeLanguageCode(i18n.resolvedLanguage || i18n.language);
   const dateLocale = getDateLocale(i18n.resolvedLanguage || i18n.language);
   const { user } = useAuth();
-  const { setSelectedNotebookId, setActiveView } = useApp();
+  const { setSelectedNotebookId, setActiveView, setShowPricing } = useApp();
+  const { limits: planLimits } = usePlanLimits();
   const { data: notebooks = [], isLoading } = useNotebooks();
   const deleteNotebook = useDeleteNotebook();
   const archiveNotebook = useArchiveNotebook();
@@ -139,6 +141,12 @@ export function NotebooksLanding() {
 
   const handleCreate = () => {
     if (!createName.trim()) return;
+    if (planLimits.maxNotebooks !== null && notebooks.length >= planLimits.maxNotebooks) {
+      toast.error(t('planLimits.notebooksReached'));
+      setShowCreate(false);
+      setShowPricing(true);
+      return;
+    }
     createNotebook.mutate({ name: createName.trim(), description: createDescription.trim(), language: createLanguage }, {
       onSuccess: () => {
         toast.success(t('notebooksLanding.create.success'));

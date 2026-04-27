@@ -11,7 +11,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useApp } from '@/contexts/useApp';
 import { useUploadDocuments, isFileAllowed } from '@/hooks/useDocuments';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 interface UploadDocumentsDialogProps {
@@ -66,8 +69,9 @@ export function UploadDocumentsDialog({
   const { t } = useTranslation();
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const { selectedProjectId, selectedChatId, selectedNotebookId } = useApp();
+  const { selectedProjectId, selectedChatId, selectedNotebookId, setShowPricing } = useApp();
   const uploadMutation = useUploadDocuments();
+  const { limits: planLimits } = usePlanLimits();
 
   const addFiles = useCallback((fileList: FileList | File[]) => {
     const arr = Array.from(fileList);
@@ -97,6 +101,28 @@ export function UploadDocumentsDialog({
   const handleDone = async () => {
     const effectiveProjectId = context === 'notebook' ? (selectedNotebookId || '') : selectedProjectId;
     if (!effectiveProjectId || validFiles.length === 0) return;
+
+    // Plan-limit enforcement: count current docs in this project/notebook scope
+    const perScopeLimit = context === 'notebook'
+      ? planLimits.maxDocumentsPerNotebook
+      : planLimits.maxDocumentsPerProject;
+    if (perScopeLimit !== null) {
+      const countQuery = supabase
+        .from('documents' as any)
+        .select('id', { count: 'exact', head: true });
+      const scoped = context === 'notebook'
+        ? countQuery.eq('notebook_id', selectedNotebookId)
+        : countQuery.eq('project_id', selectedProjectId);
+      const { count, error: countErr } = await scoped;
+      if (!countErr) {
+        const existing = count ?? 0;
+        if (existing + validFiles.length > perScopeLimit) {
+          sonnerToast.error(t('planLimits.documentsReached'));
+          setShowPricing(true);
+          return;
+        }
+      }
+    }
 
     setPendingFiles(prev => prev.map(f => f.valid ? { ...f, status: 'uploading' as const } : f));
 

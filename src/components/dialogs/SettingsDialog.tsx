@@ -20,6 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/contexts/useApp';
 import { modelOptions } from '@/config/modelOptions';
 import { useUserSettings, useSaveUserSettings, GeneralSettings } from '@/hooks/useUserSettings';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { toast } from 'sonner';
 import { RetrievalWeightsSection } from '@/components/settings/RetrievalWeightsSection';
 
@@ -28,9 +29,10 @@ import { useTranslation } from 'react-i18next';
 
 export function SettingsDialog() {
   const { t, i18n } = useTranslation();
-  const { showSettings, setShowSettings } = useApp();
+  const { showSettings, setShowSettings, setShowPricing } = useApp();
   const { data: settings } = useUserSettings();
   const saveSettings = useSaveUserSettings();
+  const { isModelRestricted } = usePlanLimits();
 
   const [local, setLocal] = useState<GeneralSettings | null>(null);
 
@@ -207,16 +209,30 @@ export function SettingsDialog() {
 
             <div className="flex items-center justify-between">
               <Label className="text-sm">{t('settingsDialog.preferredModel')}</Label>
-              <Select value={local.preferred_model} onValueChange={v => update('preferred_model', v)}>
+              <Select
+                value={local.preferred_model}
+                onValueChange={v => {
+                  if (isModelRestricted(v)) {
+                    const m = modelOptions.find(x => x.id === v);
+                    toast.error(t('planLimits.modelRestricted', { model: m?.name ?? v }));
+                    setShowPricing(true);
+                    return;
+                  }
+                  update('preferred_model', v);
+                }}
+              >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {modelOptions.map(m => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
+                  {modelOptions.map(m => {
+                    const restricted = isModelRestricted(m.id);
+                    return (
+                      <SelectItem key={m.id} value={m.id} disabled={restricted}>
+                        {m.name}{restricted ? ' 🔒' : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

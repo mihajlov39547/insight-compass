@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat } from '@/hooks/useChats';
 import { useNotebooks, useCreateNotebook, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, DbNotebook } from '@/hooks/useNotebooks';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -55,7 +56,7 @@ export function AppSidebar() {
     selectedChatId, setSelectedChatId,
     selectedNotebookId, setSelectedNotebookId,
     activeView, setActiveView,
-    unreadCount, setShowNewProject, setShowNotifications,
+    unreadCount, setShowNewProject, setShowNotifications, setShowPricing,
   } = useApp();
 
   const { user: authUser, profile } = useAuth();
@@ -281,7 +282,14 @@ export function AppSidebar() {
 
   
 
+  const { limits: planLimits } = usePlanLimits();
+
   const handleCreateNotebook = () => {
+    if (planLimits.maxNotebooks !== null && notebooks.length >= planLimits.maxNotebooks) {
+      toast.error(t('planLimits.notebooksReached'));
+      setShowPricing(true);
+      return;
+    }
     setCreateNbLanguage(currentLanguage);
     setShowCreateNotebook(true);
   };

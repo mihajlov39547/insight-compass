@@ -1072,10 +1072,12 @@
         "name": "Free",
         "description": "Perfect for getting started",
         "features": {
-          "0": "Up to 3 projects",
-          "1": "10 document uploads",
-          "2": "Basic RAG chat",
-          "3": "Community support"
+          "0": "Up to 3 projects and up to 3 notebooks",
+          "1": "5 document uploads per project or per notebook",
+          "2": "Basic RAG chat (all models except gpt-5.2 and gpt-5)",
+          "3": "No project/notebook sharing",
+          "4": "Support included",
+          "5": "Request features and improvements"
         }
       },
       "basic": {
@@ -1519,5 +1521,12 @@
       "deleted": "Account data deleted. You have been signed out.",
       "deleteFailed": "Failed to delete account data."
     }
+  },
+  "planLimits": {
+    "projectsReached": "Free plan limit reached: up to 3 projects. Upgrade to create more.",
+    "notebooksReached": "Free plan limit reached: up to 3 notebooks. Upgrade to create more.",
+    "documentsReached": "Free plan limit reached: 5 documents per project or notebook. Upgrade to upload more.",
+    "sharingDisabled": "Sharing is not available on the Free plan. Upgrade to invite collaborators.",
+    "modelRestricted": "{{model}} is not available on the Free plan. Upgrade to use it."
   }
 }
