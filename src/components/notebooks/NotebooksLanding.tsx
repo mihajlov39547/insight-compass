@@ -99,7 +99,8 @@ export function NotebooksLanding() {
   const currentLanguage = normalizeLanguageCode(i18n.resolvedLanguage || i18n.language);
   const dateLocale = getDateLocale(i18n.resolvedLanguage || i18n.language);
   const { user } = useAuth();
-  const { setSelectedNotebookId, setActiveView } = useApp();
+  const { setSelectedNotebookId, setActiveView, setShowPricing } = useApp();
+  const { limits: planLimits } = (await import('@/hooks/usePlanLimits')).usePlanLimits();
   const { data: notebooks = [], isLoading } = useNotebooks();
   const deleteNotebook = useDeleteNotebook();
   const archiveNotebook = useArchiveNotebook();
