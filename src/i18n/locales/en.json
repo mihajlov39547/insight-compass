@@ -1521,5 +1521,12 @@
       "deleted": "Account data deleted. You have been signed out.",
       "deleteFailed": "Failed to delete account data."
     }
+  },
+  "planLimits": {
+    "projectsReached": "Free plan limit reached: up to 3 projects. Upgrade to create more.",
+    "notebooksReached": "Free plan limit reached: up to 3 notebooks. Upgrade to create more.",
+    "documentsReached": "Free plan limit reached: 5 documents per project or notebook. Upgrade to upload more.",
+    "sharingDisabled": "Sharing is not available on the Free plan. Upgrade to invite collaborators.",
+    "modelRestricted": "{{model}} is not available on the Free plan. Upgrade to use it."
   }
 }
