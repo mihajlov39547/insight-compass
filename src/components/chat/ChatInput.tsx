@@ -11,6 +11,7 @@ import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { modelOptions, DEFAULT_MODEL_ID } from '@/config/modelOptions';
 import { useApp } from '@/contexts/useApp';
 import { useNotebooks } from '@/hooks/useNotebooks';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -73,8 +74,9 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   });
   const [attachedImages, setAttachedImages] = useState<PastedImage[]>([]);
   const [notebookSearch, setNotebookSearch] = useState('');
-  const { setShowDocuments, setDocumentScope, selectedChatId } = useApp();
+  const { setShowDocuments, setDocumentScope, selectedChatId, setShowPricing } = useApp();
   const { data: notebooks = [] } = useNotebooks();
+  const { isModelRestricted } = usePlanLimits();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const filteredNotebooks = useMemo(() => {
