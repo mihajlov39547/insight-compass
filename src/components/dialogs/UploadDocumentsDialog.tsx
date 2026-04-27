@@ -102,6 +102,28 @@ export function UploadDocumentsDialog({
     const effectiveProjectId = context === 'notebook' ? (selectedNotebookId || '') : selectedProjectId;
     if (!effectiveProjectId || validFiles.length === 0) return;
 
+    // Plan-limit enforcement: count current docs in this project/notebook scope
+    const perScopeLimit = context === 'notebook'
+      ? planLimits.maxDocumentsPerNotebook
+      : planLimits.maxDocumentsPerProject;
+    if (perScopeLimit !== null) {
+      const countQuery = supabase
+        .from('documents' as any)
+        .select('id', { count: 'exact', head: true });
+      const scoped = context === 'notebook'
+        ? countQuery.eq('notebook_id', selectedNotebookId)
+        : countQuery.eq('project_id', selectedProjectId);
+      const { count, error: countErr } = await scoped;
+      if (!countErr) {
+        const existing = count ?? 0;
+        if (existing + validFiles.length > perScopeLimit) {
+          sonnerToast.error(t('planLimits.documentsReached'));
+          setShowPricing(true);
+          return;
+        }
+      }
+    }
+
     setPendingFiles(prev => prev.map(f => f.valid ? { ...f, status: 'uploading' as const } : f));
 
     try {
