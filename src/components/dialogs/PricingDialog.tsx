@@ -30,7 +30,7 @@ const planConfig: Array<{
   popular: boolean;
 }> = [
   { id: 'free', price: '$0', periodKey: 'forever', icon: planIcons.free, featureCount: 6, ctaKey: 'getStarted', popular: false },
-  { id: 'basic', price: '$19', periodKey: 'perMonth', icon: planIcons.basic, featureCount: 5, ctaKey: 'getStarted', popular: false },
+  { id: 'basic', price: '$9', periodKey: 'perMonth', icon: planIcons.basic, featureCount: 6, ctaKey: 'getStarted', popular: false },
   { id: 'premium', price: '$49', periodKey: 'perMonth', icon: planIcons.premium, featureCount: 6, ctaKey: 'getStarted', popular: true },
   { id: 'enterprise', price: 'Custom', periodKey: 'contactUs', icon: planIcons.enterprise, featureCount: 6, ctaKey: 'contactSales', popular: false },
 ];

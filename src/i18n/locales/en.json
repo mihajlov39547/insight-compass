@@ -1084,11 +1084,12 @@
         "name": "Basic",
         "description": "For individuals and small teams",
         "features": {
-          "0": "Up to 10 projects",
-          "1": "100 document uploads",
-          "2": "Faster retrieval",
-          "3": "Project sharing (3 members)",
-          "4": "Email support"
+          "0": "Everything in Free",
+          "1": "Up to 10 projects and up to 10 notebooks",
+          "2": "10 document uploads per project or per notebook",
+          "3": "Faster retrieval",
+          "4": "Project sharing (up to 3 members)",
+          "5": "Email support"
         }
       },
       "premium": {
@@ -1480,7 +1481,7 @@
         "basic": {
           "name": "Basic",
           "description": "For individuals and small teams",
-          "price": "$19 / month"
+          "price": "$9 / month"
         },
         "premium": {
           "name": "Premium",
