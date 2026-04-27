@@ -11,7 +11,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useApp } from '@/contexts/useApp';
 import { useUploadDocuments, isFileAllowed } from '@/hooks/useDocuments';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 interface UploadDocumentsDialogProps {
@@ -66,8 +69,9 @@ export function UploadDocumentsDialog({
   const { t } = useTranslation();
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const { selectedProjectId, selectedChatId, selectedNotebookId } = useApp();
+  const { selectedProjectId, selectedChatId, selectedNotebookId, setShowPricing } = useApp();
   const uploadMutation = useUploadDocuments();
+  const { limits: planLimits } = usePlanLimits();
 
   const addFiles = useCallback((fileList: FileList | File[]) => {
     const arr = Array.from(fileList);
