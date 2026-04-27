@@ -61,6 +61,13 @@ export function ShareDialog() {
       return;
     }
 
+    if (planLimits.maxShareMembers !== null && members.length >= planLimits.maxShareMembers) {
+      toast.error(t('planLimits.shareMembersReached', { count: planLimits.maxShareMembers }));
+      setShowShare(false);
+      setShowPricing(true);
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       toast.error(t('shareDialog.toasts.invalidEmail'));
