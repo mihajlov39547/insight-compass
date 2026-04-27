@@ -1096,11 +1096,12 @@
         "name": "Osnovni",
         "description": "Za pojedince i male timove",
         "features": {
-          "0": "Do 10 projekata",
-          "1": "100 otpremljenih dokumenata",
-          "2": "Brže pretraživanje",
-          "3": "Deljenje projekta (3 člana)",
-          "4": "Podrška putem e-pošte"
+          "0": "Sve iz Besplatnog plana",
+          "1": "Do 10 projekata i do 10 notesa",
+          "2": "10 otpremljenih dokumenata po projektu ili notesu",
+          "3": "Brže pretraživanje",
+          "4": "Deljenje projekta (do 3 člana)",
+          "5": "Podrška putem e-pošte"
         }
       },
       "premium": {
@@ -1496,7 +1497,7 @@
         "basic": {
           "name": "Osnovni",
           "description": "Za pojedince i male timove",
-          "price": "$19 / mesečno"
+          "price": "$9 / mesečno"
         },
         "premium": {
           "name": "Premium",
