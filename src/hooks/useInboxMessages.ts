@@ -30,7 +30,7 @@ export function useInboxMessages(enabled = true) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data ?? []) as InboxMessage[];
+      return (data ?? []) as unknown as InboxMessage[];
     },
     enabled: enabled && !!user,
     staleTime: 30 * 1000,

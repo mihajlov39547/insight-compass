@@ -62,7 +62,7 @@ export function useWhatsNewArticles(language?: string, enabled = true, limit = 7
 
       if (error) throw error;
 
-      return ((data ?? []) as ArticleRow[])
+      return ((data ?? []) as unknown as ArticleRow[])
         .map(article => {
           const localization = pickLocalization(
             article.whats_new_article_localizations,
