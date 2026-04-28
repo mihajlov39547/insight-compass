@@ -68,7 +68,7 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
             <Sparkles className="h-4 w-4 text-accent-foreground" />
           </div>
           <div className="text-left">
-            <h1 className="text-base font-semibold text-foreground leading-tight">Researcher</h1>
+            <h1 className="text-base font-semibold text-foreground leading-tight">{t('sidebar.workspace')}</h1>
           </div>
         </div>
       </div>

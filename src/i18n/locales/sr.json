@@ -75,7 +75,7 @@
     },
     "expandSidebar": "Proširi bočnu traku",
     "notifications": "Obaveštenja",
-    "workspace": "Researcher",
+    "workspace": "Istraživač",
     "noChats": "Još nema četova",
     "newChat": "Novi čet",
     "newChatName": "Novi čet",
@@ -1081,7 +1081,7 @@
     },
     "plans": {
       "free": {
-        "name": "Besplatno",
+        "name": "Besplatan",
         "description": "Savršeno za početak",
         "features": {
           "0": "Do 3 projekta i do 3 beleznice",
