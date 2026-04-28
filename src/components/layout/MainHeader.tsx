@@ -47,6 +47,10 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
 
   const PlanIcon = planIcons[appUser.plan];
 
+  const handleChangeLanguage = (code: string) => {
+    void i18n.changeLanguage(code);
+  };
+
   const handleSignOut = async () => {
     await signOut();
     toast.success("Signed out successfully");
