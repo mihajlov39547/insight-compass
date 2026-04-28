@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { normalizeLanguageCode } from '@/lib/languages';
+import { AVAILABLE_LANGUAGES, normalizeLanguageCode } from '@/lib/languages';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Settings, 
