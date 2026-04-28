@@ -50,6 +50,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan, onSelectPlan }:
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="text-center pb-4">
@@ -120,5 +121,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan, onSelectPlan }:
         </div>
       </DialogContent>
     </Dialog>
+    <ContactSalesDialog open={contactSalesOpen} onOpenChange={setContactSalesOpen} />
+    </>
   );
 }
