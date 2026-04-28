@@ -11,8 +11,10 @@ export interface TemplateEntry {
 
 import { template as shareInvitation } from './share-invitation.tsx'
 import { template as contactSales } from './contact-sales.tsx'
+import { template as registrationOtp } from './registration-otp.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'share-invitation': shareInvitation,
   'contact-sales': contactSales,
+  'registration-otp': registrationOtp,
 }
