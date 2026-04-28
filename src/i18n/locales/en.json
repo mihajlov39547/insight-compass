@@ -841,6 +841,24 @@
     "toasts": {
       "signedIn": "Signed in successfully!",
       "accountCreated": "Account created successfully!"
+    },
+    "otp": {
+      "title": "Verify your email",
+      "description": "We sent a 5-digit code to {{email}}. Enter it below to finish creating your account.",
+      "label": "Verification code",
+      "verify": "Verify and create account",
+      "resend": "Resend code",
+      "resending": "Resending...",
+      "back": "Use a different email",
+      "wrongCode": "Incorrect code. {{count}} attempt(s) left.",
+      "expired": "Code expired. Please start over.",
+      "tooManyAttempts": "Too many incorrect attempts. Please start over.",
+      "noPending": "No pending registration. Please request a new code.",
+      "emailTaken": "An account already exists for this email.",
+      "sendFailed": "We couldn't send the code. Please try again.",
+      "verifyFailed": "Verification failed. Please try again.",
+      "resentToast": "A new code was sent.",
+      "successToast": "Account created! Please sign in."
     }
   },
   "onboarding": {
@@ -1283,7 +1301,10 @@
   "aiReady": "AI ready",
   "documentProcessing": {
     "runningNow": "Running now:",
-    "background": "Background:",
+    "background": {
+      "generic": "Enhancing in background: {{stage}}",
+      "questions": "Enhancing retrieval in background"
+    },
     "lastCompleted": "Last completed:",
     "elapsed": "Elapsed:",
     "retries": "Retries:",
@@ -1315,10 +1336,6 @@
       "readyForChat": "Ready for chat",
       "partiallyReady": "Partially ready",
       "after": "After {{stage}}"
-    },
-    "background": {
-      "generic": "Enhancing in background: {{stage}}",
-      "questions": "Enhancing retrieval in background"
     },
     "activities": {
       "prepare_run": "Initializing",
