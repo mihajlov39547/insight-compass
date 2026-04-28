@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Check } from 'lucide-react';
 import {
   Dialog,
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import type { Plan } from '@/types/app';
 import { planIcons } from '@/lib/planConfig';
 import { useTranslation } from 'react-i18next';
+import { ContactSalesDialog } from './ContactSalesDialog';
 
 interface PricingDialogProps {
   open: boolean;
@@ -37,7 +38,13 @@ const planConfig: Array<{
 
 export function PricingDialog({ open, onOpenChange, currentPlan, onSelectPlan }: PricingDialogProps) {
   const { t } = useTranslation();
+  const [contactSalesOpen, setContactSalesOpen] = useState(false);
+
   const handleSelectPlan = (planId: Plan) => {
+    if (planId === 'enterprise') {
+      setContactSalesOpen(true);
+      return;
+    }
     onSelectPlan(planId);
     onOpenChange(false);
   };
