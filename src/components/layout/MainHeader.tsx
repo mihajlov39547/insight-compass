@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { normalizeLanguageCode } from '@/lib/languages';
+import { AVAILABLE_LANGUAGES, normalizeLanguageCode } from '@/lib/languages';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Settings, 
@@ -47,6 +47,10 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
 
   const PlanIcon = planIcons[appUser.plan];
 
+  const handleChangeLanguage = (code: string) => {
+    void i18n.changeLanguage(code);
+  };
+
   const handleSignOut = async () => {
     await signOut();
     toast.success("Signed out successfully");
@@ -75,10 +79,38 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
 
       {/* Right Side - Actions */}
       <div className="flex items-center gap-1.5">
+        {/* Language selector - always available */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 px-3 gap-1.5 rounded-lg text-muted-foreground hover:text-foreground"
+              aria-label={t('header.language.label')}
+            >
+              <Globe className="h-4 w-4" />
+              <span className="text-sm font-medium">{t(`header.language.short.${language}`)}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuLabel>{t('header.language.label')}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {AVAILABLE_LANGUAGES.map((lang) => (
+              <DropdownMenuItem
+                key={lang.code}
+                onClick={() => handleChangeLanguage(lang.code)}
+                className={cn(language === lang.code && 'bg-accent/60 font-medium')}
+              >
+                {t(`header.language.${lang.code}`)}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* Not logged in: show auth options */}
         {!authUser && (
           <>
-            <Button variant="default" size="sm" onClick={() => setShowAuth(true)}>Sign in</Button>
+            <Button variant="default" size="sm" onClick={() => setShowAuth(true)}>{t('onboarding.signIn')}</Button>
             <AuthDialog open={showAuth} onOpenChange={setShowAuth} />
           </>
         )}
@@ -86,18 +118,6 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
         {/* Logged in actions */}
         {authUser && (
           <>
-            {/* Interface language indicator - language changes live in Settings. */}
-            {!minimal && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground">
-                    <Globe className="h-4 w-4" />
-                    <span className="font-medium">{t(`header.language.short.${language}`)}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>{t('header.language.changeInSettings')}</TooltipContent>
-              </Tooltip>
-            )}
 
             {/* Plan Badge with label */}
             <Tooltip>
