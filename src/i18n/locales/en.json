@@ -1530,5 +1530,22 @@
     "sharingDisabled": "Sharing is not available on your current plan. Upgrade to invite collaborators.",
     "shareMembersReached": "Plan limit reached: up to {{count}} members per item. Upgrade to invite more.",
     "modelRestricted": "{{model}} is not available on your current plan. Upgrade to use it."
+  },
+  "contactSales": {
+    "title": "Contact Sales",
+    "description": "Tell us about your needs and our team will get back to you shortly.",
+    "emailLabel": "Your email",
+    "subjectLabel": "Subject",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Tell us about your team size, use case, and any specific requirements…",
+    "defaultSubject": "Enterprise plan inquiry",
+    "send": "Send",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "sent": "Message sent. We'll be in touch soon.",
+    "sendFailed": "Failed to send message. Please try again.",
+    "invalidEmail": "Please enter a valid email address.",
+    "subjectRequired": "Subject is required.",
+    "messageRequired": "Message is required."
   }
 }

@@ -1546,5 +1546,22 @@
     "sharingDisabled": "Deljenje nije dostupno na vašem trenutnom planu. Nadogradite da pozovete saradnike.",
     "shareMembersReached": "Dostignut limit plana: do {{count}} članova po stavci. Nadogradite za više.",
     "modelRestricted": "{{model}} nije dostupan na vašem trenutnom planu. Nadogradite da ga koristite."
+  },
+  "contactSales": {
+    "title": "Kontaktirajte prodaju",
+    "description": "Recite nam šta vam je potrebno i naš tim će vam se javiti uskoro.",
+    "emailLabel": "Vaš email",
+    "subjectLabel": "Naslov",
+    "messageLabel": "Poruka",
+    "messagePlaceholder": "Recite nam o veličini tima, nameni i specifičnim potrebama…",
+    "defaultSubject": "Upit za Enterprise plan",
+    "send": "Pošalji",
+    "sending": "Slanje…",
+    "cancel": "Otkaži",
+    "sent": "Poruka je poslata. Javićemo vam se uskoro.",
+    "sendFailed": "Slanje poruke nije uspelo. Pokušajte ponovo.",
+    "invalidEmail": "Unesite ispravnu email adresu.",
+    "subjectRequired": "Naslov je obavezan.",
+    "messageRequired": "Poruka je obavezna."
   }
 }
