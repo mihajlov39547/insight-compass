@@ -850,6 +850,24 @@
     "toasts": {
       "signedIn": "Uspešno ste prijavljeni!",
       "accountCreated": "Nalog je uspešno kreiran!"
+    },
+    "otp": {
+      "title": "Potvrdite vašu email adresu",
+      "description": "Poslali smo 5-cifreni kod na {{email}}. Unesite ga ispod da završite kreiranje naloga.",
+      "label": "Verifikacioni kod",
+      "verify": "Potvrdi i kreiraj nalog",
+      "resend": "Pošalji ponovo",
+      "resending": "Šaljem...",
+      "back": "Koristi drugi email",
+      "wrongCode": "Pogrešan kod. Preostalo pokušaja: {{count}}.",
+      "expired": "Kod je istekao. Molimo započnite iznova.",
+      "tooManyAttempts": "Previše pogrešnih pokušaja. Molimo započnite iznova.",
+      "noPending": "Nema registracije na čekanju. Zatražite novi kod.",
+      "emailTaken": "Nalog sa ovom email adresom već postoji.",
+      "sendFailed": "Nismo uspeli da pošaljemo kod. Pokušajte ponovo.",
+      "verifyFailed": "Verifikacija nije uspela. Pokušajte ponovo.",
+      "resentToast": "Novi kod je poslat.",
+      "successToast": "Nalog je kreiran! Prijavite se."
     }
   },
   "onboarding": {
@@ -1296,7 +1314,10 @@
   "aiReady": "AI spreman",
   "documentProcessing": {
     "runningNow": "Trenutno radi:",
-    "background": "U pozadini:",
+    "background": {
+      "generic": "Poboljšavanje u pozadini: {{stage}}",
+      "questions": "Poboljšavanje pretrage u pozadini"
+    },
     "lastCompleted": "Poslednje završeno:",
     "elapsed": "Proteklo:",
     "retries": "Pokušaji:",
@@ -1328,10 +1349,6 @@
       "readyForChat": "Spremno za ćaskanje",
       "partiallyReady": "Delimično spremno",
       "after": "Posle: {{stage}}"
-    },
-    "background": {
-      "generic": "Poboljšavanje u pozadini: {{stage}}",
-      "questions": "Poboljšavanje pretrage u pozadini"
     },
     "activities": {
       "prepare_run": "Inicijalizacija",

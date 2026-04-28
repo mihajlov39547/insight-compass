@@ -942,6 +942,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_registrations: {
+        Row: {
+          attempts: number
+          code_hash: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          password_hash: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          password_hash: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          password_hash?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1998,6 +2028,7 @@ export type Database = {
           video_id: string
         }[]
       }
+      cleanup_expired_pending_registrations: { Args: never; Returns: undefined }
       complete_youtube_transcript_job: {
         Args: {
           p_chunk_count?: number

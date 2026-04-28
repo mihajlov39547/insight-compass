@@ -29,3 +29,10 @@ verify_jwt = false
 
 [functions.validation-harness]
 verify_jwt = false
+
+[functions.register-otp-start]
+verify_jwt = false
+
+[functions.register-otp-verify]
+verify_jwt = false
+
