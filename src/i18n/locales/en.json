@@ -1075,9 +1075,8 @@
           "0": "Up to 3 projects and up to 3 notebooks",
           "1": "5 document uploads per project or per notebook",
           "2": "Basic retrieval",
-          "3": "No project/notebook sharing",
-          "4": "Support included",
-          "5": "Request features and improvements"
+          "3": "Basic support",
+          "4": "Request features and improvements"
         }
       },
       "basic": {
@@ -1100,7 +1099,7 @@
           "1": "Unlimited projects and notebooks",
           "2": "500 document uploads",
           "3": "Advanced retrieval",
-          "4": "Access to latest models (gpt-5, gpt-5.2)",
+          "4": "Access to latest models",
           "5": "Priority support"
         }
       },

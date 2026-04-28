@@ -1087,9 +1087,8 @@
           "0": "Do 3 projekta i do 3 notesa",
           "1": "5 otpremljenih dokumenata po projektu ili notesu",
           "2": "Osnovno pretraživanje",
-          "3": "Bez deljenja projekata/notesa",
-          "4": "Uključena podrška",
-          "5": "Mogućnost predloga novih funkcija"
+          "3": "Osnovna podrška",
+          "4": "Mogućnost predloga novih funkcija"
         }
       },
       "basic": {
@@ -1112,7 +1111,7 @@
           "1": "Neograničeno projekata i notesa",
           "2": "500 otpremljenih dokumenata",
           "3": "Napredno pretraživanje",
-          "4": "Pristup najnovijim modelima (gpt-5, gpt-5.2)",
+          "4": "Pristup najnovijim modelima",
           "5": "Prioritetna podrška"
         }
       },
