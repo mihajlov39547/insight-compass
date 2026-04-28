@@ -1086,7 +1086,7 @@
         "features": {
           "0": "Do 3 projekta i do 3 notesa",
           "1": "5 otpremljenih dokumenata po projektu ili notesu",
-          "2": "Osnovno RAG ćaskanje (svi modeli osim gpt-5.2 i gpt-5)",
+          "2": "Osnovno pretraživanje",
           "3": "Bez deljenja projekata/notesa",
           "4": "Uključena podrška",
           "5": "Mogućnost predloga novih funkcija"
@@ -1108,11 +1108,11 @@
         "name": "Premium",
         "description": "Za timove u rastu",
         "features": {
-          "0": "Neograničeno projekata",
-          "1": "500 otpremljenih dokumenata",
-          "2": "Napredno pretraživanje",
-          "3": "Prioritetni modeli",
-          "4": "Deljenje projekta (10 članova)",
+          "0": "Sve iz Osnovnog plana",
+          "1": "Neograničeno projekata i notesa",
+          "2": "500 otpremljenih dokumenata",
+          "3": "Napredno pretraživanje",
+          "4": "Pristup najnovijim modelima (gpt-5, gpt-5.2)",
           "5": "Prioritetna podrška"
         }
       },

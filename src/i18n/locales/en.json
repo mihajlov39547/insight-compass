@@ -1074,7 +1074,7 @@
         "features": {
           "0": "Up to 3 projects and up to 3 notebooks",
           "1": "5 document uploads per project or per notebook",
-          "2": "Basic RAG chat (all models except gpt-5.2 and gpt-5)",
+          "2": "Basic retrieval",
           "3": "No project/notebook sharing",
           "4": "Support included",
           "5": "Request features and improvements"
@@ -1096,11 +1096,11 @@
         "name": "Premium",
         "description": "For growing teams",
         "features": {
-          "0": "Unlimited projects",
-          "1": "500 document uploads",
-          "2": "Advanced retrieval",
-          "3": "Priority models",
-          "4": "Project sharing (10 members)",
+          "0": "Everything in Basic",
+          "1": "Unlimited projects and notebooks",
+          "2": "500 document uploads",
+          "3": "Advanced retrieval",
+          "4": "Access to latest models (gpt-5, gpt-5.2)",
           "5": "Priority support"
         }
       },
