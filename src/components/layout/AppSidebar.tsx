@@ -580,7 +580,7 @@ export function AppSidebar() {
             <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `plan-badge-${currentPlan}`)}>
               <PlanIcon className="h-4 w-4" />
             </div>
-          </TooltipTrigger><TooltipContent side="right">{planLabels[currentPlan]} {t('sidebar.plan.suffix')}</TooltipContent></Tooltip>
+          </TooltipTrigger><TooltipContent side="right">{t(`header.plans.${currentPlan}`)} {t('sidebar.plan.suffix')}</TooltipContent></Tooltip>
           <Tooltip><TooltipTrigger asChild>
             <Button variant="ghost" size="icon" className="relative text-sidebar-foreground/70 hover:bg-sidebar-accent" onClick={() => setShowNotifications(true)}>
               <Bell className="h-4 w-4" />
@@ -886,7 +886,7 @@ export function AppSidebar() {
         <div className={cn("rounded-lg p-3 flex items-center gap-3", `plan-badge-${currentPlan}`)}>
           <PlanIcon className="h-5 w-5" />
           <div className="flex-1">
-            <p className="text-sm font-medium">{planLabels[currentPlan]} {t('sidebar.plan.suffix')}</p>
+            <p className="text-sm font-medium">{t(`header.plans.${currentPlan}`)} {t('sidebar.plan.suffix')}</p>
             {currentPlan !== 'enterprise' && <p className="text-xs opacity-80">{t('sidebar.plan.upgrade')}</p>}
           </div>
         </div>
