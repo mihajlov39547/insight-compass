@@ -1086,7 +1086,7 @@
         "features": {
           "0": "Do 3 projekta i do 3 notesa",
           "1": "5 otpremljenih dokumenata po projektu ili notesu",
-          "2": "Osnovno RAG ćaskanje (svi modeli osim gpt-5.2 i gpt-5)",
+          "2": "Osnovno pretraživanje",
           "3": "Bez deljenja projekata/notesa",
           "4": "Uključena podrška",
           "5": "Mogućnost predloga novih funkcija"
