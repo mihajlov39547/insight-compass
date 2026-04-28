@@ -39,7 +39,15 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     maxShareMembers: 3,
     restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2'],
   },
-  premium: UNLIMITED,
+  premium: {
+    maxProjects: null,
+    maxNotebooks: null,
+    maxDocumentsPerProject: 500,
+    maxDocumentsPerNotebook: 500,
+    canShare: true,
+    maxShareMembers: 10,
+    restrictedModelIds: [],
+  },
   enterprise: UNLIMITED,
 };
 
