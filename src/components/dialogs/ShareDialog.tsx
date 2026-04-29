@@ -79,11 +79,8 @@ export function ShareDialog() {
       const inviterName = profile?.full_name || profile?.username || user.email || t('shareDialog.pending');
       const inviteId = crypto.randomUUID();
 
-      const { data: invitedProfile } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
+      const { data: invitedUserId } = await supabase
+        .rpc('find_user_id_by_email', { _email: email.trim().toLowerCase() });
 
       const sharePayload: any = {
         id: inviteId,
