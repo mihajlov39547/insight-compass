@@ -1,7 +1,8 @@
 // Client-side helper for the tavily-crawl edge function.
 // Provides typed `runTavilyCrawl` and shared types reused by the chat UI.
 
-import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { getFunctionUrl } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 
 export interface CrawlPageItem {
   url: string;

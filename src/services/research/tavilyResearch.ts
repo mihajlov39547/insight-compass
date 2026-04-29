@@ -2,7 +2,8 @@
 // Reads the normalized SSE protocol defined in supabase/functions/tavily-research/index.ts
 // and exposes a typed async generator + a high-level helper that streams into callbacks.
 
-import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { getFunctionUrl } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 
 const RESEARCH_URL = getFunctionUrl('/functions/v1/tavily-research');
 
@@ -262,10 +263,7 @@ export async function runTavilyResearch({
   try {
     resp = await fetch(RESEARCH_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-      },
+      headers: await authedFetchHeaders(),
       body: JSON.stringify({ input, model, responseLanguage }),
       signal,
     });
