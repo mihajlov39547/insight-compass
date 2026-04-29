@@ -45,10 +45,7 @@ const CRAWL_URL = getFunctionUrl('/functions/v1/tavily-crawl');
 export async function runTavilyCrawl(input: RunTavilyCrawlInput): Promise<CrawlResponse> {
   const resp = await fetch(CRAWL_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-    },
+    headers: await authedFetchHeaders(),
     body: JSON.stringify({
       url: input.url,
       instructions: input.instructions ?? null,
