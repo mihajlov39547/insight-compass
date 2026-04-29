@@ -79,11 +79,8 @@ export function ShareDialog() {
       const inviterName = profile?.full_name || profile?.username || user.email || t('shareDialog.pending');
       const inviteId = crypto.randomUUID();
 
-      const { data: invitedProfile } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
+      const { data: invitedUserId } = await supabase
+        .rpc('find_user_id_by_email', { _email: email.trim().toLowerCase() });
 
       const sharePayload: any = {
         id: inviteId,
@@ -93,8 +90,8 @@ export function ShareDialog() {
         shared_by_user_id: user.id,
         shared_with_email: email.trim().toLowerCase(),
       };
-      if (invitedProfile?.user_id) {
-        sharePayload.shared_with_user_id = invitedProfile.user_id;
+      if (invitedUserId) {
+        sharePayload.shared_with_user_id = invitedUserId;
       }
 
       const { error: shareError } = await supabase.from('shares').insert(sharePayload);
@@ -314,11 +311,8 @@ function useOwnerProfile(userId?: string) {
     queryFn: async () => {
       if (!userId) return null;
       const { data } = await supabase
-        .from('profiles')
-        .select('full_name, username, email, avatar_url')
-        .eq('user_id', userId)
-        .maybeSingle();
-      return data;
+        .rpc('get_public_profile', { _user_id: userId });
+      return (data && data[0]) ?? null;
     },
     enabled: !!userId,
     staleTime: 60_000,

@@ -34,15 +34,13 @@ export function useSharedItems() {
       if (error) throw error;
       if (!shares || shares.length === 0) return [] as SharedItem[];
 
-      // Get unique sharer IDs to fetch their profiles
+      // Get unique sharer IDs to fetch their profiles via safe RPC
       const sharerIds = [...new Set(shares.map(s => s.shared_by_user_id))];
       const { data: sharerProfiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url, username, email')
-        .in('user_id', sharerIds);
+        .rpc('get_public_profiles', { _user_ids: sharerIds });
 
       const profileMap = new Map(
-        (sharerProfiles ?? []).map(p => [p.user_id, p])
+        (sharerProfiles ?? []).map((p: any) => [p.user_id, p])
       );
 
       // Get project details for shared projects
