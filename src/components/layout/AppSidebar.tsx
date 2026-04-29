@@ -37,6 +37,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -263,7 +264,7 @@ export function AppSidebar() {
       const { data: chatList } = await supabase.from('chats').select('name').eq('project_id', editProject.id).eq('is_archived', false).order('updated_at', { ascending: false }).limit(10);
       const resp = await fetch(getFunctionUrl('/functions/v1/improve-description'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` },
+        headers: await authedFetchHeaders(),
         body: JSON.stringify({
           projectName: editName, currentDescription: editDescription,
           documents: (docs ?? []).map(d => ({ fileName: d.file_name, summary: d.summary })),
@@ -448,8 +449,7 @@ export function AppSidebar() {
                         {
                           method: 'POST',
                           headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                            ...(await authedFetchHeaders()),
                           },
                           body: JSON.stringify({
                             notebookName: editNbName,

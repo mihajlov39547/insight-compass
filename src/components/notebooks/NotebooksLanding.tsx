@@ -12,6 +12,7 @@ import {
   BarChart3, GraduationCap, Camera, BookOpenCheck
 } from 'lucide-react';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { useNotebooks, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, useCreateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useAuth } from '@/contexts/useAuth';
@@ -404,8 +405,7 @@ export function NotebooksLanding() {
                       const resp = await fetch(getFunctionUrl('/functions/v1/improve-notebook'), {
                         method: 'POST',
                         headers: {
-                          'Content-Type': 'application/json',
-                          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                          ...(await authedFetchHeaders()),
                         },
                         body: JSON.stringify({
                           notebookName: editName,
