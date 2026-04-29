@@ -1997,30 +1997,7 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          email: string | null
-          full_name: string | null
-          user_id: string | null
-          username: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          email?: string | null
-          full_name?: string | null
-          user_id?: string | null
-          username?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          email?: string | null
-          full_name?: string | null
-          user_id?: string | null
-          username?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_item_permission: {
@@ -2116,6 +2093,7 @@ export type Database = {
       }
       extract_url_domain: { Args: { p_url: string }; Returns: string }
       extract_youtube_video_id: { Args: { p_url: string }; Returns: string }
+      find_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_document_chunk_stats: {
         Args: { doc_ids: string[] }
         Returns: {
@@ -2148,6 +2126,26 @@ export type Database = {
           chunk_text: string
           match_rank: number
           token_count: number
+        }[]
+      }
+      get_public_profile: {
+        Args: { _user_id: string }
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          user_id: string
+          username: string
+        }[]
+      }
+      get_public_profiles: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          user_id: string
+          username: string
         }[]
       }
       get_user_item_role: {
