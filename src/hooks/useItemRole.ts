@@ -99,10 +99,8 @@ export function useShareMembers(
       let profileMap = new Map<string, any>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, username, avatar_url, email')
-          .in('user_id', userIds);
-        profileMap = new Map((profiles ?? []).map(p => [p.user_id, p]));
+          .rpc('get_public_profiles', { _user_ids: userIds });
+        profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
       }
 
       return shares.map(s => {
