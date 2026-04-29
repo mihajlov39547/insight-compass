@@ -6,6 +6,7 @@ import {
   resolveModelDecision,
   resolveModelForTask,
 } from "../_shared/ai/task-model-config.ts";
+import { requireUser } from "../_shared/auth/require-user.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -118,6 +119,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const auth = await requireUser(req, corsHeaders);
+  if ("response" in auth) return auth.response;
 
   try {
     const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength, responseLanguage, notebookSourceInventory } = await req.json();
