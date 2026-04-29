@@ -1,7 +1,8 @@
 // Client-side helper for the tavily-extract edge function.
 // Provides typed `runTavilyExtract` and shared types reused by the chat UI.
 
-import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { getFunctionUrl } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 
 export interface ExtractSourceItem {
   url: string;
@@ -43,10 +44,7 @@ const EXTRACT_URL = getFunctionUrl('/functions/v1/tavily-extract');
 export async function runTavilyExtract(input: RunTavilyExtractInput): Promise<ExtractResponse> {
   const resp = await fetch(EXTRACT_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-    },
+    headers: await authedFetchHeaders(),
     body: JSON.stringify({
       urls: input.urls,
       query: input.query ?? null,

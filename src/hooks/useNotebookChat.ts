@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { DEFAULT_MODEL_ID } from '@/config/modelOptions';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
 import { trimChatHistory } from '@/lib/chatHistoryConfig';
 import { useUserSettings } from '@/hooks/useUserSettings';
@@ -230,8 +231,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         const scopeResp = await fetch(SCOPE_CHECK_URL, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            ...(await authedFetchHeaders()),
           },
           body: JSON.stringify({
             notebookTitle: notebookName || '',
@@ -388,8 +388,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          ...(await authedFetchHeaders()),
         },
         body: JSON.stringify({
           messages: contextMessages,
@@ -503,8 +502,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
             {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                ...(await authedFetchHeaders()),
               },
               body: JSON.stringify({
                 notebookName: notebookName || '',

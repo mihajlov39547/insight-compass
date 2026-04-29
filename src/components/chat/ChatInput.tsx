@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { modelOptions, DEFAULT_MODEL_ID } from '@/config/modelOptions';
 import { useApp } from '@/contexts/useApp';
 import { useNotebooks } from '@/hooks/useNotebooks';
@@ -263,8 +264,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            ...(await authedFetchHeaders()),
           },
           body: JSON.stringify({
             prompt: message,

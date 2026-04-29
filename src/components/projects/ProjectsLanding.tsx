@@ -14,6 +14,7 @@ import { useDocuments } from '@/hooks/useDocuments';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/useAuth';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -182,8 +183,7 @@ export function ProjectsLanding() {
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            ...(await authedFetchHeaders()),
           },
           body: JSON.stringify({
             projectName: editName,

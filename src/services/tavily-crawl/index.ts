@@ -1,7 +1,8 @@
 // Client-side helper for the tavily-crawl edge function.
 // Provides typed `runTavilyCrawl` and shared types reused by the chat UI.
 
-import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { getFunctionUrl } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 
 export interface CrawlPageItem {
   url: string;
@@ -45,10 +46,7 @@ const CRAWL_URL = getFunctionUrl('/functions/v1/tavily-crawl');
 export async function runTavilyCrawl(input: RunTavilyCrawlInput): Promise<CrawlResponse> {
   const resp = await fetch(CRAWL_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-    },
+    headers: await authedFetchHeaders(),
     body: JSON.stringify({
       url: input.url,
       instructions: input.instructions ?? null,

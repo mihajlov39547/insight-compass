@@ -11,6 +11,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getModelForTask } from "../_shared/ai/task-model-config.ts";
+import { requireUser } from "../_shared/auth/require-user.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -93,6 +94,9 @@ serve(async (req) => {
       { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+
+  const auth = await requireUser(req, corsHeaders);
+  if ("response" in auth) return auth.response;
 
   try {
     const tavilyKey = Deno.env.get("TAVILY_API_KEY");

@@ -9,6 +9,7 @@
 // 5 YouTube source items are displayed separately by the Sources UI.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireUser } from "../_shared/auth/require-user.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -151,6 +152,9 @@ serve(async (req) => {
       { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
+
+  const auth = await requireUser(req, corsHeaders);
+  if ("response" in auth) return auth.response;
 
   try {
     const serpapiKey = Deno.env.get("SERPAPI_KEY");

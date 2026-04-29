@@ -1,7 +1,8 @@
 // Frontend client for the serpapi-youtube-search edge function.
 // Returns the synthesized assistant answer + the 5 normalized video sources.
 
-import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
+import { getFunctionUrl } from '@/config/env';
+import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 
 const YOUTUBE_SEARCH_URL = getFunctionUrl('/functions/v1/serpapi-youtube-search');
 
@@ -38,10 +39,7 @@ export async function runYouTubeSearch(
 ): Promise<YouTubeSearchResponse> {
   const resp = await fetch(YOUTUBE_SEARCH_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-    },
+    headers: await authedFetchHeaders(),
     body: JSON.stringify({ query, responseLanguage }),
     signal,
   });
