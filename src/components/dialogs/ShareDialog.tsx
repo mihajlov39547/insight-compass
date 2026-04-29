@@ -311,11 +311,8 @@ function useOwnerProfile(userId?: string) {
     queryFn: async () => {
       if (!userId) return null;
       const { data } = await supabase
-        .from('profiles')
-        .select('full_name, username, email, avatar_url')
-        .eq('user_id', userId)
-        .maybeSingle();
-      return data;
+        .rpc('get_public_profile', { _user_id: userId });
+      return (data && data[0]) ?? null;
     },
     enabled: !!userId,
     staleTime: 60_000,
