@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { decryptPassword } from '../_shared/auth/encrypt-pending-password.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -71,10 +72,18 @@ Deno.serve(async (req) => {
     })
   }
 
-  // Code matches — create the auth user with email already confirmed
+  // Code matches — decrypt the stored password and create the auth user with email already confirmed
+  let plaintextPassword: string
+  try {
+    plaintextPassword = await decryptPassword(pending.password_hash)
+  } catch (e) {
+    console.error('decryptPassword failed', e)
+    return new Response(JSON.stringify({ error: 'server_error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  }
+
   const { data: created, error: createErr } = await supabase.auth.admin.createUser({
     email: pending.email,
-    password: pending.password_hash,
+    password: plaintextPassword,
     email_confirm: true,
   })
 

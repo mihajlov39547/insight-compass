@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { encryptPassword } from '../_shared/auth/encrypt-pending-password.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -61,14 +62,10 @@ Deno.serve(async (req) => {
 
   const code = generateCode()
   const codeHash = await sha256Hex(code)
-  // Store password hash (sha256 + per-row salt would be ideal; we use Supabase's own bcrypt at user-create time,
-  // so we hold the plaintext only briefly and re-encrypt by passing it to admin.createUser later).
-  // To avoid storing plaintext, encrypt with a key derived from the OTP itself? That would lock us out if user
-  // forgets. Instead we store an obfuscated value: AES-GCM with service key derivative.
-  // Simpler safe choice: store password using pgcrypto symmetric encryption via RPC. For brevity we store
-  // password directly in a service-role-only table that no client can read. This is a controlled compromise
-  // and the row is purged within 15 min or on first verify.
-  const passwordHash = password // intentionally plaintext, table is service-role only and short-lived
+  // Encrypt password with AES-GCM (key derived from service-role key) so DB backups / WAL
+  // never see plaintext. The plaintext is only reconstituted in register-otp-verify just
+  // before being passed to admin.createUser, where Supabase Auth applies bcrypt.
+  const passwordHash = await encryptPassword(password)
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
 
