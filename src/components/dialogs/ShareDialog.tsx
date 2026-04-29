@@ -90,8 +90,8 @@ export function ShareDialog() {
         shared_by_user_id: user.id,
         shared_with_email: email.trim().toLowerCase(),
       };
-      if (invitedProfile?.user_id) {
-        sharePayload.shared_with_user_id = invitedProfile.user_id;
+      if (invitedUserId) {
+        sharePayload.shared_with_user_id = invitedUserId;
       }
 
       const { error: shareError } = await supabase.from('shares').insert(sharePayload);
