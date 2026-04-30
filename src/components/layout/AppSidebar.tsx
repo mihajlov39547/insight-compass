@@ -220,7 +220,15 @@ export function AppSidebar() {
       onSuccess: (chat) => {
         setSelectedProjectId(projectId);
         setSelectedChatId(chat.id);
-      }
+      },
+      onError: (err) => {
+        if (err instanceof ChatLimitReachedError) {
+          toast.error(t('planLimits.chatsPerProjectReached', { count: err.limit }));
+          setShowPricing(true);
+        } else {
+          toast.error((err as Error).message || t('sidebar.toasts.chatCreateFailed', 'Failed to create chat.'));
+        }
+      },
     });
   };
 
