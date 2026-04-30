@@ -77,9 +77,11 @@ export function DocumentDashboard({ scope }: DocumentDashboardProps) {
   const project = projects.find(p => p.id === selectedProjectId);
   const chat = chats.find(c => c.id === selectedChatId);
 
+  // Project scope: show ALL project documents (including those attached to any chat).
+  // Chat scope: only docs attached to the selected chat.
   const { data: documents = [], isLoading } = useDocuments(
     selectedProjectId ?? undefined,
-    scope === 'project' ? null : selectedChatId,
+    scope === 'project' ? undefined : selectedChatId,
   );
   const { data: resources = [], isLoading: isResourcesLoading } = useResources();
 
@@ -280,6 +282,7 @@ export function DocumentDashboard({ scope }: DocumentDashboardProps) {
                 <DocumentRow
                   key={doc.id}
                   doc={doc}
+                  chatLabel={scope === 'project' && doc.chat_id ? (chats.find(c => c.id === doc.chat_id)?.name ?? t('documentDashboard.chatBadgeFallback')) : undefined}
                   chunkStats={chunkStatsMap?.get(doc.id)}
                   questionStats={questionStatsMap?.get(doc.id)}
                   isExpanded={expandedId === `doc:${doc.id}`}
@@ -351,9 +354,10 @@ function EmptyState({ scope, hasDocuments, onUpload }: { scope: 'project' | 'cha
 }
 
 function DocumentRow({
-  doc, chunkStats, questionStats, isExpanded, onToggle, onDelete, onRetry, isDeleting, isRetrying,
+  doc, chatLabel, chunkStats, questionStats, isExpanded, onToggle, onDelete, onRetry, isDeleting, isRetrying,
 }: {
   doc: DbDocument;
+  chatLabel?: string;
   chunkStats?: import('@/hooks/useDocumentChunkStats').ChunkStats;
   questionStats?: import('@/hooks/useDocumentQuestionStats').QuestionStats;
   isExpanded: boolean;
@@ -411,6 +415,12 @@ function DocumentRow({
                   </Badge>
                 )}
                 <AIReadyBadge isReady={isAIReady} />
+                {chatLabel && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1 border-accent/40 text-accent">
+                    <MessageSquare className="h-2.5 w-2.5" />
+                    {chatLabel}
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}

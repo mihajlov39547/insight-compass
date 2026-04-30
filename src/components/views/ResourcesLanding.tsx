@@ -125,7 +125,7 @@ export function ResourcesLanding() {
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
   const [linkProvider, setLinkProvider] = useState('unknown');
-  const [linkContainerType, setLinkContainerType] = useState<ContainerType>('personal');
+  const [linkContainerType, setLinkContainerType] = useState<ContainerType>('project');
   const [linkContainerId, setLinkContainerId] = useState<string | null>(null);
 
   // ── Stats ───────────────────────────────────────────────────────
@@ -373,7 +373,7 @@ export function ResourcesLanding() {
     setLinkUrl('');
     setLinkTitle('');
     setLinkProvider('unknown');
-    setLinkContainerType('personal');
+    setLinkContainerType('project');
     setLinkContainerId(null);
   };
 
@@ -383,8 +383,7 @@ export function ResourcesLanding() {
       return;
     }
 
-    const requiresContainerId = linkContainerType !== 'personal';
-    if (requiresContainerId && !linkContainerId) {
+    if (!linkContainerId) {
       toast({ title: 'Add source failed', description: 'Choose a target workspace.', variant: 'destructive' });
       return;
     }
@@ -395,7 +394,7 @@ export function ResourcesLanding() {
         title: linkTitle || undefined,
         provider: linkProvider,
         containerType: linkContainerType,
-        containerId: requiresContainerId ? linkContainerId : null,
+        containerId: linkContainerId,
       },
       {
         onSuccess: () => {
@@ -534,7 +533,7 @@ export function ResourcesLanding() {
               <SelectItem value="all">{t('resources.filters.container.all')}</SelectItem>
               <SelectItem value="project">{t('resources.filters.container.project')}</SelectItem>
               <SelectItem value="notebook">{t('resources.filters.container.notebook')}</SelectItem>
-              <SelectItem value="personal">{t('resources.filters.container.personal')}</SelectItem>
+              
             </SelectContent>
           </Select>
 
@@ -1109,7 +1108,7 @@ function AddSourceDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal">{t('resources.addSourceDialog.locations.personal')}</SelectItem>
+                
                 <SelectItem value="project">{t('resources.addSourceDialog.locations.project')}</SelectItem>
                 <SelectItem value="notebook">{t('resources.addSourceDialog.locations.notebook')}</SelectItem>
               </SelectContent>
@@ -1117,21 +1116,19 @@ function AddSourceDialog({
           </div>
         </div>
 
-        {containerType !== 'personal' && (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.target', { type: containerLabel })}</p>
-            <Select value={containerId ?? undefined} onValueChange={(v) => onContainerIdChange(v || null)}>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder={t('resources.addSourceDialog.selectTarget', { type: containerLabel })} />
-              </SelectTrigger>
-              <SelectContent>
-                {targetOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.target', { type: containerLabel })}</p>
+          <Select value={containerId ?? undefined} onValueChange={(v) => onContainerIdChange(v || null)}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder={t('resources.addSourceDialog.selectTarget', { type: containerLabel })} />
+            </SelectTrigger>
+            <SelectContent>
+              {targetOptions.map((option) => (
+                <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <p className="text-[11px] text-muted-foreground">
           {t('resources.addSourceDialog.footnote')}
