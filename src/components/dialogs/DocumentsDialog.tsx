@@ -222,6 +222,22 @@ export function DocumentsDialog() {
         onUploadComplete={() => {}}
         context={isProjectScope ? 'project' : 'chat'}
       />
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteDoc}
+        onOpenChange={(open) => !open && setPendingDeleteDoc(null)}
+        title={t('documentDashboard.deleteDialog.title', { defaultValue: 'Delete document?' })}
+        intro={t('documentDashboard.deleteDialog.intro', { name: pendingDeleteDoc?.file_name ?? '', defaultValue: 'This will permanently delete "{{name}}" and all of its data, including:' })}
+        items={[
+          t('documentDashboard.deleteDialog.items.file', { defaultValue: 'The original uploaded file' }),
+          t('documentDashboard.deleteDialog.items.extracted', { defaultValue: 'All extracted text, summaries, and chunks' }),
+          t('documentDashboard.deleteDialog.items.embeddings', { defaultValue: 'Search embeddings and generated questions' }),
+        ]}
+        irreversibleNote={t('documentDashboard.deleteDialog.irreversible', { defaultValue: 'This action cannot be undone.' })}
+        confirmLabel={t('documentDashboard.deleteDialog.confirm', { defaultValue: 'Delete document' })}
+        cancelLabel={t('documentDashboard.deleteDialog.cancel', { defaultValue: 'Cancel' })}
+        onConfirm={confirmDeleteDoc}
+        isPending={deleteMutation.isPending}
+      />
     </>
   );
 }
