@@ -1,9 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { DeleteWithConfirmDialog } from '@/components/dialogs/DeleteWithConfirmDialog';
 import {
   Plus, FileText, MoreHorizontal, Loader2, Sparkles,
   Atom, FlaskConical, Microscope, Scale, Landmark,
@@ -461,34 +458,25 @@ export function NotebooksLanding() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('notebooksLanding.delete.title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('notebooksLanding.delete.intro')}
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>{t('notebooksLanding.delete.items.chats')}</li>
-                <li>{t('notebooksLanding.delete.items.documents')}</li>
-                <li>{t('notebooksLanding.delete.items.notes')}</li>
-                <li>{t('notebooksLanding.delete.items.extracted')}</li>
-                <li>{t('notebooksLanding.delete.items.resources')}</li>
-                <li>{t('notebooksLanding.delete.items.sharing')}</li>
-              </ul>
-              <span className="block mt-2 font-medium">{t('notebooksLanding.delete.irreversible')}</span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('notebooksLanding.delete.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteNotebook}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('notebooksLanding.delete.confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteId}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+        title={t('notebooksLanding.delete.title')}
+        intro={t('notebooksLanding.delete.intro')}
+        items={[
+          t('notebooksLanding.delete.items.chats'),
+          t('notebooksLanding.delete.items.documents'),
+          t('notebooksLanding.delete.items.notes'),
+          t('notebooksLanding.delete.items.extracted'),
+          t('notebooksLanding.delete.items.resources'),
+          t('notebooksLanding.delete.items.sharing'),
+        ]}
+        irreversibleNote={t('notebooksLanding.delete.irreversible')}
+        confirmLabel={t('notebooksLanding.delete.confirm')}
+        cancelLabel={t('notebooksLanding.delete.cancel')}
+        onConfirm={confirmDeleteNotebook}
+        isPending={deleteNotebook.isPending}
+      />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Search, MessageSquare, FolderOpen,
   MoreHorizontal, Bell, ChevronDown, ChevronUp,
   ArrowUpAZ, ArrowDownAZ, Clock, ChevronsUpDown, ChevronsDownUp, FileText,
-  Settings, Share2, Archive, Trash2, Pencil, Sparkles, Loader2, BookOpenCheck,
+  Settings, Share2, Trash2, Pencil, Sparkles, Loader2, BookOpenCheck,
   Home, Star, FolderPlus, BookPlus, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,16 +23,7 @@ import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat, ChatLimi
 import { useNotebooks, useCreateNotebook, useDeleteNotebook, useUpdateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { DeleteWithConfirmDialog } from '@/components/dialogs/DeleteWithConfirmDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -713,7 +704,6 @@ export function AppSidebar() {
                   onSelect={() => handleProjectSelect(project)}
                   onNewChat={(e) => handleNewChat(project.id, e)}
                   onDelete={() => handleDeleteProject(project.id)}
-                  
                   onRename={() => handleManageProject(project)}
                   onChatSelect={handleChatSelect}
                   onDeleteChat={requestDeleteChat}
@@ -793,7 +783,6 @@ export function AppSidebar() {
                         setSelectedNotebookId(nb.id);
                         setActiveView('notebook-documents');
                       }}
-                      onArchiveNotebook={() => handleArchiveNotebookSidebar(nb.id)}
                       onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id, nb.name)}
                     />
                   ))}
@@ -965,64 +954,46 @@ export function AppSidebar() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!pendingDeleteChat} onOpenChange={(open) => !open && setPendingDeleteChat(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('sidebar.deleteChat.title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingDeleteChat?.name
-                ? t('sidebar.deleteChat.intro', { name: `"${pendingDeleteChat.name}"` })
-                : t('sidebar.deleteChat.introNoName')}
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>{t('sidebar.deleteChat.items.messages')}</li>
-                <li>{t('sidebar.deleteChat.items.documents')}</li>
-                <li>{t('sidebar.deleteChat.items.extracted')}</li>
-              </ul>
-              <span className="block mt-2 font-medium">{t('sidebar.deleteChat.irreversible')}</span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('sidebar.deleteChat.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteChat}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('sidebar.deleteChat.confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteChat}
+        onOpenChange={(open) => !open && setPendingDeleteChat(null)}
+        title={t('sidebar.deleteChat.title')}
+        intro={pendingDeleteChat?.name
+          ? t('sidebar.deleteChat.intro', { name: `"${pendingDeleteChat.name}"` })
+          : t('sidebar.deleteChat.introNoName')}
+        items={[
+          t('sidebar.deleteChat.items.messages'),
+          t('sidebar.deleteChat.items.documents'),
+          t('sidebar.deleteChat.items.extracted'),
+        ]}
+        irreversibleNote={t('sidebar.deleteChat.irreversible')}
+        confirmLabel={t('sidebar.deleteChat.confirm')}
+        cancelLabel={t('sidebar.deleteChat.cancel')}
+        onConfirm={confirmDeleteChat}
+        isPending={deleteChat.isPending}
+      />
 
-      <AlertDialog open={!!pendingDeleteNotebook} onOpenChange={(open) => !open && setPendingDeleteNotebook(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('sidebar.deleteNotebook.title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingDeleteNotebook?.name
-                ? t('sidebar.deleteNotebook.intro', { name: `"${pendingDeleteNotebook.name}"` })
-                : t('sidebar.deleteNotebook.introNoName')}
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>{t('sidebar.deleteNotebook.items.chats')}</li>
-                <li>{t('sidebar.deleteNotebook.items.documents')}</li>
-                <li>{t('sidebar.deleteNotebook.items.notes')}</li>
-                <li>{t('sidebar.deleteNotebook.items.extracted')}</li>
-                <li>{t('sidebar.deleteNotebook.items.resources')}</li>
-                <li>{t('sidebar.deleteNotebook.items.sharing')}</li>
-              </ul>
-              <span className="block mt-2 font-medium">{t('sidebar.deleteNotebook.irreversible')}</span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('sidebar.deleteNotebook.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteNotebookSidebar}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('sidebar.deleteNotebook.confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteNotebook}
+        onOpenChange={(open) => !open && setPendingDeleteNotebook(null)}
+        title={t('sidebar.deleteNotebook.title')}
+        intro={pendingDeleteNotebook?.name
+          ? t('sidebar.deleteNotebook.intro', { name: `"${pendingDeleteNotebook.name}"` })
+          : t('sidebar.deleteNotebook.introNoName')}
+        items={[
+          t('sidebar.deleteNotebook.items.chats'),
+          t('sidebar.deleteNotebook.items.documents'),
+          t('sidebar.deleteNotebook.items.notes'),
+          t('sidebar.deleteNotebook.items.extracted'),
+          t('sidebar.deleteNotebook.items.resources'),
+          t('sidebar.deleteNotebook.items.sharing'),
+        ]}
+        irreversibleNote={t('sidebar.deleteNotebook.irreversible')}
+        confirmLabel={t('sidebar.deleteNotebook.confirm')}
+        cancelLabel={t('sidebar.deleteNotebook.cancel')}
+        onConfirm={confirmDeleteNotebookSidebar}
+        isPending={deleteNotebook.isPending}
+      />
     </div>
       {sharedDialogs}
     </>
@@ -1030,7 +1001,7 @@ export function AppSidebar() {
 }
 
 // ── ProjectItem ──────────────────────────────────────────────────
-function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect, onDeleteChat, onRenameChat }: {
+function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onRename, onChatSelect, onDeleteChat, onRenameChat }: {
   project: DbProject;
   isExpanded: boolean;
   isSelected: boolean;
@@ -1039,7 +1010,6 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onSelect: () => void;
   onNewChat: (e: React.MouseEvent) => void;
   onDelete: () => void;
-  onArchive: () => void;
   onRename: () => void;
   onChatSelect: (chat: DbChat) => void;
   onDeleteChat: (chat: DbChat) => void;
@@ -1093,7 +1063,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                 <MoreHorizontal className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <ProjectActionsMenuContent permissions={permissions} onManageProject={onRename} onManageDocuments={handleManageProjectDocs} onArchiveProject={onArchive} onDeleteProject={onDelete} />
+            <ProjectActionsMenuContent permissions={permissions} onManageProject={onRename} onManageDocuments={handleManageProjectDocs} onDeleteProject={onDelete} />
           </DropdownMenu>
         </div>
       </div>
@@ -1140,7 +1110,6 @@ function SidebarNotebookItem({
   onOpenNotebook,
   onManageNotebook,
   onManageDocuments,
-  onArchiveNotebook,
   onDeleteNotebook,
 }: {
   notebook: DbNotebook;
@@ -1148,7 +1117,6 @@ function SidebarNotebookItem({
   onOpenNotebook: () => void;
   onManageNotebook: () => void;
   onManageDocuments: () => void;
-  onArchiveNotebook: () => void;
   onDeleteNotebook: () => void;
 }) {
   const { data: myRole } = useItemRole(notebook.id, 'notebook');
@@ -1185,7 +1153,6 @@ function SidebarNotebookItem({
           permissions={permissions}
           onManageNotebook={onManageNotebook}
           onManageDocuments={onManageDocuments}
-          onArchiveNotebook={onArchiveNotebook}
           onDeleteNotebook={onDeleteNotebook}
         />
       </DropdownMenu>

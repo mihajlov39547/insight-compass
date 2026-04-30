@@ -14,6 +14,7 @@ import { UploadDocumentsDialog } from './UploadDocumentsDialog';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { DeleteWithConfirmDialog } from '@/components/dialogs/DeleteWithConfirmDialog';
 
 const fileIcons: Record<string, any> = {
   pdf: FileText, docx: FileType, doc: FileType, txt: FileIcon,
@@ -102,10 +103,16 @@ export function DocumentsDialog() {
   const { retry: retryProcessing, isPending: isRetrying } = useRetryProcessing();
   const documentIds = documents.map(d => d.id);
   const { data: chunkStatsMap } = useDocumentChunkStats(documentIds);
+  const [pendingDeleteDoc, setPendingDeleteDoc] = useState<DbDocument | null>(null);
   const handleDelete = (doc: DbDocument) => {
+    setPendingDeleteDoc(doc);
+  };
+  const confirmDeleteDoc = () => {
+    if (!pendingDeleteDoc) return;
+    const doc = pendingDeleteDoc;
     deleteMutation.mutate(doc, {
-      onSuccess: () => toast({ title: t('documentsDialog.deleted', { name: doc.file_name }) }),
-      onError: (err: any) => toast({ title: t('documentsDialog.deleteFailed'), description: err.message, variant: 'destructive' }),
+      onSuccess: () => { toast({ title: t('documentsDialog.deleted', { name: doc.file_name }) }); setPendingDeleteDoc(null); },
+      onError: (err: any) => { toast({ title: t('documentsDialog.deleteFailed'), description: err.message, variant: 'destructive' }); setPendingDeleteDoc(null); },
     });
   };
 
@@ -214,6 +221,22 @@ export function DocumentsDialog() {
         onOpenChange={setShowUpload}
         onUploadComplete={() => {}}
         context={isProjectScope ? 'project' : 'chat'}
+      />
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteDoc}
+        onOpenChange={(open) => !open && setPendingDeleteDoc(null)}
+        title={t('documentDashboard.deleteDialog.title', { defaultValue: 'Delete document?' })}
+        intro={t('documentDashboard.deleteDialog.intro', { name: pendingDeleteDoc?.file_name ?? '', defaultValue: 'This will permanently delete "{{name}}" and all of its data, including:' })}
+        items={[
+          t('documentDashboard.deleteDialog.items.file', { defaultValue: 'The original uploaded file' }),
+          t('documentDashboard.deleteDialog.items.extracted', { defaultValue: 'All extracted text, summaries, and chunks' }),
+          t('documentDashboard.deleteDialog.items.embeddings', { defaultValue: 'Search embeddings and generated questions' }),
+        ]}
+        irreversibleNote={t('documentDashboard.deleteDialog.irreversible', { defaultValue: 'This action cannot be undone.' })}
+        confirmLabel={t('documentDashboard.deleteDialog.confirm', { defaultValue: 'Delete document' })}
+        cancelLabel={t('documentDashboard.deleteDialog.cancel', { defaultValue: 'Cancel' })}
+        onConfirm={confirmDeleteDoc}
+        isPending={deleteMutation.isPending}
       />
     </>
   );

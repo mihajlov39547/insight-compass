@@ -21,6 +21,7 @@ import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHead
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DeleteWithConfirmDialog } from '@/components/dialogs/DeleteWithConfirmDialog';
 import { useApp } from '@/contexts/useApp';
 import { useNotebooks, useUpdateNotebook } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
@@ -152,6 +153,8 @@ export function NotebookWorkspace() {
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [addingToSources, setAddingToSources] = useState(false);
+  const [pendingDeleteDoc, setPendingDeleteDoc] = useState<DbDocument | null>(null);
+  const [pendingDeleteVideo, setPendingDeleteVideo] = useState<any | null>(null);
   const chatViewportRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isChatNearBottom, setIsChatNearBottom] = useState(true);
@@ -679,7 +682,7 @@ export function NotebookWorkspace() {
                         {permissions.canDeleteDocuments && (
                           <Button
                             variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => deleteDocument.mutate(doc)}
+                            onClick={() => setPendingDeleteDoc(doc)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -736,7 +739,7 @@ export function NotebookWorkspace() {
                         {permissions.canDeleteDocuments && (
                           <Button
                             variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => deleteResource.mutate(toResourceActionInput(video))}
+                            onClick={() => setPendingDeleteVideo(video)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -1053,6 +1056,46 @@ export function NotebookWorkspace() {
         onOpenChange={setShowUpload}
         onUploadComplete={() => {}}
         context="notebook"
+      />
+
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteDoc}
+        onOpenChange={(open) => !open && setPendingDeleteDoc(null)}
+        title={t('documentDashboard.deleteDialog.title', { defaultValue: 'Delete document?' })}
+        intro={t('documentDashboard.deleteDialog.intro', { name: pendingDeleteDoc?.file_name ?? '', defaultValue: 'This will permanently delete "{{name}}" and all of its data, including:' })}
+        items={[
+          t('documentDashboard.deleteDialog.items.file', { defaultValue: 'The original uploaded file' }),
+          t('documentDashboard.deleteDialog.items.extracted', { defaultValue: 'All extracted text, summaries, and chunks' }),
+          t('documentDashboard.deleteDialog.items.embeddings', { defaultValue: 'Search embeddings and generated questions' }),
+        ]}
+        irreversibleNote={t('documentDashboard.deleteDialog.irreversible', { defaultValue: 'This action cannot be undone.' })}
+        confirmLabel={t('documentDashboard.deleteDialog.confirm', { defaultValue: 'Delete document' })}
+        cancelLabel={t('documentDashboard.deleteDialog.cancel', { defaultValue: 'Cancel' })}
+        onConfirm={() => {
+          if (!pendingDeleteDoc) return;
+          deleteDocument.mutate(pendingDeleteDoc, { onSettled: () => setPendingDeleteDoc(null) });
+        }}
+        isPending={deleteDocument.isPending}
+      />
+
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteVideo}
+        onOpenChange={(open) => !open && setPendingDeleteVideo(null)}
+        title={t('documentDashboard.deleteResourceDialog.title', { defaultValue: 'Delete resource?' })}
+        intro={t('documentDashboard.deleteResourceDialog.intro', { name: pendingDeleteVideo?.title ?? '', defaultValue: 'This will permanently delete "{{name}}" and all of its data, including:' })}
+        items={[
+          t('documentDashboard.deleteResourceDialog.items.link', { defaultValue: 'The linked resource' }),
+          t('documentDashboard.deleteResourceDialog.items.transcript', { defaultValue: 'All transcripts and extracted content' }),
+          t('documentDashboard.deleteResourceDialog.items.embeddings', { defaultValue: 'Search embeddings and generated questions' }),
+        ]}
+        irreversibleNote={t('documentDashboard.deleteResourceDialog.irreversible', { defaultValue: 'This action cannot be undone.' })}
+        confirmLabel={t('documentDashboard.deleteResourceDialog.confirm', { defaultValue: 'Delete resource' })}
+        cancelLabel={t('documentDashboard.deleteResourceDialog.cancel', { defaultValue: 'Cancel' })}
+        onConfirm={() => {
+          if (!pendingDeleteVideo) return;
+          deleteResource.mutate(toResourceActionInput(pendingDeleteVideo), { onSettled: () => setPendingDeleteVideo(null) });
+        }}
+        isPending={deleteResource.isPending}
       />
     </div>
   );
