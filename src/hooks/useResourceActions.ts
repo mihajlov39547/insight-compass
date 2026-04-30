@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startDocumentWorkflow } from '@/hooks/useDocuments';
+import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import type { ContainerType, Resource } from '@/lib/resourceClassification';
 
 export interface ResourceActionInput {
