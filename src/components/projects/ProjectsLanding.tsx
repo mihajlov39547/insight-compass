@@ -437,33 +437,24 @@ export function ProjectsLanding() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('projectsLanding.delete.title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('projectsLanding.delete.intro')}
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>{t('projectsLanding.delete.items.chats')}</li>
-                <li>{t('projectsLanding.delete.items.documents')}</li>
-                <li>{t('projectsLanding.delete.items.extracted')}</li>
-                <li>{t('projectsLanding.delete.items.resources')}</li>
-                <li>{t('projectsLanding.delete.items.sharing')}</li>
-              </ul>
-              <span className="block mt-2 font-medium">{t('projectsLanding.delete.irreversible')}</span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('projectsLanding.delete.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteProject}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('projectsLanding.delete.confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteId}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+        title={t('projectsLanding.delete.title')}
+        intro={t('projectsLanding.delete.intro')}
+        items={[
+          t('projectsLanding.delete.items.chats'),
+          t('projectsLanding.delete.items.documents'),
+          t('projectsLanding.delete.items.extracted'),
+          t('projectsLanding.delete.items.resources'),
+          t('projectsLanding.delete.items.sharing'),
+        ]}
+        irreversibleNote={t('projectsLanding.delete.irreversible')}
+        confirmLabel={t('projectsLanding.delete.confirm')}
+        cancelLabel={t('projectsLanding.delete.cancel')}
+        onConfirm={confirmDeleteProject}
+        isPending={deleteProject.isPending}
+      />
     </div>
   );
 }
