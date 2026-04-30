@@ -792,7 +792,6 @@ export function AppSidebar() {
                         setSelectedNotebookId(nb.id);
                         setActiveView('notebook-documents');
                       }}
-                      onArchiveNotebook={() => handleArchiveNotebookSidebar(nb.id)}
                       onDeleteNotebook={() => handleDeleteNotebookSidebar(nb.id, nb.name)}
                     />
                   ))}
