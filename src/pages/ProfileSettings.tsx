@@ -140,6 +140,7 @@ export default function ProfileSettings() {
   const [savedProfile, setSavedProfile] = useState<SavedProfileState>(emptySavedProfile);
 
   const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const displayEmail = profile?.email || authUser?.email || '';
   const googleProvider = authUser?.app_metadata?.provider === 'google' || authUser?.app_metadata?.providers?.includes('google');
