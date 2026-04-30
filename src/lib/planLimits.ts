@@ -6,7 +6,8 @@ export interface PlanLimits {
   maxDocumentsPerProject: number | null;
   maxDocumentsPerNotebook: number | null;
   maxChatsPerProject: number | null;
-  canShare: boolean;
+  canShareProjects: boolean;
+  canShareNotebooks: boolean;
   maxShareMembers: number | null;
   restrictedModelIds: string[];
 }
@@ -17,7 +18,8 @@ const UNLIMITED: PlanLimits = {
   maxDocumentsPerProject: null,
   maxDocumentsPerNotebook: null,
   maxChatsPerProject: null,
-  canShare: true,
+  canShareProjects: true,
+  canShareNotebooks: true,
   maxShareMembers: null,
   restrictedModelIds: [],
 };
@@ -29,7 +31,8 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     maxDocumentsPerProject: 5,
     maxDocumentsPerNotebook: 5,
     maxChatsPerProject: 1,
-    canShare: false,
+    canShareProjects: false,
+    canShareNotebooks: false,
     maxShareMembers: 0,
     restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2'],
   },
@@ -39,7 +42,8 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     maxDocumentsPerProject: 10,
     maxDocumentsPerNotebook: 10,
     maxChatsPerProject: 5,
-    canShare: true,
+    canShareProjects: true,
+    canShareNotebooks: false,
     maxShareMembers: 3,
     restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2'],
   },
@@ -49,8 +53,9 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     maxDocumentsPerProject: 500,
     maxDocumentsPerNotebook: 500,
     maxChatsPerProject: null,
-    canShare: true,
-    maxShareMembers: 10,
+    canShareProjects: true,
+    canShareNotebooks: true,
+    maxShareMembers: null,
     restrictedModelIds: [],
   },
   enterprise: UNLIMITED,
