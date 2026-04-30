@@ -713,7 +713,6 @@ export function AppSidebar() {
                   onSelect={() => handleProjectSelect(project)}
                   onNewChat={(e) => handleNewChat(project.id, e)}
                   onDelete={() => handleDeleteProject(project.id)}
-                  
                   onRename={() => handleManageProject(project)}
                   onChatSelect={handleChatSelect}
                   onDeleteChat={requestDeleteChat}
