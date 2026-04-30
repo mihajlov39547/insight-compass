@@ -1273,6 +1273,7 @@
     "emptyChat": "Chat documents are attached to this specific chat. Upload documents to provide context for this conversation.",
     "emptyNotebook": "Add documents or linked videos to this notebook to enable AI-powered search and analysis across your sources.",
     "partiallyReady": "Partially ready",
+    "chatBadgeFallback": "Chat",
     "deleted": "{{name}} deleted",
     "deleteFailed": "Delete failed",
     "transcriptRetried": "Transcript retry queued",
