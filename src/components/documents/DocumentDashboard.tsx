@@ -332,6 +332,40 @@ export function DocumentDashboard({ scope }: DocumentDashboardProps) {
         onUploadComplete={() => {}}
         context={scope}
       />
+
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteDoc}
+        onOpenChange={(open) => !open && setPendingDeleteDoc(null)}
+        title={t('documentDashboard.deleteDialog.title', { defaultValue: 'Delete document?' })}
+        intro={t('documentDashboard.deleteDialog.intro', { name: pendingDeleteDoc?.file_name ?? '', defaultValue: 'This will permanently delete "{{name}}" and all of its data, including:' })}
+        items={[
+          t('documentDashboard.deleteDialog.items.file', { defaultValue: 'The original uploaded file' }),
+          t('documentDashboard.deleteDialog.items.extracted', { defaultValue: 'All extracted text, summaries, and chunks' }),
+          t('documentDashboard.deleteDialog.items.embeddings', { defaultValue: 'Search embeddings and generated questions' }),
+        ]}
+        irreversibleNote={t('documentDashboard.deleteDialog.irreversible', { defaultValue: 'This action cannot be undone.' })}
+        confirmLabel={t('documentDashboard.deleteDialog.confirm', { defaultValue: 'Delete document' })}
+        cancelLabel={t('documentDashboard.deleteDialog.cancel', { defaultValue: 'Cancel' })}
+        onConfirm={confirmDeleteDoc}
+        isPending={deleteMutation.isPending}
+      />
+
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteResource}
+        onOpenChange={(open) => !open && setPendingDeleteResource(null)}
+        title={t('documentDashboard.deleteResourceDialog.title', { defaultValue: 'Delete resource?' })}
+        intro={t('documentDashboard.deleteResourceDialog.intro', { name: pendingDeleteResource?.title ?? '', defaultValue: 'This will permanently delete "{{name}}" and all of its data, including:' })}
+        items={[
+          t('documentDashboard.deleteResourceDialog.items.link', { defaultValue: 'The linked resource' }),
+          t('documentDashboard.deleteResourceDialog.items.transcript', { defaultValue: 'All transcripts and extracted content' }),
+          t('documentDashboard.deleteResourceDialog.items.embeddings', { defaultValue: 'Search embeddings and generated questions' }),
+        ]}
+        irreversibleNote={t('documentDashboard.deleteResourceDialog.irreversible', { defaultValue: 'This action cannot be undone.' })}
+        confirmLabel={t('documentDashboard.deleteResourceDialog.confirm', { defaultValue: 'Delete resource' })}
+        cancelLabel={t('documentDashboard.deleteResourceDialog.cancel', { defaultValue: 'Cancel' })}
+        onConfirm={confirmDeleteResource}
+        isPending={deleteResourceMutation.isPending}
+      />
     </div>
   );
 }
