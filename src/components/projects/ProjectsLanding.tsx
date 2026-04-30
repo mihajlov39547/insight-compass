@@ -8,7 +8,7 @@ import {
   BarChart3, GraduationCap, Camera, MoreHorizontal, Sparkles, Loader2
 } from 'lucide-react';
 import { useApp } from '@/contexts/useApp';
-import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
+import { useProjects, useDeleteProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats } from '@/hooks/useAllChats';
 import { useDocuments } from '@/hooks/useDocuments';
 import { formatDistanceToNow } from 'date-fns';
