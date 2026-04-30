@@ -472,13 +472,11 @@ function ProjectCardActions({
   project,
   onManageProject,
   onManageDocuments,
-  onArchiveProject,
   onDeleteProject,
 }: {
   project: DbProject;
   onManageProject: () => void;
   onManageDocuments: () => void;
-  onArchiveProject: () => void;
   onDeleteProject: () => void;
 }) {
   const { data: myRole } = useItemRole(project.id, 'project');
@@ -502,7 +500,6 @@ function ProjectCardActions({
           permissions={permissions}
           onManageProject={onManageProject}
           onManageDocuments={onManageDocuments}
-          onArchiveProject={onArchiveProject}
           onDeleteProject={onDeleteProject}
         />
       </DropdownMenu>
