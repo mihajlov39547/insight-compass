@@ -54,8 +54,13 @@ export function ShareDialog() {
   const handleInvite = async () => {
     if (!email.trim() || !user || !itemId) return;
 
-    if (!planLimits.canShare) {
-      toast.error(t('planLimits.sharingDisabled'));
+    const planAllowsThisShare = isNotebook ? planLimits.canShareNotebooks : planLimits.canShareProjects;
+    if (!planAllowsThisShare) {
+      toast.error(
+        isNotebook
+          ? t('planLimits.notebookSharingDisabled', { defaultValue: 'Notebook sharing is not available on your current plan. Upgrade to Premium to share notebooks.' })
+          : t('planLimits.sharingDisabled')
+      );
       setShowShare(false);
       setShowPricing(true);
       return;

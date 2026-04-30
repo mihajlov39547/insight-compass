@@ -163,7 +163,10 @@ export function ChatWorkspace() {
                 <Badge variant="outline" className="text-xs capitalize">{myRole}</Badge>
               )}
               {permissions.canManageSharing && (
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowShare(true)}>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => {
+                  if (!planLimits.canShareProjects) { setShowPricing(true); return; }
+                  setShowShare(true);
+                }}>
                   <Share2 className="h-4 w-4" /> {t('projectDashboard.share')}
                 </Button>
               )}
