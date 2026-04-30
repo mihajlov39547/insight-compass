@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DeleteWithConfirmDialog } from '@/components/dialogs/DeleteWithConfirmDialog';
 import { useApp } from '@/contexts/useApp';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useNotebooks, useUpdateNotebook } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDeleteNotebookNote, DbNotebookNote } from '@/hooks/useNotebookNotes';
@@ -104,7 +105,8 @@ function TranscriptStatusLabel({ status }: { status: string }) {
 
 export function NotebookWorkspace() {
   const { t } = useTranslation();
-  const { selectedNotebookId, setShowShare } = useApp();
+  const { selectedNotebookId, setShowShare, setShowPricing } = useApp();
+  const { limits: planLimits } = usePlanLimits();
   const queryClient = useQueryClient();
   const { data: myRole } = useItemRole(selectedNotebookId, 'notebook');
   const permissions = getItemPermissions(myRole);
@@ -586,7 +588,10 @@ export function NotebookWorkspace() {
         language={notebook.language}
         languageContext="notebook"
         showShare={permissions.canManageSharing}
-        onShare={permissions.canManageSharing ? () => setShowShare(true) : undefined}
+        onShare={permissions.canManageSharing ? () => {
+          if (!planLimits.canShareNotebooks) { setShowPricing(true); return; }
+          setShowShare(true);
+        } : undefined}
       />
 
       {/* 3-column layout */}
