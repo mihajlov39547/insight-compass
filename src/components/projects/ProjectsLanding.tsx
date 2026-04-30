@@ -101,7 +101,6 @@ export function ProjectsLanding() {
   } = useApp();
   const { data: projects = [], isLoading } = useProjects();
   const deleteProject = useDeleteProject();
-  const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const { data: allChats = [] } = useChats();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
