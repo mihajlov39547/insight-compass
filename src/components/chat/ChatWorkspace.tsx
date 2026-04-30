@@ -66,6 +66,19 @@ export function ChatWorkspace() {
   const createLinkResource = useCreateLinkResource();
   const { data: resources = [] } = useResources();
 
+  const handleCreateNewChat = () => {
+    if (!selectedProjectId || !selectedProject) return;
+    if (planLimits.maxChatsPerProject !== null && chats.length >= planLimits.maxChatsPerProject) {
+      toast.error(t('planLimits.chatsPerProjectReached', { count: planLimits.maxChatsPerProject }));
+      setShowPricing(true);
+      return;
+    }
+    createChat.mutate(
+      { projectId: selectedProjectId, name: t('sidebar.newChatName'), language: normalizeLanguageCode(selectedProject.language) },
+      { onSuccess: (chat) => setSelectedChatId(chat.id) }
+    );
+  };
+
   const addedYouTubeUrls = useMemo(() => {
     const set = new Set<string>();
     if (!selectedProjectId) return set;
