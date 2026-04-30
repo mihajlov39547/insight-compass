@@ -14,6 +14,7 @@ import { UploadDocumentsDialog } from './UploadDocumentsDialog';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { DeleteWithConfirmDialog } from '@/components/dialogs/DeleteWithConfirmDialog';
 
 const fileIcons: Record<string, any> = {
   pdf: FileText, docx: FileType, doc: FileType, txt: FileIcon,
