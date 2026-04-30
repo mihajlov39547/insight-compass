@@ -963,64 +963,46 @@ export function AppSidebar() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!pendingDeleteChat} onOpenChange={(open) => !open && setPendingDeleteChat(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('sidebar.deleteChat.title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingDeleteChat?.name
-                ? t('sidebar.deleteChat.intro', { name: `"${pendingDeleteChat.name}"` })
-                : t('sidebar.deleteChat.introNoName')}
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>{t('sidebar.deleteChat.items.messages')}</li>
-                <li>{t('sidebar.deleteChat.items.documents')}</li>
-                <li>{t('sidebar.deleteChat.items.extracted')}</li>
-              </ul>
-              <span className="block mt-2 font-medium">{t('sidebar.deleteChat.irreversible')}</span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('sidebar.deleteChat.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteChat}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('sidebar.deleteChat.confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteChat}
+        onOpenChange={(open) => !open && setPendingDeleteChat(null)}
+        title={t('sidebar.deleteChat.title')}
+        intro={pendingDeleteChat?.name
+          ? t('sidebar.deleteChat.intro', { name: `"${pendingDeleteChat.name}"` })
+          : t('sidebar.deleteChat.introNoName')}
+        items={[
+          t('sidebar.deleteChat.items.messages'),
+          t('sidebar.deleteChat.items.documents'),
+          t('sidebar.deleteChat.items.extracted'),
+        ]}
+        irreversibleNote={t('sidebar.deleteChat.irreversible')}
+        confirmLabel={t('sidebar.deleteChat.confirm')}
+        cancelLabel={t('sidebar.deleteChat.cancel')}
+        onConfirm={confirmDeleteChat}
+        isPending={deleteChat.isPending}
+      />
 
-      <AlertDialog open={!!pendingDeleteNotebook} onOpenChange={(open) => !open && setPendingDeleteNotebook(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('sidebar.deleteNotebook.title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingDeleteNotebook?.name
-                ? t('sidebar.deleteNotebook.intro', { name: `"${pendingDeleteNotebook.name}"` })
-                : t('sidebar.deleteNotebook.introNoName')}
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>{t('sidebar.deleteNotebook.items.chats')}</li>
-                <li>{t('sidebar.deleteNotebook.items.documents')}</li>
-                <li>{t('sidebar.deleteNotebook.items.notes')}</li>
-                <li>{t('sidebar.deleteNotebook.items.extracted')}</li>
-                <li>{t('sidebar.deleteNotebook.items.resources')}</li>
-                <li>{t('sidebar.deleteNotebook.items.sharing')}</li>
-              </ul>
-              <span className="block mt-2 font-medium">{t('sidebar.deleteNotebook.irreversible')}</span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('sidebar.deleteNotebook.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteNotebookSidebar}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('sidebar.deleteNotebook.confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteNotebook}
+        onOpenChange={(open) => !open && setPendingDeleteNotebook(null)}
+        title={t('sidebar.deleteNotebook.title')}
+        intro={pendingDeleteNotebook?.name
+          ? t('sidebar.deleteNotebook.intro', { name: `"${pendingDeleteNotebook.name}"` })
+          : t('sidebar.deleteNotebook.introNoName')}
+        items={[
+          t('sidebar.deleteNotebook.items.chats'),
+          t('sidebar.deleteNotebook.items.documents'),
+          t('sidebar.deleteNotebook.items.notes'),
+          t('sidebar.deleteNotebook.items.extracted'),
+          t('sidebar.deleteNotebook.items.resources'),
+          t('sidebar.deleteNotebook.items.sharing'),
+        ]}
+        irreversibleNote={t('sidebar.deleteNotebook.irreversible')}
+        confirmLabel={t('sidebar.deleteNotebook.confirm')}
+        cancelLabel={t('sidebar.deleteNotebook.cancel')}
+        onConfirm={confirmDeleteNotebookSidebar}
+        isPending={deleteNotebook.isPending}
+      />
     </div>
       {sharedDialogs}
     </>
