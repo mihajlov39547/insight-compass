@@ -1,263 +1,126 @@
 # YouTube Processing Workflow Migration — Implementation TODO
 
-## Progress Update (2026-04-15)
-
-Implemented already in current monolith path:
-1. Transcript fetch primary provider switched to SerpApi.
-2. Transcript chunks and chunk embeddings are persisted.
-3. Transcript chunk questions and question embeddings are persisted.
-4. Hybrid retrieval includes transcript chunk-question semantic search.
-5. Transcript debug diagnostics are surfaced in UI.
-6. Project/Notebook Manage documents views include linked YouTube video entries with document-like cards.
-7. Linked video cards show readiness, metrics, and pipeline timeline (with current placeholders where needed).
-
-Remaining focus of this file:
-1. Move this already-working monolith pipeline into workflow engine orchestration.
-2. Decommission legacy queue-worker path after migration stabilization.
-
-## Scope
-
-Migrate YouTube processing from the current queue + standalone worker model into the platform workflow engine used for documents, then clean up legacy paths, and reach document-parity retrieval quality (including chunk-question generation + question embeddings).
+> **Status legend:** `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skipped/obsolete
+> **Last reviewed:** 2026-04-30
 
 ---
 
-## Base Snapshot (Current)
+## Current State Snapshot (verified 2026-04-30)
 
-Current YouTube processing is functional but separate from document workflow orchestration:
+Confirmed in repo / DB:
 
-1. Link adapter marks YouTube resources and enqueues transcript jobs
-2. `youtube_transcript_jobs` + `youtube-transcript-worker` handle claim/run/complete
-3. Transcript text is fetched from SerpApi (primary)
-4. Transcript chunks and embeddings are persisted in `link_transcript_chunks`
-5. Retrieval includes transcript chunks via `search_link_transcript_chunks`
-6. Transcript chunk-question generation and question embeddings are implemented
-7. Lifecycle and observability differ from document activity-run model
+- Workflow engine is live with definitions: `document_processing_v1`, `validation.fanin.basic`, `validation.fanout.basic`, `validation.multi_entry.basic`. **No `youtube_processing_v1` yet.**
+- YouTube processing still runs through the **legacy path**: `youtube_transcript_jobs` table + `supabase/functions/youtube-transcript-worker/` (claim/run/complete loop, separate from `workflow-worker`).
+- Transcript fetcher lives in `youtube-transcript-worker/transcript-fetcher.ts` (SerpApi primary).
+- Transcript chunk + embedding persistence lives in `youtube-transcript-worker/chunk-persistence.ts`.
+- `link_transcript_chunks` and `link_transcript_chunk_questions` tables exist with embeddings + search_vector and proper RLS.
+- Hybrid retrieval already includes transcript chunk-question semantic search.
+- UI: linked YouTube videos show in project + notebook Manage documents with status, readiness, metrics. Timeline section still uses placeholder data (not workflow-native).
+- `youtube_transcript_jobs` currently has 0 rows → safe migration window, no in-flight legacy work to drain.
 
-This TODO focuses on convergence to a unified workflow architecture.
+### Already done (carried over)
+- [x] SerpApi as primary transcript provider
+- [x] Persist transcript chunks + chunk embeddings (`link_transcript_chunks`)
+- [x] Persist transcript chunk-questions + question embeddings (`link_transcript_chunk_questions`)
+- [x] Hybrid retrieval includes transcript chunk-questions
+- [x] Transcript debug diagnostics surfaced in UI
+- [x] Linked-video cards in project + notebook Manage documents
 
----
-
-## Target End State
-
-1. YouTube processing is fully orchestrated by workflow definitions/activity runs
-2. No separate transcript job queue is needed for primary path
-3. YouTube pipeline has stage parity with document pipeline where applicable
-4. Transcript chunks, chunk-questions, and question embeddings are available for retrieval
-5. Chat grounding behavior is consistent between document and YouTube transcript sources
-6. Legacy queue worker path is removed or retained only as explicit fallback with clear boundary
-7. Manage documents UX keeps parity for videos and documents (same discoverability and similar status detail depth)
+### Net remaining goal
+Move the working monolith pipeline into the workflow engine (`workflow-worker` handlers + a `youtube_processing_v1` definition), then decommission the legacy queue worker.
 
 ---
 
-## Migration Reminder — Preserve Current UI Contracts
+## Phase 1 — Workflow Foundation for YouTube  ⬅ **START HERE**
 
-When migrating to workflow engine, do not regress current source-management UX:
+Goal: register a `youtube_processing_v1` workflow definition and wire trigger entry.
 
-1. Keep linked YouTube videos visible in:
-   - project Manage documents
-   - notebook Manage documents
-2. Keep document-like cards for videos:
-   - status badge
-   - readiness section
-   - metrics section
-   - activity timeline section
-3. Replace timeline placeholders with workflow-native activity data once available.
-4. Maintain existing retry/delete affordances for linked videos in these views.
-5. Preserve card-level summary/title/channel visibility for linked videos.
-6. Ensure filtering/sorting/search includes videos and documents consistently.
+- [ ] **1.1** Create `youtube_processing_v1` workflow definition (migration) with activities:
+  - `classify_resource`
+  - `fetch_transcript`
+  - `persist_transcript_chunks`
+  - `generate_transcript_chunk_embeddings`
+  - `generate_transcript_chunk_questions`
+  - `generate_transcript_question_embeddings`
+  - `finalize_resource_status`
+- [ ] **1.2** Add `handler_key` mapping for each activity in `workflow-worker/handler-registry.ts` (handlers can be stubs that delegate to existing `youtube-transcript-worker` modules in Phase 2).
+- [ ] **1.3** Add a feature flag column / setting (e.g. `metadata.use_workflow_engine` on `resource_links`, or env flag `YOUTUBE_USE_WORKFLOW=1`) so we can route per-resource between legacy and workflow paths during rollout.
+- [ ] **1.4** Update link adapter / `create_link_resource_stub` consumer to call `workflow-start` with `youtube_processing_v1` when flag is on (idempotency key: `resource_link_id + transcript_version`).
+- [ ] **1.5** Verify activity runs appear in existing workflow diagnostics SQL (`sql/debug/2_activity_states_latest_workflow.sql`).
 
----
-
-## Phase 1 — Workflow Foundation for YouTube
-
-### Goal
-Introduce a dedicated workflow definition for YouTube processing with activity-run lifecycle.
-
-### Steps
-1. Create workflow definition key (example: `youtube_processing_v1`)
-2. Define workflow graph with activities:
-   - classify_resource
-   - fetch_transcript
-   - persist_transcript_chunks
-   - generate_transcript_chunk_embeddings
-   - finalize_resource_status
-3. Add trigger path from link adapter/enqueue entry points to `workflow-start`
-4. Ensure idempotency per resource/version (resource_id + normalized_url + transcript_version key)
-5. Add workflow event logging for each activity transition
-
-### Acceptance criteria
-- New YouTube resources start via workflow engine
-- Activity runs visible in existing workflow diagnostics
-- Retries handled through workflow semantics instead of custom queue semantics
+**Acceptance:** A YouTube link added with the flag on creates a `workflow_runs` row + `activity_runs` rows visible in diagnostics. Legacy path remains default for safety.
 
 ---
 
-## Phase 2 — Activity Implementation and Data Contracts
+## Phase 2 — Activity Implementation (port logic into handlers)
 
-### Goal
-Implement concrete YouTube activities with strict contracts and error taxonomy.
+- [ ] **2.1** `classify_resource` — validate provider, canonicalize video id (reuse helpers from `transcript-fetcher.ts`).
+- [ ] **2.2** `fetch_transcript` — port SerpApi fetch + structured failure taxonomy (`no_track`, `blocked`, `transient_network`, `parse_error`).
+- [ ] **2.3** `persist_transcript_chunks` — port from `chunk-persistence.ts`.
+- [ ] **2.4** `generate_transcript_chunk_embeddings` — reuse shared embeddings helper.
+- [ ] **2.5** `generate_transcript_chunk_questions` — extract from existing inline code.
+- [ ] **2.6** `generate_transcript_question_embeddings`.
+- [ ] **2.7** `finalize_resource_status` — set `transcript_status`, `processing_status`, summary metadata.
+- [ ] **2.8** Each activity: structured error returns (`HandlerFailure` with classification + category) so retries follow workflow semantics.
 
-### Steps
-1. `classify_resource` activity:
-   - validate provider/resource_type
-   - extract/canonicalize video id
-2. `fetch_transcript` activity:
-   - retrieve available transcript track
-   - normalize transcript text and language metadata
-   - emit structured failure reasons (no_track, blocked, transient_network, parse_error)
-3. `persist_transcript_chunks` activity:
-   - chunk transcript
-   - write `link_transcript_chunks`
-4. `generate_transcript_chunk_embeddings` activity:
-   - generate/store embedding vectors for transcript chunks
-5. `finalize_resource_status` activity:
-   - set `transcript_status`, `processing_status`, metadata summary
-
-### Acceptance criteria
-- Each activity can fail independently with actionable errors
-- Partial failures can resume from the failed stage (no full restart required)
+**Acceptance:** End-to-end workflow run for a real YouTube URL produces same DB rows as legacy path (chunks, questions, embeddings) and finalizes resource status.
 
 ---
 
-## Phase 3 — Chunk Question Generation Parity
+## Phase 3 — Retrieval Parity Verification
 
-### Goal
-Add question-generation parity for YouTube transcript chunks similar to document chunk questions.
+Most of this is already implemented; this phase is regression check only.
 
-### Steps
-1. Add transcript-question table (or unify with `document_chunk_questions` via generalized schema)
-2. Add activity: `generate_transcript_chunk_questions`
-   - produce 1-N targeted questions per chunk
-3. Add activity: `generate_transcript_question_embeddings`
-4. Add metrics fields:
-   - question_count
-   - embedded_question_count
-   - coverage_percent
-5. Add query helpers for transcript question stats
-
-### Acceptance criteria
-- Transcript chunks have generated questions and embeddings
-- Failure in question generation does not destroy transcript chunk availability
+- [x] Transcript chunk-question semantic search wired in hybrid retrieval
+- [ ] **3.1** Add a regression query (sql/debug) confirming workflow-produced chunks are indexed identically (same `embedding_version`, same `search_vector` population).
+- [ ] **3.2** Confirm source attribution UI labels workflow-produced transcript chunks correctly in chat answers.
 
 ---
 
-## Phase 4 — Retrieval Integration Parity
+## Phase 4 — UX + Observability
 
-### Goal
-Ensure chat retrieval uses YouTube transcript chunks/questions with parity to document retrieval behavior.
-
-### Steps
-1. Extend hybrid retrieval to include transcript chunk-question semantic search
-2. Add transcript keyword fallback where semantic misses occur
-3. Add source balancing to avoid transcript over-dominance
-4. Add provenance fields in retrieval result payload:
-   - source_kind (`document_chunk`, `transcript_chunk`, `transcript_question`)
-   - provider
-   - confidence components
-5. Tune ranking weights for transcript chunk vs transcript question vs document sources
-
-### Acceptance criteria
-- Project/notebook chat can ground answers from transcript chunks and transcript questions
-- Retrieval relevance behavior is comparable to document-only flows
+- [ ] **4.1** Replace placeholder timeline in linked-video cards with workflow-native activity_runs timeline (project Manage documents).
+- [ ] **4.2** Same for notebook Manage documents.
+- [ ] **4.3** Per-stage error display + retry affordance (trigger workflow retry, not legacy `enqueue_youtube_transcript_job`).
+- [ ] **4.4** Resource-level diagnostic fields exposed: `last_activity_key`, `last_activity_status`, `last_failure_reason`.
 
 ---
 
-## Phase 5 — Legacy Queue Path Cleanup
+## Phase 5 — Cutover
 
-### Goal
-Decommission or strictly demote the standalone queue-worker path after workflow migration stabilizes.
-
-### Steps
-1. Mark `youtube_transcript_jobs` path as legacy
-2. Add compatibility bridge during migration window:
-   - in-flight jobs can complete without data loss
-3. Switch UI retry to workflow-based retry trigger
-4. Remove schedule dependency for legacy worker in primary path
-5. Decommission legacy RPCs/functions when safe:
-   - `enqueue_youtube_transcript_job`
-   - `claim_next_youtube_transcript_job`
-   - `complete_youtube_transcript_job`
-   - `youtube-transcript-worker` (or keep as fallback feature-flagged)
-
-### Acceptance criteria
-- Primary production path is workflow-based end-to-end
-- Legacy artifacts removed or feature-flagged with explicit operational runbook
+- [ ] **5.1** Flip feature flag default to **workflow path** for new resources.
+- [ ] **5.2** Backfill / re-run path for existing YouTube resources missing chunks or questions.
+- [ ] **5.3** Update `useRetryYouTubeTranscriptIngestion` to call workflow retry RPC instead of `enqueue_youtube_transcript_job`.
+- [ ] **5.4** Monitor for 1 week.
 
 ---
 
-## Phase 6 — UX + Observability Updates
+## Phase 6 — Legacy Decommission
 
-### Goal
-Expose workflow-native processing insight for YouTube resources in product UI and operations.
-
-### Steps
-1. Drawer timeline section for YouTube activity stages
-2. Per-stage error display and retry affordance
-3. Resource-level diagnostics fields:
-   - last_activity_key
-   - last_activity_status
-   - last_failure_reason
-4. Add monitoring/dashboard widgets:
-   - workflow queue depth
-   - failure rate by activity key
-   - median processing duration
-5. Add alerting thresholds and SLOs for YouTube processing
-6. Wire workflow activity runs into linked-video cards in Manage documents views
-7. Remove timeline placeholders only after workflow data is available in UI payloads
-8. Verify parity behavior in both project and notebook scopes
-
-### Acceptance criteria
-- User can understand where a YouTube resource is stuck
-- Ops can diagnose and recover without direct DB for common failures
-- Manage documents keeps linked video visibility and card parity after migration
-- Linked video timelines are workflow-backed (no placeholder-only state for migrated path)
+- [ ] **6.1** Mark `youtube_transcript_jobs` + RPCs (`enqueue_youtube_transcript_job`, `claim_next_youtube_transcript_job`, `complete_youtube_transcript_job`) as deprecated in code comments.
+- [ ] **6.2** Remove cron schedule for `youtube-transcript-worker`.
+- [ ] **6.3** Delete `supabase/functions/youtube-transcript-worker/` (keep modules reused by handlers under `_shared/`).
+- [ ] **6.4** Drop `youtube_transcript_jobs` table (migration) once 30-day retention window passes with zero traffic.
 
 ---
 
-## Phase 7 — Migration Validation and Rollout
+## Milestone Checklist (high-level)
 
-### Goal
-Safely migrate existing YouTube resources and roll out with minimal disruption.
-
-### Steps
-1. Backfill plan for already-ingested YouTube resources:
-   - detect missing chunks
-   - detect missing transcript questions/embeddings
-2. Run staged rollout with feature flag:
-   - internal
-   - small tenant subset
-   - full rollout
-3. Add migration verification checks:
-   - status parity checks
-   - retrieval parity checks
-4. Add rollback strategy to legacy pipeline if critical regressions occur
-5. Finalize docs/runbook and handoff
-
-### Acceptance criteria
-- No data loss across migration
-- Retrieval quality does not regress for existing resources
-- Rollout and rollback paths are documented and tested
+- [ ] Phase 1 — workflow definition + flagged trigger
+- [ ] Phase 2 — handlers implemented end-to-end
+- [ ] Phase 3 — retrieval parity confirmed
+- [ ] Phase 4 — workflow-native UI + retry
+- [ ] Phase 5 — cutover complete
+- [ ] Phase 6 — legacy removed
 
 ---
 
-## Milestone Checklist
+## Suggested First Step
 
-- [ ] Workflow definition for YouTube created and active
-- [ ] YouTube processing triggered via workflow-start
-- [x] Transcript chunk question generation implemented
-- [x] Question embeddings implemented for transcript questions
-- [x] Hybrid retrieval includes transcript questions with tuned ranking
-- [ ] UI shows workflow-native stage visibility for YouTube resources
-- [ ] Project Manage documents includes workflow-backed linked-video cards
-- [ ] Notebook Manage documents includes workflow-backed linked-video cards
-- [ ] Legacy queue-worker path removed or fallback-only
-- [ ] Migration/backfill completed and verified
+**Start with Phase 1.1 + 1.2** — a single migration that registers the `youtube_processing_v1` workflow definition with all 7 activities (handlers as stubs returning `ok: true` with empty payload), plus stub handler entries in `workflow-worker/handler-registry.ts`. This is low-risk (no behavior change — legacy path still runs by default) and gives us:
 
----
+1. A real workflow definition we can trigger manually via `workflow-start` for smoke testing.
+2. Visibility in existing diagnostics SQL.
+3. A scaffold for Phase 2 to fill in stage-by-stage without blocking on UI/cutover decisions.
 
-## Notes
-
-1. Keep schema decisions aligned with long-term multi-adapter design:
-   - Prefer generalized "resource chunk/question" primitives over YouTube-specific one-offs where practical.
-2. Preserve strict permission model parity with existing document/notebook/project access controls.
-3. Any AI-based question generation should remain optional/fallback with deterministic baseline behavior when unavailable.
+**Shall I proceed with the Phase 1.1 + 1.2 migration + stub handlers?**
