@@ -316,9 +316,6 @@ export function AppSidebar() {
     });
   };
 
-  const handleArchiveNotebookSidebar = (id: string) => {
-    archiveNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success(t('sidebar.toasts.notebookArchived')); } });
-  };
 
   const handleDeleteNotebookSidebar = (id: string, name: string) => {
     setPendingDeleteNotebook({ id, name });
