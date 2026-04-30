@@ -31,22 +31,15 @@ Move the working monolith pipeline into the workflow engine (`workflow-worker` h
 
 ---
 
-## Phase 1 — Workflow Foundation for YouTube  ⬅ **START HERE**
+## Phase 1 — Workflow Foundation for YouTube  ⬅ **IN PROGRESS**
 
 Goal: register a `youtube_processing_v1` workflow definition and wire trigger entry.
 
-- [ ] **1.1** Create `youtube_processing_v1` workflow definition (migration) with activities:
-  - `classify_resource`
-  - `fetch_transcript`
-  - `persist_transcript_chunks`
-  - `generate_transcript_chunk_embeddings`
-  - `generate_transcript_chunk_questions`
-  - `generate_transcript_question_embeddings`
-  - `finalize_resource_status`
-- [ ] **1.2** Add `handler_key` mapping for each activity in `workflow-worker/handler-registry.ts` (handlers can be stubs that delegate to existing `youtube-transcript-worker` modules in Phase 2).
-- [ ] **1.3** Add a feature flag column / setting (e.g. `metadata.use_workflow_engine` on `resource_links`, or env flag `YOUTUBE_USE_WORKFLOW=1`) so we can route per-resource between legacy and workflow paths during rollout.
+- [x] **1.1** Create `youtube_processing_v1` workflow definition (migration `20260430135137_*`) with 7 activities, linear edge graph, entry=`classify_resource`, terminal=`finalize_resource_status`, optional=question stages.
+- [x] **1.2** Stub handlers + registry entries (`workflow-worker/handlers/youtube.ts` + `registry.ts`). All 7 handler keys return `ok:true` with inert payload.
+- [ ] **1.3** Add a feature flag (e.g. `metadata.use_workflow_engine` on `resource_links`, or env `YOUTUBE_USE_WORKFLOW=1`) to route per-resource between legacy and workflow paths during rollout.
 - [ ] **1.4** Update link adapter / `create_link_resource_stub` consumer to call `workflow-start` with `youtube_processing_v1` when flag is on (idempotency key: `resource_link_id + transcript_version`).
-- [ ] **1.5** Verify activity runs appear in existing workflow diagnostics SQL (`sql/debug/2_activity_states_latest_workflow.sql`).
+- [ ] **1.5** Verify activity runs appear in existing workflow diagnostics SQL (`sql/debug/2_activity_states_latest_workflow.sql`) — manual smoke test via `workflow-start` once 1.4 lands or via direct curl.
 
 **Acceptance:** A YouTube link added with the flag on creates a `workflow_runs` row + `activity_runs` rows visible in diagnostics. Legacy path remains default for safety.
 
