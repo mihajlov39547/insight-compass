@@ -942,6 +942,39 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_tokens: {
+        Row: {
+          attempts: number
+          code_hash: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          updated_at: string
+          used_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       pending_registrations: {
         Row: {
           attempts: number
@@ -2028,6 +2061,7 @@ export type Database = {
           video_id: string
         }[]
       }
+      cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
       cleanup_expired_pending_registrations: { Args: never; Returns: undefined }
       complete_youtube_transcript_job: {
         Args: {
