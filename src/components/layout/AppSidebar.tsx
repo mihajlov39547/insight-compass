@@ -19,7 +19,7 @@ import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
 import { cn } from '@/lib/utils';
 import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
-import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat } from '@/hooks/useChats';
+import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat, ChatLimitReachedError } from '@/hooks/useChats';
 import { useNotebooks, useCreateNotebook, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -220,7 +220,15 @@ export function AppSidebar() {
       onSuccess: (chat) => {
         setSelectedProjectId(projectId);
         setSelectedChatId(chat.id);
-      }
+      },
+      onError: (err) => {
+        if (err instanceof ChatLimitReachedError) {
+          toast.error(t('planLimits.chatsPerProjectReached', { count: err.limit }));
+          setShowPricing(true);
+        } else {
+          toast.error((err as Error).message || t('sidebar.toasts.chatCreateFailed', 'Failed to create chat.'));
+        }
+      },
     });
   };
 

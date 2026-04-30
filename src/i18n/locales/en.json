@@ -1112,10 +1112,11 @@
         "description": "Perfect for getting started",
         "features": {
           "0": "Up to 3 projects and up to 3 notebooks",
-          "1": "5 document uploads per project or per notebook",
-          "2": "Basic retrieval",
-          "3": "Basic support",
-          "4": "Request features and improvements"
+          "1": "1 chat per project",
+          "2": "5 document uploads per project or per notebook",
+          "3": "Basic retrieval",
+          "4": "Basic support",
+          "5": "Request features and improvements"
         }
       },
       "basic": {
@@ -1124,10 +1125,11 @@
         "features": {
           "0": "Everything in Free",
           "1": "Up to 10 projects and up to 10 notebooks",
-          "2": "10 document uploads per project or per notebook",
-          "3": "Faster retrieval",
-          "4": "Project sharing (up to 3 members)",
-          "5": "Email support"
+          "2": "Up to 5 chats per project",
+          "3": "10 document uploads per project or per notebook",
+          "4": "Faster retrieval",
+          "5": "Project sharing (up to 3 members)",
+          "6": "Email support"
         }
       },
       "premium": {
@@ -1576,6 +1578,7 @@
   "planLimits": {
     "projectsReached": "Plan limit reached for projects. Upgrade to create more.",
     "notebooksReached": "Plan limit reached for notebooks. Upgrade to create more.",
+    "chatsPerProjectReached": "Plan limit reached: up to {{count}} chat(s) per project. Upgrade to create more.",
     "documentsReached": "Plan limit reached for documents per project or notebook. Upgrade to upload more.",
     "sharingDisabled": "Sharing is not available on your current plan. Upgrade to invite collaborators.",
     "shareMembersReached": "Plan limit reached: up to {{count}} members per item. Upgrade to invite more.",

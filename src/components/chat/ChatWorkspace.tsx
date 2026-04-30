@@ -27,14 +27,16 @@ import type { SourceItem } from './SourceAttribution';
 import { useTranslation } from 'react-i18next';
 import { normalizeLanguageCode } from '@/lib/languages';
 import { useGenerationCompleteSound } from '@/hooks/useGenerationCompleteSound';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
-  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare, setShowPricing } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
   const createChat = useCreateChat();
   const { mutate: deleteMessagePair } = useDeleteMessagePair();
+  const { limits: planLimits } = usePlanLimits();
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -63,6 +65,19 @@ export function ChatWorkspace() {
   const [addingYouTubeUrl, setAddingYouTubeUrl] = useState<string | null>(null);
   const createLinkResource = useCreateLinkResource();
   const { data: resources = [] } = useResources();
+
+  const handleCreateNewChat = () => {
+    if (!selectedProjectId || !selectedProject) return;
+    if (planLimits.maxChatsPerProject !== null && chats.length >= planLimits.maxChatsPerProject) {
+      toast.error(t('planLimits.chatsPerProjectReached', { count: planLimits.maxChatsPerProject }));
+      setShowPricing(true);
+      return;
+    }
+    createChat.mutate(
+      { projectId: selectedProjectId, name: t('sidebar.newChatName'), language: normalizeLanguageCode(selectedProject.language) },
+      { onSuccess: (chat) => setSelectedChatId(chat.id) }
+    );
+  };
 
   const addedYouTubeUrls = useMemo(() => {
     const set = new Set<string>();
@@ -163,12 +178,7 @@ export function ChatWorkspace() {
               {permissions.canCreateChats && (
                 <Button
                   className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-                  onClick={() => {
-                    createChat.mutate(
-                      { projectId: selectedProjectId!, name: t('sidebar.newChatName'), language: normalizeLanguageCode(selectedProject!.language) },
-                      { onSuccess: (chat) => setSelectedChatId(chat.id) }
-                    );
-                  }}
+                  onClick={handleCreateNewChat}
                   disabled={createChat.isPending}
                 >
                   <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
@@ -193,12 +203,7 @@ export function ChatWorkspace() {
           {permissions.canCreateChats ? (
             <Button
               className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-              onClick={() => {
-                createChat.mutate(
-                  { projectId: selectedProjectId!, name: t('sidebar.newChatName'), language: normalizeLanguageCode(selectedProject!.language) },
-                  { onSuccess: (chat) => setSelectedChatId(chat.id) }
-                );
-              }}
+              onClick={handleCreateNewChat}
               disabled={createChat.isPending}
             >
               <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}

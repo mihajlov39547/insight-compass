@@ -1124,10 +1124,11 @@
         "description": "Savršeno za početak",
         "features": {
           "0": "Do 3 projekta i do 3 beleznice",
-          "1": "5 otpremljenih dokumenata po projektu ili beleznici",
-          "2": "Osnovno pretraživanje",
-          "3": "Osnovna podrška",
-          "4": "Mogućnost predloga novih funkcija"
+          "1": "1 ćaskanje po projektu",
+          "2": "5 otpremljenih dokumenata po projektu ili beleznici",
+          "3": "Osnovno pretraživanje",
+          "4": "Osnovna podrška",
+          "5": "Mogućnost predloga novih funkcija"
         }
       },
       "basic": {
@@ -1136,10 +1137,11 @@
         "features": {
           "0": "Sve iz Besplatnog plana",
           "1": "Do 10 projekata i do 10 beleznica",
-          "2": "10 otpremljenih dokumenata po projektu ili beleznici",
-          "3": "Brže pretraživanje",
-          "4": "Deljenje projekta (do 3 člana)",
-          "5": "Podrška putem e-pošte"
+          "2": "Do 5 ćaskanja po projektu",
+          "3": "10 otpremljenih dokumenata po projektu ili beleznici",
+          "4": "Brže pretraživanje",
+          "5": "Deljenje projekta (do 3 člana)",
+          "6": "Podrška putem e-pošte"
         }
       },
       "premium": {
@@ -1592,6 +1594,7 @@
   "planLimits": {
     "projectsReached": "Dostignut limit plana za projekte. Nadogradite za više.",
     "notebooksReached": "Dostignut limit plana za beleznice. Nadogradite za više.",
+    "chatsPerProjectReached": "Dostignut limit plana: do {{count}} ćaskanja po projektu. Nadogradite za više.",
     "documentsReached": "Dostignut limit plana za dokumente po projektu ili beleznici. Nadogradite za više.",
     "sharingDisabled": "Deljenje nije dostupno na vašem trenutnom planu. Nadogradite da pozovete saradnike.",
     "shareMembersReached": "Dostignut limit plana: do {{count}} članova po stavci. Nadogradite za više.",
