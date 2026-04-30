@@ -214,17 +214,6 @@ export function ProjectsLanding() {
     setActiveView('project-documents');
   };
 
-  const handleArchiveProject = (projectId: string) => {
-    archiveProject.mutate(projectId, {
-      onSuccess: () => {
-        if (selectedProjectId === projectId) {
-          setSelectedProjectId(null);
-          setSelectedChatId(null);
-        }
-        toast.success(t('projectsLanding.delete.archived'));
-      },
-    });
-  };
 
   const handleDeleteProject = (projectId: string) => {
     setPendingDeleteId(projectId);
