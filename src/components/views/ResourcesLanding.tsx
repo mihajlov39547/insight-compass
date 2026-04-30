@@ -373,7 +373,7 @@ export function ResourcesLanding() {
     setLinkUrl('');
     setLinkTitle('');
     setLinkProvider('unknown');
-    setLinkContainerType('personal');
+    setLinkContainerType('project');
     setLinkContainerId(null);
   };
 
@@ -383,8 +383,7 @@ export function ResourcesLanding() {
       return;
     }
 
-    const requiresContainerId = linkContainerType !== 'personal';
-    if (requiresContainerId && !linkContainerId) {
+    if (!linkContainerId) {
       toast({ title: 'Add source failed', description: 'Choose a target workspace.', variant: 'destructive' });
       return;
     }
