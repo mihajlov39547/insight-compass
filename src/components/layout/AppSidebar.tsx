@@ -1137,7 +1137,6 @@ function SidebarNotebookItem({
   onOpenNotebook,
   onManageNotebook,
   onManageDocuments,
-  onArchiveNotebook,
   onDeleteNotebook,
 }: {
   notebook: DbNotebook;
@@ -1145,7 +1144,6 @@ function SidebarNotebookItem({
   onOpenNotebook: () => void;
   onManageNotebook: () => void;
   onManageDocuments: () => void;
-  onArchiveNotebook: () => void;
   onDeleteNotebook: () => void;
 }) {
   const { data: myRole } = useItemRole(notebook.id, 'notebook');
@@ -1182,7 +1180,6 @@ function SidebarNotebookItem({
           permissions={permissions}
           onManageNotebook={onManageNotebook}
           onManageDocuments={onManageDocuments}
-          onArchiveNotebook={onArchiveNotebook}
           onDeleteNotebook={onDeleteNotebook}
         />
       </DropdownMenu>
