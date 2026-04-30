@@ -415,6 +415,12 @@ function DocumentRow({
                   </Badge>
                 )}
                 <AIReadyBadge isReady={isAIReady} />
+                {chatLabel && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1 border-accent/40 text-accent">
+                    <MessageSquare className="h-2.5 w-2.5" />
+                    {chatLabel}
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {doc.file_type.toUpperCase()} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
