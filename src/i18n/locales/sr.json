@@ -868,6 +868,27 @@
       "verifyFailed": "Verifikacija nije uspela. Pokušajte ponovo.",
       "resentToast": "Novi kod je poslat.",
       "successToast": "Nalog je kreiran! Prijavite se."
+    },
+    "reset": {
+      "title": "Resetujte lozinku",
+      "requestDescription": "Unesite email vašeg naloga i poslaćemo vam 5-cifreni kod.",
+      "verifyDescription": "Poslali smo 5-cifreni kod na {{email}}. Unesite ga zajedno sa novom lozinkom.",
+      "doneDescription": "Vaša lozinka je ažurirana.",
+      "doneBody": "Sada se možete prijaviti sa novom lozinkom.",
+      "sendCode": "Pošalji kod",
+      "submit": "Resetuj lozinku",
+      "useDifferentEmail": "Koristi drugi email",
+      "codeSentToast": "Ako nalog za tu email adresu postoji, kod stiže ubrzo.",
+      "codeRequired": "Molimo unesite 5-cifreni kod.",
+      "wrongCode": "Pogrešan kod. Preostalo pokušaja: {{count}}.",
+      "expired": "Kod je istekao. Zatražite novi.",
+      "tooManyAttempts": "Previše pogrešnih pokušaja. Zatražite novi kod.",
+      "noPending": "Nema resetovanja na čekanju. Zatražite novi kod.",
+      "sendFailed": "Nismo uspeli da pošaljemo kod. Pokušajte ponovo.",
+      "verifyFailed": "Nismo uspeli da resetujemo lozinku. Pokušajte ponovo.",
+      "successToast": "Lozinka je uspešno resetovana.",
+      "goSignIn": "Idi na prijavu",
+      "backHome": "Nazad na početnu"
     }
   },
   "onboarding": {
