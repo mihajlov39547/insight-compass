@@ -105,7 +105,6 @@ export function NotebooksLanding() {
   const { limits: planLimits } = usePlanLimits();
   const { data: notebooks = [], isLoading } = useNotebooks();
   const deleteNotebook = useDeleteNotebook();
-  const archiveNotebook = useArchiveNotebook();
   const updateNotebook = useUpdateNotebook();
   const createNotebook = useCreateNotebook();
 
