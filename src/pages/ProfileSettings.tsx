@@ -476,9 +476,19 @@ export default function ProfileSettings() {
                   <Shield className="h-4 w-4" /> {t('profileSettings.password.googleManaged')}
                 </p>
               ) : (
-                <Button variant="outline" size="sm">{t('profileSettings.password.change')}</Button>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">{t('profileSettings.password.localManaged')}</p>
+                  <Button variant="outline" size="sm" onClick={() => setChangePasswordOpen(true)}>
+                    {t('profileSettings.password.change')}
+                  </Button>
+                </div>
               )}
             </section>
+            <ChangePasswordDialog
+              open={changePasswordOpen}
+              onOpenChange={setChangePasswordOpen}
+              email={displayEmail}
+            />
 
             <Separator />
 
