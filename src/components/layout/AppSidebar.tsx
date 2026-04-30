@@ -103,6 +103,7 @@ export function AppSidebar() {
   const updateNotebook = useUpdateNotebook();
   const [pendingDeleteChat, setPendingDeleteChat] = useState<{ id: string; projectId: string; name: string } | null>(null);
   const [pendingDeleteNotebook, setPendingDeleteNotebook] = useState<{ id: string; name: string } | null>(null);
+  const [pendingDeleteProject, setPendingDeleteProject] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (selectedProjectId) {
@@ -222,11 +223,22 @@ export function AppSidebar() {
   };
 
   const handleDeleteProject = (projectId: string) => {
-    deleteProject.mutate(projectId, {
+    const project = projects.find((p) => p.id === projectId);
+    setPendingDeleteProject({ id: projectId, name: project?.name ?? '' });
+  };
+
+  const confirmDeleteProject = () => {
+    if (!pendingDeleteProject) return;
+    const { id } = pendingDeleteProject;
+    deleteProject.mutate(id, {
       onSuccess: () => {
-        if (selectedProjectId === projectId) { setSelectedProjectId(null); setSelectedChatId(null); }
+        if (selectedProjectId === id) { setSelectedProjectId(null); setSelectedChatId(null); }
         toast.success(t('sidebar.toasts.projectDeleted'));
-      }
+        setPendingDeleteProject(null);
+      },
+      onError: (err) => {
+        toast.error((err as Error).message || t('sidebar.toasts.projectDeleteFailed', 'Failed to delete project.'));
+      },
     });
   };
 
@@ -971,6 +983,27 @@ export function AppSidebar() {
         cancelLabel={t('sidebar.deleteChat.cancel')}
         onConfirm={confirmDeleteChat}
         isPending={deleteChat.isPending}
+      />
+
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteProject}
+        onOpenChange={(open) => !open && setPendingDeleteProject(null)}
+        title={t('sidebar.deleteProject.title', 'Delete project?')}
+        intro={pendingDeleteProject?.name
+          ? t('sidebar.deleteProject.intro', { name: `"${pendingDeleteProject.name}"`, defaultValue: 'You are about to permanently delete {{name}} and everything inside it.' })
+          : t('sidebar.deleteProject.introNoName', 'You are about to permanently delete this project and everything inside it.')}
+        items={[
+          t('sidebar.deleteProject.items.chats', 'All chats and their messages'),
+          t('sidebar.deleteProject.items.documents', 'All documents (project and chat attachments)'),
+          t('sidebar.deleteProject.items.resources', 'All linked resources (web pages, videos, transcripts)'),
+          t('sidebar.deleteProject.items.extracted', 'Extracted text, embeddings, summaries and search indexes'),
+          t('sidebar.deleteProject.items.sharing', 'Sharing and collaborator access'),
+        ]}
+        irreversibleNote={t('sidebar.deleteProject.irreversible', 'This action cannot be undone. Files are permanently removed from storage.')}
+        confirmLabel={t('sidebar.deleteProject.confirm', 'Delete project')}
+        cancelLabel={t('sidebar.deleteProject.cancel', 'Cancel')}
+        onConfirm={confirmDeleteProject}
+        isPending={deleteProject.isPending}
       />
 
       <DeleteWithConfirmDialog
