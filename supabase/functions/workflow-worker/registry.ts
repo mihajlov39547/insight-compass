@@ -46,6 +46,15 @@ import {
   documentSummarize,
   documentFinalize,
 } from "./handlers/document.ts";
+import {
+  youtubeClassifyResource,
+  youtubeFetchTranscript,
+  youtubePersistTranscriptChunks,
+  youtubeGenerateTranscriptChunkEmbeddings,
+  youtubeGenerateTranscriptChunkQuestions,
+  youtubeGenerateTranscriptQuestionEmbeddings,
+  youtubeFinalizeResourceStatus,
+} from "./handlers/youtube.ts";
 
 /**
  * Global handler registry, keyed by handler_key.
@@ -428,6 +437,57 @@ export function initializeBuiltInHandlers(): void {
     timeout_seconds: 15,
     description: "Legacy alias of document.finalize_document",
     handler: documentFinalize,
+  });
+
+  // ===== YouTube processing (Phase 1 stubs — see TODO_YOUTUBE_WORKFLOW_MIGRATION.md) =====
+  registerHandler({
+    key: "youtube.classify_resource",
+    category: "youtube",
+    timeout_seconds: 10,
+    description: "STUB: validate provider and canonicalize video id",
+    handler: youtubeClassifyResource,
+  });
+  registerHandler({
+    key: "youtube.fetch_transcript",
+    category: "youtube",
+    timeout_seconds: 60,
+    description: "STUB: fetch transcript via SerpApi (Phase 2)",
+    handler: youtubeFetchTranscript,
+  });
+  registerHandler({
+    key: "youtube.persist_transcript_chunks",
+    category: "youtube",
+    timeout_seconds: 45,
+    description: "STUB: chunk transcript and write link_transcript_chunks",
+    handler: youtubePersistTranscriptChunks,
+  });
+  registerHandler({
+    key: "youtube.generate_transcript_chunk_embeddings",
+    category: "youtube",
+    timeout_seconds: 90,
+    description: "STUB: embed transcript chunks",
+    handler: youtubeGenerateTranscriptChunkEmbeddings,
+  });
+  registerHandler({
+    key: "youtube.generate_transcript_chunk_questions",
+    category: "youtube",
+    timeout_seconds: 90,
+    description: "STUB: generate questions for transcript chunks",
+    handler: youtubeGenerateTranscriptChunkQuestions,
+  });
+  registerHandler({
+    key: "youtube.generate_transcript_question_embeddings",
+    category: "youtube",
+    timeout_seconds: 90,
+    description: "STUB: embed transcript chunk questions",
+    handler: youtubeGenerateTranscriptQuestionEmbeddings,
+  });
+  registerHandler({
+    key: "youtube.finalize_resource_status",
+    category: "youtube",
+    timeout_seconds: 15,
+    description: "STUB: finalize transcript_status / processing_status",
+    handler: youtubeFinalizeResourceStatus,
   });
 
   builtInsInitialized = true;
