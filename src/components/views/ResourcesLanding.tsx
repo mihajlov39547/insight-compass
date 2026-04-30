@@ -1108,7 +1108,7 @@ function AddSourceDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal">{t('resources.addSourceDialog.locations.personal')}</SelectItem>
+                
                 <SelectItem value="project">{t('resources.addSourceDialog.locations.project')}</SelectItem>
                 <SelectItem value="notebook">{t('resources.addSourceDialog.locations.notebook')}</SelectItem>
               </SelectContent>
