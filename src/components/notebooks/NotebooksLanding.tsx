@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
-import { useNotebooks, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, useCreateNotebook, DbNotebook } from '@/hooks/useNotebooks';
+import { useNotebooks, useDeleteNotebook, useUpdateNotebook, useCreateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useAuth } from '@/contexts/useAuth';
 import { useApp } from '@/contexts/useApp';
