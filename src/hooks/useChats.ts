@@ -48,10 +48,25 @@ const WELCOME_MESSAGE = `Welcome! I can help you explore and work with the infor
 
 export function useCreateChat() {
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   return useMutation({
     mutationFn: async ({ projectId, name, language }: { projectId: string; name: string; language: AvailableLanguageCode }) => {
+      // Plan-limit enforcement: cap chats per project for free/basic.
+      const plan = normalizePlan(profile?.plan);
+      const planLimits = getPlanLimits(plan);
+      if (planLimits.maxChatsPerProject !== null) {
+        const { count, error: countErr } = await supabase
+          .from('chats')
+          .select('id', { count: 'exact', head: true })
+          .eq('project_id', projectId)
+          .eq('is_archived', false);
+        if (countErr) throw countErr;
+        if ((count ?? 0) >= planLimits.maxChatsPerProject) {
+          throw new ChatLimitReachedError(planLimits.maxChatsPerProject);
+        }
+      }
+
       const { data, error } = await supabase
         .from('chats')
         .insert({ project_id: projectId, user_id: user!.id, name, language })
