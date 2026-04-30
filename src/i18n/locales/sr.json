@@ -1592,6 +1592,7 @@
   "planLimits": {
     "projectsReached": "Dostignut limit plana za projekte. Nadogradite za više.",
     "notebooksReached": "Dostignut limit plana za beleznice. Nadogradite za više.",
+    "chatsPerProjectReached": "Dostignut limit plana: do {{count}} ćaskanja po projektu. Nadogradite za više.",
     "documentsReached": "Dostignut limit plana za dokumente po projektu ili beleznici. Nadogradite za više.",
     "sharingDisabled": "Deljenje nije dostupno na vašem trenutnom planu. Nadogradite da pozovete saradnike.",
     "shareMembersReached": "Dostignut limit plana: do {{count}} članova po stavci. Nadogradite za više.",
