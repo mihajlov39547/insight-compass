@@ -212,7 +212,17 @@ export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthD
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="auth-pw">{t('auth.password')}</Label>
-                <button type="button" className="text-xs text-muted-foreground hover:text-primary transition-colors" onClick={() => toast.info(t('auth.resetPasswordSoon'))}>{t('auth.resetPassword')}</button>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => {
+                    const id = identifier.trim();
+                    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(id);
+                    handleOpenChange(false);
+                    const url = isEmail ? `/reset-password?email=${encodeURIComponent(id.toLowerCase())}` : '/reset-password';
+                    window.location.assign(url);
+                  }}
+                >{t('auth.resetPassword')}</button>
               </div>
               <Input id="auth-pw" type="password" placeholder={t('auth.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}

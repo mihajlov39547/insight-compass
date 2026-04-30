@@ -859,6 +859,27 @@
       "verifyFailed": "Verification failed. Please try again.",
       "resentToast": "A new code was sent.",
       "successToast": "Account created! Please sign in."
+    },
+    "reset": {
+      "title": "Reset your password",
+      "requestDescription": "Enter your account email and we'll send you a 5-digit code.",
+      "verifyDescription": "We sent a 5-digit code to {{email}}. Enter it below along with your new password.",
+      "doneDescription": "Your password has been updated.",
+      "doneBody": "You can now sign in with your new password.",
+      "sendCode": "Send code",
+      "submit": "Reset password",
+      "useDifferentEmail": "Use a different email",
+      "codeSentToast": "If an account exists for that email, a code is on the way.",
+      "codeRequired": "Please enter the 5-digit code.",
+      "wrongCode": "Incorrect code. {{count}} attempt(s) left.",
+      "expired": "Code expired. Please request a new one.",
+      "tooManyAttempts": "Too many incorrect attempts. Please request a new code.",
+      "noPending": "No pending reset. Please request a new code.",
+      "sendFailed": "We couldn't send the code. Please try again.",
+      "verifyFailed": "Couldn't reset your password. Please try again.",
+      "successToast": "Password reset successfully.",
+      "goSignIn": "Go to sign in",
+      "backHome": "Back to home"
     }
   },
   "onboarding": {
@@ -1520,7 +1541,19 @@
     "password": {
       "title": "Password",
       "googleManaged": "Authentication is managed by Google. Password login is not available.",
-      "change": "Change Password"
+      "localManaged": "Update the password used to sign in with your email address.",
+      "change": "Change password",
+      "dialogTitle": "Change password",
+      "dialogDescription": "Enter your current password, then choose a new one.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "submit": "Update password",
+      "wrongCurrent": "Current password is incorrect.",
+      "sameAsOld": "New password must be different from the current one.",
+      "weakPassword": "This password is too weak or has appeared in a data breach. Please choose a stronger one.",
+      "updateFailed": "Couldn't update your password. Please try again.",
+      "updatedToast": "Password updated successfully."
     },
     "danger": {
       "title": "Danger Zone",

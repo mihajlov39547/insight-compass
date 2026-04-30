@@ -100,7 +100,13 @@ export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInD
               <button
                 type="button"
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                onClick={() => toast.info(t('auth.resetPasswordSoon'))}
+                onClick={() => {
+                  const id = identifier.trim();
+                  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(id);
+                  onOpenChange(false);
+                  const url = isEmail ? `/reset-password?email=${encodeURIComponent(id.toLowerCase())}` : '/reset-password';
+                  window.location.assign(url);
+                }}
               >
                 {t('auth.resetPassword')}
               </button>

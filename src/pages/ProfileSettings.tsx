@@ -24,6 +24,7 @@ import {
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog';
 
 
 interface SavedProfileState {
@@ -139,6 +140,7 @@ export default function ProfileSettings() {
   const [savedProfile, setSavedProfile] = useState<SavedProfileState>(emptySavedProfile);
 
   const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const displayEmail = profile?.email || authUser?.email || '';
   const googleProvider = authUser?.app_metadata?.provider === 'google' || authUser?.app_metadata?.providers?.includes('google');
@@ -474,9 +476,19 @@ export default function ProfileSettings() {
                   <Shield className="h-4 w-4" /> {t('profileSettings.password.googleManaged')}
                 </p>
               ) : (
-                <Button variant="outline" size="sm">{t('profileSettings.password.change')}</Button>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">{t('profileSettings.password.localManaged')}</p>
+                  <Button variant="outline" size="sm" onClick={() => setChangePasswordOpen(true)}>
+                    {t('profileSettings.password.change')}
+                  </Button>
+                </div>
               )}
             </section>
+            <ChangePasswordDialog
+              open={changePasswordOpen}
+              onOpenChange={setChangePasswordOpen}
+              email={displayEmail}
+            />
 
             <Separator />
 
