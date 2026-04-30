@@ -175,10 +175,6 @@ export function NotebooksLanding() {
     });
   };
 
-  const handleArchive = (id: string) => {
-    archiveNotebook.mutate(id, { onSuccess: () => toast.success(t('notebooksLanding.delete.archived')) });
-  };
-
   const handleDelete = (id: string) => {
     setPendingDeleteId(id);
   };
