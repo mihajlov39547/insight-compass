@@ -1269,7 +1269,7 @@
     "noMatchSources": "No sources match your filters",
     "noDocuments": "No documents yet",
     "noSources": "No sources yet",
-    "emptyProject": "Project documents are available across all chats in this project. Upload documents to enable AI-powered search and analysis.",
+    "emptyProject": "Project documents include everything attached to this project and to any of its chats. Upload documents to enable AI-powered search and analysis.",
     "emptyChat": "Chat documents are attached to this specific chat. Upload documents to provide context for this conversation.",
     "emptyNotebook": "Add documents or linked videos to this notebook to enable AI-powered search and analysis across your sources.",
     "partiallyReady": "Partially ready",
