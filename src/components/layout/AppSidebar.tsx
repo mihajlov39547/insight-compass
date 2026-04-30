@@ -1090,7 +1090,7 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                 <MoreHorizontal className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <ProjectActionsMenuContent permissions={permissions} onManageProject={onRename} onManageDocuments={handleManageProjectDocs} onArchiveProject={onArchive} onDeleteProject={onDelete} />
+            <ProjectActionsMenuContent permissions={permissions} onManageProject={onRename} onManageDocuments={handleManageProjectDocs} onDeleteProject={onDelete} />
           </DropdownMenu>
         </div>
       </div>
