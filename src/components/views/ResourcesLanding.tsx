@@ -1116,21 +1116,19 @@ function AddSourceDialog({
           </div>
         </div>
 
-        {containerType !== 'personal' && (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.target', { type: containerLabel })}</p>
-            <Select value={containerId ?? undefined} onValueChange={(v) => onContainerIdChange(v || null)}>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder={t('resources.addSourceDialog.selectTarget', { type: containerLabel })} />
-              </SelectTrigger>
-              <SelectContent>
-                {targetOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.target', { type: containerLabel })}</p>
+          <Select value={containerId ?? undefined} onValueChange={(v) => onContainerIdChange(v || null)}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder={t('resources.addSourceDialog.selectTarget', { type: containerLabel })} />
+            </SelectTrigger>
+            <SelectContent>
+              {targetOptions.map((option) => (
+                <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <p className="text-[11px] text-muted-foreground">
           {t('resources.addSourceDialog.footnote')}
