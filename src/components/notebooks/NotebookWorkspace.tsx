@@ -739,7 +739,7 @@ export function NotebookWorkspace() {
                         {permissions.canDeleteDocuments && (
                           <Button
                             variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => deleteResource.mutate(toResourceActionInput(video))}
+                            onClick={() => setPendingDeleteVideo(video)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
