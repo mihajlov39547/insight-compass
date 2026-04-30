@@ -1115,8 +1115,9 @@
           "1": "1 chat per project",
           "2": "5 document uploads per project or per notebook",
           "3": "Basic retrieval",
-          "4": "Basic support",
-          "5": "Request features and improvements"
+          "4": "No sharing — projects and notebooks are private",
+          "5": "Basic support",
+          "6": "Request features and improvements"
         }
       },
       "basic": {
@@ -1128,8 +1129,9 @@
           "2": "Up to 5 chats per project",
           "3": "10 document uploads per project or per notebook",
           "4": "Faster retrieval",
-          "5": "Project sharing (up to 3 members)",
-          "6": "Email support"
+          "5": "Project sharing — up to 3 members per project",
+          "6": "Notebook sharing not included — upgrade to Premium",
+          "7": "Email support"
         }
       },
       "premium": {
@@ -1138,11 +1140,12 @@
         "features": {
           "0": "Everything in Basic",
           "1": "Unlimited projects and notebooks",
-          "2": "500 document uploads",
+          "2": "500 document uploads per project or per notebook",
           "3": "Advanced retrieval",
           "4": "Access to latest models",
-          "5": "Teams sharing (up to 10 members per team)",
-          "6": "Priority support"
+          "5": "Unlimited project sharing with unlimited members",
+          "6": "Unlimited notebook sharing with unlimited members",
+          "7": "Priority support — Teams coming soon"
         }
       },
       "enterprise": {
@@ -1581,7 +1584,8 @@
     "notebooksReached": "Plan limit reached for notebooks. Upgrade to create more.",
     "chatsPerProjectReached": "Plan limit reached: up to {{count}} chat(s) per project. Upgrade to create more.",
     "documentsReached": "Plan limit reached for documents per project or notebook. Upgrade to upload more.",
-    "sharingDisabled": "Sharing is not available on your current plan. Upgrade to invite collaborators.",
+    "sharingDisabled": "Project sharing is not available on your current plan. Upgrade to Basic or Premium to invite collaborators.",
+    "notebookSharingDisabled": "Notebook sharing is only available on the Premium plan. Upgrade to share notebooks.",
     "shareMembersReached": "Plan limit reached: up to {{count}} members per item. Upgrade to invite more.",
     "modelRestricted": "{{model}} is not available on your current plan. Upgrade to use it."
   },
