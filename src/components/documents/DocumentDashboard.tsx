@@ -354,9 +354,10 @@ function EmptyState({ scope, hasDocuments, onUpload }: { scope: 'project' | 'cha
 }
 
 function DocumentRow({
-  doc, chunkStats, questionStats, isExpanded, onToggle, onDelete, onRetry, isDeleting, isRetrying,
+  doc, chatLabel, chunkStats, questionStats, isExpanded, onToggle, onDelete, onRetry, isDeleting, isRetrying,
 }: {
   doc: DbDocument;
+  chatLabel?: string;
   chunkStats?: import('@/hooks/useDocumentChunkStats').ChunkStats;
   questionStats?: import('@/hooks/useDocumentQuestionStats').QuestionStats;
   isExpanded: boolean;
