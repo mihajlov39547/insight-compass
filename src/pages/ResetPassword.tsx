@@ -120,7 +120,7 @@ export default function ResetPassword() {
           onClick={() => navigate('/')}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
-          <ArrowLeft className="h-4 w-4" /> {t('common.backHome')}
+          <ArrowLeft className="h-4 w-4" /> {t('auth.reset.backHome')}
         </button>
 
         <Card>

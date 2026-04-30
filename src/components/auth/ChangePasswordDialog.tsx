@@ -103,7 +103,7 @@ export function ChangePasswordDialog({ open, onOpenChange, email }: ChangePasswo
             {errors.confirm && <p className="text-sm text-destructive">{errors.confirm}</p>}
           </div>
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => handleOpen(false)} disabled={loading}>{t('common.cancel')}</Button>
+            <Button type="button" variant="ghost" onClick={() => handleOpen(false)} disabled={loading}>{t('profileSettings.danger.cancel')}</Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {t('profileSettings.password.submit')}
