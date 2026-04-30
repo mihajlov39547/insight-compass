@@ -1286,6 +1286,7 @@
     "emptyChat": "Dokumenti ćaskanja su priloženi ovom ćaskanju. Otpremite dokumente da pružite kontekst razgovoru.",
     "emptyNotebook": "Dodajte dokumente ili povezane video snimke ovoj beleznici da omogućite AI pretragu i analizu kroz vaše izvore.",
     "partiallyReady": "Delimično spremno",
+    "chatBadgeFallback": "Ćaskanje",
     "deleted": "{{name}} obrisan",
     "deleteFailed": "Brisanje nije uspelo",
     "transcriptRetried": "Ponovni pokušaj transkripta zakazan",
