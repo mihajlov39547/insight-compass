@@ -210,6 +210,44 @@ export function useRenameResource() {
   });
 }
 
+async function maybeStartYoutubeWorkflow(resourceId: string, userId: string, url: string) {
+  // Phase 1.4: opt-in workflow trigger guarded by `youtube_use_workflow` flag.
+  // When OFF (default), the SQL stub already enqueued the legacy transcript job — no-op here.
+  try {
+    const { data: enabled } = await supabase.rpc('is_feature_enabled' as any, {
+      p_key: 'youtube_use_workflow',
+    });
+    if (!enabled) return;
+
+    const resp = await fetch(getFunctionUrl('/functions/v1/workflow-start'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({
+        definition_key: 'youtube_processing_v1',
+        input_payload: {
+          resource_link_id: resourceId,
+          source: 'create_link',
+          url,
+          initiated_at: new Date().toISOString(),
+        },
+        user_id: userId,
+        trigger_entity_type: 'resource_link',
+        trigger_entity_id: resourceId,
+        idempotency_key: `youtube-workflow-${resourceId}`,
+        create_initial_context_snapshot: true,
+      }),
+    });
+    if (!resp.ok) {
+      console.warn('[youtube workflow] workflow-start failed', resp.status, await resp.text().catch(() => ''));
+    }
+  } catch (err) {
+    console.warn('[youtube workflow] flag check / start error', err);
+  }
+}
+
 export function useCreateLinkResource() {
   const queryClient = useQueryClient();
 
@@ -225,7 +263,19 @@ export function useCreateLinkResource() {
 
       if (error) throw error;
 
-      return Array.isArray(data) ? data[0] : data;
+      const row = Array.isArray(data) ? data[0] : data;
+
+      // Phase 1.4: when the new link is YouTube and flag is on, also kick the workflow path.
+      // Legacy enqueue still runs inside the SQL stub regardless (safe parallel path).
+      if (row?.id && input.provider === 'youtube') {
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        if (userId) {
+          await maybeStartYoutubeWorkflow(row.id, userId, input.url.trim());
+        }
+      }
+
+      return row;
     },
     onSuccess: (_result, input) => {
       invalidateResourceScopes(queryClient, {
