@@ -23,7 +23,7 @@ import { ProjectActionsMenuContent } from '@/components/actions/EntityActionMenu
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DeleteWithConfirmDialog } from '@/components/dialogs/DeleteWithConfirmDialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
