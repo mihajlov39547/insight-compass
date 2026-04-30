@@ -282,6 +282,7 @@ export function DocumentDashboard({ scope }: DocumentDashboardProps) {
                 <DocumentRow
                   key={doc.id}
                   doc={doc}
+                  chatLabel={scope === 'project' && doc.chat_id ? (chats.find(c => c.id === doc.chat_id)?.name ?? t('documentDashboard.chatBadgeFallback')) : undefined}
                   chunkStats={chunkStatsMap?.get(doc.id)}
                   questionStats={questionStatsMap?.get(doc.id)}
                   isExpanded={expandedId === `doc:${doc.id}`}
