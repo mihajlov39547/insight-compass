@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, FileText, Share2, Archive, Trash2, Pencil, BookOpen } from 'lucide-react';
+import { Settings, FileText, Share2, Trash2, Pencil } from 'lucide-react';
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useTranslation } from 'react-i18next';
 import type { ItemPermissions } from '@/lib/permissions';
@@ -8,7 +8,6 @@ interface ProjectActionsMenuContentProps {
   onManageProject: () => void;
   onManageDocuments: () => void;
   onShareProject?: () => void;
-  onArchiveProject: () => void;
   onDeleteProject: () => void;
   permissions?: ItemPermissions | null;
   /** @deprecated Use permissions instead */
@@ -19,7 +18,6 @@ export function ProjectActionsMenuContent({
   onManageProject,
   onManageDocuments,
   onShareProject,
-  onArchiveProject,
   onDeleteProject,
   permissions,
   shareDisabled,
@@ -27,7 +25,6 @@ export function ProjectActionsMenuContent({
   const { t } = useTranslation();
   const canManage = permissions ? permissions.canRename : false;
   const canShare = !!onShareProject && (permissions ? permissions.canManageSharing : !shareDisabled);
-  const canArchive = permissions ? permissions.canArchive : false;
   const canDelete = permissions ? permissions.canDelete : false;
   const canViewDocs = permissions ? permissions.canViewDocuments : false;
 
@@ -54,12 +51,7 @@ export function ProjectActionsMenuContent({
           <Share2 className="h-3.5 w-3.5 mr-2" /> {t('actionsMenu.shareProject')}
         </DropdownMenuItem>
       )}
-      {(canArchive || canDelete) && <DropdownMenuSeparator />}
-      {canArchive && (
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchiveProject(); }}>
-          <Archive className="h-3.5 w-3.5 mr-2" /> {t('actionsMenu.archiveProject')}
-        </DropdownMenuItem>
-      )}
+      {canDelete && <DropdownMenuSeparator />}
       {canDelete && (
         <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); onDeleteProject(); }}>
           <Trash2 className="h-3.5 w-3.5 mr-2" /> {t('actionsMenu.deleteProject')}
@@ -121,7 +113,6 @@ interface NotebookActionsMenuContentProps {
   onManageNotebook: () => void;
   onManageDocuments: () => void;
   onShareNotebook?: () => void;
-  onArchiveNotebook: () => void;
   onDeleteNotebook: () => void;
   permissions?: ItemPermissions | null;
   /** @deprecated Use permissions instead */
@@ -132,7 +123,6 @@ export function NotebookActionsMenuContent({
   onManageNotebook,
   onManageDocuments,
   onShareNotebook,
-  onArchiveNotebook,
   onDeleteNotebook,
   permissions,
   shareDisabled,
@@ -140,7 +130,6 @@ export function NotebookActionsMenuContent({
   const { t } = useTranslation();
   const canManage = permissions ? permissions.canRename : false;
   const canShare = !!onShareNotebook && (permissions ? permissions.canManageSharing : !shareDisabled);
-  const canArchive = permissions ? permissions.canArchive : false;
   const canDelete = permissions ? permissions.canDelete : false;
   const canViewDocs = permissions ? permissions.canViewDocuments : false;
 
@@ -167,12 +156,7 @@ export function NotebookActionsMenuContent({
           <Share2 className="h-3.5 w-3.5 mr-2" /> {t('actionsMenu.shareNotebook')}
         </DropdownMenuItem>
       )}
-      {(canArchive || canDelete) && <DropdownMenuSeparator />}
-      {canArchive && (
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchiveNotebook(); }}>
-          <Archive className="h-3.5 w-3.5 mr-2" /> {t('actionsMenu.archiveNotebook')}
-        </DropdownMenuItem>
-      )}
+      {canDelete && <DropdownMenuSeparator />}
       {canDelete && (
         <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); onDeleteNotebook(); }}>
           <Trash2 className="h-3.5 w-3.5 mr-2" /> {t('actionsMenu.deleteNotebook')}
