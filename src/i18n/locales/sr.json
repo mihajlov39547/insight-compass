@@ -1557,7 +1557,19 @@
     "password": {
       "title": "Lozinka",
       "googleManaged": "Autentifikacijom upravlja Google. Prijava lozinkom nije dostupna.",
-      "change": "Promeni lozinku"
+      "localManaged": "Ažurirajte lozinku koju koristite za prijavu email adresom.",
+      "change": "Promeni lozinku",
+      "dialogTitle": "Promena lozinke",
+      "dialogDescription": "Unesite trenutnu lozinku, zatim izaberite novu.",
+      "current": "Trenutna lozinka",
+      "new": "Nova lozinka",
+      "confirm": "Potvrdi novu lozinku",
+      "submit": "Ažuriraj lozinku",
+      "wrongCurrent": "Trenutna lozinka nije tačna.",
+      "sameAsOld": "Nova lozinka mora biti različita od trenutne.",
+      "weakPassword": "Ova lozinka je preslaba ili je pronađena u bazi kompromitovanih lozinki. Izaberite jaču.",
+      "updateFailed": "Nismo uspeli da ažuriramo lozinku. Pokušajte ponovo.",
+      "updatedToast": "Lozinka je uspešno ažurirana."
     },
     "danger": {
       "title": "Opasna zona",
