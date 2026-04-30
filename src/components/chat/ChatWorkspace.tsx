@@ -203,12 +203,7 @@ export function ChatWorkspace() {
           {permissions.canCreateChats ? (
             <Button
               className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-              onClick={() => {
-                createChat.mutate(
-                  { projectId: selectedProjectId!, name: t('sidebar.newChatName'), language: normalizeLanguageCode(selectedProject!.language) },
-                  { onSuccess: (chat) => setSelectedChatId(chat.id) }
-                );
-              }}
+              onClick={handleCreateNewChat}
               disabled={createChat.isPending}
             >
               <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
