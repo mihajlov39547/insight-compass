@@ -197,6 +197,27 @@ export type Database = {
           },
         ]
       }
+      app_feature_flags: {
+        Row: {
+          description: string
+          enabled: boolean
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          description?: string
+          enabled?: boolean
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          description?: string
+          enabled?: boolean
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chats: {
         Row: {
           created_at: string
@@ -2301,6 +2322,7 @@ export type Database = {
         Args: { p_activity_id: string; p_workflow_run_id: string }
         Returns: boolean
       }
+      is_feature_enabled: { Args: { p_key: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
