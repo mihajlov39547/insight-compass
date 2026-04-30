@@ -18,9 +18,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
 import { cn } from '@/lib/utils';
-import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
+import { useProjects, useDeleteProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat, ChatLimitReachedError } from '@/hooks/useChats';
-import { useNotebooks, useCreateNotebook, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, DbNotebook } from '@/hooks/useNotebooks';
+import { useNotebooks, useCreateNotebook, useDeleteNotebook, useUpdateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -70,12 +70,10 @@ export function AppSidebar() {
   const createChat = useCreateChat();
   const createNotebook = useCreateNotebook();
   const deleteProject = useDeleteProject();
-  const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
   const deleteNotebook = useDeleteNotebook();
-  const archiveNotebook = useArchiveNotebook();
 
   const [editProject, setEditProject] = useState<DbProject | null>(null);
   const [editName, setEditName] = useState('');
@@ -241,14 +239,6 @@ export function AppSidebar() {
     });
   };
 
-  const handleArchiveProject = (projectId: string) => {
-    archiveProject.mutate(projectId, {
-      onSuccess: () => {
-        if (selectedProjectId === projectId) { setSelectedProjectId(null); setSelectedChatId(null); }
-        toast.success(t('sidebar.toasts.projectArchived'));
-      }
-    });
-  };
 
   const handleManageProject = (project: DbProject) => {
     setEditProject(project);
@@ -326,9 +316,6 @@ export function AppSidebar() {
     });
   };
 
-  const handleArchiveNotebookSidebar = (id: string) => {
-    archiveNotebook.mutate(id, { onSuccess: () => { if (selectedNotebookId === id) setSelectedNotebookId(null); toast.success(t('sidebar.toasts.notebookArchived')); } });
-  };
 
   const handleDeleteNotebookSidebar = (id: string, name: string) => {
     setPendingDeleteNotebook({ id, name });
@@ -726,7 +713,7 @@ export function AppSidebar() {
                   onSelect={() => handleProjectSelect(project)}
                   onNewChat={(e) => handleNewChat(project.id, e)}
                   onDelete={() => handleDeleteProject(project.id)}
-                  onArchive={() => handleArchiveProject(project.id)}
+                  
                   onRename={() => handleManageProject(project)}
                   onChatSelect={handleChatSelect}
                   onDeleteChat={requestDeleteChat}

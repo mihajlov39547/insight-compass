@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
-import { useNotebooks, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, useCreateNotebook, DbNotebook } from '@/hooks/useNotebooks';
+import { useNotebooks, useDeleteNotebook, useUpdateNotebook, useCreateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useAuth } from '@/contexts/useAuth';
 import { useApp } from '@/contexts/useApp';
@@ -105,7 +105,6 @@ export function NotebooksLanding() {
   const { limits: planLimits } = usePlanLimits();
   const { data: notebooks = [], isLoading } = useNotebooks();
   const deleteNotebook = useDeleteNotebook();
-  const archiveNotebook = useArchiveNotebook();
   const updateNotebook = useUpdateNotebook();
   const createNotebook = useCreateNotebook();
 
@@ -174,10 +173,6 @@ export function NotebooksLanding() {
         setEditNotebook(null);
       },
     });
-  };
-
-  const handleArchive = (id: string) => {
-    archiveNotebook.mutate(id, { onSuccess: () => toast.success(t('notebooksLanding.delete.archived')) });
   };
 
   const handleDelete = (id: string) => {
@@ -265,7 +260,6 @@ export function NotebooksLanding() {
                     setSelectedNotebookId(notebook.id);
                     setActiveView('notebook-documents');
                   }}
-                  onArchiveNotebook={() => handleArchive(notebook.id)}
                   onDeleteNotebook={() => handleDelete(notebook.id)}
                 />
                 <div>
@@ -503,13 +497,11 @@ function NotebookCardActions({
   notebook,
   onManageNotebook,
   onManageDocuments,
-  onArchiveNotebook,
   onDeleteNotebook,
 }: {
   notebook: DbNotebook;
   onManageNotebook: () => void;
   onManageDocuments: () => void;
-  onArchiveNotebook: () => void;
   onDeleteNotebook: () => void;
 }) {
   const { data: myRole } = useItemRole(notebook.id, 'notebook');
@@ -533,7 +525,6 @@ function NotebookCardActions({
           permissions={permissions}
           onManageNotebook={onManageNotebook}
           onManageDocuments={onManageDocuments}
-          onArchiveNotebook={onArchiveNotebook}
           onDeleteNotebook={onDeleteNotebook}
         />
       </DropdownMenu>

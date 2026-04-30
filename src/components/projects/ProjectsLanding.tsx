@@ -8,7 +8,7 @@ import {
   BarChart3, GraduationCap, Camera, MoreHorizontal, Sparkles, Loader2
 } from 'lucide-react';
 import { useApp } from '@/contexts/useApp';
-import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
+import { useProjects, useDeleteProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats } from '@/hooks/useAllChats';
 import { useDocuments } from '@/hooks/useDocuments';
 import { formatDistanceToNow } from 'date-fns';
@@ -101,7 +101,6 @@ export function ProjectsLanding() {
   } = useApp();
   const { data: projects = [], isLoading } = useProjects();
   const deleteProject = useDeleteProject();
-  const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const { data: allChats = [] } = useChats();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -215,17 +214,6 @@ export function ProjectsLanding() {
     setActiveView('project-documents');
   };
 
-  const handleArchiveProject = (projectId: string) => {
-    archiveProject.mutate(projectId, {
-      onSuccess: () => {
-        if (selectedProjectId === projectId) {
-          setSelectedProjectId(null);
-          setSelectedChatId(null);
-        }
-        toast.success(t('projectsLanding.delete.archived'));
-      },
-    });
-  };
 
   const handleDeleteProject = (projectId: string) => {
     setPendingDeleteId(projectId);
@@ -312,7 +300,6 @@ export function ProjectsLanding() {
                     project={project}
                     onManageProject={() => handleManageProject(project)}
                     onManageDocuments={() => handleManageProjectDocs(project.id)}
-                    onArchiveProject={() => handleArchiveProject(project.id)}
                     onDeleteProject={() => handleDeleteProject(project.id)}
                   />
                   <div>
@@ -485,13 +472,11 @@ function ProjectCardActions({
   project,
   onManageProject,
   onManageDocuments,
-  onArchiveProject,
   onDeleteProject,
 }: {
   project: DbProject;
   onManageProject: () => void;
   onManageDocuments: () => void;
-  onArchiveProject: () => void;
   onDeleteProject: () => void;
 }) {
   const { data: myRole } = useItemRole(project.id, 'project');
@@ -515,7 +500,6 @@ function ProjectCardActions({
           permissions={permissions}
           onManageProject={onManageProject}
           onManageDocuments={onManageDocuments}
-          onArchiveProject={onArchiveProject}
           onDeleteProject={onDeleteProject}
         />
       </DropdownMenu>
