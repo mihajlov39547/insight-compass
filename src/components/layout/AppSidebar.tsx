@@ -18,9 +18,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
 import { cn } from '@/lib/utils';
-import { useProjects, useDeleteProject, useArchiveProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
+import { useProjects, useDeleteProject, useUpdateProject, DbProject } from '@/hooks/useProjects';
 import { useChats, useCreateChat, useDeleteChat, useUpdateChat, DbChat, ChatLimitReachedError } from '@/hooks/useChats';
-import { useNotebooks, useCreateNotebook, useDeleteNotebook, useArchiveNotebook, useUpdateNotebook, DbNotebook } from '@/hooks/useNotebooks';
+import { useNotebooks, useCreateNotebook, useDeleteNotebook, useUpdateNotebook, DbNotebook } from '@/hooks/useNotebooks';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
