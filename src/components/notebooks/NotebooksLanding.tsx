@@ -497,13 +497,11 @@ function NotebookCardActions({
   notebook,
   onManageNotebook,
   onManageDocuments,
-  onArchiveNotebook,
   onDeleteNotebook,
 }: {
   notebook: DbNotebook;
   onManageNotebook: () => void;
   onManageDocuments: () => void;
-  onArchiveNotebook: () => void;
   onDeleteNotebook: () => void;
 }) {
   const { data: myRole } = useItemRole(notebook.id, 'notebook');
@@ -527,7 +525,6 @@ function NotebookCardActions({
           permissions={permissions}
           onManageNotebook={onManageNotebook}
           onManageDocuments={onManageDocuments}
-          onArchiveNotebook={onArchiveNotebook}
           onDeleteNotebook={onDeleteNotebook}
         />
       </DropdownMenu>
