@@ -27,14 +27,16 @@ import type { SourceItem } from './SourceAttribution';
 import { useTranslation } from 'react-i18next';
 import { normalizeLanguageCode } from '@/lib/languages';
 import { useGenerationCompleteSound } from '@/hooks/useGenerationCompleteSound';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
-  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare, setShowPricing } = useApp();
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
   const createChat = useCreateChat();
   const { mutate: deleteMessagePair } = useDeleteMessagePair();
+  const { limits: planLimits } = usePlanLimits();
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
