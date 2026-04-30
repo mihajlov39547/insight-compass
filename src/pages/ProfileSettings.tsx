@@ -24,6 +24,7 @@ import {
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog';
 
 
 interface SavedProfileState {
