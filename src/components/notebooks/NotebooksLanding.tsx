@@ -260,7 +260,6 @@ export function NotebooksLanding() {
                     setSelectedNotebookId(notebook.id);
                     setActiveView('notebook-documents');
                   }}
-                  onArchiveNotebook={() => handleArchive(notebook.id)}
                   onDeleteNotebook={() => handleDelete(notebook.id)}
                 />
                 <div>
