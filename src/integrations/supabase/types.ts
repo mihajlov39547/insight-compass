@@ -2063,6 +2063,7 @@ export type Database = {
       }
       cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
       cleanup_expired_pending_registrations: { Args: never; Returns: undefined }
+      cleanup_workflow_logs: { Args: never; Returns: Json }
       complete_youtube_transcript_job: {
         Args: {
           p_chunk_count?: number
