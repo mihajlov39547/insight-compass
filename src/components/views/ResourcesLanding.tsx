@@ -533,7 +533,7 @@ export function ResourcesLanding() {
               <SelectItem value="all">{t('resources.filters.container.all')}</SelectItem>
               <SelectItem value="project">{t('resources.filters.container.project')}</SelectItem>
               <SelectItem value="notebook">{t('resources.filters.container.notebook')}</SelectItem>
-              <SelectItem value="personal">{t('resources.filters.container.personal')}</SelectItem>
+              
             </SelectContent>
           </Select>
 
