@@ -1028,7 +1028,7 @@ export function AppSidebar() {
 }
 
 // ── ProjectItem ──────────────────────────────────────────────────
-function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onArchive, onRename, onChatSelect, onDeleteChat, onRenameChat }: {
+function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle, onSelect, onNewChat, onDelete, onRename, onChatSelect, onDeleteChat, onRenameChat }: {
   project: DbProject;
   isExpanded: boolean;
   isSelected: boolean;
@@ -1037,7 +1037,6 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   onSelect: () => void;
   onNewChat: (e: React.MouseEvent) => void;
   onDelete: () => void;
-  onArchive: () => void;
   onRename: () => void;
   onChatSelect: (chat: DbChat) => void;
   onDeleteChat: (chat: DbChat) => void;
