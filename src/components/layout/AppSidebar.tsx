@@ -239,14 +239,6 @@ export function AppSidebar() {
     });
   };
 
-  const handleArchiveProject = (projectId: string) => {
-    archiveProject.mutate(projectId, {
-      onSuccess: () => {
-        if (selectedProjectId === projectId) { setSelectedProjectId(null); setSelectedChatId(null); }
-        toast.success(t('sidebar.toasts.projectArchived'));
-      }
-    });
-  };
 
   const handleManageProject = (project: DbProject) => {
     setEditProject(project);
