@@ -3,6 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import type { AvailableLanguageCode } from '@/lib/languages';
 import i18n from '@/i18n/config';
+import { getPlanLimits } from '@/lib/planLimits';
+import { normalizePlan } from '@/types/app';
+
+export class ChatLimitReachedError extends Error {
+  limit: number;
+  constructor(limit: number) {
+    super(`Chat limit reached (${limit} per project on this plan)`);
+    this.name = 'ChatLimitReachedError';
+    this.limit = limit;
+  }
+}
 
 export interface DbChat {
   id: string;
