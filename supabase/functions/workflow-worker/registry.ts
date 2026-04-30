@@ -46,6 +46,15 @@ import {
   documentSummarize,
   documentFinalize,
 } from "./handlers/document.ts";
+import {
+  youtubeClassifyResource,
+  youtubeFetchTranscript,
+  youtubePersistTranscriptChunks,
+  youtubeGenerateTranscriptChunkEmbeddings,
+  youtubeGenerateTranscriptChunkQuestions,
+  youtubeGenerateTranscriptQuestionEmbeddings,
+  youtubeFinalizeResourceStatus,
+} from "./handlers/youtube.ts";
 
 /**
  * Global handler registry, keyed by handler_key.
