@@ -394,7 +394,7 @@ export function ResourcesLanding() {
         title: linkTitle || undefined,
         provider: linkProvider,
         containerType: linkContainerType,
-        containerId: requiresContainerId ? linkContainerId : null,
+        containerId: linkContainerId,
       },
       {
         onSuccess: () => {
