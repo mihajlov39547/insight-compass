@@ -103,10 +103,16 @@ export function DocumentsDialog() {
   const { retry: retryProcessing, isPending: isRetrying } = useRetryProcessing();
   const documentIds = documents.map(d => d.id);
   const { data: chunkStatsMap } = useDocumentChunkStats(documentIds);
+  const [pendingDeleteDoc, setPendingDeleteDoc] = useState<DbDocument | null>(null);
   const handleDelete = (doc: DbDocument) => {
+    setPendingDeleteDoc(doc);
+  };
+  const confirmDeleteDoc = () => {
+    if (!pendingDeleteDoc) return;
+    const doc = pendingDeleteDoc;
     deleteMutation.mutate(doc, {
-      onSuccess: () => toast({ title: t('documentsDialog.deleted', { name: doc.file_name }) }),
-      onError: (err: any) => toast({ title: t('documentsDialog.deleteFailed'), description: err.message, variant: 'destructive' }),
+      onSuccess: () => { toast({ title: t('documentsDialog.deleted', { name: doc.file_name }) }); setPendingDeleteDoc(null); },
+      onError: (err: any) => { toast({ title: t('documentsDialog.deleteFailed'), description: err.message, variant: 'destructive' }); setPendingDeleteDoc(null); },
     });
   };
 
