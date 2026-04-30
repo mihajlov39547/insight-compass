@@ -77,9 +77,11 @@ export function DocumentDashboard({ scope }: DocumentDashboardProps) {
   const project = projects.find(p => p.id === selectedProjectId);
   const chat = chats.find(c => c.id === selectedChatId);
 
+  // Project scope: show ALL project documents (including those attached to any chat).
+  // Chat scope: only docs attached to the selected chat.
   const { data: documents = [], isLoading } = useDocuments(
     selectedProjectId ?? undefined,
-    scope === 'project' ? null : selectedChatId,
+    scope === 'project' ? undefined : selectedChatId,
   );
   const { data: resources = [], isLoading: isResourcesLoading } = useResources();
 
