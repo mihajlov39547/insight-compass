@@ -300,7 +300,6 @@ export function ProjectsLanding() {
                     project={project}
                     onManageProject={() => handleManageProject(project)}
                     onManageDocuments={() => handleManageProjectDocs(project.id)}
-                    onArchiveProject={() => handleArchiveProject(project.id)}
                     onDeleteProject={() => handleDeleteProject(project.id)}
                   />
                   <div>
