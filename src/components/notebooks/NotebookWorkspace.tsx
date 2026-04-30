@@ -153,6 +153,8 @@ export function NotebookWorkspace() {
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [addingToSources, setAddingToSources] = useState(false);
+  const [pendingDeleteDoc, setPendingDeleteDoc] = useState<DbDocument | null>(null);
+  const [pendingDeleteVideo, setPendingDeleteVideo] = useState<any | null>(null);
   const chatViewportRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isChatNearBottom, setIsChatNearBottom] = useState(true);
