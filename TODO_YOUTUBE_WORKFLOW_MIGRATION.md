@@ -37,11 +37,11 @@ Goal: register a `youtube_processing_v1` workflow definition and wire trigger en
 
 - [x] **1.1** Create `youtube_processing_v1` workflow definition (migration `20260430135137_*`) with 7 activities, linear edge graph, entry=`classify_resource`, terminal=`finalize_resource_status`, optional=question stages.
 - [x] **1.2** Stub handlers + registry entries (`workflow-worker/handlers/youtube.ts` + `registry.ts`). All 7 handler keys return `ok:true` with inert payload.
-- [ ] **1.3** Add a feature flag (e.g. `metadata.use_workflow_engine` on `resource_links`, or env `YOUTUBE_USE_WORKFLOW=1`) to route per-resource between legacy and workflow paths during rollout.
-- [ ] **1.4** Update link adapter / `create_link_resource_stub` consumer to call `workflow-start` with `youtube_processing_v1` when flag is on (idempotency key: `resource_link_id + transcript_version`).
-- [ ] **1.5** Verify activity runs appear in existing workflow diagnostics SQL (`sql/debug/2_activity_states_latest_workflow.sql`) — manual smoke test via `workflow-start` once 1.4 lands or via direct curl.
+- [x] **1.3** Feature flag plumbing: `app_feature_flags` table + `is_feature_enabled(text)` RPC. Seeded `youtube_use_workflow = false` (off by default).
+- [x] **1.4** Client wiring: `useCreateLinkResource` calls `workflow-start` with `youtube_processing_v1` (idempotency key `youtube-workflow-<resource_id>`) when flag is on. Legacy `enqueue_youtube_transcript_job` inside the SQL stub still runs in parallel as safety net during dual-write window.
+- [ ] **1.5** Smoke test: flip `youtube_use_workflow=true` in DB, add a YouTube link, confirm `workflow_runs` + 7 `activity_runs` rows for `youtube_processing_v1` appear via `sql/debug/2_activity_states_latest_workflow.sql`. (Stubs will all succeed → workflow reaches terminal state.)
 
-**Acceptance:** A YouTube link added with the flag on creates a `workflow_runs` row + `activity_runs` rows visible in diagnostics. Legacy path remains default for safety.
+**Acceptance:** A YouTube link added with the flag on creates a `workflow_runs` row + `activity_runs` rows visible in diagnostics. Legacy path remains default for safety. ✅ Code path ready, awaiting smoke test.
 
 ---
 
