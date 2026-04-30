@@ -81,10 +81,19 @@ export function NotebookDocumentDashboard() {
   const [sort, setSort] = useState<SortKey>('recent');
   const [search, setSearch] = useState('');
 
+  const [pendingDeleteDoc, setPendingDeleteDoc] = useState<DbDocument | null>(null);
+  const [pendingDeleteResource, setPendingDeleteResource] = useState<Resource | null>(null);
+
   const handleDelete = (doc: DbDocument) => {
+    setPendingDeleteDoc(doc);
+  };
+
+  const confirmDeleteDoc = () => {
+    if (!pendingDeleteDoc) return;
+    const doc = pendingDeleteDoc;
     deleteMutation.mutate(doc, {
-      onSuccess: () => toast({ title: t('documentDashboard.deleted', { name: doc.file_name }) }),
-      onError: (err: any) => toast({ title: t('documentDashboard.deleteFailed'), description: err.message, variant: 'destructive' }),
+      onSuccess: () => { toast({ title: t('documentDashboard.deleted', { name: doc.file_name }) }); setPendingDeleteDoc(null); },
+      onError: (err: any) => { toast({ title: t('documentDashboard.deleteFailed'), description: err.message, variant: 'destructive' }); setPendingDeleteDoc(null); },
     });
   };
 
@@ -100,9 +109,15 @@ export function NotebookDocumentDashboard() {
   });
 
   const handleDeleteResource = (resource: Resource) => {
+    setPendingDeleteResource(resource);
+  };
+
+  const confirmDeleteResource = () => {
+    if (!pendingDeleteResource) return;
+    const resource = pendingDeleteResource;
     deleteResourceMutation.mutate(toResourceActionInput(resource), {
-      onSuccess: () => toast({ title: t('documentDashboard.deleted', { name: resource.title }) }),
-      onError: (err: any) => toast({ title: t('documentDashboard.deleteFailed'), description: err.message, variant: 'destructive' }),
+      onSuccess: () => { toast({ title: t('documentDashboard.deleted', { name: resource.title }) }); setPendingDeleteResource(null); },
+      onError: (err: any) => { toast({ title: t('documentDashboard.deleteFailed'), description: err.message, variant: 'destructive' }); setPendingDeleteResource(null); },
     });
   };
 
