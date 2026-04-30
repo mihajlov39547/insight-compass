@@ -125,7 +125,7 @@ export function ResourcesLanding() {
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
   const [linkProvider, setLinkProvider] = useState('unknown');
-  const [linkContainerType, setLinkContainerType] = useState<ContainerType>('personal');
+  const [linkContainerType, setLinkContainerType] = useState<ContainerType>('project');
   const [linkContainerId, setLinkContainerId] = useState<string | null>(null);
 
   // ── Stats ───────────────────────────────────────────────────────
