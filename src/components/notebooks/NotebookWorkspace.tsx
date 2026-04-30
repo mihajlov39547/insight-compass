@@ -1057,6 +1057,46 @@ export function NotebookWorkspace() {
         onUploadComplete={() => {}}
         context="notebook"
       />
+
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteDoc}
+        onOpenChange={(open) => !open && setPendingDeleteDoc(null)}
+        title={t('documentDashboard.deleteDialog.title', { defaultValue: 'Delete document?' })}
+        intro={t('documentDashboard.deleteDialog.intro', { name: pendingDeleteDoc?.file_name ?? '', defaultValue: 'This will permanently delete "{{name}}" and all of its data, including:' })}
+        items={[
+          t('documentDashboard.deleteDialog.items.file', { defaultValue: 'The original uploaded file' }),
+          t('documentDashboard.deleteDialog.items.extracted', { defaultValue: 'All extracted text, summaries, and chunks' }),
+          t('documentDashboard.deleteDialog.items.embeddings', { defaultValue: 'Search embeddings and generated questions' }),
+        ]}
+        irreversibleNote={t('documentDashboard.deleteDialog.irreversible', { defaultValue: 'This action cannot be undone.' })}
+        confirmLabel={t('documentDashboard.deleteDialog.confirm', { defaultValue: 'Delete document' })}
+        cancelLabel={t('documentDashboard.deleteDialog.cancel', { defaultValue: 'Cancel' })}
+        onConfirm={() => {
+          if (!pendingDeleteDoc) return;
+          deleteDocument.mutate(pendingDeleteDoc, { onSettled: () => setPendingDeleteDoc(null) });
+        }}
+        isPending={deleteDocument.isPending}
+      />
+
+      <DeleteWithConfirmDialog
+        open={!!pendingDeleteVideo}
+        onOpenChange={(open) => !open && setPendingDeleteVideo(null)}
+        title={t('documentDashboard.deleteResourceDialog.title', { defaultValue: 'Delete resource?' })}
+        intro={t('documentDashboard.deleteResourceDialog.intro', { name: pendingDeleteVideo?.title ?? '', defaultValue: 'This will permanently delete "{{name}}" and all of its data, including:' })}
+        items={[
+          t('documentDashboard.deleteResourceDialog.items.link', { defaultValue: 'The linked resource' }),
+          t('documentDashboard.deleteResourceDialog.items.transcript', { defaultValue: 'All transcripts and extracted content' }),
+          t('documentDashboard.deleteResourceDialog.items.embeddings', { defaultValue: 'Search embeddings and generated questions' }),
+        ]}
+        irreversibleNote={t('documentDashboard.deleteResourceDialog.irreversible', { defaultValue: 'This action cannot be undone.' })}
+        confirmLabel={t('documentDashboard.deleteResourceDialog.confirm', { defaultValue: 'Delete resource' })}
+        cancelLabel={t('documentDashboard.deleteResourceDialog.cancel', { defaultValue: 'Cancel' })}
+        onConfirm={() => {
+          if (!pendingDeleteVideo) return;
+          deleteResource.mutate(toResourceActionInput(pendingDeleteVideo), { onSettled: () => setPendingDeleteVideo(null) });
+        }}
+        isPending={deleteResource.isPending}
+      />
     </div>
   );
 }
