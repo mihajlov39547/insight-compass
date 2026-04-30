@@ -70,12 +70,10 @@ export function AppSidebar() {
   const createChat = useCreateChat();
   const createNotebook = useCreateNotebook();
   const deleteProject = useDeleteProject();
-  const archiveProject = useArchiveProject();
   const updateProject = useUpdateProject();
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
   const deleteNotebook = useDeleteNotebook();
-  const archiveNotebook = useArchiveNotebook();
 
   const [editProject, setEditProject] = useState<DbProject | null>(null);
   const [editName, setEditName] = useState('');
