@@ -300,8 +300,58 @@ export function useRetryYouTubeTranscriptIngestion() {
       // Clear stale debug (often null) before a new transcript attempt starts.
       await queryClient.cancelQueries({ queryKey: ['resource-transcript-debug', resource.id] });
       queryClient.invalidateQueries({ queryKey: ['resource-transcript-debug', resource.id] });
+      queryClient.invalidateQueries({ queryKey: ['resource-workflow-timeline', resource.id] });
     },
     mutationFn: async (resource: ResourceActionInput) => {
+      // Phase 4.3: Check if workflow path is enabled; if so, restart via workflow-start
+      // with a fresh idempotency key to force a new run.
+      try {
+        const { data: enabled } = await supabase.rpc('is_feature_enabled' as any, {
+          p_key: 'youtube_use_workflow',
+        });
+        if (enabled) {
+          // Get resource URL for the workflow input
+          const { data: link } = await supabase
+            .from('resource_links')
+            .select('url')
+            .eq('id', resource.id)
+            .maybeSingle();
+
+          if (link?.url) {
+            const resp = await fetch(getFunctionUrl('/functions/v1/workflow-start'), {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: JSON.stringify({
+                definition_key: 'youtube_processing_v1',
+                input_payload: {
+                  resource_link_id: resource.id,
+                  source: 'retry',
+                  url: link.url,
+                  initiated_at: new Date().toISOString(),
+                },
+                user_id: resource.ownerUserId,
+                trigger_entity_type: 'resource_link',
+                trigger_entity_id: resource.id,
+                idempotency_key: `youtube-workflow-retry-${resource.id}-${Date.now()}`,
+                create_initial_context_snapshot: true,
+              }),
+            });
+            if (!resp.ok) {
+              throw new Error(`Workflow retry failed: ${resp.status}`);
+            }
+            return resource;
+          }
+        }
+      } catch (err: any) {
+        // If workflow retry fails with a real error, throw it
+        if (err?.message?.startsWith('Workflow retry')) throw err;
+        console.warn('[youtube retry] workflow path failed, falling back to legacy', err);
+      }
+
+      // Fallback: legacy retry
       const { error } = await supabase.rpc('enqueue_youtube_transcript_job' as any, {
         p_resource_id: resource.id,
         p_force_retry: true,
@@ -314,6 +364,7 @@ export function useRetryYouTubeTranscriptIngestion() {
     onSuccess: (resource) => {
       invalidateResourceScopes(queryClient, resource);
       queryClient.invalidateQueries({ queryKey: ['resource-transcript-debug', resource.id] });
+      queryClient.invalidateQueries({ queryKey: ['resource-workflow-timeline', resource.id] });
     },
   });
 }
