@@ -327,7 +327,7 @@ export function LinkedVideoRow({
                 <div className="flex items-center justify-between">
                   <VideoStatusBadge status={effectiveStatus} />
                   <span className="text-[11px] text-muted-foreground tabular-nums">
-                    {formatDurationFromMs(debug?.totalDurationMs ?? null)}
+                    {workflowDuration || '—'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
