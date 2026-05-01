@@ -385,18 +385,21 @@ export function LinkedVideoRow({
                         <Check className="h-3.5 w-3.5 text-green-600" />
                       ) : activity.status === 'failed' ? (
                         <AlertCircle className="h-3.5 w-3.5 text-destructive" />
-                      ) : activity.status === 'skipped' ? (
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground/50" />
-                      ) : (
+                      ) : activity.status === 'running' ? (
                         <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+                      ) : (
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground/50" />
                       )}
                       <span className={activity.status === 'failed' ? 'text-destructive' : 'text-foreground'}>{activity.label}</span>
-                      {activity.key === 'questions' && (
+                      {activity.isOptional && (
                         <span className="text-[9px] text-muted-foreground/60 italic">{t('documentProcessing.optional')}</span>
+                      )}
+                      {activity.attemptCount > 1 && (
+                        <span className="text-[9px] text-muted-foreground/60">×{activity.attemptCount}</span>
                       )}
                       <span className="ml-auto text-muted-foreground/50 tabular-nums">{activity.detail || ''}</span>
                     </div>
-                  ))}
+                  ))
                 </div>
               </div>
             </div>
