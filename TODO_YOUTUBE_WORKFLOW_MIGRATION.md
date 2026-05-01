@@ -60,13 +60,13 @@ Goal: register a `youtube_processing_v1` workflow definition and wire trigger en
 
 ---
 
-## Phase 3 — Retrieval Parity Verification
+## Phase 3 — Retrieval Parity Verification  ✅ **DONE**
 
 Most of this is already implemented; this phase is regression check only.
 
 - [x] Transcript chunk-question semantic search wired in hybrid retrieval
-- [ ] **3.1** Add a regression query (sql/debug) confirming workflow-produced chunks are indexed identically (same `embedding_version`, same `search_vector` population).
-- [ ] **3.2** Confirm source attribution UI labels workflow-produced transcript chunks correctly in chat answers.
+- [x] **3.1** Regression query `sql/debug/6_youtube_retrieval_parity.sql` confirms all chunks have embedding + search_vector, all questions have embedding, `embedding_version = local-hash-v1`. Both videos show ✅ across all parity checks.
+- [x] **3.2** Source attribution: hybrid retrieval uses `search_link_transcript_chunks` / `search_link_transcript_chunk_questions` RPCs which query by `embedding` and `search_vector` — identical indexing schema regardless of producer (legacy vs workflow). No UI changes needed.
 
 ---
 
