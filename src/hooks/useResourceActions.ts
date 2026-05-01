@@ -211,13 +211,9 @@ export function useRenameResource() {
 }
 
 async function maybeStartYoutubeWorkflow(resourceId: string, userId: string, url: string) {
-  // Phase 1.4: opt-in workflow trigger guarded by `youtube_use_workflow` flag.
-  // When OFF (default), the SQL stub already enqueued the legacy transcript job — no-op here.
+  // Phase 5: Workflow is now the primary path. Legacy enqueue still runs in
+  // the SQL stub as a safety net until Phase 6 decommission.
   try {
-    const { data: enabled } = await supabase.rpc('is_feature_enabled' as any, {
-      p_key: 'youtube_use_workflow',
-    });
-    if (!enabled) return;
 
     const resp = await fetch(getFunctionUrl('/functions/v1/workflow-start'), {
       method: 'POST',
@@ -303,55 +299,48 @@ export function useRetryYouTubeTranscriptIngestion() {
       queryClient.invalidateQueries({ queryKey: ['resource-workflow-timeline', resource.id] });
     },
     mutationFn: async (resource: ResourceActionInput) => {
-      // Phase 4.3: Check if workflow path is enabled; if so, restart via workflow-start
-      // with a fresh idempotency key to force a new run.
+      // Phase 5: Workflow-first retry. Always attempt the workflow path;
+      // fall back to legacy enqueue only if the workflow call itself errors.
       try {
-        const { data: enabled } = await supabase.rpc('is_feature_enabled' as any, {
-          p_key: 'youtube_use_workflow',
-        });
-        if (enabled) {
-          // Get resource URL for the workflow input
-          const { data: link } = await supabase
-            .from('resource_links')
-            .select('url')
-            .eq('id', resource.id)
-            .maybeSingle();
+        const { data: link } = await supabase
+          .from('resource_links')
+          .select('url')
+          .eq('id', resource.id)
+          .maybeSingle();
 
-          if (link?.url) {
-            const resp = await fetch(getFunctionUrl('/functions/v1/workflow-start'), {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        if (link?.url) {
+          const resp = await fetch(getFunctionUrl('/functions/v1/workflow-start'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({
+              definition_key: 'youtube_processing_v1',
+              input_payload: {
+                resource_link_id: resource.id,
+                source: 'retry',
+                url: link.url,
+                initiated_at: new Date().toISOString(),
               },
-              body: JSON.stringify({
-                definition_key: 'youtube_processing_v1',
-                input_payload: {
-                  resource_link_id: resource.id,
-                  source: 'retry',
-                  url: link.url,
-                  initiated_at: new Date().toISOString(),
-                },
-                user_id: resource.ownerUserId,
-                trigger_entity_type: 'resource_link',
-                trigger_entity_id: resource.id,
-                idempotency_key: `youtube-workflow-retry-${resource.id}-${Date.now()}`,
-                create_initial_context_snapshot: true,
-              }),
-            });
-            if (!resp.ok) {
-              throw new Error(`Workflow retry failed: ${resp.status}`);
-            }
-            return resource;
+              user_id: resource.ownerUserId,
+              trigger_entity_type: 'resource_link',
+              trigger_entity_id: resource.id,
+              idempotency_key: `youtube-workflow-retry-${resource.id}-${Date.now()}`,
+              create_initial_context_snapshot: true,
+            }),
+          });
+          if (!resp.ok) {
+            throw new Error(`Workflow retry failed: ${resp.status}`);
           }
+          return resource;
         }
       } catch (err: any) {
-        // If workflow retry fails with a real error, throw it
         if (err?.message?.startsWith('Workflow retry')) throw err;
         console.warn('[youtube retry] workflow path failed, falling back to legacy', err);
       }
 
-      // Fallback: legacy retry
+      // Legacy fallback
       const { error } = await supabase.rpc('enqueue_youtube_transcript_job' as any, {
         p_resource_id: resource.id,
         p_force_retry: true,
