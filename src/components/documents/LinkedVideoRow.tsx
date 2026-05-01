@@ -399,7 +399,7 @@ export function LinkedVideoRow({
                       )}
                       <span className="ml-auto text-muted-foreground/50 tabular-nums">{activity.detail || ''}</span>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>
