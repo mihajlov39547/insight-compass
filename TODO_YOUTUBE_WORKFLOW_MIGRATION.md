@@ -31,7 +31,7 @@ Move the working monolith pipeline into the workflow engine (`workflow-worker` h
 
 ---
 
-## Phase 1 — Workflow Foundation for YouTube  ⬅ **IN PROGRESS**
+## Phase 1 — Workflow Foundation for YouTube  ✅ **DONE**
 
 Goal: register a `youtube_processing_v1` workflow definition and wire trigger entry.
 
@@ -99,8 +99,8 @@ Most of this is already implemented; this phase is regression check only.
 
 ## Milestone Checklist (high-level)
 
-- [ ] Phase 1 — workflow definition + flagged trigger
-- [ ] Phase 2 — handlers implemented end-to-end
+- [x] Phase 1 — workflow definition + flagged trigger
+- [x] Phase 2 — handlers implemented end-to-end
 - [ ] Phase 3 — retrieval parity confirmed
 - [ ] Phase 4 — workflow-native UI + retry
 - [ ] Phase 5 — cutover complete
@@ -108,12 +108,6 @@ Most of this is already implemented; this phase is regression check only.
 
 ---
 
-## Suggested First Step
+## Suggested Next Step
 
-**Start with Phase 1.1 + 1.2** — a single migration that registers the `youtube_processing_v1` workflow definition with all 7 activities (handlers as stubs returning `ok: true` with empty payload), plus stub handler entries in `workflow-worker/handler-registry.ts`. This is low-risk (no behavior change — legacy path still runs by default) and gives us:
-
-1. A real workflow definition we can trigger manually via `workflow-start` for smoke testing.
-2. Visibility in existing diagnostics SQL.
-3. A scaffold for Phase 2 to fill in stage-by-stage without blocking on UI/cutover decisions.
-
-**Shall I proceed with the Phase 1.1 + 1.2 migration + stub handlers?**
+**Test Phase 2 end-to-end**: Add a new YouTube link (with the flag already on) and verify the workflow-produced chunks, embeddings, questions, and summary match what the legacy worker produces. Then proceed to **Phase 3** retrieval parity verification.
