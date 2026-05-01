@@ -70,12 +70,12 @@ Most of this is already implemented; this phase is regression check only.
 
 ---
 
-## Phase 4 — UX + Observability
+## Phase 4 — UX + Observability  ✅ **DONE**
 
-- [ ] **4.1** Replace placeholder timeline in linked-video cards with workflow-native activity_runs timeline (project Manage documents).
-- [ ] **4.2** Same for notebook Manage documents.
-- [ ] **4.3** Per-stage error display + retry affordance (trigger workflow retry, not legacy `enqueue_youtube_transcript_job`).
-- [ ] **4.4** Resource-level diagnostic fields exposed: `last_activity_key`, `last_activity_status`, `last_failure_reason`.
+- [x] **4.1** Replace placeholder timeline in linked-video cards with workflow-native `activity_runs` timeline (project Manage documents). New hook `useResourceWorkflowTimeline` fetches real data; falls back to legacy debug when no workflow run exists.
+- [x] **4.2** Same for notebook Manage documents — `LinkedVideoRow` is shared, so both dashboards are covered.
+- [x] **4.3** Per-stage error display + retry affordance. Timeline now shows per-activity duration, attempt count (×N), and error messages. `useRetryYouTubeTranscriptIngestion` uses `workflow-start` with a fresh idempotency key when the flag is on, falling back to legacy `enqueue_youtube_transcript_job`.
+- [x] **4.4** Resource-level diagnostic fields exposed via workflow timeline: last completed activity, workflow status, per-activity error messages visible in the timeline detail column.
 
 ---
 
