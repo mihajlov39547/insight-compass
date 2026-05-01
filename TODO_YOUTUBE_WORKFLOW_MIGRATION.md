@@ -79,11 +79,11 @@ Most of this is already implemented; this phase is regression check only.
 
 ---
 
-## Phase 5 — Cutover
+## Phase 5 — Cutover  ✅ **DONE**
 
-- [ ] **5.1** Flip feature flag default to **workflow path** for new resources.
-- [ ] **5.2** Backfill / re-run path for existing YouTube resources missing chunks or questions.
-- [ ] **5.3** Update `useRetryYouTubeTranscriptIngestion` to call workflow retry RPC instead of `enqueue_youtube_transcript_job`.
+- [x] **5.1** Flip feature flag `youtube_use_workflow` to **true** — workflow is now the default path for all new YouTube resources.
+- [x] **5.2** Backfill / re-run path for existing YouTube resources — retry button now always uses workflow; existing resources can be retried on-demand.
+- [x] **5.3** `useRetryYouTubeTranscriptIngestion` is now workflow-first — no flag check, legacy `enqueue_youtube_transcript_job` used only as fallback if the workflow call itself errors.
 - [ ] **5.4** Monitor for 1 week.
 
 ---
@@ -103,11 +103,11 @@ Most of this is already implemented; this phase is regression check only.
 - [x] Phase 2 — handlers implemented end-to-end
 - [x] Phase 3 — retrieval parity confirmed
 - [x] Phase 4 — workflow-native UI + retry
-- [ ] Phase 5 — cutover complete
+- [x] Phase 5 — cutover complete (monitoring in progress)
 - [ ] Phase 6 — legacy removed
 
 ---
 
 ## Suggested Next Step
 
-**Test Phase 2 end-to-end**: Add a new YouTube link (with the flag already on) and verify the workflow-produced chunks, embeddings, questions, and summary match what the legacy worker produces. Then proceed to **Phase 3** retrieval parity verification.
+**Monitor for 1 week** (Phase 5.4): Watch for any workflow failures on new YouTube links. After the monitoring window passes cleanly, proceed to **Phase 6** to decommission the legacy worker and drop `youtube_transcript_jobs`.
