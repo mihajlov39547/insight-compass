@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import type { Resource } from '@/lib/resourceClassification';
 import { useResourceTranscriptDebug } from '@/hooks/useResourceTranscriptDebug';
 import { useResourceTranscriptPipelineStats } from '@/hooks/useResourceTranscriptPipelineStats';
+import { useResourceWorkflowTimeline, type WorkflowActivityRun } from '@/hooks/useResourceWorkflowTimeline';
 import { useTranslation } from 'react-i18next';
 
 function formatDurationFromMs(ms: number | null | undefined): string {
