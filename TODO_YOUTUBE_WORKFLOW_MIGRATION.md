@@ -101,7 +101,7 @@ Most of this is already implemented; this phase is regression check only.
 
 - [x] Phase 1 — workflow definition + flagged trigger
 - [x] Phase 2 — handlers implemented end-to-end
-- [ ] Phase 3 — retrieval parity confirmed
+- [x] Phase 3 — retrieval parity confirmed
 - [ ] Phase 4 — workflow-native UI + retry
 - [ ] Phase 5 — cutover complete
 - [ ] Phase 6 — legacy removed
