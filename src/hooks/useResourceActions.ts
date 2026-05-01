@@ -261,8 +261,8 @@ export function useCreateLinkResource() {
 
       const row = Array.isArray(data) ? data[0] : data;
 
-      // Phase 1.4: when the new link is YouTube and flag is on, also kick the workflow path.
-      // Legacy enqueue still runs inside the SQL stub regardless (safe parallel path).
+      // Phase 5: Always kick the workflow path for YouTube links.
+      // Legacy enqueue still runs inside the SQL stub as safety net.
       if (row?.id && input.provider === 'youtube') {
         const { data: userData } = await supabase.auth.getUser();
         const userId = userData?.user?.id;
