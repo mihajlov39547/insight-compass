@@ -336,19 +336,9 @@ export function useRetryYouTubeTranscriptIngestion() {
           return resource;
         }
       } catch (err: any) {
-        if (err?.message?.startsWith('Workflow retry')) throw err;
-        console.warn('[youtube retry] workflow path failed, falling back to legacy', err);
+        console.error('[youtube retry] workflow retry failed', err);
+        throw err;
       }
-
-      // Legacy fallback
-      const { error } = await supabase.rpc('enqueue_youtube_transcript_job' as any, {
-        p_resource_id: resource.id,
-        p_force_retry: true,
-      });
-
-      if (error) throw error;
-
-      return resource;
     },
     onSuccess: (resource) => {
       invalidateResourceScopes(queryClient, resource);

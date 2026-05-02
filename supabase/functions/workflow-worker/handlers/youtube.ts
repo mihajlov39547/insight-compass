@@ -10,8 +10,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import type { HandlerExecutionInput, JsonObject } from "../contracts.ts";
 import type { HandlerOutput } from "../handler-interface.ts";
-import { fetchTranscriptForVideo } from "../../youtube-transcript-worker/transcript-fetcher.ts";
-import { buildTranscriptChunks } from "../../youtube-transcript-worker/chunk-persistence.ts";
+import { fetchTranscriptForVideo } from "../../_shared/youtube/transcript-fetcher.ts";
+import { buildTranscriptChunks } from "../../_shared/youtube/chunk-persistence.ts";
 import { generateEmbeddingsLocal, localEmbedding } from "../../_shared/document-processing/embeddings.ts";
 import { generateDocumentSummary } from "../../_shared/document-processing/summarization.ts";
 import { getModelForTask } from "../../_shared/ai/task-model-config.ts";
