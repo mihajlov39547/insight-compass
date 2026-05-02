@@ -1,9 +1,9 @@
 /**
  * Transcript chunking and persistence logic.
  */
-import { chunkText, estimateTokenCount } from "../_shared/document-processing/chunking.ts";
-import { generateEmbeddingsLocal, localEmbedding } from "../_shared/document-processing/embeddings.ts";
-import { getModelForTask } from "../_shared/ai/task-model-config.ts";
+import { chunkText, estimateTokenCount } from "../document-processing/chunking.ts";
+import { generateEmbeddingsLocal, localEmbedding } from "../document-processing/embeddings.ts";
+import { getModelForTask } from "../ai/task-model-config.ts";
 
 interface TranscriptPersistenceStats {
   chunkCount: number;

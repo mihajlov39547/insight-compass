@@ -1990,65 +1990,6 @@ export type Database = {
           },
         ]
       }
-      youtube_transcript_jobs: {
-        Row: {
-          attempt_count: number
-          created_at: string
-          error_message: string | null
-          finished_at: string | null
-          id: string
-          lease_expires_at: string | null
-          max_attempts: number
-          requested_by: string
-          resource_link_id: string
-          started_at: string | null
-          status: string
-          transcript_text: string | null
-          updated_at: string
-          worker_id: string | null
-        }
-        Insert: {
-          attempt_count?: number
-          created_at?: string
-          error_message?: string | null
-          finished_at?: string | null
-          id?: string
-          lease_expires_at?: string | null
-          max_attempts?: number
-          requested_by: string
-          resource_link_id: string
-          started_at?: string | null
-          status?: string
-          transcript_text?: string | null
-          updated_at?: string
-          worker_id?: string | null
-        }
-        Update: {
-          attempt_count?: number
-          created_at?: string
-          error_message?: string | null
-          finished_at?: string | null
-          id?: string
-          lease_expires_at?: string | null
-          max_attempts?: number
-          requested_by?: string
-          resource_link_id?: string
-          started_at?: string | null
-          status?: string
-          transcript_text?: string | null
-          updated_at?: string
-          worker_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "youtube_transcript_jobs_resource_link_id_fkey"
-            columns: ["resource_link_id"]
-            isOneToOne: false
-            referencedRelation: "resource_links"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -2148,7 +2089,6 @@ export type Database = {
         }[]
       }
       extract_url_domain: { Args: { p_url: string }; Returns: string }
-      extract_youtube_video_id: { Args: { p_url: string }; Returns: string }
       find_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_document_chunk_stats: {
         Args: { doc_ids: string[] }
