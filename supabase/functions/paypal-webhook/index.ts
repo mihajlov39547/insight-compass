@@ -26,6 +26,17 @@ async function verifyPayPalWebhook(
   const clientSecret = Deno.env.get("PAYPAL_SECRET_KEY_1");
   const paypalEnv = Deno.env.get("PAYPAL_ENV") || "sandbox";
 
+  // PayPal simulator events lack signature headers — skip verification in sandbox
+  if (paypalEnv !== "live") {
+    const hasSignatureHeaders = req.headers.get("paypal-transmission-id") &&
+      req.headers.get("paypal-transmission-sig") &&
+      req.headers.get("paypal-auth-algo");
+    if (!hasSignatureHeaders) {
+      console.warn("Sandbox mode: no signature headers present, skipping verification (simulator event)");
+      return true;
+    }
+  }
+
   if (!webhookId || !clientId || !clientSecret) {
     console.warn("PayPal verification secrets missing, skipping verification");
     return true; // Allow in dev, tighten for production
