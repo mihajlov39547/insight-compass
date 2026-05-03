@@ -41,3 +41,9 @@ verify_jwt = false
 [functions.password-reset-verify]
 verify_jwt = false
 
+[functions.paypal-subscription-approved]
+verify_jwt = false
+
+[functions.paypal-webhook]
+verify_jwt = false
+

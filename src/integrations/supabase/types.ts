@@ -996,6 +996,42 @@ export type Database = {
         }
         Relationships: []
       }
+      paypal_webhook_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          paypal_event_id: string
+          paypal_resource_id: string | null
+          paypal_subscription_id: string | null
+          processed: boolean
+          processed_at: string | null
+          raw_payload: Json
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          paypal_event_id: string
+          paypal_resource_id?: string | null
+          paypal_subscription_id?: string | null
+          processed?: boolean
+          processed_at?: string | null
+          raw_payload?: Json
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          paypal_event_id?: string
+          paypal_resource_id?: string | null
+          paypal_subscription_id?: string | null
+          processed?: boolean
+          processed_at?: string | null
+          raw_payload?: Json
+        }
+        Relationships: []
+      }
       pending_registrations: {
         Row: {
           attempts: number
@@ -1023,6 +1059,75 @@ export type Database = {
           expires_at?: string
           id?: string
           password_hash?: string
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          chats_per_project_limit: number | null
+          created_at: string
+          currency: string
+          document_upload_limit: number | null
+          id: string
+          interval: string
+          key: string
+          latest_models_enabled: boolean
+          name: string
+          notebook_limit: number | null
+          notebook_member_limit: number | null
+          notebook_sharing_enabled: boolean
+          paypal_plan_id: string | null
+          price_cents: number | null
+          project_limit: number | null
+          project_member_limit: number | null
+          project_sharing_enabled: boolean
+          retrieval_level: string
+          support_level: string
+          updated_at: string
+        }
+        Insert: {
+          chats_per_project_limit?: number | null
+          created_at?: string
+          currency?: string
+          document_upload_limit?: number | null
+          id?: string
+          interval?: string
+          key: string
+          latest_models_enabled?: boolean
+          name: string
+          notebook_limit?: number | null
+          notebook_member_limit?: number | null
+          notebook_sharing_enabled?: boolean
+          paypal_plan_id?: string | null
+          price_cents?: number | null
+          project_limit?: number | null
+          project_member_limit?: number | null
+          project_sharing_enabled?: boolean
+          retrieval_level?: string
+          support_level?: string
+          updated_at?: string
+        }
+        Update: {
+          chats_per_project_limit?: number | null
+          created_at?: string
+          currency?: string
+          document_upload_limit?: number | null
+          id?: string
+          interval?: string
+          key?: string
+          latest_models_enabled?: boolean
+          name?: string
+          notebook_limit?: number | null
+          notebook_member_limit?: number | null
+          notebook_sharing_enabled?: boolean
+          paypal_plan_id?: string | null
+          price_cents?: number | null
+          project_limit?: number | null
+          project_member_limit?: number | null
+          project_sharing_enabled?: boolean
+          retrieval_level?: string
+          support_level?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1483,6 +1588,48 @@ export type Database = {
           retrieval_keyword_weight?: number
           retrieval_question_weight?: number
           show_suggested_prompts?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          paypal_plan_id: string | null
+          paypal_subscription_id: string | null
+          plan_key: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          paypal_plan_id?: string | null
+          paypal_subscription_id?: string | null
+          plan_key?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          paypal_plan_id?: string | null
+          paypal_subscription_id?: string | null
+          plan_key?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Trash2, Shield, AlertTriangle, Sparkles, Zap, Crown, Building2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Shield, AlertTriangle, Sparkles, Zap, Crown, Building2, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog';
+import { BillingSection } from '@/components/settings/BillingSection';
 
 
 interface SavedProfileState {
@@ -313,6 +314,10 @@ export default function ProfileSettings() {
           <TabsList className="w-full mb-6">
             <TabsTrigger value="profile" className="flex-1">{t('profileSettings.tabs.profile')}</TabsTrigger>
             <TabsTrigger value="settings" className="flex-1">{t('profileSettings.tabs.settings')}</TabsTrigger>
+            <TabsTrigger value="billing" className="flex-1">
+              <CreditCard className="h-4 w-4 mr-1.5" />
+              Billing
+            </TabsTrigger>
           </TabsList>
 
           {/* ===================== PROFILE TAB ===================== */}
@@ -523,6 +528,10 @@ export default function ProfileSettings() {
                 </AlertDialogContent>
               </AlertDialog>
             </section>
+          </TabsContent>
+
+          <TabsContent value="billing">
+            <BillingSection />
           </TabsContent>
         </Tabs>
       </div>
