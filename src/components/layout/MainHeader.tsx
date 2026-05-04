@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 import { planIcons } from '@/lib/planConfig';
+import { normalizePlan } from '@/types/app';
 
 interface MainHeaderProps {
   minimal?: boolean;
