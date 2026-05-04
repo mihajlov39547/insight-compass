@@ -138,7 +138,7 @@ function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean, payp
 
 export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp, onSelectPlan }: PricingDialogProps) {
   const { t } = useTranslation();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const qc = useQueryClient();
   const [contactSalesOpen, setContactSalesOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
