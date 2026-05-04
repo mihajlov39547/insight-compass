@@ -24,6 +24,7 @@ export interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
