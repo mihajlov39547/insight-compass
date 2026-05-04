@@ -1,7 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { PAYPAL_CLIENT_ID, PAYPAL_ENV } from '@/config/env';
 
-const PAYPAL_SDK_URL =
-  'https://www.paypal.com/sdk/js?client-id=AQ9U9E6D6qxsOKpMLm4fMnwzuyfKq9rye9XUfFlQUMo0g4hoADoue4UZf5sunSj1toOqV5XvqCotvyKG&vault=true&intent=subscription';
+/**
+ * Build the SDK URL using the configured client ID.
+ * PayPal uses the same host (www.paypal.com) for both sandbox and live —
+ * the environment is determined by the client-id credential, not the hostname.
+ */
+function buildSdkUrl(): string {
+  if (!PAYPAL_CLIENT_ID) {
+    throw new Error(
+      'VITE_PAYPAL_CLIENT_ID is not configured. ' +
+      'Set it in public/env.js or as a Vite env var.'
+    );
+  }
+  console.info(`[PayPal] Loading SDK — env=${PAYPAL_ENV}, clientId=${PAYPAL_CLIENT_ID.slice(0, 12)}…`);
+  return `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&vault=true&intent=subscription`;
+}
 
 let sdkLoadPromise: Promise<void> | null = null;
 
@@ -11,10 +25,13 @@ function loadPayPalSDK(): Promise<void> {
 
   sdkLoadPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = PAYPAL_SDK_URL;
+    script.src = buildSdkUrl();
     script.setAttribute('data-sdk-integration-source', 'button-factory');
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load PayPal SDK'));
+    script.onerror = () => {
+      sdkLoadPromise = null; // allow retry
+      reject(new Error('Failed to load PayPal SDK'));
+    };
     document.head.appendChild(script);
   });
 

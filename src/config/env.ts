@@ -55,6 +55,24 @@ export const SUPABASE_ENV_SOURCE = {
   key: keySelection.source,
 } as const;
 
+// --- PayPal (publishable / frontend-safe) ---
+const paypalClientIdSelection = pickValue(
+  import.meta.env.VITE_PAYPAL_CLIENT_ID,
+  runtimeEnv.VITE_PAYPAL_CLIENT_ID,
+  '' // no fallback — must be configured
+);
+const paypalEnvSelection = pickValue(
+  import.meta.env.VITE_PAYPAL_ENV,
+  runtimeEnv.VITE_PAYPAL_ENV,
+  'sandbox' // default to sandbox for safety
+);
+
+/** PayPal publishable client ID loaded from env / runtime config. */
+export const PAYPAL_CLIENT_ID = paypalClientIdSelection.value;
+
+/** "sandbox" or "live" — controls which PayPal environment the frontend targets. */
+export const PAYPAL_ENV = paypalEnvSelection.value as 'sandbox' | 'live';
+
 export function getFunctionUrl(path: string): string {
   const normalized = path.startsWith('/') ? path : `/${path}`;
   return `${SUPABASE_URL}${normalized}`;
