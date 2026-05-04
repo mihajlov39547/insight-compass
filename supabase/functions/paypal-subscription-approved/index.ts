@@ -8,6 +8,10 @@ const corsHeaders = {
 };
 
 const PLAN_MAP: Record<string, string> = {
+  // Sandbox
+  "P-3YC17439JF027973DNH4PDMA": "basic_monthly",
+  "P-64W44396F73265731NH4O5EI": "premium_monthly",
+  // Live
   "P-94V224809Y744903GNH3YJ5I": "basic_monthly",
   "P-914500751X525453BNH3YLOA": "premium_monthly",
 };
