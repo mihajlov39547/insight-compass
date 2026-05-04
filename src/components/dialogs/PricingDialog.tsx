@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import {
   Dialog,
@@ -42,10 +42,19 @@ interface PlanCard {
   ctaType: 'current' | 'paypal' | 'contact' | 'downgrade' | 'signup';
 }
 
-const PAYPAL_PLANS: Record<string, { planId: string; planKey: string }> = {
-  basic: { planId: 'P-94V224809Y744903GNH3YJ5I', planKey: 'basic_monthly' },
-  premium: { planId: 'P-914500751X525453BNH3YLOA', planKey: 'premium_monthly' },
-};
+// Plan IDs are fetched from the backend at runtime (env-aware).
+let _cachedPlans: Record<string, { planId: string; planKey: string }> | null = null;
+
+async function fetchPayPalPlans(): Promise<Record<string, { planId: string; planKey: string }>> {
+  if (_cachedPlans) return _cachedPlans;
+  const { data, error } = await supabase.functions.invoke('paypal-config');
+  if (error || !data?.plans) {
+    console.warn('Failed to fetch PayPal plans, using empty map');
+    return {};
+  }
+  _cachedPlans = data.plans;
+  return data.plans;
+}
 
 const PLAN_ORDER: Plan[] = ['free', 'basic', 'premium', 'enterprise'];
 
@@ -113,7 +122,7 @@ function getPlanPrice(planId: Plan): { price: string; period: string } {
   }
 }
 
-function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean): PlanCard['ctaType'] {
+function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean, paypalPlans: Record<string, { planId: string; planKey: string }>): PlanCard['ctaType'] {
   if (!isLoggedIn) {
     if (cardPlan === 'enterprise') return 'contact';
     return 'signup';
@@ -123,7 +132,7 @@ function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean): Pla
   const currentIdx = PLAN_ORDER.indexOf(currentPlan);
   const cardIdx = PLAN_ORDER.indexOf(cardPlan);
   if (cardIdx < currentIdx) return 'downgrade';
-  if (PAYPAL_PLANS[cardPlan]) return 'paypal';
+  if (paypalPlans[cardPlan]) return 'paypal';
   return 'current'; // free → free
 }
 
@@ -133,7 +142,14 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
   const qc = useQueryClient();
   const [contactSalesOpen, setContactSalesOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [paypalPlans, setPaypalPlans] = useState<Record<string, { planId: string; planKey: string }>>({});
   const { data: subscription } = useUserSubscription();
+
+  useEffect(() => {
+    if (open) {
+      fetchPayPalPlans().then(setPaypalPlans);
+    }
+  }, [open]);
 
   const isLoggedIn = !!user;
   const currentPlan = normalizePlan(profile?.plan);
@@ -185,8 +201,8 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
               const { price, period } = getPlanPrice(planId);
               const isPopular = planId === 'premium';
               const isCurrentPlan = isLoggedIn && currentPlan === planId;
-              const ctaType = getCtaType(planId, currentPlan, isLoggedIn);
-              const paypal = PAYPAL_PLANS[planId];
+              const ctaType = getCtaType(planId, currentPlan, isLoggedIn, paypalPlans);
+              const paypal = paypalPlans[planId];
 
               return (
                 <div
