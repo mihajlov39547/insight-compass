@@ -181,19 +181,10 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
       // Refresh profile and subscription data
       qc.invalidateQueries({ queryKey: ['user-subscription'] });
 
-      // Re-fetch profile to update plan across UI
-      const { data: updatedProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user!.id)
-        .maybeSingle();
+      // Re-fetch profile to update plan across the entire UI (header, sidebar, etc.)
+      await refreshProfile();
 
-      if (updatedProfile) {
-        // Force profile refresh by invalidating auth-related queries
-        qc.invalidateQueries({ queryKey: ['profile'] });
-      }
-
-      // Update local plan state
+      // Update local AppContext plan state
       const newPlan = planKey.includes('premium') ? 'premium' : planKey.includes('basic') ? 'basic' : 'free';
       onSelectPlan(newPlan as Plan);
 
@@ -205,7 +196,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
     } finally {
       setProcessing(false);
     }
-  }, [qc, user, onSelectPlan, onOpenChange]);
+  }, [qc, user, onSelectPlan, onOpenChange, refreshProfile]);
 
   return (
     <>
