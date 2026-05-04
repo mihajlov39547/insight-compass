@@ -1,41 +1,46 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PAYPAL_CLIENT_ID, PAYPAL_ENV } from '@/config/env';
+import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Build the SDK URL using the configured client ID.
- * PayPal uses the same host (www.paypal.com) for both sandbox and live —
- * the environment is determined by the client-id credential, not the hostname.
- */
-function buildSdkUrl(): string {
-  if (!PAYPAL_CLIENT_ID) {
-    throw new Error(
-      'VITE_PAYPAL_CLIENT_ID is not configured. ' +
-      'Set it in public/env.js or as a Vite env var.'
-    );
-  }
-  console.info(`[PayPal] Loading SDK — env=${PAYPAL_ENV}, clientId=${PAYPAL_CLIENT_ID.slice(0, 12)}…`);
-  return `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&vault=true&intent=subscription`;
+/** Fetch PayPal publishable config from the backend (secrets-managed). */
+async function fetchPayPalConfig(): Promise<{ clientId: string; env: string }> {
+  const { data, error } = await supabase.functions.invoke('paypal-config');
+  if (error) throw new Error(`Failed to fetch PayPal config: ${error.message}`);
+  if (!data?.clientId) throw new Error('PAYPAL_CLIENT_ID is not configured in backend secrets.');
+  return data as { clientId: string; env: string };
 }
 
 let sdkLoadPromise: Promise<void> | null = null;
+let cachedConfig: { clientId: string; env: string } | null = null;
 
-function loadPayPalSDK(): Promise<void> {
-  if ((window as any).paypal) return Promise.resolve();
-  if (sdkLoadPromise) return sdkLoadPromise;
+async function loadPayPalSDK(): Promise<{ clientId: string; env: string }> {
+  if (!cachedConfig) {
+    cachedConfig = await fetchPayPalConfig();
+  }
+  const config = cachedConfig;
+
+  if ((window as any).paypal) return config;
+  if (sdkLoadPromise) {
+    await sdkLoadPromise;
+    return config;
+  }
+
+  console.info(`[PayPal] Loading SDK — env=${config.env}, clientId=${config.clientId.slice(0, 12)}…`);
+  const url = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(config.clientId)}&vault=true&intent=subscription`;
 
   sdkLoadPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = buildSdkUrl();
+    script.src = url;
     script.setAttribute('data-sdk-integration-source', 'button-factory');
     script.onload = () => resolve();
     script.onerror = () => {
-      sdkLoadPromise = null; // allow retry
+      sdkLoadPromise = null;
       reject(new Error('Failed to load PayPal SDK'));
     };
     document.head.appendChild(script);
   });
 
-  return sdkLoadPromise;
+  await sdkLoadPromise;
+  return config;
 }
 
 interface PayPalSubscriptionButtonProps {
