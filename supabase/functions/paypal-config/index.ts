@@ -24,8 +24,11 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const clientId = Deno.env.get("PAYPAL_CLIENT_ID") || "";
   const env = (Deno.env.get("PAYPAL_ENV") || "sandbox").trim().toLowerCase();
+  // Use env-specific client ID: PAYPAL_SANDBOX_CLIENT_ID for sandbox, PAYPAL_CLIENT_ID for live
+  const clientId = env === "sandbox"
+    ? (Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID") || Deno.env.get("PAYPAL_CLIENT_ID") || "")
+    : (Deno.env.get("PAYPAL_CLIENT_ID") || "");
   const plans = PLANS_BY_ENV[env] ?? PLANS_BY_ENV["sandbox"];
 
   return new Response(
