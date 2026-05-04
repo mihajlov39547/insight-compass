@@ -57,6 +57,11 @@ export const SUPABASE_ENV_SOURCE = {
 
 
 export function getFunctionUrl(path: string): string {
-  const normalized = path.startsWith('/') ? path : `/${path}`;
-  return `${SUPABASE_URL}${normalized}`;
+  // If already a full path (e.g. /functions/v1/...), use as-is; otherwise prefix with /functions/v1
+  if (path.startsWith('/functions/v1/') || path.startsWith('functions/v1/')) {
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    return `${SUPABASE_URL}${normalized}`;
+  }
+  const name = path.startsWith('/') ? path.slice(1) : path;
+  return `${SUPABASE_URL}/functions/v1/${name}`;
 }
