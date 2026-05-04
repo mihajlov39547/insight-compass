@@ -5,6 +5,8 @@ const FALLBACK_SUPABASE_PUBLISHABLE_KEY =
 export type RuntimeEnv = {
   VITE_SUPABASE_URL?: string;
   VITE_SUPABASE_PUBLISHABLE_KEY?: string;
+  VITE_PAYPAL_CLIENT_ID?: string;
+  VITE_PAYPAL_ENV?: string;
 };
 
 function readRuntimeEnv(): RuntimeEnv {
