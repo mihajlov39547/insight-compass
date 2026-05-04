@@ -156,24 +156,25 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
 
   const handlePayPalApprove = useCallback(async (subscriptionID: string, paypalPlanId: string, planKey: string) => {
     setProcessing(true);
+    console.info('[PayPal] onApprove triggered', { subscriptionID, paypalPlanId, planKey });
     try {
       const res = await fetchEdgeFunction('paypal-subscription-approved', {
         method: 'POST',
         body: JSON.stringify({ subscriptionID, paypalPlanId, planKey }),
       });
+      console.info('[PayPal] Edge Function response', { url: res.url, status: res.status });
       const result = await res.json();
+      console.info('[PayPal] Edge Function body', result);
       if (!res.ok) {
         toast.error(result.error || 'Subscription processing failed');
         return;
       }
       toast.success('Subscription activated! Welcome to your new plan.');
       qc.invalidateQueries({ queryKey: ['user-subscription'] });
-      // Refresh profile
       qc.invalidateQueries({ queryKey: ['profile'] });
-      // Force profile refetch
       window.location.reload();
     } catch (err) {
-      console.error('PayPal approval error:', err);
+      console.error('[PayPal] approval error:', err);
       toast.error('Failed to process subscription. Please try again.');
     } finally {
       setProcessing(false);
