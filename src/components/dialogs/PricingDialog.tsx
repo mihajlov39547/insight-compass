@@ -122,7 +122,7 @@ function getPlanPrice(planId: Plan): { price: string; period: string } {
   }
 }
 
-function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean): PlanCard['ctaType'] {
+function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean, paypalPlans: Record<string, { planId: string; planKey: string }>): PlanCard['ctaType'] {
   if (!isLoggedIn) {
     if (cardPlan === 'enterprise') return 'contact';
     return 'signup';
@@ -132,7 +132,7 @@ function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean): Pla
   const currentIdx = PLAN_ORDER.indexOf(currentPlan);
   const cardIdx = PLAN_ORDER.indexOf(cardPlan);
   if (cardIdx < currentIdx) return 'downgrade';
-  if (PAYPAL_PLANS[cardPlan]) return 'paypal';
+  if (paypalPlans[cardPlan]) return 'paypal';
   return 'current'; // free → free
 }
 
@@ -142,7 +142,14 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
   const qc = useQueryClient();
   const [contactSalesOpen, setContactSalesOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [paypalPlans, setPaypalPlans] = useState<Record<string, { planId: string; planKey: string }>>({});
   const { data: subscription } = useUserSubscription();
+
+  useEffect(() => {
+    if (open) {
+      fetchPayPalPlans().then(setPaypalPlans);
+    }
+  }, [open]);
 
   const isLoggedIn = !!user;
   const currentPlan = normalizePlan(profile?.plan);
@@ -194,8 +201,8 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
               const { price, period } = getPlanPrice(planId);
               const isPopular = planId === 'premium';
               const isCurrentPlan = isLoggedIn && currentPlan === planId;
-              const ctaType = getCtaType(planId, currentPlan, isLoggedIn);
-              const paypal = PAYPAL_PLANS[planId];
+              const ctaType = getCtaType(planId, currentPlan, isLoggedIn, paypalPlans);
+              const paypal = paypalPlans[planId];
 
               return (
                 <div
