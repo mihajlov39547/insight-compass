@@ -8,4 +8,7 @@
 window.__ENV__ = {
   VITE_SUPABASE_URL: "https://mdrxzwudhtmkyqcxwvcy.supabase.co",
   VITE_SUPABASE_PUBLISHABLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kcnh6d3VkaHRta3lxY3h3dmN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5OTQ2NjAsImV4cCI6MjA4OTU3MDY2MH0.2EZVGthInapEDDEpTD3DSTHde92lMmCNd_H9V97gyC8",
+  // PayPal sandbox client ID (publishable key — safe for frontend)
+  VITE_PAYPAL_CLIENT_ID: "AQ9U9E6D6qxsOKpMLm4fMnwzuyfKq9rye9XUfFlQUMo0g4hoADoue4UZf5sunSj1toOqV5XvqCotvyKG",
+  VITE_PAYPAL_ENV: "sandbox",
 };
