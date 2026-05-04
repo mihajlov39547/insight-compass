@@ -169,17 +169,43 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
         toast.error(result.error || 'Subscription processing failed');
         return;
       }
-      toast.success('Subscription activated! Welcome to your new plan.');
+
+      // Derive friendly plan name
+      const friendlyPlan = planKey.includes('premium') ? 'Premium' : planKey.includes('basic') ? 'Basic' : planKey;
+
+      toast.success(`🎉 Subscription activated!`, {
+        description: `You're now on the ${friendlyPlan} plan. Subscription ID: ${subscriptionID}`,
+        duration: 8000,
+      });
+
+      // Refresh profile and subscription data
       qc.invalidateQueries({ queryKey: ['user-subscription'] });
-      qc.invalidateQueries({ queryKey: ['profile'] });
-      window.location.reload();
+
+      // Re-fetch profile to update plan across UI
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      if (updatedProfile) {
+        // Force profile refresh by invalidating auth-related queries
+        qc.invalidateQueries({ queryKey: ['profile'] });
+      }
+
+      // Update local plan state
+      const newPlan = planKey.includes('premium') ? 'premium' : planKey.includes('basic') ? 'basic' : 'free';
+      onSelectPlan(newPlan as Plan);
+
+      // Close dialog after brief delay
+      setTimeout(() => onOpenChange(false), 1500);
     } catch (err) {
       console.error('[PayPal] approval error:', err);
       toast.error('Failed to process subscription. Please try again.');
     } finally {
       setProcessing(false);
     }
-  }, [qc]);
+  }, [qc, user, onSelectPlan, onOpenChange]);
 
   return (
     <>
