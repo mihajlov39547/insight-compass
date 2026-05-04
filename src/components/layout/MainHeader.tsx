@@ -45,7 +45,8 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
 
   const language = normalizeLanguageCode(i18n.resolvedLanguage || i18n.language);
 
-  const PlanIcon = planIcons[appUser.plan];
+  const currentPlan = normalizePlan(profile?.plan);
+  const PlanIcon = planIcons[currentPlan];
 
   const handleChangeLanguage = (code: string) => {
     void i18n.changeLanguage(code);
@@ -127,15 +128,15 @@ export function MainHeader({ minimal = false }: MainHeaderProps) {
                   size="sm"
                   className={cn(
                     "h-9 px-3 gap-1.5 rounded-lg",
-                    `plan-badge-${appUser.plan}`
+                    `plan-badge-${currentPlan}`
                   )}
                   onClick={() => setShowPricing(true)}
                 >
                   <PlanIcon className="h-4 w-4" />
-                  <span className="text-sm font-medium">{t(`header.plans.${appUser.plan}`)}</span>
+                  <span className="text-sm font-medium">{t(`header.plans.${currentPlan}`)}</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{t(`header.plans.${appUser.plan}`)} {t('profileSettings.subscription.planSuffix')}</TooltipContent>
+              <TooltipContent>{t(`header.plans.${currentPlan}`)} {t('profileSettings.subscription.planSuffix')}</TooltipContent>
             </Tooltip>
 
             {/* General Settings - hide in minimal mode */}
