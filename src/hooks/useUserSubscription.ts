@@ -39,5 +39,14 @@ export function useEffectivePlanKey(): string {
   const { data: sub } = useUserSubscription();
   if (!sub) return 'free';
   if (sub.status === 'active' || sub.status === 'pending') return sub.plan_key;
+  // Cancelled but still within billing period
+  if (
+    sub.status === 'cancelled' &&
+    sub.cancel_at_period_end &&
+    sub.current_period_end &&
+    new Date(sub.current_period_end) > new Date()
+  ) {
+    return sub.plan_key;
+  }
   return 'free';
 }
