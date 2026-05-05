@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Upload, Trash2, File as FileIcon, FileType, FileSpreadsheet, Loader2, RotateCcw, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
