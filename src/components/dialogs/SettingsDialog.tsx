@@ -78,6 +78,7 @@ export function SettingsDialog() {
             <Settings className="h-5 w-5 text-accent" />
             {t('settingsDialog.title')}
           </DialogTitle>
+          <DialogDescription className="sr-only">Application settings</DialogDescription>
         </DialogHeader>
 
         <div className="py-4 space-y-6">
