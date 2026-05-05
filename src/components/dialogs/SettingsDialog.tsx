@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Settings } from 'lucide-react';
 import {
   Dialog,
-  DialogContent, DialogDescription, DialogHeader, DialogTitle,
+  DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
