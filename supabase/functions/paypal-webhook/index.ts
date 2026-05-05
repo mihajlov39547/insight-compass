@@ -234,14 +234,28 @@ Deno.serve(async (req) => {
       }
       case "BILLING.SUBSCRIPTION.CANCELLED": {
         if (sub) {
-          await supabaseAdmin
-            .from("user_subscriptions")
-            .update({ status: "cancelled", cancel_at_period_end: true })
-            .eq("id", sub.id);
-          await supabaseAdmin
-            .from("profiles")
-            .update({ plan: "free" })
-            .eq("user_id", sub.user_id);
+          // Check if the billing period has ended
+          const periodEnd = sub.current_period_end ? new Date(sub.current_period_end) : null;
+          const periodExpired = !periodEnd || periodEnd <= new Date();
+
+          if (periodExpired) {
+            // Period already ended — downgrade immediately
+            await supabaseAdmin
+              .from("user_subscriptions")
+              .update({ status: "cancelled", cancel_at_period_end: false })
+              .eq("id", sub.id);
+            await supabaseAdmin
+              .from("profiles")
+              .update({ plan: "free" })
+              .eq("user_id", sub.user_id);
+          } else {
+            // Period still active — mark as cancelling but keep access
+            await supabaseAdmin
+              .from("user_subscriptions")
+              .update({ status: "cancelled", cancel_at_period_end: true })
+              .eq("id", sub.id);
+            // Do NOT downgrade profile.plan yet
+          }
         }
         break;
       }

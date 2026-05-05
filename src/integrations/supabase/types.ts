@@ -2220,6 +2220,7 @@ export type Database = {
         Args: { p_url: string }
         Returns: string
       }
+      downgrade_expired_subscriptions: { Args: never; Returns: undefined }
       edge_condition_matches: {
         Args: { p_condition_expr: Json; p_context: Json }
         Returns: boolean

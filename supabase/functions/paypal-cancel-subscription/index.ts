@@ -135,31 +135,60 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update subscription in DB
+    // Fetch subscription details from PayPal to get billing period end
+    let currentPeriodEnd: string | null = null;
+    try {
+      const detailRes = await fetch(
+        `${baseUrl}/v1/billing/subscriptions/${sub.paypal_subscription_id}`,
+        {
+          method: "GET",
+          headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        }
+      );
+      if (detailRes.ok) {
+        const detail = await detailRes.json();
+        // PayPal returns billing_info.next_billing_time for active subs,
+        // or we use the current_period_end from billing_info
+        currentPeriodEnd =
+          detail.billing_info?.next_billing_time ||
+          detail.billing_info?.last_payment?.time ||
+          null;
+        console.info("[cancel] PayPal next_billing_time:", detail.billing_info?.next_billing_time);
+        console.info("[cancel] PayPal last_payment time:", detail.billing_info?.last_payment?.time);
+
+        // If we got last_payment time, calculate period end as +1 month
+        if (!detail.billing_info?.next_billing_time && detail.billing_info?.last_payment?.time) {
+          const lastPayment = new Date(detail.billing_info.last_payment.time);
+          lastPayment.setMonth(lastPayment.getMonth() + 1);
+          currentPeriodEnd = lastPayment.toISOString();
+        }
+      }
+    } catch (e) {
+      console.warn("[cancel] Could not fetch subscription details:", e);
+    }
+
+    console.info("[cancel] Computed currentPeriodEnd:", currentPeriodEnd);
+
+    // Update subscription in DB — keep status active, mark cancel_at_period_end
     const { error: updateSubError } = await supabaseAdmin
       .from("user_subscriptions")
       .update({
-        status: "cancelled",
-        cancel_at_period_end: false,
+        cancel_at_period_end: true,
+        current_period_end: currentPeriodEnd,
         updated_at: new Date().toISOString(),
       })
       .eq("id", sub.id);
 
     console.info("[cancel] DB subscription update error:", updateSubError || "none");
 
-    // Set profile plan to free
-    const { error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .update({ plan: "free" })
-      .eq("user_id", userId);
-
-    console.info("[cancel] DB profile update error:", profileError || "none");
+    // Do NOT downgrade profile.plan — user keeps access until period end
 
     return new Response(
       JSON.stringify({
         success: true,
-        status: "cancelled",
+        status: "cancel_at_period_end",
         paypalSubscriptionId: sub.paypal_subscription_id,
+        currentPeriodEnd,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

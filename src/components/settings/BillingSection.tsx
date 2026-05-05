@@ -31,9 +31,16 @@ export function BillingSection() {
   const qc = useQueryClient();
   const [cancelling, setCancelling] = useState(false);
 
+  const isCancelledWithAccess =
+    subscription?.status === 'cancelled' &&
+    subscription?.cancel_at_period_end &&
+    subscription?.current_period_end &&
+    new Date(subscription.current_period_end) > new Date();
+
   const canCancel =
     !!subscription?.paypal_subscription_id &&
     (subscription.status === 'active' || subscription.status === 'pending') &&
+    !subscription.cancel_at_period_end &&
     (subscription.plan_key === 'basic_monthly' || subscription.plan_key === 'premium_monthly');
 
   const handleCancel = async () => {
@@ -50,7 +57,14 @@ export function BillingSection() {
         toast.error(result.error || 'Cancellation failed');
         return;
       }
-      toast.success('Subscription cancelled successfully.');
+      const periodEnd = result.currentPeriodEnd
+        ? new Date(result.currentPeriodEnd).toLocaleDateString()
+        : null;
+      toast.success(
+        periodEnd
+          ? `Subscription cancelled. You'll keep access until ${periodEnd}.`
+          : 'Subscription cancelled successfully.'
+      );
       qc.invalidateQueries({ queryKey: ['user-subscription'] });
       await refreshProfile();
     } catch (err) {
@@ -84,12 +98,21 @@ export function BillingSection() {
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Status</span>
             <Badge
-              variant={statusLabel === 'active' ? 'default' : 'secondary'}
-              className="capitalize"
+              variant={isCancelledWithAccess ? 'outline' : statusLabel === 'active' ? 'default' : 'secondary'}
+              className={isCancelledWithAccess ? 'text-amber-500 border-amber-500' : 'capitalize'}
             >
-              {statusLabel}
+              {isCancelledWithAccess ? 'Cancels at period end' : statusLabel}
             </Badge>
           </div>
+
+          {isCancelledWithAccess && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Access until</span>
+              <span className="text-sm font-medium text-amber-500">
+                {new Date(subscription!.current_period_end!).toLocaleDateString()}
+              </span>
+            </div>
+          )}
 
           {subscription?.plan_key && subscription.plan_key !== 'free' && (
             <div className="flex items-center justify-between">
