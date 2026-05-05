@@ -7,7 +7,7 @@ import { useChatPreviews } from '@/hooks/useChatPreviews';
 import { formatDistanceToNow } from 'date-fns';
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -181,8 +181,9 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
 
       <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
         <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
-          <DialogHeader>
+           <DialogHeader>
             <DialogTitle>{t('projectDashboard.chats.rename.title')}</DialogTitle>
+            <DialogDescription className="sr-only">Enter a new name for this chat</DialogDescription>
           </DialogHeader>
           <Input
             value={renameChatValue}

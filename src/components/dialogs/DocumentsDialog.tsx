@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Upload, Trash2, File as FileIcon, FileType, FileSpreadsheet, Loader2, RotateCcw, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -132,6 +132,7 @@ export function DocumentsDialog() {
                 </Badge>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">Manage documents</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Button variant="outline" className="w-full mb-4 gap-2 border-2 border-dashed hover:border-accent hover:bg-accent/5" onClick={() => setShowUpload(true)}>

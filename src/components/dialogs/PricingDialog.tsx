@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -208,9 +209,9 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
             <DialogTitle className="text-2xl font-bold">
               {t('pricingDialog.title')}
             </DialogTitle>
-            <p className="text-muted-foreground">
+            <DialogDescription className="text-muted-foreground">
               {t('pricingDialog.subtitle')}
-            </p>
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
