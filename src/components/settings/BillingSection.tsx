@@ -105,6 +105,15 @@ export function BillingSection() {
             </Badge>
           </div>
 
+          {isCancelledWithAccess && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Access until</span>
+              <span className="text-sm font-medium text-amber-500">
+                {new Date(subscription!.current_period_end!).toLocaleDateString()}
+              </span>
+            </div>
+          )}
+
           {subscription?.plan_key && subscription.plan_key !== 'free' && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Billing</span>
