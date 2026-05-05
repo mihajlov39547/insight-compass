@@ -208,7 +208,9 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
             <DialogTitle className="text-2xl font-bold">
               {t('pricingDialog.title')}
             </DialogTitle>
-            <p className="text-muted-foreground">
+            <DialogDescription className="text-muted-foreground">
+              {t('pricingDialog.subtitle')}
+            </DialogDescription>
               {t('pricingDialog.subtitle')}
             </p>
           </DialogHeader>
