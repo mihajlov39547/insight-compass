@@ -80,6 +80,7 @@ export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInD
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="text-xl">{t('auth.signInTitle')}</DialogTitle>
+          <DialogDescription className="sr-only">Sign in to your account</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
