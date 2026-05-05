@@ -1,19 +1,65 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/useAuth';
 import { useUserSubscription } from '@/hooks/useUserSubscription';
 import { normalizePlan } from '@/types/app';
 import { useApp } from '@/contexts/useApp';
-import { CreditCard, ExternalLink } from 'lucide-react';
+import { CreditCard, ExternalLink, XCircle } from 'lucide-react';
 import { planLabels } from '@/lib/planConfig';
+import { fetchEdgeFunction } from '@/lib/edge/invokeWithAuth';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function BillingSection() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { data: subscription, isLoading } = useUserSubscription();
   const { setShowPricing } = useApp();
   const currentPlan = normalizePlan(profile?.plan);
+  const qc = useQueryClient();
+  const [cancelling, setCancelling] = useState(false);
+
+  const canCancel =
+    !!subscription?.paypal_subscription_id &&
+    (subscription.status === 'active' || subscription.status === 'pending') &&
+    (subscription.plan_key === 'basic_monthly' || subscription.plan_key === 'premium_monthly');
+
+  const handleCancel = async () => {
+    setCancelling(true);
+    try {
+      const res = await fetchEdgeFunction('paypal-cancel-subscription', {
+        method: 'POST',
+        body: JSON.stringify({
+          reason: 'User requested cancellation from Rsrcher billing page',
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.error || 'Cancellation failed');
+        return;
+      }
+      toast.success('Subscription cancelled successfully.');
+      qc.invalidateQueries({ queryKey: ['user-subscription'] });
+      await refreshProfile();
+    } catch (err) {
+      console.error('[Cancel] error:', err);
+      toast.error('Failed to cancel subscription. Please try again.');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">Loading billing info…</div>;
@@ -68,15 +114,47 @@ export function BillingSection() {
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">Manage Subscription</h3>
 
-        <Button onClick={() => setShowPricing(true)} className="w-full sm:w-auto">
-          <CreditCard className="h-4 w-4 mr-2" />
-          {currentPlan === 'free' ? 'Upgrade Plan' : 'Change Plan'}
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={() => setShowPricing(true)} className="w-full sm:w-auto">
+            <CreditCard className="h-4 w-4 mr-2" />
+            {currentPlan === 'free' ? 'Upgrade Plan' : 'Change Plan'}
+          </Button>
+
+          {canCancel && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full sm:w-auto" disabled={cancelling}>
+                  <XCircle className="h-4 w-4 mr-2" />
+                  {cancelling ? 'Cancelling…' : 'Cancel subscription'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel subscription?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Your PayPal subscription will be cancelled. You will not be billed again.
+                    Your access may remain active until the end of the current billing period,
+                    depending on your billing status.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep subscription</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCancel}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Cancel subscription
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
 
         {hasPayPalSub && (
           <div className="text-sm text-muted-foreground mt-3 space-y-1">
             <p>
-              To cancel or manage your subscription, please use your{' '}
+              To manage your subscription, you can also use your{' '}
               <a
                 href="https://www.paypal.com/myaccount/autopay/"
                 target="_blank"
