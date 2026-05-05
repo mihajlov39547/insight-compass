@@ -211,8 +211,6 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
             <DialogDescription className="text-muted-foreground">
               {t('pricingDialog.subtitle')}
             </DialogDescription>
-              {t('pricingDialog.subtitle')}
-            </p>
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
