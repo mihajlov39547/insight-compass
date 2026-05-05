@@ -132,6 +132,7 @@ export function DocumentsDialog() {
                 </Badge>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">Manage documents</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Button variant="outline" className="w-full mb-4 gap-2 border-2 border-dashed hover:border-accent hover:bg-accent/5" onClick={() => setShowUpload(true)}>
