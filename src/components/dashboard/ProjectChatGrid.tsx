@@ -181,8 +181,9 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
 
       <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
         <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
-          <DialogHeader>
+           <DialogHeader>
             <DialogTitle>{t('projectDashboard.chats.rename.title')}</DialogTitle>
+            <DialogDescription className="sr-only">Enter a new name for this chat</DialogDescription>
           </DialogHeader>
           <Input
             value={renameChatValue}
