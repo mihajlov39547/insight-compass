@@ -122,7 +122,7 @@ function getPlanPrice(planId: Plan): { price: string; period: string } {
   }
 }
 
-function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean, paypalPlans: Record<string, { planId: string; planKey: string }>): PlanCard['ctaType'] {
+function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean, paypalPlans: Record<string, { planId: string; planKey: string }>, hasActivePaidSub: boolean): PlanCard['ctaType'] {
   if (!isLoggedIn) {
     if (cardPlan === 'enterprise') return 'contact';
     return 'signup';
@@ -132,6 +132,8 @@ function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean, payp
   const currentIdx = PLAN_ORDER.indexOf(currentPlan);
   const cardIdx = PLAN_ORDER.indexOf(cardPlan);
   if (cardIdx < currentIdx) return 'downgrade';
+  // Block new subscriptions if user already has an active paid one
+  if (hasActivePaidSub && paypalPlans[cardPlan]) return 'downgrade';
   if (paypalPlans[cardPlan]) return 'paypal';
   return 'current'; // free → free
 }
@@ -219,7 +221,8 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
               const { price, period } = getPlanPrice(planId);
               const isPopular = planId === 'premium';
               const isCurrentPlan = isLoggedIn && currentPlan === planId;
-              const ctaType = getCtaType(planId, currentPlan, isLoggedIn, paypalPlans);
+              const hasActivePaidSub = !!subscription && (subscription.status === 'active' || subscription.status === 'pending') && (subscription.plan_key === 'basic_monthly' || subscription.plan_key === 'premium_monthly');
+              const ctaType = getCtaType(planId, currentPlan, isLoggedIn, paypalPlans, hasActivePaidSub);
               const paypal = paypalPlans[planId];
 
               return (
@@ -290,8 +293,10 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
                       </Button>
                     )}
                     {ctaType === 'downgrade' && (
-                      <Button variant="outline" className="w-full" disabled>
-                        Contact support to downgrade
+                      <Button variant="outline" className="w-full text-xs" disabled>
+                        {hasActivePaidSub && planId !== currentPlan
+                          ? 'Cancel current plan first'
+                          : 'Contact support to downgrade'}
                       </Button>
                     )}
                     {ctaType === 'signup' && (
