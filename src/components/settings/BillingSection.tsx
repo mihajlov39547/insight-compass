@@ -31,9 +31,16 @@ export function BillingSection() {
   const qc = useQueryClient();
   const [cancelling, setCancelling] = useState(false);
 
+  const isCancelledWithAccess =
+    subscription?.status === 'cancelled' &&
+    subscription?.cancel_at_period_end &&
+    subscription?.current_period_end &&
+    new Date(subscription.current_period_end) > new Date();
+
   const canCancel =
     !!subscription?.paypal_subscription_id &&
     (subscription.status === 'active' || subscription.status === 'pending') &&
+    !subscription.cancel_at_period_end &&
     (subscription.plan_key === 'basic_monthly' || subscription.plan_key === 'premium_monthly');
 
   const handleCancel = async () => {
