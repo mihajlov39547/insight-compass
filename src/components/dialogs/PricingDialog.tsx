@@ -221,7 +221,8 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
               const { price, period } = getPlanPrice(planId);
               const isPopular = planId === 'premium';
               const isCurrentPlan = isLoggedIn && currentPlan === planId;
-              const ctaType = getCtaType(planId, currentPlan, isLoggedIn, paypalPlans);
+              const hasActivePaidSub = !!subscription && (subscription.status === 'active' || subscription.status === 'pending') && (subscription.plan_key === 'basic_monthly' || subscription.plan_key === 'premium_monthly');
+              const ctaType = getCtaType(planId, currentPlan, isLoggedIn, paypalPlans, hasActivePaidSub);
               const paypal = paypalPlans[planId];
 
               return (
