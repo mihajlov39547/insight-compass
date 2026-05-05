@@ -950,7 +950,7 @@ export function AppSidebar() {
       {/* Rename Chat Dialog */}
       <Dialog open={!!renameChatId} onOpenChange={(open) => !open && setRenameChatId(null)}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>{t('sidebar.renameChat.title')}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('sidebar.renameChat.title')}</DialogTitle><DialogDescription className="sr-only">Enter a new name for this chat</DialogDescription></DialogHeader>
           <Input value={renameChatValue} onChange={(e) => setRenameChatValue(e.target.value)} onKeyDown={(e) => {
             if (e.key === 'Enter' && renameChatId && renameChatValue.trim()) {
               updateChat.mutate({ id: renameChatId, name: renameChatValue.trim() }, { onSuccess: () => { toast.success(t('sidebar.toasts.chatRenamed')); setRenameChatId(null); } });
