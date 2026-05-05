@@ -122,7 +122,7 @@ function getPlanPrice(planId: Plan): { price: string; period: string } {
   }
 }
 
-function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean, paypalPlans: Record<string, { planId: string; planKey: string }>): PlanCard['ctaType'] {
+function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean, paypalPlans: Record<string, { planId: string; planKey: string }>, hasActivePaidSub: boolean): PlanCard['ctaType'] {
   if (!isLoggedIn) {
     if (cardPlan === 'enterprise') return 'contact';
     return 'signup';
@@ -132,6 +132,8 @@ function getCtaType(cardPlan: Plan, currentPlan: Plan, isLoggedIn: boolean, payp
   const currentIdx = PLAN_ORDER.indexOf(currentPlan);
   const cardIdx = PLAN_ORDER.indexOf(cardPlan);
   if (cardIdx < currentIdx) return 'downgrade';
+  // Block new subscriptions if user already has an active paid one
+  if (hasActivePaidSub && paypalPlans[cardPlan]) return 'downgrade';
   if (paypalPlans[cardPlan]) return 'paypal';
   return 'current'; // free → free
 }
