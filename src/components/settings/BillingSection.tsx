@@ -57,7 +57,14 @@ export function BillingSection() {
         toast.error(result.error || 'Cancellation failed');
         return;
       }
-      toast.success('Subscription cancelled successfully.');
+      const periodEnd = result.currentPeriodEnd
+        ? new Date(result.currentPeriodEnd).toLocaleDateString()
+        : null;
+      toast.success(
+        periodEnd
+          ? `Subscription cancelled. You'll keep access until ${periodEnd}.`
+          : 'Subscription cancelled successfully.'
+      );
       qc.invalidateQueries({ queryKey: ['user-subscription'] });
       await refreshProfile();
     } catch (err) {
