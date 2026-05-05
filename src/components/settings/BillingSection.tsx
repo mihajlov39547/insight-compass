@@ -98,10 +98,10 @@ export function BillingSection() {
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Status</span>
             <Badge
-              variant={statusLabel === 'active' ? 'default' : 'secondary'}
-              className="capitalize"
+              variant={isCancelledWithAccess ? 'outline' : statusLabel === 'active' ? 'default' : 'secondary'}
+              className={isCancelledWithAccess ? 'text-amber-500 border-amber-500' : 'capitalize'}
             >
-              {statusLabel}
+              {isCancelledWithAccess ? 'Cancels at period end' : statusLabel}
             </Badge>
           </div>
 
