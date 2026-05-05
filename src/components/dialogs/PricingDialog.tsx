@@ -293,8 +293,10 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
                       </Button>
                     )}
                     {ctaType === 'downgrade' && (
-                      <Button variant="outline" className="w-full" disabled>
-                        Contact support to downgrade
+                      <Button variant="outline" className="w-full text-xs" disabled>
+                        {hasActivePaidSub && planId !== currentPlan
+                          ? 'Cancel current plan first'
+                          : 'Contact support to downgrade'}
                       </Button>
                     )}
                     {ctaType === 'signup' && (
