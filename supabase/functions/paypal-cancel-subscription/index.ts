@@ -83,28 +83,84 @@ Deno.serve(async (req) => {
     console.info("[cancel] local subscription id:", sub.id);
     console.info("[cancel] paypal_subscription_id:", sub.paypal_subscription_id);
 
-    // Get PayPal credentials based on env
-    const clientId = paypalEnv === "sandbox"
+    // Get PayPal credentials based on env. Keep sandbox explicit and normalize safely.
+    const rawClientId = paypalEnv === "sandbox"
       ? (Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID") || Deno.env.get("PAYPAL_CLIENT_ID") || "")
       : (Deno.env.get("PAYPAL_CLIENT_ID") || "");
-    const clientSecret = paypalEnv === "sandbox"
+    const rawClientSecret = paypalEnv === "sandbox"
       ? (Deno.env.get("PAYPAL_SANDBOX_SECRET_KEY") || Deno.env.get("PAYPAL_SECRET_KEY_1") || "")
       : (Deno.env.get("PAYPAL_SECRET_KEY_1") || "");
+    const clientId = rawClientId.trim();
+    const clientSecret = rawClientSecret.trim();
+    const oauthUrl = `${baseUrl}/v1/oauth2/token`;
+
+    const safeOauthDiagnostics = {
+      paypalEnv,
+      baseUrl,
+      oauthUrl,
+      hasSandboxClientId: Boolean(Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID")),
+      sandboxClientIdPrefix: Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID")?.slice(0, 10) || null,
+      sandboxClientIdLength: Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID")?.length || 0,
+      hasFallbackClientId: Boolean(Deno.env.get("PAYPAL_CLIENT_ID")),
+      fallbackClientIdPrefix: Deno.env.get("PAYPAL_CLIENT_ID")?.slice(0, 10) || null,
+      fallbackClientIdLength: Deno.env.get("PAYPAL_CLIENT_ID")?.length || 0,
+      hasSandboxSecret: Boolean(Deno.env.get("PAYPAL_SANDBOX_SECRET_KEY")),
+      sandboxSecretLength: Deno.env.get("PAYPAL_SANDBOX_SECRET_KEY")?.length || 0,
+      hasFallbackSecret: Boolean(Deno.env.get("PAYPAL_SECRET_KEY_1")),
+      fallbackSecretLength: Deno.env.get("PAYPAL_SECRET_KEY_1")?.length || 0,
+    };
+    console.info("[cancel] paypal_oauth_config", safeOauthDiagnostics);
+
+    if (!clientId || !clientSecret) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          stage: "paypal_config",
+          message: "Missing PayPal sandbox client ID or secret",
+          hasClientId: Boolean(clientId),
+          hasClientSecret: Boolean(clientSecret),
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Get PayPal OAuth token
-    const tokenRes = await fetch(`${baseUrl}/v1/oauth2/token`, {
+    const tokenRes = await fetch(oauthUrl, {
       method: "POST",
       headers: {
         Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
         "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
       },
       body: "grant_type=client_credentials",
     });
-    const tokenData = await tokenRes.json();
-    if (!tokenData.access_token) {
-      console.error("[cancel] Failed to get PayPal token:", tokenData);
+
+    const tokenText = await tokenRes.text();
+    let tokenData: any = null;
+    try {
+      tokenData = tokenText ? JSON.parse(tokenText) : null;
+    } catch {
+      tokenData = { raw: tokenText };
+    }
+
+    console.info("[cancel] PayPal OAuth response", {
+      status: tokenRes.status,
+      ok: tokenRes.ok,
+      hasAccessToken: Boolean(tokenData?.access_token),
+      paypalError: tokenRes.ok ? null : tokenData,
+    });
+
+    if (!tokenRes.ok || !tokenData?.access_token) {
       return new Response(
-        JSON.stringify({ error: "Failed to authenticate with PayPal" }),
+        JSON.stringify({
+          success: false,
+          stage: "paypal_oauth",
+          paypalStatus: tokenRes.status,
+          paypalError: tokenData,
+          sandboxClientIdPrefix: safeOauthDiagnostics.sandboxClientIdPrefix,
+          sandboxClientIdLength: safeOauthDiagnostics.sandboxClientIdLength,
+          sandboxSecretLength: safeOauthDiagnostics.sandboxSecretLength,
+        }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
