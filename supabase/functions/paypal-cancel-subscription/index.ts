@@ -183,6 +183,43 @@ Deno.serve(async (req) => {
 
     // Do NOT downgrade profile.plan — user keeps access until period end
 
+    // Send cancellation confirmation email
+    try {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("username")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const recipientEmail = authUser?.email;
+
+      if (recipientEmail) {
+        const friendlyPlan = sub.plan_key === "basic_monthly" ? "Basic" : "Premium";
+        const accessUntil = currentPeriodEnd
+          ? new Date(currentPeriodEnd).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+          : "the end of your current billing period";
+
+        await supabaseAdmin.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "subscription-cancelled",
+            recipientEmail,
+            idempotencyKey: `sub-cancel-${sub.paypal_subscription_id}`,
+            templateData: {
+              planName: friendlyPlan,
+              subscriptionId: sub.paypal_subscription_id,
+              accessUntil,
+              email: recipientEmail,
+              name: profile?.username || undefined,
+            },
+          },
+        });
+        console.log("[cancel] Cancellation email sent to", recipientEmail);
+      }
+    } catch (emailErr) {
+      console.error("[cancel] Failed to send cancellation email:", emailErr);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
