@@ -78,6 +78,47 @@ Deno.serve(async (req) => {
       console.error("Failed to update profile plan:", profileError);
     }
 
+    // Send subscription confirmation email
+    try {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("username, email")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      // Get user email from auth
+      const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const recipientEmail = authUser?.email;
+
+      if (recipientEmail) {
+        const friendlyPlan = expectedPlanKey === "basic_monthly" ? "Basic" : "Premium";
+        const price = expectedPlanKey === "basic_monthly" ? "$7.99/month" : "$14.99/month";
+        const periodStart = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+        await supabaseAdmin.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "subscription-confirmation",
+            recipientEmail,
+            idempotencyKey: `sub-confirm-${subscriptionID}`,
+            templateData: {
+              planName: friendlyPlan,
+              planKey: expectedPlanKey,
+              subscriptionId: subscriptionID,
+              billingPeriod: "Monthly",
+              periodStart,
+              price,
+              email: recipientEmail,
+              name: profile?.username || undefined,
+            },
+          },
+        });
+        console.log("Subscription confirmation email sent to", recipientEmail);
+      }
+    } catch (emailErr) {
+      // Non-blocking — subscription still succeeded
+      console.error("Failed to send confirmation email:", emailErr);
+    }
+
     return new Response(
       JSON.stringify({ success: true, planKey: expectedPlanKey }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
