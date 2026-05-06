@@ -13,7 +13,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useContext } from 'react';
 import { useAuth } from '@/contexts/useAuth';
+import { AppContext } from '@/contexts/app-context';
 import { useUserSubscription } from '@/hooks/useUserSubscription';
 import { normalizePlan } from '@/types/app';
 import { useApp } from '@/contexts/useApp';
