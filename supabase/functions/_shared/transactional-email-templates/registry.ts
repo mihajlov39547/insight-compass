@@ -14,6 +14,7 @@ import { template as contactSales } from './contact-sales.tsx'
 import { template as registrationOtp } from './registration-otp.tsx'
 import { template as passwordResetOtp } from './password-reset-otp.tsx'
 import { template as subscriptionConfirmation } from './subscription-confirmation.tsx'
+import { template as subscriptionCancelled } from './subscription-cancelled.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'share-invitation': shareInvitation,
@@ -21,4 +22,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'registration-otp': registrationOtp,
   'password-reset-otp': passwordResetOtp,
   'subscription-confirmation': subscriptionConfirmation,
+  'subscription-cancelled': subscriptionCancelled,
 }
