@@ -37,8 +37,12 @@ async function verifyPayPalWebhook(
 ): Promise<boolean> {
   const paypalEnv = getPayPalEnv();
   const webhookId = Deno.env.get("PAYPAL_WEBHOOK_ID");
-  const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
-  const clientSecret = Deno.env.get("PAYPAL_SECRET_KEY_1");
+  const clientId = paypalEnv === "sandbox"
+    ? (Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID") || "")
+    : (Deno.env.get("PAYPAL_CLIENT_ID") || "");
+  const clientSecret = paypalEnv === "sandbox"
+    ? (Deno.env.get("PAYPAL_SANDBOX_SECRET_KEY") || "")
+    : (Deno.env.get("PAYPAL_SECRET_KEY") || "");
 
   const hasSignatureHeaders =
     req.headers.get("paypal-transmission-id") &&

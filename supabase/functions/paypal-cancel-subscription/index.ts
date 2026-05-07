@@ -85,11 +85,11 @@ Deno.serve(async (req) => {
 
     // Get PayPal credentials based on env. Keep sandbox explicit and normalize safely.
     const rawClientId = paypalEnv === "sandbox"
-      ? (Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID") || Deno.env.get("PAYPAL_CLIENT_ID") || "")
+      ? (Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID") || "")
       : (Deno.env.get("PAYPAL_CLIENT_ID") || "");
     const rawClientSecret = paypalEnv === "sandbox"
-      ? (Deno.env.get("PAYPAL_SANDBOX_SECRET_KEY") || Deno.env.get("PAYPAL_SECRET_KEY_1") || "")
-      : (Deno.env.get("PAYPAL_SECRET_KEY_1") || "");
+      ? (Deno.env.get("PAYPAL_SANDBOX_SECRET_KEY") || "")
+      : (Deno.env.get("PAYPAL_SECRET_KEY") || "");
     const clientId = rawClientId.trim();
     const clientSecret = rawClientSecret.trim();
     const oauthUrl = `${baseUrl}/v1/oauth2/token`;
@@ -106,8 +106,8 @@ Deno.serve(async (req) => {
       fallbackClientIdLength: Deno.env.get("PAYPAL_CLIENT_ID")?.length || 0,
       hasSandboxSecret: Boolean(Deno.env.get("PAYPAL_SANDBOX_SECRET_KEY")),
       sandboxSecretLength: Deno.env.get("PAYPAL_SANDBOX_SECRET_KEY")?.length || 0,
-      hasFallbackSecret: Boolean(Deno.env.get("PAYPAL_SECRET_KEY_1")),
-      fallbackSecretLength: Deno.env.get("PAYPAL_SECRET_KEY_1")?.length || 0,
+      hasLiveSecret: Boolean(Deno.env.get("PAYPAL_SECRET_KEY")),
+      liveSecretLength: Deno.env.get("PAYPAL_SECRET_KEY")?.length || 0,
     };
     console.info("[cancel] paypal_oauth_config", safeOauthDiagnostics);
 
