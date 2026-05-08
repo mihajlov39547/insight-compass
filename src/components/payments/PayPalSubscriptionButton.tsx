@@ -85,10 +85,36 @@ export function PayPalSubscriptionButton({
               label: 'subscribe',
             },
             createSubscription: (_data: any, actions: any) => {
-              return actions.subscription.create({ plan_id: planId });
+              console.info('[PayPal] Creating subscription', {
+                planId,
+                planKey,
+                brandName: 'Researcher by AKTIKA',
+                shippingPreference: 'NO_SHIPPING',
+                userAction: 'SUBSCRIBE_NOW',
+              });
+              return actions.subscription.create({
+                plan_id: planId,
+                application_context: {
+                  brand_name: 'Researcher by AKTIKA',
+                  shipping_preference: 'NO_SHIPPING',
+                  user_action: 'SUBSCRIBE_NOW',
+                },
+              });
             },
             onApprove: (data: any) => {
+              console.info('[PayPal] Subscription approved', {
+                subscriptionID: data.subscriptionID,
+                planId,
+                planKey,
+              });
               onApprove(data.subscriptionID, planId, planKey);
+            },
+            onCancel: (data: any) => {
+              console.info('[PayPal] Subscription cancelled by user', data);
+            },
+            onError: (err: any) => {
+              console.error('[PayPal] Subscription error', err);
+              setError('PayPal checkout failed. Please try again.');
             },
           })
           .render(containerRef.current);
