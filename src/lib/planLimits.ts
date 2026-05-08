@@ -34,7 +34,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     canShareProjects: false,
     canShareNotebooks: false,
     maxShareMembers: 0,
-    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2'],
+    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'gemma-4'],
   },
   basic: {
     maxProjects: 10,
@@ -45,7 +45,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     canShareProjects: true,
     canShareNotebooks: false,
     maxShareMembers: 3,
-    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2'],
+    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'gemma-4'],
   },
   premium: {
     maxProjects: null,
