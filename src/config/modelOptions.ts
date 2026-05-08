@@ -17,4 +17,5 @@ export const modelOptions: ModelOption[] = [
   { id: 'openai/gpt-5-mini', name: 'gpt-5-mini', description: 'Good alternative for concise general tasks' },
   { id: 'openai/gpt-5', name: 'gpt-5', description: 'Accuracy-critical tasks, complex decision-making, and high-quality reasoning.' },
   { id: 'openai/gpt-5.2', name: 'gpt-5.2', description: 'Complex reasoning, deep coding and analytical workflows, and long-context knowledge tasks.' },
+  { id: 'gemma-4', name: 'gemma-4', description: 'Premium-only. Google Gemma 4 with adaptive thinking and search grounding.' },
 ];
