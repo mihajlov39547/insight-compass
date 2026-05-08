@@ -366,7 +366,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
         const { data: profile } = await supabaseAdmin
           .from("profiles")
           .select("plan")
-          .eq("id", auth.user.id)
+          .eq("user_id", auth.user.id)
           .single();
         const userPlan = profile?.plan ?? "free";
         assertCanUseGemma4(userPlan);
