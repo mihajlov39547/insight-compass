@@ -7,6 +7,7 @@ import {
   resolveModelForTask,
 } from "../_shared/ai/task-model-config.ts";
 import { requireUser } from "../_shared/auth/require-user.ts";
+import { assertCanUseGemma4, streamGemma4Response } from "../_shared/ai/gemma4-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
