@@ -18,5 +18,5 @@ export const modelOptions: ModelOption[] = [
   { id: 'openai/gpt-5', name: 'gpt-5', description: 'Accuracy-critical tasks, complex decision-making, and high-quality reasoning.' },
   { id: 'openai/gpt-5.2', name: 'gpt-5.2', description: 'Complex reasoning, deep coding and analytical workflows, and long-context knowledge tasks.' },
   { id: 'gemma-4', name: 'gemma-4', description: 'Premium-only. Google Gemma 4 with adaptive thinking and search grounding.' },
-  { id: 'gemini-3.1', name: 'Gemini 3.1', description: 'Basic & Premium. Smart routing across Gemini 3.1 Flash Lite / Flash Preview / Pro with web grounding.' },
+  { id: 'gemini-3.1', name: 'gemini-3.1', description: 'Basic & Premium. Smart routing across Gemini 3.1 Flash Lite / Flash Preview / Pro with web grounding.' },
 ];
