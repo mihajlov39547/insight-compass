@@ -155,7 +155,8 @@ export async function streamGemma4Response(
   const config: any = {};
 
   if (input.systemPrompt) {
-    config.systemInstruction = input.systemPrompt;
+    // Match Google GenAI canonical format (array of parts)
+    config.systemInstruction = [{ text: input.systemPrompt }];
   }
 
   // Thinking config — will be retried without if the API rejects it
