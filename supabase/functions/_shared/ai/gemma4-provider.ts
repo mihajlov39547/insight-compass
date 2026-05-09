@@ -27,13 +27,12 @@ const GEMMA_4_MODELS = [
   "gemma-4-31b-it",
 ] as const;
 
-let gemmaRoundRobinIndex = 0;
+// Seed with current time so cold starts don't always pick model[0].
+let gemmaRoundRobinIndex = Math.floor(Date.now() / 1000) % GEMMA_4_MODELS.length;
 
 function pickGemma4Model(): string {
-  // In serverless (cold-start resets), fall back to time-based selection.
-  const idx = gemmaRoundRobinIndex || (Date.now() % GEMMA_4_MODELS.length);
-  const selected = GEMMA_4_MODELS[idx % GEMMA_4_MODELS.length];
-  gemmaRoundRobinIndex = idx + 1;
+  const selected = GEMMA_4_MODELS[gemmaRoundRobinIndex % GEMMA_4_MODELS.length];
+  gemmaRoundRobinIndex = (gemmaRoundRobinIndex + 1) % GEMMA_4_MODELS.length;
   return selected;
 }
 
@@ -156,7 +155,8 @@ export async function streamGemma4Response(
   const config: any = {};
 
   if (input.systemPrompt) {
-    config.systemInstruction = input.systemPrompt;
+    // Match Google GenAI canonical format (array of parts)
+    config.systemInstruction = [{ text: input.systemPrompt }];
   }
 
   // Thinking config — will be retried without if the API rejects it
