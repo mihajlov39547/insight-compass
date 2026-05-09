@@ -410,6 +410,64 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       });
     }
 
+    // ---- Gemini 3.1 branch: route to Google GenAI directly (Basic + Premium) ----
+    if (requestedModel === "gemini-3.1") {
+      let userPlan = "free";
+      try {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.4");
+        const supabaseAdmin = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("plan")
+          .eq("user_id", auth.user.id)
+          .single();
+        userPlan = profile?.plan ?? "free";
+        assertCanUseGemini31(userPlan);
+      } catch (guardError: any) {
+        if (guardError.statusCode === 403) {
+          return new Response(
+            JSON.stringify({ error: guardError.message }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        throw guardError;
+      }
+
+      const hasCode = latestUserPrompt.includes("```") || latestUserPrompt.includes("function ") || latestUserPrompt.includes("const ");
+      const webSearchEnabled = !!(messageOptions?.useWebSearch);
+
+      const { readable, writable } = new TransformStream<Uint8Array>();
+      const writer = writable.getWriter();
+
+      streamGemini31Response(
+        {
+          userId: auth.user.id,
+          conversationId: chatId ?? (notebookScope ? "notebook" : "project"),
+          messageId: messageId ?? crypto.randomUUID(),
+          systemPrompt,
+          promptForHeuristic: latestUserPrompt,
+          messages: chatMessages,
+          contextDocumentCount: docs.length,
+          hasCode,
+          webSearchEnabled,
+        },
+        writer,
+      ).catch((err) => {
+        console.error("[gemini31] fatal stream error:", err);
+        const encoder = new TextEncoder();
+        writer.write(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: "Gemini 3.1 encountered an error. Please try again." }, index: 0 }] })}\n\n`));
+        writer.write(encoder.encode("data: [DONE]\n\n"));
+        writer.close();
+      });
+
+      return new Response(readable, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
     // Reasoning-style models spend a (sometimes large) portion of the budget on
     // hidden chain-of-thought tokens. If we cap them at the visible-answer budget
     // they often emit truncated or empty answers. Detect those models and grant
