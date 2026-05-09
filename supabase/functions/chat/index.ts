@@ -8,6 +8,7 @@ import {
 } from "../_shared/ai/task-model-config.ts";
 import { requireUser } from "../_shared/auth/require-user.ts";
 import { assertCanUseGemma4, streamGemma4Response } from "../_shared/ai/gemma4-provider.ts";
+import { assertCanUseGemini31, streamGemini31Response } from "../_shared/ai/gemini31-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -125,7 +126,7 @@ serve(async (req) => {
   if ("response" in auth) return auth.response;
 
   try {
-    const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength, responseLanguage, notebookSourceInventory } = await req.json();
+    const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength, responseLanguage, notebookSourceInventory, chatId, messageId, messageOptions } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -402,6 +403,64 @@ Final answer-shaping instruction (baseline, not an absolute lock):
         gemmaWriter.write(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: "Gemma 4 encountered an error. Please try again." }, index: 0 }] })}\n\n`));
         gemmaWriter.write(encoder.encode("data: [DONE]\n\n"));
         gemmaWriter.close();
+      });
+
+      return new Response(readable, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
+    // ---- Gemini 3.1 branch: route to Google GenAI directly (Basic + Premium) ----
+    if (requestedModel === "gemini-3.1") {
+      let userPlan = "free";
+      try {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.4");
+        const supabaseAdmin = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("plan")
+          .eq("user_id", auth.user.id)
+          .single();
+        userPlan = profile?.plan ?? "free";
+        assertCanUseGemini31(userPlan);
+      } catch (guardError: any) {
+        if (guardError.statusCode === 403) {
+          return new Response(
+            JSON.stringify({ error: guardError.message }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        throw guardError;
+      }
+
+      const hasCode = latestUserPrompt.includes("```") || latestUserPrompt.includes("function ") || latestUserPrompt.includes("const ");
+      const webSearchEnabled = !!(messageOptions?.useWebSearch);
+
+      const { readable, writable } = new TransformStream<Uint8Array>();
+      const writer = writable.getWriter();
+
+      streamGemini31Response(
+        {
+          userId: auth.user.id,
+          conversationId: chatId ?? (notebookScope ? "notebook" : "project"),
+          messageId: messageId ?? crypto.randomUUID(),
+          systemPrompt,
+          promptForHeuristic: latestUserPrompt,
+          messages: chatMessages,
+          contextDocumentCount: docs.length,
+          hasCode,
+          webSearchEnabled,
+        },
+        writer,
+      ).catch((err) => {
+        console.error("[gemini31] fatal stream error:", err);
+        const encoder = new TextEncoder();
+        writer.write(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: "Gemini 3.1 encountered an error. Please try again." }, index: 0 }] })}\n\n`));
+        writer.write(encoder.encode("data: [DONE]\n\n"));
+        writer.close();
       });
 
       return new Response(readable, {
