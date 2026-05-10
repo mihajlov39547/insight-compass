@@ -2237,6 +2237,7 @@ export type Database = {
         }[]
       }
       extract_url_domain: { Args: { p_url: string }; Returns: string }
+      extract_youtube_video_id: { Args: { p_url: string }; Returns: string }
       find_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_document_chunk_stats: {
         Args: { doc_ids: string[] }
