@@ -156,10 +156,12 @@ export function BillingSection() {
         <h3 className="text-lg font-semibold">Manage Subscription</h3>
 
         <div className="flex flex-wrap gap-3">
-          <Button onClick={() => setShowPricing(true)} className="w-full sm:w-auto">
-            <CreditCard className="h-4 w-4 mr-2" />
-            {currentPlan === 'free' ? 'Upgrade Plan' : 'Change Plan'}
-          </Button>
+          {currentPlan === 'free' && (
+            <Button onClick={() => setShowPricing(true)} className="w-full sm:w-auto">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Upgrade Plan
+            </Button>
+          )}
 
           {canCancel && (
             <AlertDialog>
