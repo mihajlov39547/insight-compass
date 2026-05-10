@@ -32,17 +32,25 @@ export function BillingSection() {
   const qc = useQueryClient();
   const [cancelling, setCancelling] = useState(false);
 
+  const periodEndDate = subscription?.current_period_end
+    ? new Date(subscription.current_period_end)
+    : null;
+  const periodEndInFuture = !!periodEndDate && periodEndDate > new Date();
+
   const isCancelledWithAccess =
-    subscription?.status === 'cancelled' &&
-    subscription?.cancel_at_period_end &&
-    subscription?.current_period_end &&
-    new Date(subscription.current_period_end) > new Date();
+    !!subscription?.cancel_at_period_end &&
+    (subscription?.status === 'cancelled' || subscription?.status === 'active') &&
+    periodEndInFuture;
+
+  const isPaidPlan =
+    subscription?.plan_key === 'basic_monthly' ||
+    subscription?.plan_key === 'premium_monthly';
 
   const canCancel =
     !!subscription?.paypal_subscription_id &&
-    (subscription.status === 'active' || subscription.status === 'pending') &&
-    !subscription.cancel_at_period_end &&
-    (subscription.plan_key === 'basic_monthly' || subscription.plan_key === 'premium_monthly');
+    (subscription?.status === 'active' || subscription?.status === 'pending') &&
+    !subscription?.cancel_at_period_end &&
+    isPaidPlan;
 
   const handleCancel = async () => {
     setCancelling(true);
@@ -106,11 +114,20 @@ export function BillingSection() {
             </Badge>
           </div>
 
-          {isCancelledWithAccess && (
+          {isCancelledWithAccess && periodEndDate && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Access until</span>
               <span className="text-sm font-medium text-amber-500">
-                {new Date(subscription!.current_period_end!).toLocaleDateString()}
+                {periodEndDate.toLocaleDateString()}
+              </span>
+            </div>
+          )}
+
+          {isPaidPlan && periodEndDate && !isCancelledWithAccess && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Next billing date</span>
+              <span className="text-sm font-medium">
+                {periodEndDate.toLocaleDateString()}
               </span>
             </div>
           )}
@@ -139,10 +156,12 @@ export function BillingSection() {
         <h3 className="text-lg font-semibold">Manage Subscription</h3>
 
         <div className="flex flex-wrap gap-3">
-          <Button onClick={() => setShowPricing(true)} className="w-full sm:w-auto">
-            <CreditCard className="h-4 w-4 mr-2" />
-            {currentPlan === 'free' ? 'Upgrade Plan' : 'Change Plan'}
-          </Button>
+          {currentPlan === 'free' && (
+            <Button onClick={() => setShowPricing(true)} className="w-full sm:w-auto">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Upgrade Plan
+            </Button>
+          )}
 
           {canCancel && (
             <AlertDialog>
