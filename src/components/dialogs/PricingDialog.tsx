@@ -86,7 +86,7 @@ function getPlanFeatures(planId: Plan): string[] {
       return [
         'Everything in Basic',
         'Unlimited projects and notebooks',
-        '500 document uploads per project/notebook',
+        '50 document uploads per project/notebook',
         'Advanced retrieval',
         'Access to latest models',
         'Unlimited project sharing',

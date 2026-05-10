@@ -50,8 +50,8 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   premium: {
     maxProjects: null,
     maxNotebooks: null,
-    maxDocumentsPerProject: 500,
-    maxDocumentsPerNotebook: 500,
+    maxDocumentsPerProject: 50,
+    maxDocumentsPerNotebook: 50,
     maxChatsPerProject: null,
     canShareProjects: true,
     canShareNotebooks: true,
