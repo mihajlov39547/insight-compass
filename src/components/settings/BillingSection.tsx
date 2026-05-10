@@ -114,11 +114,20 @@ export function BillingSection() {
             </Badge>
           </div>
 
-          {isCancelledWithAccess && (
+          {isCancelledWithAccess && periodEndDate && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Access until</span>
               <span className="text-sm font-medium text-amber-500">
-                {new Date(subscription!.current_period_end!).toLocaleDateString()}
+                {periodEndDate.toLocaleDateString()}
+              </span>
+            </div>
+          )}
+
+          {isPaidPlan && periodEndDate && !isCancelledWithAccess && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Next billing date</span>
+              <span className="text-sm font-medium">
+                {periodEndDate.toLocaleDateString()}
               </span>
             </div>
           )}
