@@ -252,7 +252,7 @@ function getLimitsForDisplay(plan: string) {
         { label: 'Projects', value: 'Unlimited' },
         { label: 'Notebooks', value: 'Unlimited' },
         { label: 'Chats per project', value: 'Unlimited' },
-        { label: 'Docs per project/notebook', value: '500' },
+        { label: 'Docs per project/notebook', value: '50' },
         { label: 'Project sharing', value: 'Unlimited' },
         { label: 'Notebook sharing', value: 'Unlimited' },
       ];
