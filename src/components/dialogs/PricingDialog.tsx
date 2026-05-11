@@ -59,67 +59,24 @@ async function fetchPayPalPlans(): Promise<Record<string, { planId: string; plan
 
 const PLAN_ORDER: Plan[] = ['free', 'basic', 'premium', 'enterprise'];
 
-function getPlanFeatures(planId: Plan): string[] {
-  switch (planId) {
-    case 'free':
-      return [
-        'Up to 3 projects and 3 notebooks',
-        '1 chat per project',
-        '5 document uploads per project/notebook',
-        'Basic retrieval',
-        'No sharing — private only',
-        'Basic support',
-        'Request features and improvements',
-      ];
-    case 'basic':
-      return [
-        'Everything in Free',
-        'Up to 10 projects and 10 notebooks',
-        'Up to 5 chats per project',
-        '10 document uploads per project/notebook',
-        'Faster retrieval',
-        'Project sharing — up to 3 members',
-        'Notebook sharing not included',
-        'Email support',
-      ];
-    case 'premium':
-      return [
-        'Everything in Basic',
-        'Unlimited projects and notebooks',
-        '50 document uploads per project/notebook',
-        'Advanced retrieval',
-        'Access to latest models',
-        'Unlimited project sharing',
-        'Unlimited notebook sharing',
-        'Priority support — Teams coming soon',
-      ];
-    case 'enterprise':
-      return [
-        'Everything in Premium',
-        'Unlimited documents',
-        'Team management',
-        'SSO & security features',
-        'Custom integrations',
-        'Dedicated support',
-      ];
-  }
+const PLAN_FEATURE_COUNTS: Record<Plan, number> = {
+  free: 7,
+  basic: 8,
+  premium: 8,
+  enterprise: 6,
+};
+
+function getPlanFeatures(planId: Plan, t: (k: string) => string): string[] {
+  const count = PLAN_FEATURE_COUNTS[planId];
+  return Array.from({ length: count }, (_, i) => t(`pricingDialog.plans.${planId}.features.${i}`));
 }
 
-function getPlanSubtitle(planId: Plan): string {
+function getPlanPrice(planId: Plan, t: (k: string) => string): { price: string; period: string } {
   switch (planId) {
-    case 'free': return 'Perfect for getting started';
-    case 'basic': return 'For individuals and small teams';
-    case 'premium': return 'For growing teams';
-    case 'enterprise': return 'For large organizations';
-  }
-}
-
-function getPlanPrice(planId: Plan): { price: string; period: string } {
-  switch (planId) {
-    case 'free': return { price: '$0', period: 'forever' };
-    case 'basic': return { price: '$9', period: 'per month' };
-    case 'premium': return { price: '$19', period: 'per month' };
-    case 'enterprise': return { price: 'Custom', period: 'contact us' };
+    case 'free': return { price: '$0', period: t('pricingDialog.periods.forever') };
+    case 'basic': return { price: '$9', period: t('pricingDialog.periods.perMonth') };
+    case 'premium': return { price: '$19', period: t('pricingDialog.periods.perMonth') };
+    case 'enterprise': return { price: 'Custom', period: t('pricingDialog.periods.contactUs') };
   }
 }
 
