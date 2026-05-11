@@ -639,9 +639,27 @@ export function NotebookWorkspace() {
                 <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.sources.title')}</h2>
               </div>
               {permissions.canUploadDocuments && (
-                <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setShowUpload(true)}>
-                  <Plus className="h-3 w-3" /> {t('notebookWorkspace.sources.addSource')}
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground">
+                      <Plus className="h-3 w-3" /> {t('notebookWorkspace.sources.addSource')}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem onClick={() => setShowUpload(true)}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {t('notebookWorkspace.sources.addMenu.uploadDocument')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setLinkDialogUrl(''); setLinkDialogTitle(''); setLinkDialogKind('youtube'); }}>
+                      <Video className="h-4 w-4 mr-2" />
+                      {t('notebookWorkspace.sources.addMenu.youtube')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setLinkDialogUrl(''); setLinkDialogTitle(''); setLinkDialogKind('web'); }}>
+                      <Globe className="h-4 w-4 mr-2" />
+                      {t('notebookWorkspace.sources.addMenu.website')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
             <ScrollArea className="flex-1">
