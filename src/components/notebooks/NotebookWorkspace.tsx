@@ -152,6 +152,10 @@ export function NotebookWorkspace() {
   useGenerationCompleteSound(isGenerating, !!error);
 
   const [showUpload, setShowUpload] = useState(false);
+  const [linkDialogKind, setLinkDialogKind] = useState<'youtube' | 'web' | null>(null);
+  const [linkDialogUrl, setLinkDialogUrl] = useState('');
+  const [linkDialogTitle, setLinkDialogTitle] = useState('');
+  const [linkDialogSubmitting, setLinkDialogSubmitting] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<DbNotebookNote | null>(null);
   const [editTitle, setEditTitle] = useState('');
