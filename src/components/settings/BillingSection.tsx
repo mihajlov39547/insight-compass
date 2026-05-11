@@ -216,6 +216,13 @@ export function BillingSection() {
         <h3 className="text-lg font-semibold">Plan Limits</h3>
         <PlanLimitsDisplay plan={currentPlan} />
       </section>
+
+      <PricingDialog
+        open={showPricing}
+        onOpenChange={setShowPricing}
+        currentPlan={currentPlan}
+        onSelectPlan={(_p: Plan) => setShowPricing(false)}
+      />
     </div>
   );
 }
