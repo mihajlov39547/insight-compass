@@ -1127,8 +1127,13 @@
     },
     "ctas": {
       "getStarted": "Get Started",
-      "contactSales": "Contact Sales"
+      "contactSales": "Contact Sales",
+      "signupFree": "Sign Up Free",
+      "signupSubscribe": "Sign Up to Subscribe",
+      "cancelFirst": "Cancel current plan first",
+      "contactDowngrade": "Contact support to downgrade"
     },
+    "processing": "Processing your subscription…",
     "plans": {
       "free": {
         "name": "Free",
@@ -1163,7 +1168,7 @@
         "features": {
           "0": "Everything in Basic",
           "1": "Unlimited projects and notebooks",
-          "2": "500 document uploads per project or per notebook",
+          "2": "50 document uploads per project or per notebook",
           "3": "Advanced retrieval",
           "4": "Access to latest models",
           "5": "Unlimited project sharing with unlimited members",

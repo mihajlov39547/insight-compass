@@ -59,67 +59,24 @@ async function fetchPayPalPlans(): Promise<Record<string, { planId: string; plan
 
 const PLAN_ORDER: Plan[] = ['free', 'basic', 'premium', 'enterprise'];
 
-function getPlanFeatures(planId: Plan): string[] {
-  switch (planId) {
-    case 'free':
-      return [
-        'Up to 3 projects and 3 notebooks',
-        '1 chat per project',
-        '5 document uploads per project/notebook',
-        'Basic retrieval',
-        'No sharing — private only',
-        'Basic support',
-        'Request features and improvements',
-      ];
-    case 'basic':
-      return [
-        'Everything in Free',
-        'Up to 10 projects and 10 notebooks',
-        'Up to 5 chats per project',
-        '10 document uploads per project/notebook',
-        'Faster retrieval',
-        'Project sharing — up to 3 members',
-        'Notebook sharing not included',
-        'Email support',
-      ];
-    case 'premium':
-      return [
-        'Everything in Basic',
-        'Unlimited projects and notebooks',
-        '50 document uploads per project/notebook',
-        'Advanced retrieval',
-        'Access to latest models',
-        'Unlimited project sharing',
-        'Unlimited notebook sharing',
-        'Priority support — Teams coming soon',
-      ];
-    case 'enterprise':
-      return [
-        'Everything in Premium',
-        'Unlimited documents',
-        'Team management',
-        'SSO & security features',
-        'Custom integrations',
-        'Dedicated support',
-      ];
-  }
+const PLAN_FEATURE_COUNTS: Record<Plan, number> = {
+  free: 7,
+  basic: 8,
+  premium: 8,
+  enterprise: 6,
+};
+
+function getPlanFeatures(planId: Plan, t: (k: string) => string): string[] {
+  const count = PLAN_FEATURE_COUNTS[planId];
+  return Array.from({ length: count }, (_, i) => t(`pricingDialog.plans.${planId}.features.${i}`));
 }
 
-function getPlanSubtitle(planId: Plan): string {
+function getPlanPrice(planId: Plan, t: (k: string) => string): { price: string; period: string } {
   switch (planId) {
-    case 'free': return 'Perfect for getting started';
-    case 'basic': return 'For individuals and small teams';
-    case 'premium': return 'For growing teams';
-    case 'enterprise': return 'For large organizations';
-  }
-}
-
-function getPlanPrice(planId: Plan): { price: string; period: string } {
-  switch (planId) {
-    case 'free': return { price: '$0', period: 'forever' };
-    case 'basic': return { price: '$9', period: 'per month' };
-    case 'premium': return { price: '$19', period: 'per month' };
-    case 'enterprise': return { price: 'Custom', period: 'contact us' };
+    case 'free': return { price: '$0', period: t('pricingDialog.periods.forever') };
+    case 'basic': return { price: '$9', period: t('pricingDialog.periods.perMonth') };
+    case 'premium': return { price: '$19', period: t('pricingDialog.periods.perMonth') };
+    case 'enterprise': return { price: 'Custom', period: t('pricingDialog.periods.contactUs') };
   }
 }
 
@@ -217,9 +174,9 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {PLAN_ORDER.map((planId) => {
               const Icon = planIcons[planId];
-              const features = getPlanFeatures(planId);
-              const subtitle = getPlanSubtitle(planId);
-              const { price, period } = getPlanPrice(planId);
+              const features = getPlanFeatures(planId, t);
+              const subtitle = t(`pricingDialog.plans.${planId}.description`);
+              const { price, period } = getPlanPrice(planId, t);
               const isPopular = planId === 'premium';
               const isCurrentPlan = isLoggedIn && currentPlan === planId;
               const hasActivePaidSub = !!subscription && (subscription.status === 'active' || subscription.status === 'pending') && (subscription.plan_key === 'basic_monthly' || subscription.plan_key === 'premium_monthly');
@@ -239,7 +196,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
                 >
                   {isPopular && (
                     <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                      Most Popular
+                      {t('pricingDialog.mostPopular')}
                     </Badge>
                   )}
 
@@ -296,8 +253,8 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
                     {ctaType === 'downgrade' && (
                       <Button variant="outline" className="w-full text-xs" disabled>
                         {hasActivePaidSub && planId !== currentPlan
-                          ? 'Cancel current plan first'
-                          : 'Contact support to downgrade'}
+                          ? t('pricingDialog.ctas.cancelFirst')
+                          : t('pricingDialog.ctas.contactDowngrade')}
                       </Button>
                     )}
                     {ctaType === 'signup' && (
@@ -306,10 +263,9 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
                         className="w-full"
                         onClick={() => {
                           onOpenChange(false);
-                          // Trigger login dialog — handled by parent
                         }}
                       >
-                        {planId === 'free' ? 'Sign Up Free' : 'Sign Up to Subscribe'}
+                        {planId === 'free' ? t('pricingDialog.ctas.signupFree') : t('pricingDialog.ctas.signupSubscribe')}
                       </Button>
                     )}
                   </div>
@@ -320,7 +276,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
 
           {processing && (
             <div className="text-center text-sm text-muted-foreground mt-4">
-              Processing your subscription…
+              {t('pricingDialog.processing')}
             </div>
           )}
         </DialogContent>
