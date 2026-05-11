@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -14,20 +14,19 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/useAuth';
-import { AppContext } from '@/contexts/app-context';
 import { useUserSubscription } from '@/hooks/useUserSubscription';
-import { normalizePlan } from '@/types/app';
+import { normalizePlan, type Plan } from '@/types/app';
 import { CreditCard, ExternalLink, XCircle } from 'lucide-react';
 import { planLabels } from '@/lib/planConfig';
 import { fetchEdgeFunction } from '@/lib/edge/invokeWithAuth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { PricingDialog } from '@/components/dialogs/PricingDialog';
 
 export function BillingSection() {
   const { profile, refreshProfile } = useAuth();
   const { data: subscription, isLoading } = useUserSubscription();
-  const appContext = useContext(AppContext);
-  const setShowPricing = appContext?.setShowPricing ?? (() => {});
+  const [showPricing, setShowPricing] = useState(false);
   const currentPlan = normalizePlan(profile?.plan);
   const qc = useQueryClient();
   const [cancelling, setCancelling] = useState(false);
