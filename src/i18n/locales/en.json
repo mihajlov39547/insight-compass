@@ -1127,8 +1127,13 @@
     },
     "ctas": {
       "getStarted": "Get Started",
-      "contactSales": "Contact Sales"
+      "contactSales": "Contact Sales",
+      "signupFree": "Sign Up Free",
+      "signupSubscribe": "Sign Up to Subscribe",
+      "cancelFirst": "Cancel current plan first",
+      "contactDowngrade": "Contact support to downgrade"
     },
+    "processing": "Processing your subscription…",
     "plans": {
       "free": {
         "name": "Free",
