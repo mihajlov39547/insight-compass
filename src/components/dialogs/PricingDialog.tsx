@@ -253,8 +253,8 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
                     {ctaType === 'downgrade' && (
                       <Button variant="outline" className="w-full text-xs" disabled>
                         {hasActivePaidSub && planId !== currentPlan
-                          ? 'Cancel current plan first'
-                          : 'Contact support to downgrade'}
+                          ? t('pricingDialog.ctas.cancelFirst')
+                          : t('pricingDialog.ctas.contactDowngrade')}
                       </Button>
                     )}
                     {ctaType === 'signup' && (
@@ -263,10 +263,9 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
                         className="w-full"
                         onClick={() => {
                           onOpenChange(false);
-                          // Trigger login dialog — handled by parent
                         }}
                       >
-                        {planId === 'free' ? 'Sign Up Free' : 'Sign Up to Subscribe'}
+                        {planId === 'free' ? t('pricingDialog.ctas.signupFree') : t('pricingDialog.ctas.signupSubscribe')}
                       </Button>
                     )}
                   </div>
@@ -277,7 +276,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
 
           {processing && (
             <div className="text-center text-sm text-muted-foreground mt-4">
-              Processing your subscription…
+              {t('pricingDialog.processing')}
             </div>
           )}
         </DialogContent>
