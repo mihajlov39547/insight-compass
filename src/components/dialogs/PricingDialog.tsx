@@ -174,9 +174,9 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {PLAN_ORDER.map((planId) => {
               const Icon = planIcons[planId];
-              const features = getPlanFeatures(planId);
-              const subtitle = getPlanSubtitle(planId);
-              const { price, period } = getPlanPrice(planId);
+              const features = getPlanFeatures(planId, t);
+              const subtitle = t(`pricingDialog.plans.${planId}.description`);
+              const { price, period } = getPlanPrice(planId, t);
               const isPopular = planId === 'premium';
               const isCurrentPlan = isLoggedIn && currentPlan === planId;
               const hasActivePaidSub = !!subscription && (subscription.status === 'active' || subscription.status === 'pending') && (subscription.plan_key === 'basic_monthly' || subscription.plan_key === 'premium_monthly');
