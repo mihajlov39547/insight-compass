@@ -196,7 +196,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
                 >
                   {isPopular && (
                     <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                      Most Popular
+                      {t('pricingDialog.mostPopular')}
                     </Badge>
                   )}
 
