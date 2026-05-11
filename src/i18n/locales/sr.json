@@ -1139,8 +1139,13 @@
     },
     "ctas": {
       "getStarted": "Započni",
-      "contactSales": "Kontaktiraj prodaju"
+      "contactSales": "Kontaktiraj prodaju",
+      "signupFree": "Registruj se besplatno",
+      "signupSubscribe": "Registruj se da bi se pretplatio",
+      "cancelFirst": "Prvo otkažite trenutni plan",
+      "contactDowngrade": "Kontaktirajte podršku za sniženje plana"
     },
+    "processing": "Obrada pretplate…",
     "plans": {
       "free": {
         "name": "Besplatan",
