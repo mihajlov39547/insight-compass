@@ -20,6 +20,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DeleteWithConfirmDialog } from '@/components/dialogs/DeleteWithConfirmDialog';
 import { useApp } from '@/contexts/useApp';
@@ -150,6 +152,10 @@ export function NotebookWorkspace() {
   useGenerationCompleteSound(isGenerating, !!error);
 
   const [showUpload, setShowUpload] = useState(false);
+  const [linkDialogKind, setLinkDialogKind] = useState<'youtube' | 'web' | null>(null);
+  const [linkDialogUrl, setLinkDialogUrl] = useState('');
+  const [linkDialogTitle, setLinkDialogTitle] = useState('');
+  const [linkDialogSubmitting, setLinkDialogSubmitting] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<DbNotebookNote | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -633,9 +639,27 @@ export function NotebookWorkspace() {
                 <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.sources.title')}</h2>
               </div>
               {permissions.canUploadDocuments && (
-                <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setShowUpload(true)}>
-                  <Plus className="h-3 w-3" /> {t('notebookWorkspace.sources.addSource')}
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground">
+                      <Plus className="h-3 w-3" /> {t('notebookWorkspace.sources.addSource')}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem onClick={() => setShowUpload(true)}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {t('notebookWorkspace.sources.addMenu.uploadDocument')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setLinkDialogUrl(''); setLinkDialogTitle(''); setLinkDialogKind('youtube'); }}>
+                      <Video className="h-4 w-4 mr-2" />
+                      {t('notebookWorkspace.sources.addMenu.youtube')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setLinkDialogUrl(''); setLinkDialogTitle(''); setLinkDialogKind('web'); }}>
+                      <Globe className="h-4 w-4 mr-2" />
+                      {t('notebookWorkspace.sources.addMenu.website')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
             <ScrollArea className="flex-1">
@@ -1062,6 +1086,95 @@ export function NotebookWorkspace() {
         onUploadComplete={() => {}}
         context="notebook"
       />
+
+      {/* Add link source dialog (YouTube / Website) */}
+      <Dialog
+        open={linkDialogKind !== null}
+        onOpenChange={(open) => { if (!open && !linkDialogSubmitting) setLinkDialogKind(null); }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {linkDialogKind === 'youtube'
+                ? t('notebookWorkspace.sources.linkDialog.youtubeTitle')
+                : t('notebookWorkspace.sources.linkDialog.websiteTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {linkDialogKind === 'youtube'
+                ? t('notebookWorkspace.sources.linkDialog.youtubeDescription')
+                : t('notebookWorkspace.sources.linkDialog.websiteDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="link-url">{t('notebookWorkspace.sources.linkDialog.urlLabel')}</Label>
+              <Input
+                id="link-url"
+                type="url"
+                placeholder={linkDialogKind === 'youtube'
+                  ? t('notebookWorkspace.sources.linkDialog.youtubePlaceholder')
+                  : t('notebookWorkspace.sources.linkDialog.websitePlaceholder')}
+                value={linkDialogUrl}
+                onChange={(e) => setLinkDialogUrl(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-title">{t('notebookWorkspace.sources.linkDialog.titleLabel')}</Label>
+              <Input
+                id="link-title"
+                placeholder={t('notebookWorkspace.sources.linkDialog.titlePlaceholder')}
+                value={linkDialogTitle}
+                onChange={(e) => setLinkDialogTitle(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setLinkDialogKind(null)}
+              disabled={linkDialogSubmitting}
+            >
+              {t('notebookWorkspace.sources.linkDialog.cancel')}
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!selectedNotebookId || !linkDialogKind) return;
+                const url = linkDialogUrl.trim();
+                if (!url) {
+                  toast.error(t('notebookWorkspace.sources.linkDialog.urlRequired'));
+                  return;
+                }
+                try {
+                  setLinkDialogSubmitting(true);
+                  await createLinkResource.mutateAsync({
+                    url,
+                    title: linkDialogTitle.trim() || undefined,
+                    provider: linkDialogKind === 'youtube' ? 'youtube' : 'web',
+                    containerType: 'notebook',
+                    containerId: selectedNotebookId,
+                  });
+                  toast.success(linkDialogKind === 'youtube'
+                    ? t('notebookWorkspace.sources.linkDialog.toastYoutubeAdded')
+                    : t('notebookWorkspace.sources.linkDialog.toastWebsiteAdded'));
+                  setLinkDialogKind(null);
+                  setLinkDialogUrl('');
+                  setLinkDialogTitle('');
+                } catch (err: any) {
+                  toast.error(err?.message || t('notebookWorkspace.sources.linkDialog.toastFailed'));
+                } finally {
+                  setLinkDialogSubmitting(false);
+                }
+              }}
+              disabled={linkDialogSubmitting || !linkDialogUrl.trim()}
+            >
+              {linkDialogSubmitting
+                ? t('notebookWorkspace.sources.linkDialog.submitting')
+                : t('notebookWorkspace.sources.linkDialog.submit')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <DeleteWithConfirmDialog
         open={!!pendingDeleteDoc}

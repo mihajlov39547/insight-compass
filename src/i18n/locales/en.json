@@ -390,7 +390,30 @@
       "retryTranscript": "Retry transcript",
       "transcriptStatus": "transcript {{status}}",
       "footerEnabled_one": "{{count}} source enabled",
-      "footerEnabled_other": "{{count}} sources enabled"
+      "footerEnabled_other": "{{count}} sources enabled",
+      "addMenu": {
+        "uploadDocument": "Upload document",
+        "youtube": "Add YouTube video",
+        "website": "Add website"
+      },
+      "linkDialog": {
+        "youtubeTitle": "Add YouTube video",
+        "youtubeDescription": "Paste a YouTube URL. We'll fetch the transcript and add it to your sources.",
+        "websiteTitle": "Add website",
+        "websiteDescription": "Paste a URL to add this website as a source. Content processing will be available soon.",
+        "urlLabel": "URL",
+        "youtubePlaceholder": "https://www.youtube.com/watch?v=…",
+        "websitePlaceholder": "https://example.com/article",
+        "titleLabel": "Title (optional)",
+        "titlePlaceholder": "Readable source title",
+        "urlRequired": "Please enter a URL",
+        "cancel": "Cancel",
+        "submit": "Add source",
+        "submitting": "Adding…",
+        "toastYoutubeAdded": "YouTube video added — extracting transcript",
+        "toastWebsiteAdded": "Website added to sources",
+        "toastFailed": "Failed to add source"
+      }
     },
     "notes": {
       "title": "Notes",
