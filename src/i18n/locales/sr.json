@@ -397,7 +397,30 @@
       "transcriptStatus": "transkript {{status}}",
       "footerEnabled_one": "{{count}} izvor omogućen",
       "footerEnabled_few": "{{count}} izvora omogućeno",
-      "footerEnabled_other": "{{count}} izvora omogućeno"
+      "footerEnabled_other": "{{count}} izvora omogućeno",
+      "addMenu": {
+        "uploadDocument": "Otpremi dokument",
+        "youtube": "Dodaj YouTube video",
+        "website": "Dodaj veb sajt"
+      },
+      "linkDialog": {
+        "youtubeTitle": "Dodaj YouTube video",
+        "youtubeDescription": "Nalepite YouTube URL. Preuzećemo transkript i dodati ga vašim izvorima.",
+        "websiteTitle": "Dodaj veb sajt",
+        "websiteDescription": "Nalepite URL da dodate ovaj sajt kao izvor. Obrada sadržaja biće dostupna uskoro.",
+        "urlLabel": "URL",
+        "youtubePlaceholder": "https://www.youtube.com/watch?v=…",
+        "websitePlaceholder": "https://primer.com/clanak",
+        "titleLabel": "Naslov (opciono)",
+        "titlePlaceholder": "Čitljiv naziv izvora",
+        "urlRequired": "Unesite URL",
+        "cancel": "Otkaži",
+        "submit": "Dodaj izvor",
+        "submitting": "Dodavanje…",
+        "toastYoutubeAdded": "YouTube video dodat — izvlačenje transkripta",
+        "toastWebsiteAdded": "Veb sajt dodat u izvore",
+        "toastFailed": "Neuspešno dodavanje izvora"
+      }
     },
     "notes": {
       "title": "Beleške",
