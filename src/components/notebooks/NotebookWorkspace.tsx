@@ -1087,6 +1087,95 @@ export function NotebookWorkspace() {
         context="notebook"
       />
 
+      {/* Add link source dialog (YouTube / Website) */}
+      <Dialog
+        open={linkDialogKind !== null}
+        onOpenChange={(open) => { if (!open && !linkDialogSubmitting) setLinkDialogKind(null); }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {linkDialogKind === 'youtube'
+                ? t('notebookWorkspace.sources.linkDialog.youtubeTitle')
+                : t('notebookWorkspace.sources.linkDialog.websiteTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {linkDialogKind === 'youtube'
+                ? t('notebookWorkspace.sources.linkDialog.youtubeDescription')
+                : t('notebookWorkspace.sources.linkDialog.websiteDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="link-url">{t('notebookWorkspace.sources.linkDialog.urlLabel')}</Label>
+              <Input
+                id="link-url"
+                type="url"
+                placeholder={linkDialogKind === 'youtube'
+                  ? t('notebookWorkspace.sources.linkDialog.youtubePlaceholder')
+                  : t('notebookWorkspace.sources.linkDialog.websitePlaceholder')}
+                value={linkDialogUrl}
+                onChange={(e) => setLinkDialogUrl(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-title">{t('notebookWorkspace.sources.linkDialog.titleLabel')}</Label>
+              <Input
+                id="link-title"
+                placeholder={t('notebookWorkspace.sources.linkDialog.titlePlaceholder')}
+                value={linkDialogTitle}
+                onChange={(e) => setLinkDialogTitle(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setLinkDialogKind(null)}
+              disabled={linkDialogSubmitting}
+            >
+              {t('notebookWorkspace.sources.linkDialog.cancel')}
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!selectedNotebookId || !linkDialogKind) return;
+                const url = linkDialogUrl.trim();
+                if (!url) {
+                  toast.error(t('notebookWorkspace.sources.linkDialog.urlRequired'));
+                  return;
+                }
+                try {
+                  setLinkDialogSubmitting(true);
+                  await createLinkResource.mutateAsync({
+                    url,
+                    title: linkDialogTitle.trim() || undefined,
+                    provider: linkDialogKind === 'youtube' ? 'youtube' : 'web',
+                    containerType: 'notebook',
+                    containerId: selectedNotebookId,
+                  });
+                  toast.success(linkDialogKind === 'youtube'
+                    ? t('notebookWorkspace.sources.linkDialog.toastYoutubeAdded')
+                    : t('notebookWorkspace.sources.linkDialog.toastWebsiteAdded'));
+                  setLinkDialogKind(null);
+                  setLinkDialogUrl('');
+                  setLinkDialogTitle('');
+                } catch (err: any) {
+                  toast.error(err?.message || t('notebookWorkspace.sources.linkDialog.toastFailed'));
+                } finally {
+                  setLinkDialogSubmitting(false);
+                }
+              }}
+              disabled={linkDialogSubmitting || !linkDialogUrl.trim()}
+            >
+              {linkDialogSubmitting
+                ? t('notebookWorkspace.sources.linkDialog.submitting')
+                : t('notebookWorkspace.sources.linkDialog.submit')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <DeleteWithConfirmDialog
         open={!!pendingDeleteDoc}
         onOpenChange={(open) => !open && setPendingDeleteDoc(null)}
