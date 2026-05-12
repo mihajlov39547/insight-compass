@@ -1,5 +1,12 @@
 import type { Plan } from '@/types/app';
 
+export interface WebCrawlLimits {
+  limit: number;
+  maxDepth: number;
+  maxBreadth: number;
+  extractDepth: 'basic' | 'advanced';
+}
+
 export interface PlanLimits {
   maxProjects: number | null;
   maxNotebooks: number | null;
@@ -10,6 +17,7 @@ export interface PlanLimits {
   canShareNotebooks: boolean;
   maxShareMembers: number | null;
   restrictedModelIds: string[];
+  webCrawl: WebCrawlLimits;
 }
 
 const UNLIMITED: PlanLimits = {
@@ -22,6 +30,7 @@ const UNLIMITED: PlanLimits = {
   canShareNotebooks: true,
   maxShareMembers: null,
   restrictedModelIds: [],
+  webCrawl: { limit: 100, maxDepth: 3, maxBreadth: 30, extractDepth: 'advanced' },
 };
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
