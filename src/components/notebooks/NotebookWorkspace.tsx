@@ -30,7 +30,8 @@ import { useNotebooks, useUpdateNotebook } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDeleteNotebookNote, DbNotebookNote } from '@/hooks/useNotebookNotes';
 import { useNotebookMessages, useNotebookAIChat, useDeleteNotebookMessagePair } from '@/hooks/useNotebookChat';
-import { useDeleteDocument, DbDocument } from '@/hooks/useDocuments';
+import { useDeleteDocument, useUploadDocuments, DbDocument } from '@/hooks/useDocuments';
+import { runTavilyCrawl } from '@/services/tavily-crawl';
 import { useResources } from '@/hooks/useResources';
 import { useDeleteResource, useRetryYouTubeTranscriptIngestion, useCreateLinkResource, type ResourceActionInput } from '@/hooks/useResourceActions';
 import type { Resource } from '@/lib/resourceClassification';
@@ -135,6 +136,7 @@ export function NotebookWorkspace() {
   const deleteResource = useDeleteResource();
   const retryTranscript = useRetryYouTubeTranscriptIngestion();
   const createLinkResource = useCreateLinkResource();
+  const uploadDocuments = useUploadDocuments();
   const [addingYouTubeUrl, setAddingYouTubeUrl] = useState<string | null>(null);
   const createNote = useCreateNotebookNote();
   const updateNote = useUpdateNotebookNote();
@@ -1147,16 +1149,72 @@ export function NotebookWorkspace() {
                 }
                 try {
                   setLinkDialogSubmitting(true);
-                  await createLinkResource.mutateAsync({
-                    url,
-                    title: linkDialogTitle.trim() || undefined,
-                    provider: linkDialogKind === 'youtube' ? 'youtube' : 'web',
-                    containerType: 'notebook',
-                    containerId: selectedNotebookId,
-                  });
-                  toast.success(linkDialogKind === 'youtube'
-                    ? t('notebookWorkspace.sources.linkDialog.toastYoutubeAdded')
-                    : t('notebookWorkspace.sources.linkDialog.toastWebsiteAdded'));
+
+                  if (linkDialogKind === 'youtube') {
+                    await createLinkResource.mutateAsync({
+                      url,
+                      title: linkDialogTitle.trim() || undefined,
+                      provider: 'youtube',
+                      containerType: 'notebook',
+                      containerId: selectedNotebookId,
+                    });
+                    toast.success(t('notebookWorkspace.sources.linkDialog.toastYoutubeAdded'));
+                  } else {
+                    // Website: run Tavily crawl, merge raw_content, upload as a single document source
+                    let parsedHost = '';
+                    try { parsedHost = new URL(url).hostname.replace(/^www\./, ''); } catch { /* ignore */ }
+                    const fallbackTitle = parsedHost || url;
+                    const providedTitle = linkDialogTitle.trim();
+
+                    toast.info(t('notebookWorkspace.sources.linkDialog.toastCrawling'));
+
+                    const result = await runTavilyCrawl({
+                      url,
+                      extract_depth: planLimits.webCrawl.extractDepth,
+                      max_depth: planLimits.webCrawl.maxDepth,
+                      max_breadth: planLimits.webCrawl.maxBreadth,
+                      limit: planLimits.webCrawl.limit,
+                    });
+
+                    const pages = (result.results || []).filter(
+                      (r) => typeof r.raw_content === 'string' && r.raw_content.trim().length > 0,
+                    );
+                    if (pages.length === 0) {
+                      toast.error(t('notebookWorkspace.sources.linkDialog.toastNoContent'));
+                      return;
+                    }
+
+                    const finalTitle = providedTitle || fallbackTitle;
+                    const merged = [
+                      `# ${finalTitle}`,
+                      ``,
+                      `Source: ${result.base_url || url}`,
+                      `Crawled pages: ${pages.length}`,
+                      ``,
+                      ...pages.map((p, i) => {
+                        const heading = p.title || `Page ${i + 1}`;
+                        return `\n---\n\n## ${heading}\n\n${(p.raw_content || '').trim()}\n`;
+                      }),
+                    ].join('\n');
+
+                    const safeName = finalTitle
+                      .replace(/[\\/:*?"<>|]+/g, ' ')
+                      .replace(/\s+/g, ' ')
+                      .trim()
+                      .slice(0, 80) || 'website';
+                    const fileName = `${safeName}.md`;
+                    const file = new File([merged], fileName, { type: 'text/markdown' });
+
+                    await uploadDocuments.mutateAsync({
+                      files: [file],
+                      projectId: selectedNotebookId,
+                      chatId: null,
+                      notebookId: selectedNotebookId,
+                    });
+
+                    toast.success(t('notebookWorkspace.sources.linkDialog.toastWebsiteCrawled', { count: pages.length }));
+                  }
+
                   setLinkDialogKind(null);
                   setLinkDialogUrl('');
                   setLinkDialogTitle('');
@@ -1169,8 +1227,12 @@ export function NotebookWorkspace() {
               disabled={linkDialogSubmitting || !linkDialogUrl.trim()}
             >
               {linkDialogSubmitting
-                ? t('notebookWorkspace.sources.linkDialog.submitting')
-                : t('notebookWorkspace.sources.linkDialog.submit')}
+                ? (linkDialogKind === 'web'
+                    ? t('notebookWorkspace.sources.linkDialog.crawling')
+                    : t('notebookWorkspace.sources.linkDialog.submitting'))
+                : (linkDialogKind === 'web'
+                    ? t('notebookWorkspace.sources.linkDialog.crawl')
+                    : t('notebookWorkspace.sources.linkDialog.submit'))}
             </Button>
           </DialogFooter>
         </DialogContent>
