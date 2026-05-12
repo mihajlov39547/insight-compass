@@ -1034,7 +1034,8 @@ export async function extractPlainTextLikeContentStage(
   const doc = await loadDocumentRow(supabase, documentId);
   const bytes = await downloadDocumentSource(supabase, doc);
   const extraction = extractPlainTextLikeContent(bytes, doc.file_name);
-  const status = extraction.text.trim() ? "COMPLETED" : "EMPTY";
+  const hasText = extraction.text.trim().length > 0;
+  const status = hasText ? "COMPLETED" : "EMPTY";
 
   await persistExtractionCheckpoint(supabase, doc, {
     stageKey: "document.extract_plain_text_like_content",
@@ -1045,6 +1046,19 @@ export async function extractPlainTextLikeContentStage(
     metadataPatch: {
       word_count: extraction.word_count,
       char_count: extraction.char_count,
+      // Plain-text-like files (txt/md/csv/json/xml/log/rtf) are inherently
+      // readable when extraction yields any non-empty content. Bypass the
+      // heuristic quality gate which is tuned for noisy binary extractions
+      // (PDF, OCR) and incorrectly rejects very short plain-text files.
+      extraction_method: extraction.method,
+      extraction_encoding: "utf-8",
+      extraction_readable: hasText,
+      quality_score: hasText ? 1 : 0,
+      quality_reason: hasText ? "plain_text_like_ok" : "empty_text",
+      readable_char_ratio: hasText ? 1 : 0,
+      pdf_syntax_ratio: 0,
+      structural_noise_ratio: 0,
+      structural_noise_filtered: false,
     },
   });
 
