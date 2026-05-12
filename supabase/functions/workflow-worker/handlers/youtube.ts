@@ -194,8 +194,7 @@ export async function youtubeFetchTranscript(
     const debugPayload = (err as any)?.debug || null;
 
     const isTransient = /timeout|ECONNRESET|fetch failed|AbortError/i.test(message);
-    const isUnavailable = /no transcript|transcript.*not available|no captions|tracks available/i.test(message);
-    const finalStatus = isTransient ? "processing" : (isUnavailable ? "unavailable" : "failed");
+    const finalStatus = isTransient ? "processing" : "failed";
 
     // Persist error debug + reflect terminal status on the resource so the UI
     // doesn't stay stuck on "processing" when the video has no transcript.
