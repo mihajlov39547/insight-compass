@@ -44,6 +44,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     canShareNotebooks: false,
     maxShareMembers: 0,
     restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'gemma-4', 'gemini-3.1'],
+    webCrawl: { limit: 10, maxDepth: 1, maxBreadth: 10, extractDepth: 'basic' },
   },
   basic: {
     maxProjects: 10,
@@ -55,6 +56,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     canShareNotebooks: false,
     maxShareMembers: 3,
     restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'gemma-4'],
+    webCrawl: { limit: 25, maxDepth: 2, maxBreadth: 20, extractDepth: 'basic' },
   },
   premium: {
     maxProjects: null,
@@ -66,6 +68,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     canShareNotebooks: true,
     maxShareMembers: null,
     restrictedModelIds: [],
+    webCrawl: { limit: 50, maxDepth: 2, maxBreadth: 25, extractDepth: 'advanced' },
   },
   enterprise: UNLIMITED,
 };
