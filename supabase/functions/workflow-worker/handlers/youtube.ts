@@ -193,7 +193,12 @@ export async function youtubeFetchTranscript(
     const message = err instanceof Error ? err.message : "Unknown transcript fetch error";
     const debugPayload = (err as any)?.debug || null;
 
-    // Persist error debug even on failure
+    const isTransient = /timeout|ECONNRESET|fetch failed|AbortError/i.test(message);
+    const isUnavailable = /no transcript|transcript.*not available|no captions|tracks available/i.test(message);
+    const finalStatus = isTransient ? "processing" : (isUnavailable ? "unavailable" : "failed");
+
+    // Persist error debug + reflect terminal status on the resource so the UI
+    // doesn't stay stuck on "processing" when the video has no transcript.
     try {
       const supabase = createServiceRoleClient();
       await persistTranscriptDebugMetadata(supabase, resourceLinkId, debugPayload, {
@@ -202,9 +207,18 @@ export async function youtubeFetchTranscript(
         error: message,
       });
       await persistVideoTitleMetadata(supabase, resourceLinkId, debugPayload?.youtubeTitle, debugPayload?.youtubeSubtitle);
+      if (!isTransient) {
+        await supabase
+          .from("resource_links")
+          .update({
+            transcript_status: finalStatus,
+            transcript_error: message,
+            transcript_updated_at: new Date().toISOString(),
+          })
+          .eq("id", resourceLinkId);
+      }
     } catch { /* best-effort */ }
 
-    const isTransient = /timeout|ECONNRESET|fetch failed|AbortError/i.test(message);
     return fail(
       isTransient ? "retryable" : "terminal",
       message,
