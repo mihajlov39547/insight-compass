@@ -136,6 +136,8 @@ export function NotebookWorkspace() {
   const deleteResource = useDeleteResource();
   const retryTranscript = useRetryYouTubeTranscriptIngestion();
   const createLinkResource = useCreateLinkResource();
+  const uploadDocuments = useUploadDocuments();
+  const { limits: planLimitsForCrawl } = usePlanLimits();
   const [addingYouTubeUrl, setAddingYouTubeUrl] = useState<string | null>(null);
   const createNote = useCreateNotebookNote();
   const updateNote = useUpdateNotebookNote();
