@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { MailX, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { PageSeo } from '@/components/seo/PageSeo';
 
 type Status = 'loading' | 'valid' | 'already' | 'invalid' | 'success' | 'error';
 
@@ -46,7 +47,13 @@ export default function Unsubscribe() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <main className="min-h-screen flex items-center justify-center bg-background p-4">
+      <PageSeo
+        title="Unsubscribe — Researcher"
+        description="Manage your Researcher email subscription preferences."
+        path="/unsubscribe"
+        noindex
+      />
       <div className="max-w-md w-full text-center space-y-6">
         {status === 'loading' && (
           <>
@@ -98,6 +105,6 @@ export default function Unsubscribe() {
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,0 +1,15 @@
+# Researcher
+
+> Notebook-style LLM workspace for project files, semantic search, and grounded answers from uploaded documents.
+
+Researcher organizes documents and notes into projects and notebooks, then lets you chat with an AI that grounds its answers in your sources. Supports PDFs, DOCX, plain text, YouTube transcripts, and crawled web pages, with hybrid semantic + keyword retrieval and source attribution.
+
+## Pages
+
+- [Home](/): Workspace dashboard for projects, notebooks, and chats.
+- [Profile settings](/profile-settings): Account, plan, and billing management.
+
+## Optional
+
+- [Reset password](/reset-password): Password recovery flow.
+- [Unsubscribe](/unsubscribe): Email unsubscribe handler.

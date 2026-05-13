@@ -9,6 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { PageSeo } from '@/components/seo/PageSeo';
 
 type Step = 'request' | 'verify' | 'done';
 
@@ -113,7 +114,13 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
+    <main className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
+      <PageSeo
+        title="Reset password — Researcher"
+        description="Reset your Researcher account password."
+        path="/reset-password"
+        noindex
+      />
       <div className="w-full max-w-md">
         <button
           type="button"
@@ -203,6 +210,6 @@ export default function ResetPassword() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   );
 }

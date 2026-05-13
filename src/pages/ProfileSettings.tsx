@@ -26,6 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog';
 import { BillingSection } from '@/components/settings/BillingSection';
+import { PageSeo } from '@/components/seo/PageSeo';
 
 
 interface SavedProfileState {
@@ -301,6 +302,12 @@ export default function ProfileSettings() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSeo
+        title="Profile settings — Researcher"
+        description="Manage your Researcher account, preferences, plan, and billing details."
+        path="/profile-settings"
+        noindex
+      />
       {/* Top bar */}
       <header className="h-14 bg-card border-b border-border flex items-center px-4 gap-3 shrink-0">
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>

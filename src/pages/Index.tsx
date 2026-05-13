@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { PageSeo } from '@/components/seo/PageSeo';
 import { AppProvider } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/useAuth';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -35,6 +36,10 @@ import { normalizePlan } from '@/types/app';
 function MainContent() {
   const { activeView } = useApp();
 
+  return <main className="flex-1 min-h-0 h-full flex flex-col">{renderActiveView(activeView)}</main>;
+}
+
+function renderActiveView(activeView: string) {
   if (activeView === 'home') return <HomeLanding />;
   if (activeView === 'projects') return <ProjectsLanding />;
   if (activeView === 'project-documents') return <DocumentDashboard scope="project" />;
@@ -167,6 +172,11 @@ function AppContent() {
 const Index = () => {
   return (
     <AppProvider>
+      <PageSeo
+        title="Researcher — Notebook-style LLM workspace"
+        description="Researcher is a notebook-style LLM workspace for project files, semantic search, and grounded answers from uploaded documents."
+        path="/"
+      />
       <AppContent />
     </AppProvider>
   );
