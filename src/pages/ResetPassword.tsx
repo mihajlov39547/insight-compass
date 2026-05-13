@@ -9,6 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { PageSeo } from '@/components/seo/PageSeo';
 
 type Step = 'request' | 'verify' | 'done';
 

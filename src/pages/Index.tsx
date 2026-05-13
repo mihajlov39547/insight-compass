@@ -172,6 +172,11 @@ function AppContent() {
 const Index = () => {
   return (
     <AppProvider>
+      <PageSeo
+        title="Researcher — Notebook-style LLM workspace"
+        description="Researcher is a notebook-style LLM workspace for project files, semantic search, and grounded answers from uploaded documents."
+        path="/"
+      />
       <AppContent />
     </AppProvider>
   );

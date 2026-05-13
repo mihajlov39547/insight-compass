@@ -26,6 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog';
 import { BillingSection } from '@/components/settings/BillingSection';
+import { PageSeo } from '@/components/seo/PageSeo';
 
 
 interface SavedProfileState {
