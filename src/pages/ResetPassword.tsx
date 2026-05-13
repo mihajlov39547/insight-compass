@@ -210,6 +210,6 @@ export default function ResetPassword() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   );
 }
