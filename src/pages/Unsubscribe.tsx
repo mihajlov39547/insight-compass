@@ -47,7 +47,13 @@ export default function Unsubscribe() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <main className="min-h-screen flex items-center justify-center bg-background p-4">
+      <PageSeo
+        title="Unsubscribe — Researcher"
+        description="Manage your Researcher email subscription preferences."
+        path="/unsubscribe"
+        noindex
+      />
       <div className="max-w-md w-full text-center space-y-6">
         {status === 'loading' && (
           <>

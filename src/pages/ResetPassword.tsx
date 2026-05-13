@@ -114,7 +114,13 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
+    <main className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
+      <PageSeo
+        title="Reset password — Researcher"
+        description="Reset your Researcher account password."
+        path="/reset-password"
+        noindex
+      />
       <div className="w-full max-w-md">
         <button
           type="button"
