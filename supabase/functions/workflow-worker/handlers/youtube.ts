@@ -775,3 +775,63 @@ async function persistVideoTitleMetadata(
     console.warn(`[youtube.metadata] Failed to persist title: ${err}`);
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Transcript text stash (workflow context patches strip long strings) */
+/* ------------------------------------------------------------------ */
+
+async function stashTranscriptText(supabase: any, resourceId: string, text: string) {
+  if (!text) return;
+  try {
+    const { data: row } = await supabase
+      .from("resource_links")
+      .select("metadata")
+      .eq("id", resourceId)
+      .maybeSingle();
+    const currentMetadata = row?.metadata && typeof row.metadata === "object" ? row.metadata : {};
+    const currentTranscript = typeof currentMetadata.transcript === "object" && currentMetadata.transcript !== null
+      ? currentMetadata.transcript
+      : {};
+    const nextMetadata = {
+      ...currentMetadata,
+      transcript: { ...currentTranscript, _text_stash: text },
+    };
+    await supabase.from("resource_links").update({ metadata: nextMetadata }).eq("id", resourceId);
+  } catch (err) {
+    console.warn(`[youtube.stash] Failed to stash transcript: ${err}`);
+  }
+}
+
+async function loadStashedTranscriptText(supabase: any, resourceId: string): Promise<string | null> {
+  try {
+    const { data: row } = await supabase
+      .from("resource_links")
+      .select("metadata")
+      .eq("id", resourceId)
+      .maybeSingle();
+    const stash = row?.metadata?.transcript?._text_stash;
+    return typeof stash === "string" && stash.length > 0 ? stash : null;
+  } catch {
+    return null;
+  }
+}
+
+async function clearStashedTranscriptText(supabase: any, resourceId: string) {
+  try {
+    const { data: row } = await supabase
+      .from("resource_links")
+      .select("metadata")
+      .eq("id", resourceId)
+      .maybeSingle();
+    const currentMetadata = row?.metadata && typeof row.metadata === "object" ? row.metadata : {};
+    const currentTranscript = typeof currentMetadata.transcript === "object" && currentMetadata.transcript !== null
+      ? { ...currentMetadata.transcript }
+      : {};
+    if (!("_text_stash" in currentTranscript)) return;
+    delete currentTranscript._text_stash;
+    const nextMetadata = { ...currentMetadata, transcript: currentTranscript };
+    await supabase.from("resource_links").update({ metadata: nextMetadata }).eq("id", resourceId);
+  } catch (err) {
+    console.warn(`[youtube.stash] Failed to clear transcript stash: ${err}`);
+  }
+}
