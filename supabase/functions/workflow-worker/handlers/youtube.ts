@@ -589,7 +589,6 @@ export async function youtubeFinalizeResourceStatus(
 ): Promise<HandlerOutput> {
   const wCtx = ctx(input);
   const resourceLinkId = wCtx.resource_link_id as string;
-  const transcriptText = wCtx.transcript_text as string;
   const videoTitle = wCtx.video_title as string | null;
   const transcriptLanguage = wCtx.transcript_language as string | null;
   const chunkCount = (wCtx.chunk_count as number) || 0;
@@ -597,6 +596,11 @@ export async function youtubeFinalizeResourceStatus(
   const embeddedQuestionCount = (wCtx.embedded_question_count as number) || 0;
 
   const supabase = createServiceRoleClient();
+
+  let transcriptText = (wCtx.transcript_text as string) || "";
+  if (!transcriptText) {
+    transcriptText = (await loadStashedTranscriptText(supabase, resourceLinkId)) || "";
+  }
 
   // Generate summary
   const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")?.trim() || null;
