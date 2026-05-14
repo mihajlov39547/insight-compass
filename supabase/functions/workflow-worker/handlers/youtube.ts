@@ -239,18 +239,22 @@ export async function youtubePersistTranscriptChunks(
   input: HandlerExecutionInput,
 ): Promise<HandlerOutput> {
   const wCtx = ctx(input);
-  const transcriptText = wCtx.transcript_text as string;
   const resourceLinkId = wCtx.resource_link_id as string;
   const userId = wCtx.user_id as string;
   const projectId = wCtx.project_id as string | null;
   const notebookId = wCtx.notebook_id as string | null;
 
-  if (!transcriptText) return fail("terminal", "No transcript_text in context", "dependency_input", "MISSING_TRANSCRIPT");
+  const supabase = createServiceRoleClient();
+
+  let transcriptText = (wCtx.transcript_text as string) || "";
+  if (!transcriptText) {
+    transcriptText = (await loadStashedTranscriptText(supabase, resourceLinkId)) || "";
+  }
+
+  if (!transcriptText) return fail("terminal", "No transcript_text available", "dependency_input", "MISSING_TRANSCRIPT");
 
   const chunks = buildTranscriptChunks(transcriptText);
   if (chunks.length === 0) return fail("terminal", "Transcript is empty after chunking", "validation", "EMPTY_TRANSCRIPT");
-
-  const supabase = createServiceRoleClient();
 
   // Clear existing chunks
   const { error: deleteError } = await supabase
