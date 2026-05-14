@@ -648,6 +648,9 @@ export async function youtubeFinalizeResourceStatus(
     return fail("retryable", `Failed to update resource status: ${updateError.message}`, "transient", "STATUS_UPDATE_FAILED");
   }
 
+  // Clear stashed transcript text — chunks are persisted, no longer needed.
+  await clearStashedTranscriptText(supabase, resourceLinkId);
+
   return {
     ok: true,
     output_payload: {
