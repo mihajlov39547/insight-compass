@@ -172,6 +172,10 @@ export async function youtubeFetchTranscript(
       winning_strategy: result.debug?.winningStrategy ?? null,
     });
 
+    // Stash full transcript text on the resource row — workflow context patches
+    // strip strings >1000 chars, so we cannot pass the transcript via context.
+    await stashTranscriptText(supabase, resourceLinkId, result.transcript);
+
     return {
       ok: true,
       output_payload: {
@@ -182,7 +186,7 @@ export async function youtubeFetchTranscript(
         language_code: result.debug?.serpapiLanguageCode ?? null,
       },
       context_patch: {
-        transcript_text: result.transcript,
+        transcript_length: result.transcript.length,
         video_title: result.videoTitle ?? null,
         video_subtitle: result.videoSubtitle ?? null,
         transcript_language: result.debug?.serpapiLanguageCode ?? null,
