@@ -172,6 +172,10 @@ export async function youtubeFetchTranscript(
       winning_strategy: result.debug?.winningStrategy ?? null,
     });
 
+    // Stash full transcript text on the resource row — workflow context patches
+    // strip strings >1000 chars, so we cannot pass the transcript via context.
+    await stashTranscriptText(supabase, resourceLinkId, result.transcript);
+
     return {
       ok: true,
       output_payload: {
@@ -182,7 +186,7 @@ export async function youtubeFetchTranscript(
         language_code: result.debug?.serpapiLanguageCode ?? null,
       },
       context_patch: {
-        transcript_text: result.transcript,
+        transcript_length: result.transcript.length,
         video_title: result.videoTitle ?? null,
         video_subtitle: result.videoSubtitle ?? null,
         transcript_language: result.debug?.serpapiLanguageCode ?? null,
@@ -235,18 +239,22 @@ export async function youtubePersistTranscriptChunks(
   input: HandlerExecutionInput,
 ): Promise<HandlerOutput> {
   const wCtx = ctx(input);
-  const transcriptText = wCtx.transcript_text as string;
   const resourceLinkId = wCtx.resource_link_id as string;
   const userId = wCtx.user_id as string;
   const projectId = wCtx.project_id as string | null;
   const notebookId = wCtx.notebook_id as string | null;
 
-  if (!transcriptText) return fail("terminal", "No transcript_text in context", "dependency_input", "MISSING_TRANSCRIPT");
+  const supabase = createServiceRoleClient();
+
+  let transcriptText = (wCtx.transcript_text as string) || "";
+  if (!transcriptText) {
+    transcriptText = (await loadStashedTranscriptText(supabase, resourceLinkId)) || "";
+  }
+
+  if (!transcriptText) return fail("terminal", "No transcript_text available", "dependency_input", "MISSING_TRANSCRIPT");
 
   const chunks = buildTranscriptChunks(transcriptText);
   if (chunks.length === 0) return fail("terminal", "Transcript is empty after chunking", "validation", "EMPTY_TRANSCRIPT");
-
-  const supabase = createServiceRoleClient();
 
   // Clear existing chunks
   const { error: deleteError } = await supabase
@@ -581,7 +589,6 @@ export async function youtubeFinalizeResourceStatus(
 ): Promise<HandlerOutput> {
   const wCtx = ctx(input);
   const resourceLinkId = wCtx.resource_link_id as string;
-  const transcriptText = wCtx.transcript_text as string;
   const videoTitle = wCtx.video_title as string | null;
   const transcriptLanguage = wCtx.transcript_language as string | null;
   const chunkCount = (wCtx.chunk_count as number) || 0;
@@ -589,6 +596,11 @@ export async function youtubeFinalizeResourceStatus(
   const embeddedQuestionCount = (wCtx.embedded_question_count as number) || 0;
 
   const supabase = createServiceRoleClient();
+
+  let transcriptText = (wCtx.transcript_text as string) || "";
+  if (!transcriptText) {
+    transcriptText = (await loadStashedTranscriptText(supabase, resourceLinkId)) || "";
+  }
 
   // Generate summary
   const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")?.trim() || null;
@@ -635,6 +647,9 @@ export async function youtubeFinalizeResourceStatus(
   if (updateError) {
     return fail("retryable", `Failed to update resource status: ${updateError.message}`, "transient", "STATUS_UPDATE_FAILED");
   }
+
+  // Clear stashed transcript text — chunks are persisted, no longer needed.
+  await clearStashedTranscriptText(supabase, resourceLinkId);
 
   return {
     ok: true,
@@ -758,5 +773,65 @@ async function persistVideoTitleMetadata(
     }
   } catch (err) {
     console.warn(`[youtube.metadata] Failed to persist title: ${err}`);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Transcript text stash (workflow context patches strip long strings) */
+/* ------------------------------------------------------------------ */
+
+async function stashTranscriptText(supabase: any, resourceId: string, text: string) {
+  if (!text) return;
+  try {
+    const { data: row } = await supabase
+      .from("resource_links")
+      .select("metadata")
+      .eq("id", resourceId)
+      .maybeSingle();
+    const currentMetadata = row?.metadata && typeof row.metadata === "object" ? row.metadata : {};
+    const currentTranscript = typeof currentMetadata.transcript === "object" && currentMetadata.transcript !== null
+      ? currentMetadata.transcript
+      : {};
+    const nextMetadata = {
+      ...currentMetadata,
+      transcript: { ...currentTranscript, _text_stash: text },
+    };
+    await supabase.from("resource_links").update({ metadata: nextMetadata }).eq("id", resourceId);
+  } catch (err) {
+    console.warn(`[youtube.stash] Failed to stash transcript: ${err}`);
+  }
+}
+
+async function loadStashedTranscriptText(supabase: any, resourceId: string): Promise<string | null> {
+  try {
+    const { data: row } = await supabase
+      .from("resource_links")
+      .select("metadata")
+      .eq("id", resourceId)
+      .maybeSingle();
+    const stash = row?.metadata?.transcript?._text_stash;
+    return typeof stash === "string" && stash.length > 0 ? stash : null;
+  } catch {
+    return null;
+  }
+}
+
+async function clearStashedTranscriptText(supabase: any, resourceId: string) {
+  try {
+    const { data: row } = await supabase
+      .from("resource_links")
+      .select("metadata")
+      .eq("id", resourceId)
+      .maybeSingle();
+    const currentMetadata = row?.metadata && typeof row.metadata === "object" ? row.metadata : {};
+    const currentTranscript = typeof currentMetadata.transcript === "object" && currentMetadata.transcript !== null
+      ? { ...currentMetadata.transcript }
+      : {};
+    if (!("_text_stash" in currentTranscript)) return;
+    delete currentTranscript._text_stash;
+    const nextMetadata = { ...currentMetadata, transcript: currentTranscript };
+    await supabase.from("resource_links").update({ metadata: nextMetadata }).eq("id", resourceId);
+  } catch (err) {
+    console.warn(`[youtube.stash] Failed to clear transcript stash: ${err}`);
   }
 }

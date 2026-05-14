@@ -172,7 +172,7 @@ export async function applyWorkflowContextPatch(
       .insert({
         workflow_run_id: workflowRunId,
         activity_run_id: activityRunId,
-        event_type: "workflow_context_patched",
+        event_type: "workflow_context_updated",
         actor,
         details: {
           merge_policy: "shallow_top_level_lww",
