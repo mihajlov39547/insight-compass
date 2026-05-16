@@ -318,16 +318,17 @@ export async function finalizeWorkflowRunState(
 }
 
 /**
- * When a document-type workflow fails, update the document's processing_status
- * to "failed" so the UI doesn't stay stuck in an intermediate processing state.
+ * When a workflow run reaches a failed terminal state, propagate the failure
+ * back to the entity that triggered it (document or resource_link) so the UI
+ * does not stay stuck in an intermediate "processing" state.
  */
-async function syncDocumentStatusOnWorkflowFailure(
+async function syncTriggerEntityOnWorkflowFailure(
   supabase: SupabaseClient,
   workflowRunId: string,
-  failureReason: string
+  failureReason: string,
+  lastErrorMessage: string,
 ): Promise<void> {
   try {
-    // Check if this workflow is a document-triggered workflow
     const { data: workflowRun, error: wrError } = await supabase
       .from("workflow_runs")
       .select("trigger_entity_type, trigger_entity_id")
@@ -335,46 +336,63 @@ async function syncDocumentStatusOnWorkflowFailure(
       .single();
 
     if (wrError || !workflowRun) return;
+    const entityType = workflowRun.trigger_entity_type;
+    const entityId = workflowRun.trigger_entity_id;
+    if (!entityType || !entityId) return;
 
-    if (workflowRun.trigger_entity_type !== "document" || !workflowRun.trigger_entity_id) {
+    const nowIso = new Date().toISOString();
+    const errorText = (lastErrorMessage || failureReason || "workflow_failed").slice(0, 2000);
+
+    if (entityType === "document") {
+      const { data: doc } = await supabase
+        .from("documents")
+        .select("processing_status")
+        .eq("id", entityId)
+        .single();
+      if (!doc || ["completed", "failed"].includes(doc.processing_status)) return;
+
+      const { error: updateError } = await supabase
+        .from("documents")
+        .update({
+          processing_status: "failed",
+          processing_error: `Workflow failed: ${errorText}`,
+          updated_at: nowIso,
+        })
+        .eq("id", entityId);
+      if (updateError) {
+        console.warn(`sync document ${entityId} failed: ${updateError.message}`);
+      } else {
+        console.log(`Document ${entityId} marked failed (${failureReason})`);
+      }
       return;
     }
 
-    const documentId = workflowRun.trigger_entity_id;
+    if (entityType === "resource_link") {
+      const { data: link } = await supabase
+        .from("resource_links")
+        .select("transcript_status")
+        .eq("id", entityId)
+        .single();
+      if (!link || ["completed", "failed"].includes(link.transcript_status)) return;
 
-    // Only update if document is still in an intermediate processing state
-    const { data: doc, error: docError } = await supabase
-      .from("documents")
-      .select("processing_status")
-      .eq("id", documentId)
-      .single();
-
-    if (docError || !doc) return;
-
-    const terminalDocStatuses = ["completed", "failed"];
-    if (terminalDocStatuses.includes(doc.processing_status)) return;
-
-    const { error: updateError } = await supabase
-      .from("documents")
-      .update({
-        processing_status: "failed",
-        processing_error: `Workflow failed: ${failureReason}`,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", documentId);
-
-    if (updateError) {
-      console.warn(
-        `Failed to sync document ${documentId} status on workflow failure: ${updateError.message}`
-      );
-    } else {
-      console.log(
-        `Document ${documentId} processing_status set to 'failed' after workflow failure: ${failureReason}`
-      );
+      const { error: updateError } = await supabase
+        .from("resource_links")
+        .update({
+          transcript_status: "failed",
+          transcript_error: errorText,
+          transcript_updated_at: nowIso,
+          updated_at: nowIso,
+        })
+        .eq("id", entityId);
+      if (updateError) {
+        console.warn(`sync resource_link ${entityId} failed: ${updateError.message}`);
+      } else {
+        console.log(`Resource link ${entityId} marked failed (${failureReason})`);
+      }
     }
   } catch (err) {
     console.warn(
-      `syncDocumentStatusOnWorkflowFailure error: ${err instanceof Error ? err.message : String(err)}`
+      `syncTriggerEntityOnWorkflowFailure error: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 }
