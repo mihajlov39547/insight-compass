@@ -12,20 +12,20 @@ Check off items as they ship. Keep this file updated in the same PR that lands e
 Goal: every "Retry" button (document, video, any resource) wipes prior state
 and starts a clean workflow run instead of resuming a half-broken one.
 
-- [ ] Create shared backend RPC / edge function `reset_resource_for_retry`
-  - [ ] For `resource_links` (YouTube): clear `link_transcript_chunks`,
-        `link_transcript_chunk_questions`, `transcript_text`, `transcript_error`,
-        `transcript_debug`, `summary`, `metadata.transcript._text_stash`, and
-        reset `transcript_status` to `pending`
-  - [ ] For `documents`: clear `document_chunks`, `document_chunk_questions`,
+- [x] Create shared backend RPC / edge function `reset_resource_for_retry`
+  - [x] For `resource_links` (YouTube): clear `link_transcript_chunks`,
+        `link_transcript_chunk_questions`, `transcript_error`,
+        `metadata.transcript._text_stash`/`error`/`debug` and `metadata.summary`,
+        and reset `transcript_status` to `pending`
+  - [x] For `documents`: clear `document_chunks`, `document_chunk_questions`,
         `document_analysis`, reset `processing_status` to `uploaded` and clear
-        error fields
-  - [ ] Mark all prior `workflow_runs` for the entity as `superseded` (new enum value)
-        or `cancelled`, and cancel their pending `activity_runs`
-- [ ] Wire all retry entry points to call it before `workflow-start`:
-  - [ ] `useResourceActions` retry path (YouTube + linked resources)
-  - [ ] Document retry button(s) in `DocumentDashboard` / `DocumentProcessingOverview`
-  - [ ] Any backend auto-retry on failure (if it bypasses the UI)
+        error/summary/language/counts fields
+  - [x] Cancel all active `workflow_runs` for the entity (set `cancelled` with
+        reason `superseded_by_retry`) and cancel their non-terminal `activity_runs`
+- [x] Wire all retry entry points to call it before `workflow-start`:
+  - [x] `useResourceActions` retry path (YouTube + linked resources)
+  - [x] Document retry button (`useRetryProcessing` in `useDocuments`)
+  - [ ] Any backend auto-retry on failure (if it bypasses the UI) — N/A, all retries go through UI hooks today
 - [ ] Add UI confirmation copy: "Retry will clear previous results and re-run from scratch."
 
 ## Phase 2 — Sync workflow failures back to the resource
