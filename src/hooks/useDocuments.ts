@@ -341,7 +341,19 @@ export function useRetryProcessing() {
 
   const mutation = useMutation({
     mutationFn: async (doc: DbDocument) => {
-      const trigger = await startDocumentWorkflow(doc, 'retry');
+      // Phase 1: clear chunks/analysis/errors and cancel any in-flight runs
+      // so the retry starts from a clean slate.
+      const { error: resetErr } = await supabase.rpc(
+        'reset_resource_for_retry' as any,
+        { p_entity_type: 'document', p_entity_id: doc.id }
+      );
+      if (resetErr) {
+        console.warn('[doc retry] reset_resource_for_retry failed', resetErr.message);
+      }
+      const trigger = await startDocumentWorkflow(
+        { ...doc, processing_status: 'uploaded' },
+        'retry'
+      );
       return {
         status: 'accepted',
         ...trigger,

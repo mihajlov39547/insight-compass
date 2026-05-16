@@ -302,6 +302,15 @@ export function useRetryYouTubeTranscriptIngestion() {
       // Phase 5: Workflow-first retry. Always attempt the workflow path;
       // fall back to legacy enqueue only if the workflow call itself errors.
       try {
+        // Phase 1: wipe prior chunks/embeddings/state and cancel in-flight runs.
+        const { error: resetErr } = await supabase.rpc(
+          'reset_resource_for_retry' as any,
+          { p_entity_type: 'resource_link', p_entity_id: resource.id }
+        );
+        if (resetErr) {
+          console.warn('[youtube retry] reset_resource_for_retry failed', resetErr.message);
+        }
+
         const { data: link } = await supabase
           .from('resource_links')
           .select('url')
