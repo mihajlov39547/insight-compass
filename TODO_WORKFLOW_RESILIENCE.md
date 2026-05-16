@@ -33,11 +33,13 @@ and starts a clean workflow run instead of resuming a half-broken one.
 Goal: when a workflow run fails, the resource row reflects it immediately so
 the UI never shows perpetual `processing`.
 
-- [ ] In `workflow-finalization.ts`, on terminal `failed` workflow:
-  - [ ] If trigger is `resource_link`: update `transcript_status = 'failed'`,
-        `transcript_error = <last activity error>`, `updated_at = now()`
-  - [ ] If trigger is `document`: update `processing_status = 'failed'` with reason
+- [x] In `workflow-finalization.ts`, on terminal `failed` workflow:
+  - [x] If trigger is `resource_link`: update `transcript_status = 'failed'`,
+        `transcript_error = <last activity error>`, `transcript_updated_at = now()`
+  - [x] If trigger is `document`: update `processing_status = 'failed'` with reason
+        (last failed activity's `error_message`, not just generic reason)
 - [ ] Add a DB trigger as defensive backstop: `workflow_runs.status -> failed`
+      propagates to the linked entity if not already terminal
       propagates to the linked entity if not already terminal
 
 ## Phase 3 — Durable transcript storage
