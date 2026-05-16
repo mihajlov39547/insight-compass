@@ -2438,6 +2438,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      reset_resource_for_retry: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: Json
+      }
       run_link_adapter_enrichment: {
         Args: { p_resource_id: string }
         Returns: {
