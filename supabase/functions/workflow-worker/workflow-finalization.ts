@@ -288,14 +288,15 @@ export async function finalizeWorkflowRunState(
     );
   }
 
-  // Post-finalization: if this is a document workflow that failed,
-  // update the document's processing_status so it doesn't stay stuck.
+  // Post-finalization: if this workflow failed, sync the triggering entity
+  // (document or resource_link) so the UI doesn't stay stuck in "processing".
   if (finalStatus === "failed") {
-    await syncDocumentStatusOnWorkflowFailure(
-      supabase,
-      workflowRunId,
-      inferFailedReason(state.requiredFailureCount, trigger)
-    );
+    const reason = inferFailedReason(state.requiredFailureCount, trigger);
+    const lastError = relevantRuns
+      .filter((r) => !r.is_optional && r.status === "failed" && r.error_message)
+      .map((r) => r.error_message as string)
+      .pop() ?? reason;
+    await syncTriggerEntityOnWorkflowFailure(supabase, workflowRunId, reason, lastError);
   }
 
   return {
