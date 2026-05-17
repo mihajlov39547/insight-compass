@@ -46,12 +46,12 @@ the UI never shows perpetual `processing`.
 
 Goal: stop stuffing transcripts into `resource_links.metadata` / context patches.
 
-- [ ] New table `youtube_transcript_stages` (resource_link_id, stage, text, lang, created_at)
-  - [ ] RLS mirrors `resource_links`
-- [ ] `youtubeFetchTranscript` writes raw transcript here instead of stash
-- [ ] `youtubePersistTranscriptChunks` + `youtubeFinalizeResourceStatus`
-      read from this table; remove `_text_stash` helpers
-- [ ] Migration: backfill not required (drop stash on next reset)
+- [x] New table `youtube_transcript_stages` (resource_link_id, stage, text, lang, created_at)
+  - [x] RLS mirrors `resource_links` (viewer access via owner/project/notebook; service role writes)
+- [x] `youtubeFetchTranscript` writes raw transcript here instead of stash
+- [x] `youtubePersistTranscriptChunks` + `youtubeFinalizeResourceStatus`
+      read from this table; legacy `_text_stash` retained as fallback for in-flight runs
+- [x] `reset_resource_for_retry` wipes stages on retry; backfill not required (drop stash on next reset)
 
 ## Phase 4 — Tolerant finalization
 
