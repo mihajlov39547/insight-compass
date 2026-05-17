@@ -152,3 +152,4 @@ not just the legacy column.
 - [ ] Force a failure (bad video ID) — UI flips to `failed` within seconds, retry recovers
 - [ ] Kill a worker mid-activity — stale detection marks it failed within 10 min
 - [ ] Optional enrichment failure does not block `completed` state
+- [ ] Resume from failed activity: single activity fails → fix → Resume reruns only that step and downstream completes on same workflow_run
