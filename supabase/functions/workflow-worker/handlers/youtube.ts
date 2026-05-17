@@ -851,3 +851,58 @@ async function clearStashedTranscriptText(supabase: any, resourceId: string) {
     console.warn(`[youtube.stash] Failed to clear transcript stash: ${err}`);
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Durable transcript stage storage (youtube_transcript_stages)       */
+/* ------------------------------------------------------------------ */
+
+async function saveTranscriptStage(
+  supabase: any,
+  resourceLinkId: string,
+  stage: string,
+  text: string,
+  lang: string | null,
+  metadata: Record<string, unknown> = {},
+): Promise<void> {
+  if (!text) return;
+  try {
+    const { error } = await supabase
+      .from("youtube_transcript_stages")
+      .upsert(
+        {
+          resource_link_id: resourceLinkId,
+          stage,
+          text,
+          lang,
+          metadata,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "resource_link_id,stage" },
+      );
+    if (error) {
+      console.warn(`[youtube.stage] Failed to upsert stage ${stage}: ${error.message}`);
+    }
+  } catch (err) {
+    console.warn(`[youtube.stage] Exception upserting stage ${stage}: ${err}`);
+  }
+}
+
+async function loadTranscriptStage(
+  supabase: any,
+  resourceLinkId: string,
+  stage: string,
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from("youtube_transcript_stages")
+      .select("text")
+      .eq("resource_link_id", resourceLinkId)
+      .eq("stage", stage)
+      .maybeSingle();
+    if (error || !data) return null;
+    const text = (data as any).text;
+    return typeof text === "string" && text.length > 0 ? text : null;
+  } catch {
+    return null;
+  }
+}
