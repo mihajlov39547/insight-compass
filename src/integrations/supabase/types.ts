@@ -2137,6 +2137,50 @@ export type Database = {
           },
         ]
       }
+      youtube_transcript_stages: {
+        Row: {
+          char_count: number | null
+          created_at: string
+          id: string
+          lang: string | null
+          metadata: Json
+          resource_link_id: string
+          stage: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          char_count?: number | null
+          created_at?: string
+          id?: string
+          lang?: string | null
+          metadata?: Json
+          resource_link_id: string
+          stage?: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          char_count?: number | null
+          created_at?: string
+          id?: string
+          lang?: string | null
+          metadata?: Json
+          resource_link_id?: string
+          stage?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "youtube_transcript_stages_resource_link_id_fkey"
+            columns: ["resource_link_id"]
+            isOneToOne: false
+            referencedRelation: "resource_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
