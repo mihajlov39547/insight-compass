@@ -75,7 +75,66 @@ Goal: if no activity transitions for N minutes, mark the run failed and surface 
   - [ ] Let finalization roll the workflow to `failed`
 - [ ] Add Phase 2 sync so resource flips to `failed` automatically
 
-## Phase 6 — UI: workflow truth in the badge
+## Phase 6 — Resume from failed activity (partial retry)
+
+Goal: in addition to the full reset retry, expose a "Resume" action that
+re-runs ONLY the failed activities of the current workflow run and lets
+downstream activities continue once they succeed. Successful upstream
+activities (and their outputs in workflow context) MUST be preserved.
+
+Key principle: full retry = wipe + new workflow_run. Partial resume =
+re-arm failed activity_runs on the SAME workflow_run, keeping prior
+context patches and completed activity outputs intact.
+
+- [ ] Backend RPC `resume_failed_activities(workflow_run_id)`:
+  - [ ] Validate caller owns the workflow run
+  - [ ] Only operate on the latest workflow_run whose status is `failed`
+        (or `running` with all non-terminal activities stuck/failed)
+  - [ ] For each `activity_runs` row with `status = 'failed'` and
+        `is_terminal = true`:
+      - reset `status = 'pending'`, `is_terminal = false`,
+        `attempt_count = 0`, clear `error_message`, `error_details`,
+        `finished_at`, `claimed_by`, `claimed_at`, `lease_expires_at`,
+        `next_retry_at`, `queue_msg_id`
+      - bump `updated_at = now()`
+  - [ ] Flip `workflow_runs.status` back to `running`, clear
+        `failure_reason`, set `resumed_at`/increment `resume_count`
+        (add columns if missing)
+  - [ ] Re-enqueue the reset activities via the same path
+        `workflow-start` uses for scheduling (queue_dispatches insert
+        + pgmq send, or a shared helper extracted from worker)
+  - [ ] Emit a `workflow_resumed` workflow_event with the list of
+        activity_run_ids re-armed
+- [ ] Context sufficiency audit (per handler) — make sure a failed
+      activity can re-run standalone from `workflow_runs.context_patches`
+      + its `input_payload` without depending on volatile in-memory state:
+  - [ ] `youtubeFetchTranscript` — already reads resource row; OK
+  - [ ] `youtubePersistTranscriptChunks` — now reads
+        `youtube_transcript_stages`; OK after Phase 3
+  - [ ] `youtubeFinalizeResourceStatus` — verify it reads stages, not stash
+  - [ ] Document handlers — verify each reads from durable storage
+        (storage bucket + `document_analysis`), not transient context
+  - [ ] Document any handler that still needs upstream activity output
+        and add a "rehydrate from DB" branch
+- [ ] Edge function `workflow-resume` (thin wrapper around the RPC) that
+      also kicks the worker the same way `startDocumentWorkflow` does
+- [ ] Frontend wiring:
+  - [ ] New hook `useResumeFailedActivities(workflowRunId)`
+  - [ ] In `LinkedVideoRow` / resource detail timeline: when latest
+        workflow has at least one `failed` activity, render TWO buttons:
+        - "Resume failed step" (calls workflow-resume)
+        - "Retry from scratch" (existing full reset path)
+  - [ ] Same treatment in `DocumentStatusBadge` / document detail
+  - [ ] Disable "Resume" if no failed activity exists or the workflow
+        is already `completed`
+- [ ] Cap resume attempts (e.g. max 5 resumes per workflow_run) to avoid
+      infinite loops; after cap, force full retry
+- [ ] Verification: induce a transient failure in the
+      `persist_transcript_chunks` activity, fix the root cause, click
+      Resume → chunks land, embeddings + finalize run, workflow ends
+      `completed` on the SAME workflow_run_id
+
+## Phase 7 — UI: workflow truth in the badge
 
 Goal: resource/document status badge reflects the latest workflow run,
 not just the legacy column.
