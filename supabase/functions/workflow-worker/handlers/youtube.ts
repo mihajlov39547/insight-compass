@@ -612,6 +612,9 @@ export async function youtubeFinalizeResourceStatus(
 
   let transcriptText = (wCtx.transcript_text as string) || "";
   if (!transcriptText) {
+    transcriptText = (await loadTranscriptStage(supabase, resourceLinkId, "raw")) || "";
+  }
+  if (!transcriptText) {
     transcriptText = (await loadStashedTranscriptText(supabase, resourceLinkId)) || "";
   }
 
