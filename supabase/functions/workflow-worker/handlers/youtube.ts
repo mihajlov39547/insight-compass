@@ -257,6 +257,10 @@ export async function youtubePersistTranscriptChunks(
 
   let transcriptText = (wCtx.transcript_text as string) || "";
   if (!transcriptText) {
+    transcriptText = (await loadTranscriptStage(supabase, resourceLinkId, "raw")) || "";
+  }
+  if (!transcriptText) {
+    // Backward compat: read from legacy metadata stash
     transcriptText = (await loadStashedTranscriptText(supabase, resourceLinkId)) || "";
   }
 
