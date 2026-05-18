@@ -235,7 +235,10 @@ export function mapRpcRowToResource(row: Record<string, any>): Resource {
     updatedAt: row.updated_at,
     processingStatus: row.processing_status,
     processingError: row.processing_error || null,
-    readiness: deriveReadiness(row.processing_status),
+    readiness: deriveReadiness(row.processing_status, {
+      resourceType,
+      transcriptStatus: row.transcript_status || null,
+    }),
     summary: row.summary || null,
     pageCount: row.page_count,
     wordCount: row.word_count,
