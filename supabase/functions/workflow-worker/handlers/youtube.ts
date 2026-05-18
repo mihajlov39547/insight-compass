@@ -641,10 +641,38 @@ export async function youtubeFinalizeResourceStatus(
     }
   }
 
+  // Phase 4 — Strict readiness gate: never mark a video "ready" unless real
+  // chunks (and at least partial embeddings) exist in the DB. Optional steps
+  // like question generation may have failed and that's fine, but missing
+  // chunks/embeddings means there is no searchable content and the resource
+  // must be reported as failed instead of misleadingly ready.
+  const { count: actualChunkCount } = await supabase
+    .from("link_transcript_chunks")
+    .select("id", { count: "exact", head: true })
+    .eq("resource_link_id", resourceLinkId);
+
+  const { count: embeddedChunkCount } = await supabase
+    .from("link_transcript_chunks")
+    .select("id", { count: "exact", head: true })
+    .eq("resource_link_id", resourceLinkId)
+    .not("embedding", "is", null);
+
+  const hasChunks = (actualChunkCount ?? 0) > 0;
+  const hasAnyEmbedding = (embeddedChunkCount ?? 0) > 0;
+  const finalStatus: "ready" | "failed" = hasChunks && hasAnyEmbedding ? "ready" : "failed";
+  const finalError =
+    finalStatus === "failed"
+      ? !hasChunks
+        ? "No transcript chunks were persisted"
+        : "No transcript chunk embeddings were generated"
+      : null;
+
   // Persist final debug metadata
   await persistTranscriptDebugMetadata(supabase, resourceLinkId, null, {
     question_count: questionCount,
     embedded_question_count: embeddedQuestionCount,
+    actual_chunk_count: actualChunkCount ?? 0,
+    embedded_chunk_count: embeddedChunkCount ?? 0,
     summary,
     summary_model: summaryModel,
     summary_warning: summaryWarning,
@@ -654,14 +682,18 @@ export async function youtubeFinalizeResourceStatus(
   const { error: updateError } = await supabase
     .from("resource_links")
     .update({
-      transcript_status: "ready",
+      transcript_status: finalStatus,
       transcript_updated_at: new Date().toISOString(),
-      transcript_error: null,
+      transcript_error: finalError,
     })
     .eq("id", resourceLinkId);
 
   if (updateError) {
     return fail("retryable", `Failed to update resource status: ${updateError.message}`, "transient", "STATUS_UPDATE_FAILED");
+  }
+
+  if (finalStatus === "failed") {
+    return fail("non_retryable", finalError || "Finalization preconditions not met", "validation", "READINESS_GATE_FAILED");
   }
 
   // Clear stashed transcript text — chunks are persisted, no longer needed.

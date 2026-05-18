@@ -53,16 +53,35 @@ Goal: stop stuffing transcripts into `resource_links.metadata` / context patches
       read from this table; legacy `_text_stash` retained as fallback for in-flight runs
 - [x] `reset_resource_for_retry` wipes stages on retry; backfill not required (drop stash on next reset)
 
-## Phase 4 — Tolerant finalization
+## Phase 4 — Tolerant finalization ✅
 
 Goal: optional branches (question enrichment, question embeddings) must never
-block the workflow from completing once chunks + embeddings exist.
+block the workflow from completing once chunks + embeddings exist — AND the
+finalize step must never lie about readiness when the essential outputs are
+missing.
 
-- [ ] Audit `youtube_processing_v1` and `document_processing_v1` DAGs:
-  - [ ] Confirm `is_optional = true` on enrichment activities
-- [ ] Update `workflow-finalization-policy.ts` to ignore optional `failed`
-      activities when computing terminal state (already partial — verify)
-- [ ] Add unit test in `validation-harness` for "optional fails, workflow completes"
+- [x] Audited DAGs (`workflow_activities` snapshot):
+      youtube `generate_transcript_chunk_questions` +
+      `generate_transcript_question_embeddings` and document
+      `document.generate_chunk_questions` are `is_optional = true`; all
+      transcript / chunk / embedding / finalize steps are required.
+- [x] Verified `workflow-finalization.ts` already ignores optional
+      `failed`/`cancelled` activities (`!row.is_optional` filter) — optional
+      failures contribute only to `optional_failure_count` and do not flip
+      the workflow to `failed`.
+- [x] Added strict readiness gate to `youtubeFinalizeResourceStatus`: counts
+      actual rows in `link_transcript_chunks` (and embedded rows). Sets
+      `transcript_status = 'ready'` only when both `chunk_count > 0` and at
+      least one embedding exists; otherwise sets
+      `transcript_status = 'failed'` with an explicit `transcript_error` and
+      returns a non-retryable handler failure (`READINESS_GATE_FAILED`) so
+      the workflow ends `failed` and Phase 2 sync propagates the truth.
+- [ ] Mirror the same strict gate in `document.finalize_document` (verify
+      `document_chunks` count + embedded count before flipping
+      `processing_status = 'completed'`).
+- [ ] Add unit test in `validation-harness` for "optional fails, workflow
+      completes" and "required chunk persistence yields 0 rows → finalize
+      fails".
 
 ## Phase 5 — Stale-run detection
 
