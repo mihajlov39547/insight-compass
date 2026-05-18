@@ -146,6 +146,27 @@ not just the legacy column.
 
 ---
 
+## Phase 8 — Gate "Ready" on transcript for video resources
+
+Goal: a YouTube/video resource must NOT be reported as Ready while the
+transcript is still missing — the transcript is the only searchable/chat
+content, so `metadata_ready` alone is misleading.
+
+- [x] `deriveReadiness()` now takes `{ resourceType, transcriptStatus }` and,
+      for `video` / `link_video`, returns `ready` only when
+      `transcript_status === 'ready'`, `failed` when transcript failed, and
+      `processing` otherwise — regardless of `processing_status`.
+- [x] `mapRpcRowToResource()` passes the new context.
+- [ ] Audit backend RPC `get_user_resources` to ensure it does not itself
+      collapse `processing_status` into a "ready"-implying field that bypasses
+      `deriveReadiness` (it returns raw `processing_status` + `transcript_status`,
+      so the frontend gate is sufficient today, but worth a one-time check).
+- [ ] Verification: link a video → row stays "Processing" until transcript
+      lands, then flips to "Ready"; if transcript fails, row shows "Failed"
+      with retry available even though metadata was extracted successfully.
+
+---
+
 ## Verification checklist (run after each phase)
 
 - [ ] Reprocess `vdBvGPUYaSY` end-to-end with a fresh retry — transcript persisted, chunks > 0, embeddings > 0

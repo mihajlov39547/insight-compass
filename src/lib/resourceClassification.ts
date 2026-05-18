@@ -71,7 +71,23 @@ export const CONTAINER_TYPE_LABELS: Record<ContainerType, string> = {
 // ── Processing / Readiness ───────────────────────────────────────────
 export type ReadinessStatus = 'ready' | 'processing' | 'failed' | 'partial' | 'unknown';
 
-export function deriveReadiness(processingStatus: string): ReadinessStatus {
+export function deriveReadiness(
+  processingStatus: string,
+  opts?: { resourceType?: string; transcriptStatus?: string | null },
+): ReadinessStatus {
+  // For transcript-bearing resources (videos / YouTube links), the resource is
+  // only truly "ready" once the transcript has been fetched and indexed.
+  // Without a transcript there is no searchable/chat-grounded content, so
+  // gate readiness on transcript_status regardless of processing_status.
+  const needsTranscript = opts?.resourceType === 'video' || opts?.resourceType === 'link_video';
+  if (needsTranscript) {
+    const ts = opts?.transcriptStatus;
+    if (ts === 'ready') return 'ready';
+    if (ts === 'failed') return 'failed';
+    // none / processing / null → still working
+    return 'processing';
+  }
+
   if (processingStatus === 'completed') return 'ready';
   if (processingStatus === 'metadata_ready' || processingStatus === 'transcript_ready') return 'ready';
   if (processingStatus === 'failed') return 'failed';
@@ -219,7 +235,10 @@ export function mapRpcRowToResource(row: Record<string, any>): Resource {
     updatedAt: row.updated_at,
     processingStatus: row.processing_status,
     processingError: row.processing_error || null,
-    readiness: deriveReadiness(row.processing_status),
+    readiness: deriveReadiness(row.processing_status, {
+      resourceType,
+      transcriptStatus: row.transcript_status || null,
+    }),
     summary: row.summary || null,
     pageCount: row.page_count,
     wordCount: row.word_count,
