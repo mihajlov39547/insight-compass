@@ -1215,6 +1215,13 @@ function ResourceDetailsDrawer({
     extractedTextEnabled,
   );
 
+  // Workflow DAG data (available for any resource that has at least one workflow_run)
+  const showWorkflowTab = isVideo || isDocument;
+  const { data: workflowDag } = useWorkflowDagForResource(
+    showWorkflowTab ? resourceId : null,
+    showWorkflowTab && open,
+  );
+
   useEffect(() => {
     setDetailsTab('overview');
   }, [resourceId, open]);
