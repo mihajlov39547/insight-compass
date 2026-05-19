@@ -193,3 +193,32 @@ content, so `metadata_ready` alone is misleading.
 - [ ] Kill a worker mid-activity — stale detection marks it failed within 10 min
 - [ ] Optional enrichment failure does not block `completed` state
 - [ ] Resume from failed activity: single activity fails → fix → Resume reruns only that step and downstream completes on same workflow_run
+
+---
+
+## Phase 9 — Resource drawer: Workflow diagram tab
+
+Goal: give users a visual representation of the active workflow DAG
+(youtube_processing_v1 / document_processing_v1) with live per-activity
+status, so they can see at a glance where a run is and which step failed.
+
+- [x] New SECURITY DEFINER RPC `get_workflow_dag(p_workflow_run_id uuid)`
+      returns `{ workflow_key, workflow_status, nodes[], edges[] }` for the
+      version pinned to the run, joined against `activity_runs` for live
+      status / attempt_count / error_message. Caller must be `auth.uid()`
+      = `workflow_runs.user_id`.
+- [x] Hook `useWorkflowDagForResource(resourceId)` fetches the latest
+      workflow_run for the resource and calls the RPC; polls every 5 s
+      while the drawer is open.
+- [x] `WorkflowDiagram` component performs a longest-path layered layout
+      (depth = longest path from entry), renders nodes as status-colored
+      boxes with icons (pending / running / completed / failed / skipped)
+      and SVG bezier edges with arrowheads.
+- [x] Resource drawer (`ResourcesLanding` ResourceDetailsSheet) now has a
+      third subtab "Workflow" (shown for video + document resources),
+      next to Overview and Transcript/Extracted text.
+- [ ] Add highlight + click → "Resume failed step" affordance directly on
+      the failed node (ties into Phase 6).
+- [ ] Render the same diagram inside the document/video row inline timeline
+      as an opt-in expansion, replacing the linear activity list when the
+      DAG has parallel branches.

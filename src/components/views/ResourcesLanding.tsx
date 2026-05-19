@@ -36,6 +36,8 @@ import { useResourceTranscriptPreview } from '@/hooks/useResourceTranscriptPrevi
 import { useResourceExtractedText } from '@/hooks/useResourceExtractedText';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { useResourceTranscriptDebug, type TranscriptDebugPayload, type StageDebugEntry } from '@/hooks/useResourceTranscriptDebug';
+import { useWorkflowDagForResource } from '@/hooks/useWorkflowDag';
+import { WorkflowDiagram } from '@/components/documents/WorkflowDiagram';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
   formatFileSize, truncateFileName, formatResourceLocation
@@ -1188,7 +1190,7 @@ function ResourceDetailsDrawer({
 }) {
   const { t } = useTranslation();
   const resourceId = resource?.id ?? null;
-  const [detailsTab, setDetailsTab] = useState<'overview' | 'content'>('overview');
+  const [detailsTab, setDetailsTab] = useState<'overview' | 'content' | 'workflow'>('overview');
 
   // Determine resource category
   const isVideo = resource?.provider === 'youtube' || !!resource?.transcriptStatus;
@@ -1211,6 +1213,13 @@ function ResourceDetailsDrawer({
   const { data: extractedTextResult, isLoading: isExtractedTextLoading } = useResourceExtractedText(
     isDocument ? resourceId : null,
     extractedTextEnabled,
+  );
+
+  // Workflow DAG data (available for any resource that has at least one workflow_run)
+  const showWorkflowTab = isVideo || isDocument;
+  const { data: workflowDag } = useWorkflowDagForResource(
+    showWorkflowTab ? resourceId : null,
+    showWorkflowTab && open,
   );
 
   useEffect(() => {
@@ -1244,11 +1253,14 @@ function ResourceDetailsDrawer({
 
           <ScrollArea className="flex-1">
             <div className="px-6 py-4">
-              <Tabs value={detailsTab} onValueChange={(value) => setDetailsTab(value as 'overview' | 'content')}>
+              <Tabs value={detailsTab} onValueChange={(value) => setDetailsTab(value as 'overview' | 'content' | 'workflow')}>
                 <TabsList className="h-8 p-0.5">
                   <TabsTrigger value="overview" className="text-xs h-7 px-3">{t('resources.drawer.tabs.overview')}</TabsTrigger>
                   {showContentTab && (
                     <TabsTrigger value="content" className="text-xs h-7 px-3">{contentTabLabel}</TabsTrigger>
+                  )}
+                  {showWorkflowTab && (
+                    <TabsTrigger value="workflow" className="text-xs h-7 px-3">{t('resources.drawer.tabs.workflow', 'Workflow')}</TabsTrigger>
                   )}
                 </TabsList>
 
@@ -1364,6 +1376,13 @@ function ResourceDetailsDrawer({
                         isLoading={isExtractedTextLoading}
                       />
                     ) : null}
+                  </TabsContent>
+                )}
+
+                {/* ═══ WORKFLOW TAB ═══ */}
+                {showWorkflowTab && (
+                  <TabsContent value="workflow" className="mt-3">
+                    <WorkflowDiagram dag={workflowDag ?? null} />
                   </TabsContent>
                 )}
               </Tabs>
