@@ -1378,6 +1378,13 @@ function ResourceDetailsDrawer({
                     ) : null}
                   </TabsContent>
                 )}
+
+                {/* ═══ WORKFLOW TAB ═══ */}
+                {showWorkflowTab && (
+                  <TabsContent value="workflow" className="mt-3">
+                    <WorkflowDiagram dag={workflowDag ?? null} />
+                  </TabsContent>
+                )}
               </Tabs>
             </div>
           </ScrollArea>
