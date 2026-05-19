@@ -1190,7 +1190,7 @@ function ResourceDetailsDrawer({
 }) {
   const { t } = useTranslation();
   const resourceId = resource?.id ?? null;
-  const [detailsTab, setDetailsTab] = useState<'overview' | 'content'>('overview');
+  const [detailsTab, setDetailsTab] = useState<'overview' | 'content' | 'workflow'>('overview');
 
   // Determine resource category
   const isVideo = resource?.provider === 'youtube' || !!resource?.transcriptStatus;
