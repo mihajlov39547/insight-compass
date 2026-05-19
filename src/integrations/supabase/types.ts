@@ -2451,6 +2451,7 @@ export type Database = {
           word_count: number
         }[]
       }
+      get_workflow_dag: { Args: { p_workflow_run_id: string }; Returns: Json }
       is_activity_runnable: {
         Args: { p_activity_id: string; p_workflow_run_id: string }
         Returns: boolean
