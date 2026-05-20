@@ -153,7 +153,7 @@ export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }
         </div>
       </div>
 
-      <div className="overflow-auto rounded-md border border-border bg-muted/20 max-h-[75vh]">
+      <div ref={scrollRef} className="overflow-auto rounded-md border border-border bg-muted/20 max-h-[75vh]">
         <div className="relative" style={{ width: data.width, height: data.height }}>
           <svg width={data.width} height={data.height} className="absolute inset-0 pointer-events-none">
             <defs>
