@@ -190,6 +190,7 @@ export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }
               className={cn(
                 'absolute rounded-md border px-2.5 py-1.5 text-[11px] shadow-sm transition-colors',
                 statusStyles(node.status),
+                (node.status === 'failed' || node.status === 'dead_letter') && 'ring-2 ring-destructive/60',
               )}
               style={{ left: x, top: y, width: NODE_W, height: NODE_H }}
               title={node.error_message || node.name}
