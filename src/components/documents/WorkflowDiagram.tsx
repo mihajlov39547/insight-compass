@@ -3,10 +3,10 @@ import { Loader2, Check, AlertCircle, Clock, CircleDashed, SkipForward } from 'l
 import { cn } from '@/lib/utils';
 import type { WorkflowDag, WorkflowDagNode, WorkflowNodeStatus } from '@/hooks/useWorkflowDag';
 
-const NODE_W = 180;
+const NODE_W = 200;
 const NODE_H = 56;
-const COL_GAP = 56;
-const ROW_GAP = 16;
+const COL_GAP = 16;
+const ROW_GAP = 40;
 const PAD = 16;
 
 function statusStyles(status: WorkflowNodeStatus) {
