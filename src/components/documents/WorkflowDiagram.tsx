@@ -109,6 +109,19 @@ function layout(dag: WorkflowDag): { nodes: Laid[]; width: number; height: numbe
 
 export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }) {
   const data = useMemo(() => (dag ? layout(dag) : null), [dag]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to first failed node so failures are always visible
+  useEffect(() => {
+    if (!data || !scrollRef.current) return;
+    const failed = data.nodes.find(
+      (n) => n.node.status === 'failed' || n.node.status === 'dead_letter',
+    );
+    if (failed) {
+      scrollRef.current.scrollTo({ top: Math.max(0, failed.y - 80), behavior: 'smooth' });
+    }
+  }, [data]);
+
 
   if (!dag) {
     return (
