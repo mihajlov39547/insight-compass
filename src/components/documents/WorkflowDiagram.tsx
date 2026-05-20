@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Loader2, Check, AlertCircle, Clock, CircleDashed, SkipForward } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WorkflowDag, WorkflowDagNode, WorkflowNodeStatus } from '@/hooks/useWorkflowDag';
