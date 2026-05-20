@@ -3,10 +3,10 @@ import { Loader2, Check, AlertCircle, Clock, CircleDashed, SkipForward } from 'l
 import { cn } from '@/lib/utils';
 import type { WorkflowDag, WorkflowDagNode, WorkflowNodeStatus } from '@/hooks/useWorkflowDag';
 
-const NODE_W = 180;
+const NODE_W = 200;
 const NODE_H = 56;
-const COL_GAP = 56;
-const ROW_GAP = 16;
+const COL_GAP = 16;
+const ROW_GAP = 40;
 const PAD = 16;
 
 function statusStyles(status: WorkflowNodeStatus) {
@@ -79,32 +79,31 @@ function layout(dag: WorkflowDag): { nodes: Laid[]; width: number; height: numbe
   }
   for (const k of nodeMap.keys()) dfs(k);
 
-  // Group by column
-  const columns = new Map<number, WorkflowDagNode[]>();
+  // Group by depth — depth becomes the ROW (top-down layout)
+  const rows = new Map<number, WorkflowDagNode[]>();
   for (const n of dag.nodes) {
-    const c = depth.get(n.key) ?? 0;
-    if (!columns.has(c)) columns.set(c, []);
-    columns.get(c)!.push(n);
+    const d = depth.get(n.key) ?? 0;
+    if (!rows.has(d)) rows.set(d, []);
+    rows.get(d)!.push(n);
   }
-  // Sort each column alphabetically by name for stability
-  for (const arr of columns.values()) arr.sort((a, b) => a.name.localeCompare(b.name));
+  for (const arr of rows.values()) arr.sort((a, b) => a.name.localeCompare(b.name));
 
-  const sortedCols = [...columns.keys()].sort((a, b) => a - b);
+  const sortedRows = [...rows.keys()].sort((a, b) => a - b);
   const laid: Laid[] = [];
   const byKey = new Map<string, Laid>();
-  sortedCols.forEach((col) => {
-    columns.get(col)!.forEach((node, row) => {
+  sortedRows.forEach((rowIdx, rIndex) => {
+    rows.get(rowIdx)!.forEach((node, col) => {
       const x = PAD + col * (NODE_W + COL_GAP);
-      const y = PAD + row * (NODE_H + ROW_GAP);
-      const item = { node, col, row, x, y };
+      const y = PAD + rIndex * (NODE_H + ROW_GAP);
+      const item = { node, col, row: rIndex, x, y };
       laid.push(item);
       byKey.set(node.key, item);
     });
   });
 
-  const width = PAD * 2 + (sortedCols.length || 1) * NODE_W + Math.max(0, sortedCols.length - 1) * COL_GAP;
-  const maxRows = Math.max(...[...columns.values()].map((c) => c.length), 1);
-  const height = PAD * 2 + maxRows * NODE_H + (maxRows - 1) * ROW_GAP;
+  const maxCols = Math.max(...[...rows.values()].map((c) => c.length), 1);
+  const width = PAD * 2 + maxCols * NODE_W + (maxCols - 1) * COL_GAP;
+  const height = PAD * 2 + (sortedRows.length || 1) * NODE_H + Math.max(0, sortedRows.length - 1) * ROW_GAP;
   return { nodes: laid, width, height, byKey };
 }
 
@@ -153,12 +152,12 @@ export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }
               const from = data.byKey.get(e.from);
               const to = data.byKey.get(e.to);
               if (!from || !to) return null;
-              const x1 = from.x + NODE_W;
-              const y1 = from.y + NODE_H / 2;
-              const x2 = to.x;
-              const y2 = to.y + NODE_H / 2;
-              const mx = (x1 + x2) / 2;
-              const path = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+              const x1 = from.x + NODE_W / 2;
+              const y1 = from.y + NODE_H;
+              const x2 = to.x + NODE_W / 2;
+              const y2 = to.y;
+              const my = (y1 + y2) / 2;
+              const path = `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
               const active = to.node.status === 'running' || to.node.status === 'claimed';
               return (
                 <path
