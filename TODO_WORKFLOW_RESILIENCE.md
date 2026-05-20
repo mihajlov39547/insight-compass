@@ -222,3 +222,37 @@ status, so they can see at a glance where a run is and which step failed.
 - [ ] Render the same diagram inside the document/video row inline timeline
       as an opt-in expansion, replacing the linear activity list when the
       DAG has parallel branches.
+
+---
+
+## Phase 10 — Scanned-PDF must route to `document.ocr_pdf`
+
+Goal: today the active `document_processing_v1` DAG unconditionally goes
+`inspect_pdf_text_layer → persist_metadata.after_pdf_inspection → extract_pdf_text → normalize_output`.
+For scanned PDFs `extract_pdf_text` returns empty (`pdf_text_status =
+NATIVE_EXTRACTION_EMPTY`, extractor `unpdf_empty`), and `normalize_output`
+fails with "Normalized extraction output is empty". The handler for
+`document.ocr_pdf` exists and is registered, but no edge routes to it.
+
+Reproduced with workflow run `3a07d8fe-4553-46be-b716-623432144129`
+(d1.pdf): inspection completed, extract completed empty, normalize failed,
+ocr_pdf stayed `pending` forever.
+
+Fix:
+- [ ] Migration: change edge `persist_metadata.after_pdf_inspection →
+      extract_pdf_text` to be conditional on
+      `pdf_text_status IN ('INSPECTION_HAS_TEXT_LAYER','HAS_SELECTABLE_TEXT')`.
+- [ ] Migration: add edge `persist_metadata.after_pdf_inspection →
+      ocr_pdf` conditional on
+      `pdf_text_status IN ('LIKELY_SCANNED','INSPECTION_NO_TEXT_LAYER','INSPECTION_FAILED','NATIVE_EXTRACTION_EMPTY')`.
+- [ ] Migration: ensure `ocr_pdf → normalize_output` edge already exists
+      (it does for current version — verify on next version bump).
+- [ ] Handler: `document.extract_pdf_text` should also write
+      `pdf_text_status = NATIVE_EXTRACTION_EMPTY` into context on empty
+      output, so a future "post-extract OCR rescue" edge can be wired
+      (`extract_pdf_text → ocr_pdf` conditional on
+      `pdf_text_status = NATIVE_EXTRACTION_EMPTY`) as a belt-and-braces
+      fallback.
+- [ ] Verification: re-upload d1.pdf — inspection reports LIKELY_SCANNED,
+      run skips `extract_pdf_text`, runs `ocr_pdf`, normalize succeeds,
+      document reaches `completed` with OCR text.

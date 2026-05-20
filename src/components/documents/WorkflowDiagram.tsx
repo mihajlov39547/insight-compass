@@ -1,13 +1,13 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Loader2, Check, AlertCircle, Clock, CircleDashed, SkipForward } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WorkflowDag, WorkflowDagNode, WorkflowNodeStatus } from '@/hooks/useWorkflowDag';
 
-const NODE_W = 200;
-const NODE_H = 56;
-const COL_GAP = 16;
-const ROW_GAP = 40;
-const PAD = 16;
+const NODE_W = 180;
+const NODE_H = 48;
+const COL_GAP = 12;
+const ROW_GAP = 28;
+const PAD = 12;
 
 function statusStyles(status: WorkflowNodeStatus) {
   switch (status) {
@@ -109,6 +109,19 @@ function layout(dag: WorkflowDag): { nodes: Laid[]; width: number; height: numbe
 
 export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }) {
   const data = useMemo(() => (dag ? layout(dag) : null), [dag]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to first failed node so failures are always visible
+  useEffect(() => {
+    if (!data || !scrollRef.current) return;
+    const failed = data.nodes.find(
+      (n) => n.node.status === 'failed' || n.node.status === 'dead_letter',
+    );
+    if (failed) {
+      scrollRef.current.scrollTo({ top: Math.max(0, failed.y - 80), behavior: 'smooth' });
+    }
+  }, [data]);
+
 
   if (!dag) {
     return (
@@ -140,7 +153,7 @@ export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }
         </div>
       </div>
 
-      <div className="overflow-auto rounded-md border border-border bg-muted/20 max-h-[60vh]">
+      <div ref={scrollRef} className="overflow-auto rounded-md border border-border bg-muted/20 max-h-[75vh]">
         <div className="relative" style={{ width: data.width, height: data.height }}>
           <svg width={data.width} height={data.height} className="absolute inset-0 pointer-events-none">
             <defs>
@@ -177,6 +190,7 @@ export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }
               className={cn(
                 'absolute rounded-md border px-2.5 py-1.5 text-[11px] shadow-sm transition-colors',
                 statusStyles(node.status),
+                (node.status === 'failed' || node.status === 'dead_letter') && 'ring-2 ring-destructive/60',
               )}
               style={{ left: x, top: y, width: NODE_W, height: NODE_H }}
               title={node.error_message || node.name}
