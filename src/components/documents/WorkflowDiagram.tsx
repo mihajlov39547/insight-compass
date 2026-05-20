@@ -152,12 +152,12 @@ export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }
               const from = data.byKey.get(e.from);
               const to = data.byKey.get(e.to);
               if (!from || !to) return null;
-              const x1 = from.x + NODE_W;
-              const y1 = from.y + NODE_H / 2;
-              const x2 = to.x;
-              const y2 = to.y + NODE_H / 2;
-              const mx = (x1 + x2) / 2;
-              const path = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+              const x1 = from.x + NODE_W / 2;
+              const y1 = from.y + NODE_H;
+              const x2 = to.x + NODE_W / 2;
+              const y2 = to.y;
+              const my = (y1 + y2) / 2;
+              const path = `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
               const active = to.node.status === 'running' || to.node.status === 'claimed';
               return (
                 <path
