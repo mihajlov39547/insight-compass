@@ -1222,6 +1222,7 @@ function ResourceDetailsDrawer({
     showWorkflowTab ? resourceId : null,
     showWorkflowTab && open,
   );
+  const resumeMutation = useResumeFailedActivities();
 
   useEffect(() => {
     setDetailsTab('overview');
