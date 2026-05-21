@@ -108,7 +108,15 @@ function layout(dag: WorkflowDag): { nodes: Laid[]; width: number; height: numbe
   return { nodes: laid, width, height, byKey };
 }
 
-export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }) {
+export function WorkflowDiagram({
+  dag,
+  onResume,
+  isResuming,
+}: {
+  dag: WorkflowDag | null | undefined;
+  onResume?: (workflowRunId: string) => void;
+  isResuming?: boolean;
+}) {
   const data = useMemo(() => (dag ? layout(dag) : null), [dag]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -138,6 +146,9 @@ export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }
     return acc;
   }, {});
 
+  const failedCount = (counts.failed || 0) + (counts.dead_letter || 0);
+  const canResume = failedCount > 0 && !!onResume && dag.workflow_status !== 'completed';
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -149,10 +160,28 @@ export function WorkflowDiagram({ dag }: { dag: WorkflowDag | null | undefined }
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           {counts.completed ? <span className="text-green-600">✓ {counts.completed}</span> : null}
           {counts.running || counts.claimed ? <span className="text-primary">⟳ {(counts.running || 0) + (counts.claimed || 0)}</span> : null}
-          {counts.failed || counts.dead_letter ? <span className="text-destructive">✕ {(counts.failed || 0) + (counts.dead_letter || 0)}</span> : null}
+          {failedCount ? <span className="text-destructive">✕ {failedCount}</span> : null}
           {counts.pending ? <span>○ {counts.pending}</span> : null}
         </div>
       </div>
+
+      {canResume && (
+        <div className="flex items-center justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
+          <div className="text-[11px] text-destructive">
+            {failedCount} failed step{failedCount === 1 ? '' : 's'}. Resume to re-run only the failed step{failedCount === 1 ? '' : 's'} on this workflow.
+          </div>
+          <Button
+            size="sm"
+            variant="destructive"
+            className="h-7 gap-1.5 text-[11px]"
+            disabled={isResuming}
+            onClick={() => onResume!(dag.workflow_run_id)}
+          >
+            <RotateCw className={cn('h-3.5 w-3.5', isResuming && 'animate-spin')} />
+            {isResuming ? 'Resuming…' : 'Resume failed step' + (failedCount === 1 ? '' : 's')}
+          </Button>
+        </div>
+      )}
 
       <div ref={scrollRef} className="overflow-auto rounded-md border border-border bg-muted/20 max-h-[75vh]">
         <div className="relative" style={{ width: data.width, height: data.height }}>
