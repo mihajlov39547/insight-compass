@@ -217,8 +217,11 @@ status, so they can see at a glance where a run is and which step failed.
 - [x] Resource drawer (`ResourcesLanding` ResourceDetailsSheet) now has a
       third subtab "Workflow" (shown for video + document resources),
       next to Overview and Transcript/Extracted text.
-- [ ] Add highlight + click → "Resume failed step" affordance directly on
-      the failed node (ties into Phase 6).
+- [x] Compact top-down layout + auto-scroll to first failed node + red ring
+      highlight so failures stay visible inside the narrow drawer (tested
+      with d1.pdf workflow that surfaces 30 activities).
+- [ ] Add click → "Resume failed step" affordance directly on the failed
+      node (ties into Phase 6).
 - [ ] Render the same diagram inside the document/video row inline timeline
       as an opt-in expansion, replacing the linear activity list when the
       DAG has parallel branches.
