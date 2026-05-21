@@ -2068,6 +2068,8 @@ export type Database = {
           last_heartbeat_at: string | null
           metadata: Json
           output_payload: Json | null
+          resume_count: number
+          resumed_at: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["workflow_run_status"]
           timeout_seconds: number | null
@@ -2089,6 +2091,8 @@ export type Database = {
           last_heartbeat_at?: string | null
           metadata?: Json
           output_payload?: Json | null
+          resume_count?: number
+          resumed_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["workflow_run_status"]
           timeout_seconds?: number | null
@@ -2110,6 +2114,8 @@ export type Database = {
           last_heartbeat_at?: string | null
           metadata?: Json
           output_payload?: Json | null
+          resume_count?: number
+          resumed_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["workflow_run_status"]
           timeout_seconds?: number | null
@@ -2485,6 +2491,10 @@ export type Database = {
       }
       reset_resource_for_retry: {
         Args: { p_entity_id: string; p_entity_type: string }
+        Returns: Json
+      }
+      resume_failed_activities: {
+        Args: { p_workflow_run_id: string }
         Returns: Json
       }
       run_link_adapter_enrichment: {

@@ -105,53 +105,37 @@ Key principle: full retry = wipe + new workflow_run. Partial resume =
 re-arm failed activity_runs on the SAME workflow_run, keeping prior
 context patches and completed activity outputs intact.
 
-- [ ] Backend RPC `resume_failed_activities(workflow_run_id)`:
-  - [ ] Validate caller owns the workflow run
-  - [ ] Only operate on the latest workflow_run whose status is `failed`
-        (or `running` with all non-terminal activities stuck/failed)
-  - [ ] For each `activity_runs` row with `status = 'failed'` and
-        `is_terminal = true`:
-      - reset `status = 'pending'`, `is_terminal = false`,
-        `attempt_count = 0`, clear `error_message`, `error_details`,
-        `finished_at`, `claimed_by`, `claimed_at`, `lease_expires_at`,
-        `next_retry_at`, `queue_msg_id`
-      - bump `updated_at = now()`
-  - [ ] Flip `workflow_runs.status` back to `running`, clear
-        `failure_reason`, set `resumed_at`/increment `resume_count`
-        (add columns if missing)
-  - [ ] Re-enqueue the reset activities via the same path
-        `workflow-start` uses for scheduling (queue_dispatches insert
-        + pgmq send, or a shared helper extracted from worker)
-  - [ ] Emit a `workflow_resumed` workflow_event with the list of
-        activity_run_ids re-armed
-- [ ] Context sufficiency audit (per handler) — make sure a failed
-      activity can re-run standalone from `workflow_runs.context_patches`
-      + its `input_payload` without depending on volatile in-memory state:
-  - [ ] `youtubeFetchTranscript` — already reads resource row; OK
-  - [ ] `youtubePersistTranscriptChunks` — now reads
-        `youtube_transcript_stages`; OK after Phase 3
+- [x] Added `workflow_runs.resume_count` (int) and `resumed_at` (timestamptz).
+- [x] Backend RPC `resume_failed_activities(workflow_run_id)` (SECURITY
+      DEFINER, validates `auth.uid() = workflow_runs.user_id`):
+      resets failed/dead_letter required activity_runs to `queued`,
+      clears error/lease/claim/attempt state, scheduled_at=now(),
+      flips workflow_runs back to `running`, increments resume_count,
+      logs a `workflow_resumed` event, and caps resumes at 5 per run.
+- [x] Frontend hook `useResumeFailedActivities` calls the RPC and fires
+      the same staggered worker kicks `useDocuments` uses for fresh starts
+      (no separate edge function needed — RPC + worker kick is enough).
+- [x] WorkflowDiagram surfaces a "Resume failed step(s)" banner with a
+      destructive button whenever the run has failed activities and is not
+      already `completed`. Wired through the resource drawer Workflow tab.
+- [ ] Context sufficiency audit per handler — make sure a failed activity
+      can re-run standalone from `workflow_runs.context` + its
+      `input_payload` without depending on volatile in-memory state from
+      its upstream activity:
+  - [x] `youtubeFetchTranscript` — reads resource row; OK
+  - [x] `youtubePersistTranscriptChunks` — reads `youtube_transcript_stages`; OK
   - [ ] `youtubeFinalizeResourceStatus` — verify it reads stages, not stash
-  - [ ] Document handlers — verify each reads from durable storage
-        (storage bucket + `document_analysis`), not transient context
-  - [ ] Document any handler that still needs upstream activity output
-        and add a "rehydrate from DB" branch
-- [ ] Edge function `workflow-resume` (thin wrapper around the RPC) that
-      also kicks the worker the same way `startDocumentWorkflow` does
-- [ ] Frontend wiring:
-  - [ ] New hook `useResumeFailedActivities(workflowRunId)`
-  - [ ] In `LinkedVideoRow` / resource detail timeline: when latest
-        workflow has at least one `failed` activity, render TWO buttons:
-        - "Resume failed step" (calls workflow-resume)
-        - "Retry from scratch" (existing full reset path)
-  - [ ] Same treatment in `DocumentStatusBadge` / document detail
-  - [ ] Disable "Resume" if no failed activity exists or the workflow
-        is already `completed`
-- [ ] Cap resume attempts (e.g. max 5 resumes per workflow_run) to avoid
-      infinite loops; after cap, force full retry
+  - [ ] Document handlers (`extract_pdf_text`, `ocr_pdf`,
+        `normalize_output`, `chunk_text`, etc.) — verify each reads from
+        durable storage (storage bucket + `document_analysis`), not
+        transient context
+- [ ] Also render the Resume button on the document/video row inline
+      (`LinkedVideoRow`, `DocumentStatusBadge`) so users don't have to
+      open the drawer.
 - [ ] Verification: induce a transient failure in the
       `persist_transcript_chunks` activity, fix the root cause, click
       Resume → chunks land, embeddings + finalize run, workflow ends
-      `completed` on the SAME workflow_run_id
+      `completed` on the SAME workflow_run_id.
 
 ## Phase 7 — UI: workflow truth in the badge
 

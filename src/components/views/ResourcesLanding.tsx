@@ -38,6 +38,7 @@ import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { useResourceTranscriptDebug, type TranscriptDebugPayload, type StageDebugEntry } from '@/hooks/useResourceTranscriptDebug';
 import { useWorkflowDagForResource } from '@/hooks/useWorkflowDag';
 import { WorkflowDiagram } from '@/components/documents/WorkflowDiagram';
+import { useResumeFailedActivities } from '@/hooks/useResumeFailedActivities';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
   formatFileSize, truncateFileName, formatResourceLocation
@@ -1221,6 +1222,7 @@ function ResourceDetailsDrawer({
     showWorkflowTab ? resourceId : null,
     showWorkflowTab && open,
   );
+  const resumeMutation = useResumeFailedActivities();
 
   useEffect(() => {
     setDetailsTab('overview');
@@ -1382,7 +1384,11 @@ function ResourceDetailsDrawer({
                 {/* ═══ WORKFLOW TAB ═══ */}
                 {showWorkflowTab && (
                   <TabsContent value="workflow" className="mt-3">
-                    <WorkflowDiagram dag={workflowDag ?? null} />
+                    <WorkflowDiagram
+                      dag={workflowDag ?? null}
+                      onResume={(runId) => resumeMutation.mutate(runId)}
+                      isResuming={resumeMutation.isPending}
+                    />
                   </TabsContent>
                 )}
               </Tabs>
