@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Loader2, Check, AlertCircle, Clock, CircleDashed, SkipForward } from 'lucide-react';
+import { Loader2, Check, AlertCircle, Clock, CircleDashed, SkipForward, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import type { WorkflowDag, WorkflowDagNode, WorkflowNodeStatus } from '@/hooks/useWorkflowDag';
 
 const NODE_W = 180;
