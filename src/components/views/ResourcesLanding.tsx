@@ -38,6 +38,7 @@ import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { useResourceTranscriptDebug, type TranscriptDebugPayload, type StageDebugEntry } from '@/hooks/useResourceTranscriptDebug';
 import { useWorkflowDagForResource } from '@/hooks/useWorkflowDag';
 import { WorkflowDiagram } from '@/components/documents/WorkflowDiagram';
+import { useResumeFailedActivities } from '@/hooks/useResumeFailedActivities';
 import {
   type Resource, type ResourceType, type ReadinessStatus, type ContainerType,
   formatFileSize, truncateFileName, formatResourceLocation
