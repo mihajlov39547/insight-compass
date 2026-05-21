@@ -1384,7 +1384,11 @@ function ResourceDetailsDrawer({
                 {/* ═══ WORKFLOW TAB ═══ */}
                 {showWorkflowTab && (
                   <TabsContent value="workflow" className="mt-3">
-                    <WorkflowDiagram dag={workflowDag ?? null} />
+                    <WorkflowDiagram
+                      dag={workflowDag ?? null}
+                      onResume={(runId) => resumeMutation.mutate(runId)}
+                      isResuming={resumeMutation.isPending}
+                    />
                   </TabsContent>
                 )}
               </Tabs>
