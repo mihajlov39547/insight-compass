@@ -1,8 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
-import { getFunctionUrl } from '@/lib/edge/invokeWithAuth';
+import { SUPABASE_PUBLISHABLE_KEY, getFunctionUrl } from '@/config/env';
 
 /**
  * Resumes a failed workflow run by re-arming only its failed activities
