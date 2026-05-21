@@ -242,20 +242,18 @@ Reproduced with workflow run `3a07d8fe-4553-46be-b716-623432144129`
 ocr_pdf stayed `pending` forever.
 
 Fix:
-- [ ] Migration: change edge `persist_metadata.after_pdf_inspection →
-      extract_pdf_text` to be conditional on
-      `pdf_text_status IN ('INSPECTION_HAS_TEXT_LAYER','HAS_SELECTABLE_TEXT')`.
-- [ ] Migration: add edge `persist_metadata.after_pdf_inspection →
-      ocr_pdf` conditional on
+- [x] Data migration on active version `dc2930ab` (`document_processing_v1` v4):
+      tightened edge `after_pdf_inspection → extract_pdf_text` to fire only
+      when `pdf_text_status IN ('INSPECTION_HAS_TEXT_LAYER','HAS_SELECTABLE_TEXT')`.
+- [x] Added edge `after_pdf_inspection → ocr_pdf` conditional on
       `pdf_text_status IN ('LIKELY_SCANNED','INSPECTION_NO_TEXT_LAYER','INSPECTION_FAILED','NATIVE_EXTRACTION_EMPTY')`.
-- [ ] Migration: ensure `ocr_pdf → normalize_output` edge already exists
-      (it does for current version — verify on next version bump).
-- [ ] Handler: `document.extract_pdf_text` should also write
-      `pdf_text_status = NATIVE_EXTRACTION_EMPTY` into context on empty
-      output, so a future "post-extract OCR rescue" edge can be wired
-      (`extract_pdf_text → ocr_pdf` conditional on
-      `pdf_text_status = NATIVE_EXTRACTION_EMPTY`) as a belt-and-braces
-      fallback.
-- [ ] Verification: re-upload d1.pdf — inspection reports LIKELY_SCANNED,
-      run skips `extract_pdf_text`, runs `ocr_pdf`, normalize succeeds,
-      document reaches `completed` with OCR text.
+- [x] Edge `ocr_pdf → normalize_output` already exists on v4 (verified).
+- [ ] Bake the same routing into the workflow-definition seed/migration so a
+      future version bump (v5+) keeps it.
+- [ ] Handler: have `document.extract_pdf_text` set `pdf_text_status =
+      NATIVE_EXTRACTION_EMPTY` in its context patch when output is empty,
+      enabling a future belt-and-braces `extract_pdf_text → ocr_pdf`
+      rescue edge.
+- [ ] Verification: re-upload d1.pdf (or hit Retry) — inspection reports
+      LIKELY_SCANNED, run skips `extract_pdf_text`, runs `ocr_pdf`,
+      normalize succeeds, document reaches `completed` with OCR text.
