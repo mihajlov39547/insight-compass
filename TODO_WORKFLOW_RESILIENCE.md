@@ -81,9 +81,14 @@ missing.
       the stage flips `documents.processing_status = 'failed'` with an
       explicit reason and throws a terminal `READINESS_GATE_FAILED` so the
       workflow ends `failed` and Phase 2 sync propagates the truth.
-- [ ] Add unit test in `validation-harness` for "optional fails, workflow
-      completes" and "required chunk persistence yields 0 rows → finalize
-      fails".
+- [x] "Optional fails, workflow completes" — already covered by
+      `validateOptionalFailureNonBlocking` in `finalization-deno-runner`.
+- [x] "Required chunk persistence yields 0 rows → finalize fails" — new
+      Deno unit test `_shared/document-processing/finalize_test.ts` mocks
+      the supabase client and asserts the readiness gate flips the
+      document to `failed` and throws terminal `READINESS_GATE_FAILED`
+      for both the zero-chunks and zero-embeddings branches, plus the
+      happy path.
 
 ## Phase 5 — Stale-run detection
 
