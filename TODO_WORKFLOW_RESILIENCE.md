@@ -76,9 +76,11 @@ missing.
       `transcript_status = 'failed'` with an explicit `transcript_error` and
       returns a non-retryable handler failure (`READINESS_GATE_FAILED`) so
       the workflow ends `failed` and Phase 2 sync propagates the truth.
-- [ ] Mirror the same strict gate in `document.finalize_document` (verify
-      `document_chunks` count + embedded count before flipping
-      `processing_status = 'completed'`).
+- [x] Mirrored the strict gate in `finalizeDocumentStage`: counts
+      `document_chunks` and embedded rows for the document; if either is 0
+      the stage flips `documents.processing_status = 'failed'` with an
+      explicit reason and throws a terminal `READINESS_GATE_FAILED` so the
+      workflow ends `failed` and Phase 2 sync propagates the truth.
 - [ ] Add unit test in `validation-harness` for "optional fails, workflow
       completes" and "required chunk persistence yields 0 rows → finalize
       fails".
