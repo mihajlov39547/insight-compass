@@ -2145,7 +2145,7 @@ export async function finalizeDocumentStage(
 
     throw new DocumentStageError(reason, {
       code: "READINESS_GATE_FAILED",
-      classification: "non_retryable",
+      classification: "terminal",
       details: { chunk_count: totalChunks, embedded_count: totalEmbedded },
     });
   }
