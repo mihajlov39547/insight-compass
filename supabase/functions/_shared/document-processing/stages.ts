@@ -2090,6 +2090,66 @@ export async function finalizeDocumentStage(
     };
   }
 
+  // Strict readiness gate: never report `completed` unless the document
+  // actually has searchable content (chunks) AND at least one embedded chunk.
+  // Mirrors the YouTube finalize gate so the UI never lies about readiness
+  // when an upstream stage silently produced zero rows.
+  const { count: chunkCount, error: chunkCountError } = await supabase
+    .from("document_chunks")
+    .select("id", { count: "exact", head: true })
+    .eq("document_id", documentId);
+
+  if (chunkCountError) {
+    throw new DocumentStageError(
+      `Failed to count document chunks for readiness gate: ${chunkCountError.message}`,
+      { code: "FINALIZE_READINESS_COUNT_FAILED", classification: "retryable" }
+    );
+  }
+
+  const { count: embeddedCount, error: embeddedCountError } = await supabase
+    .from("document_chunks")
+    .select("id", { count: "exact", head: true })
+    .eq("document_id", documentId)
+    .not("embedding", "is", null);
+
+  if (embeddedCountError) {
+    throw new DocumentStageError(
+      `Failed to count embedded chunks for readiness gate: ${embeddedCountError.message}`,
+      { code: "FINALIZE_READINESS_COUNT_FAILED", classification: "retryable" }
+    );
+  }
+
+  const totalChunks = chunkCount ?? 0;
+  const totalEmbedded = embeddedCount ?? 0;
+
+  if (totalChunks === 0 || totalEmbedded === 0) {
+    const reason =
+      totalChunks === 0
+        ? "Document has no chunks after processing — refusing to mark completed."
+        : "Document has no embedded chunks after processing — refusing to mark completed.";
+
+    const { error: gateError } = await supabase
+      .from("documents")
+      .update({
+        processing_status: "failed",
+        processing_error: reason,
+      })
+      .eq("id", documentId);
+
+    if (gateError) {
+      throw new DocumentStageError(
+        `Failed to persist readiness-gate failure: ${gateError.message}`,
+        { code: "FINALIZE_READINESS_WRITE_FAILED", classification: "retryable" }
+      );
+    }
+
+    throw new DocumentStageError(reason, {
+      code: "READINESS_GATE_FAILED",
+      classification: "non_retryable",
+      details: { chunk_count: totalChunks, embedded_count: totalEmbedded },
+    });
+  }
+
   const { error } = await supabase
     .from("documents")
     .update({
@@ -2109,5 +2169,7 @@ export async function finalizeDocumentStage(
     document_id: documentId,
     final_status: "completed",
     finalized_at: new Date().toISOString(),
+    chunk_count: totalChunks,
+    embedded_chunk_count: totalEmbedded,
   };
 }
