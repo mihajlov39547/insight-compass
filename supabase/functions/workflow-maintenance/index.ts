@@ -40,6 +40,8 @@ interface MaintenanceRequest {
   stale_before_seconds?: number;
   dry_run?: boolean;
   actor?: string;
+  /** Phase 5: workflow_runs with no activity transitions for this many minutes are flagged stale. */
+  stale_workflow_minutes?: number;
 }
 
 serve(async (req) => {
