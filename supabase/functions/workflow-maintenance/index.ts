@@ -96,40 +96,25 @@ serve(async (req) => {
     }
 
     const stale = staleRows ?? [];
-    if (stale.length === 0) {
-      return jsonResponse({
-        scanned_count: 0,
-        stale_found_count: 0,
-        recovered_count: 0,
-        failed_count: 0,
-        dry_run: dryRun,
-        message: "No stale activities found",
-      });
-    }
 
-    if (dryRun) {
-      return jsonResponse({
-        scanned_count: stale.length,
-        stale_found_count: stale.length,
-        recovered_count: 0,
-        failed_count: 0,
-        dry_run: true,
-        stale_activities: stale.map(s => ({
+    let recoveredCount = 0;
+    let failedCount = 0;
+    const touchedWorkflowIds = new Set<string>();
+    const touchedActivityIds: string[] = [];
+    const dryRunStaleActivities = dryRun
+      ? stale.map(s => ({
           id: s.id,
           activity_key: s.activity_key,
           status: s.status,
           attempt_count: s.attempt_count,
           max_attempts: s.max_attempts,
           lease_expires_at: s.lease_expires_at,
-        })),
-        message: `Dry run: found ${stale.length} stale activities`,
-      });
-    }
+        }))
+      : [];
 
-    let recoveredCount = 0;
-    let failedCount = 0;
-    const touchedWorkflowIds = new Set<string>();
-    const touchedActivityIds: string[] = [];
+    if (!dryRun) {
+      // (loop below processes stale activities)
+    }
 
     for (const row of stale) {
       const hasRetryBudget = row.attempt_count < row.max_attempts;
