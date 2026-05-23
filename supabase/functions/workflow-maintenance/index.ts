@@ -40,6 +40,8 @@ interface MaintenanceRequest {
   stale_before_seconds?: number;
   dry_run?: boolean;
   actor?: string;
+  /** Phase 5: workflow_runs with no activity transitions for this many minutes are flagged stale. */
+  stale_workflow_minutes?: number;
 }
 
 serve(async (req) => {
@@ -94,42 +96,23 @@ serve(async (req) => {
     }
 
     const stale = staleRows ?? [];
-    if (stale.length === 0) {
-      return jsonResponse({
-        scanned_count: 0,
-        stale_found_count: 0,
-        recovered_count: 0,
-        failed_count: 0,
-        dry_run: dryRun,
-        message: "No stale activities found",
-      });
-    }
 
-    if (dryRun) {
-      return jsonResponse({
-        scanned_count: stale.length,
-        stale_found_count: stale.length,
-        recovered_count: 0,
-        failed_count: 0,
-        dry_run: true,
-        stale_activities: stale.map(s => ({
+    let recoveredCount = 0;
+    let failedCount = 0;
+    const touchedWorkflowIds = new Set<string>();
+    const touchedActivityIds: string[] = [];
+    const dryRunStaleActivities = dryRun
+      ? stale.map(s => ({
           id: s.id,
           activity_key: s.activity_key,
           status: s.status,
           attempt_count: s.attempt_count,
           max_attempts: s.max_attempts,
           lease_expires_at: s.lease_expires_at,
-        })),
-        message: `Dry run: found ${stale.length} stale activities`,
-      });
-    }
+        }))
+      : [];
 
-    let recoveredCount = 0;
-    let failedCount = 0;
-    const touchedWorkflowIds = new Set<string>();
-    const touchedActivityIds: string[] = [];
-
-    for (const row of stale) {
+    for (const row of dryRun ? [] : stale) {
       const hasRetryBudget = row.attempt_count < row.max_attempts;
       const nowIso = new Date().toISOString();
 
@@ -319,7 +302,126 @@ serve(async (req) => {
       }
     }
 
-    const message = `Recovery complete: ${recoveredCount} recovered, ${failedCount} failed terminal, ${stale.length} scanned`;
+    // ============================================================
+    // Phase 5 — Stale workflow-run detection
+    // ============================================================
+    // A workflow can stall even when no activity holds a lease
+    // (e.g. orchestration dropped between steps, nothing queued).
+    // We catch runs whose activity timeline has not advanced for
+    // `stale_workflow_minutes` and force-fail them so the Phase 2
+    // trigger flips the linked entity to `failed` and the UI can
+    // surface a Retry/Resume action.
+    const staleWorkflowMinutes = clampInt(body.stale_workflow_minutes, 1, 1440, 10);
+    const workflowStaleCutoffIso = new Date(
+      Date.now() - staleWorkflowMinutes * 60_000
+    ).toISOString();
+
+    let staleWorkflowScanned = 0;
+    let staleWorkflowFailed = 0;
+    const staleWorkflowIds: string[] = [];
+
+    const { data: candidateRuns, error: candErr } = await supabase
+      .from("workflow_runs")
+      .select("id, status, created_at, updated_at, trigger_entity_type, trigger_entity_id")
+      .in("status", ["pending", "running"])
+      .lte("updated_at", workflowStaleCutoffIso)
+      .lte("created_at", workflowStaleCutoffIso)
+      .order("updated_at", { ascending: true })
+      .limit(maxRecords);
+
+    if (candErr) {
+      console.warn("[maintenance] stale workflow scan failed:", candErr.message);
+    } else if (candidateRuns && candidateRuns.length > 0) {
+      for (const run of candidateRuns) {
+        staleWorkflowScanned++;
+
+        // Authoritative signal: latest activity_runs.updated_at for this workflow.
+        const { data: latestAct } = await supabase
+          .from("activity_runs")
+          .select("updated_at")
+          .eq("workflow_run_id", run.id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const latestActUpdated = latestAct?.updated_at as string | undefined;
+        if (latestActUpdated && latestActUpdated > workflowStaleCutoffIso) {
+          // Activities are still progressing — not stale.
+          continue;
+        }
+
+        if (dryRun) {
+          staleWorkflowIds.push(run.id);
+          continue;
+        }
+
+        const nowIso = new Date().toISOString();
+        const reason = `Workflow stalled: no activity transitions for >${staleWorkflowMinutes} min`;
+
+        // Fail any in-progress activity_runs so the entity gets a real error message
+        // and the Phase 2 trigger can pick it up.
+        const { data: failedActs } = await supabase
+          .from("activity_runs")
+          .update({
+            status: "failed",
+            claimed_by: null,
+            claimed_at: null,
+            lease_expires_at: null,
+            finished_at: nowIso,
+            error_message: reason,
+            error_details: {
+              recovery_action: "fail_stale_workflow",
+              source: "maintenance_cron",
+              stale_workflow_minutes: staleWorkflowMinutes,
+              actor,
+            },
+            updated_at: nowIso,
+          })
+          .eq("workflow_run_id", run.id)
+          .in("status", ["queued", "claimed", "running", "waiting_retry"])
+          .select("id");
+
+        for (const a of failedActs ?? []) {
+          await supabase
+            .from("activity_attempts")
+            .update({ finished_at: nowIso, error_message: reason })
+            .eq("activity_run_id", a.id)
+            .is("finished_at", null);
+        }
+
+        // Flip workflow → failed (Phase 2 trigger handles entity sync).
+        const { data: updatedRun } = await supabase
+          .from("workflow_runs")
+          .update({
+            status: "failed",
+            failure_reason: "stale_workflow_no_activity",
+            completed_at: nowIso,
+            updated_at: nowIso,
+          })
+          .eq("id", run.id)
+          .in("status", ["pending", "running"])
+          .select("id");
+
+        if (updatedRun && updatedRun.length > 0) {
+          staleWorkflowFailed++;
+          staleWorkflowIds.push(run.id);
+
+          await supabase.from("workflow_events").insert({
+            workflow_run_id: run.id,
+            event_type: "workflow_failed",
+            actor,
+            details: {
+              reason: "stale_workflow_no_activity",
+              stale_workflow_minutes: staleWorkflowMinutes,
+              latest_activity_updated_at: latestActUpdated ?? null,
+              source: "maintenance_cron",
+            },
+          });
+        }
+      }
+    }
+
+    const message = `Recovery complete: ${recoveredCount} recovered, ${failedCount} failed terminal, ${stale.length} stale leases scanned; stale workflows: ${staleWorkflowFailed} failed / ${staleWorkflowScanned} scanned`;
     console.log(`[maintenance] ${message}`);
 
     return jsonResponse({
@@ -329,7 +431,12 @@ serve(async (req) => {
       failed_count: failedCount,
       workflow_run_ids_touched: Array.from(touchedWorkflowIds),
       activity_run_ids_touched: touchedActivityIds,
-      dry_run: false,
+      stale_workflow_scanned: staleWorkflowScanned,
+      stale_workflow_failed: staleWorkflowFailed,
+      stale_workflow_ids: staleWorkflowIds,
+      stale_workflow_minutes: staleWorkflowMinutes,
+      stale_activities: dryRunStaleActivities,
+      dry_run: dryRun,
       message,
     });
   } catch (error) {

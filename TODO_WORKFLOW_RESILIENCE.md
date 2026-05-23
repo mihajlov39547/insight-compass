@@ -100,12 +100,15 @@ missing.
 
 Goal: if no activity transitions for N minutes, mark the run failed and surface retry.
 
-- [ ] Extend `workflow-maintenance` cron:
-  - [ ] Detect workflow_runs with `status in (running, pending)` and no
-        `activity_runs.updated_at` change in > 10 min
-  - [ ] Mark stale activity_runs as `failed` with reason `stale_lease`
-  - [ ] Let finalization roll the workflow to `failed`
-- [ ] Add Phase 2 sync so resource flips to `failed` automatically
+- [x] Extend `workflow-maintenance` cron:
+  - [x] Detect workflow_runs with `status in (running, pending)` and no
+        `activity_runs.updated_at` change in > 10 min (configurable via
+        `stale_workflow_minutes`, default 10, max 1440)
+  - [x] Mark stale activity_runs (queued/claimed/running/waiting_retry)
+        as `failed` with reason `stale_workflow_no_activity`
+  - [x] Flip workflow_runs → `failed` with `failure_reason='stale_workflow_no_activity'`;
+        Phase 2 trigger then syncs the linked document/resource
+- [x] Phase 2 sync trigger picks up the workflow failure automatically
 
 ## Phase 6 — Resume from failed activity (partial retry)
 
