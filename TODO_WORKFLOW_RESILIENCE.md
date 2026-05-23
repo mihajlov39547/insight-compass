@@ -38,9 +38,15 @@ the UI never shows perpetual `processing`.
         `transcript_error = <last activity error>`, `transcript_updated_at = now()`
   - [x] If trigger is `document`: update `processing_status = 'failed'` with reason
         (last failed activity's `error_message`, not just generic reason)
-- [ ] Add a DB trigger as defensive backstop: `workflow_runs.status -> failed`
-      propagates to the linked entity if not already terminal
-      propagates to the linked entity if not already terminal
+- [x] DB trigger `trg_sync_entity_on_workflow_failed` on
+      `workflow_runs` (AFTER UPDATE OF status WHEN NEW.status='failed')
+      calls SECURITY DEFINER `public.sync_entity_on_workflow_failed()`
+      which flips the linked `documents.processing_status` or
+      `resource_links.transcript_status` to `failed` with the last
+      required-activity error message, only if the entity is not
+      already in a terminal state. EXECUTE on the function is revoked
+      from `public` / `anon` / `authenticated` so it can only run
+      from the trigger.
 
 ## Phase 3 — Durable transcript storage
 
