@@ -112,11 +112,7 @@ serve(async (req) => {
         }))
       : [];
 
-    if (!dryRun) {
-      // (loop below processes stale activities)
-    }
-
-    for (const row of stale) {
+    for (const row of dryRun ? [] : stale) {
       const hasRetryBudget = row.attempt_count < row.max_attempts;
       const nowIso = new Date().toISOString();
 
