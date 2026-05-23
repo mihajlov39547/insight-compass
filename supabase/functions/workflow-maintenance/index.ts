@@ -435,6 +435,7 @@ serve(async (req) => {
       stale_workflow_failed: staleWorkflowFailed,
       stale_workflow_ids: staleWorkflowIds,
       stale_workflow_minutes: staleWorkflowMinutes,
+      stale_activities: dryRunStaleActivities,
       dry_run: dryRun,
       message,
     });
