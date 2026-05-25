@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
             "finalization-deno-runner",
             "lease-recovery-deno-runner",
             "retry-deno-runner",
+            "stale-workflow-deno-runner",
           ],
           timestamp: new Date().toISOString(),
         }),

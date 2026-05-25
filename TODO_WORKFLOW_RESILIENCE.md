@@ -109,6 +109,13 @@ Goal: if no activity transitions for N minutes, mark the run failed and surface 
   - [x] Flip workflow_runs → `failed` with `failure_reason='stale_workflow_no_activity'`;
         Phase 2 trigger then syncs the linked document/resource
 - [x] Phase 2 sync trigger picks up the workflow failure automatically
+- [x] Validation harness runner `stale-workflow-deno-runner.ts` seeds a
+      backdated workflow_run + activity_run and asserts: dry-run lists it,
+      real run flips both to `failed` with
+      `failure_reason='stale_workflow_no_activity'` +
+      `recovery_action='fail_stale_workflow'` on the activity, a
+      `workflow_failed` event is logged, and a fresh 1-min-old workflow
+      is left untouched by the same call.
 
 ## Phase 6 — Resume from failed activity (partial retry)
 
