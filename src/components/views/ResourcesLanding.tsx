@@ -1034,6 +1034,8 @@ function AddSourceDialog({
   projects,
   notebooks,
   submitting,
+  files,
+  onFilesChange,
   onOpenChange,
   onUrlChange,
   onTitleChange,
@@ -1051,6 +1053,8 @@ function AddSourceDialog({
   projects: Array<{ id: string; name: string }>;
   notebooks: Array<{ id: string; name: string }>;
   submitting: boolean;
+  files: File[];
+  onFilesChange: (files: File[]) => void;
   onOpenChange: (open: boolean) => void;
   onUrlChange: (value: string) => void;
   onTitleChange: (value: string) => void;
@@ -1061,6 +1065,9 @@ function AddSourceDialog({
 }) {
   const { t } = useTranslation();
   const targetOptions = containerType === 'project' ? projects : notebooks;
+  const isInternal = provider === 'internal';
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputId = 'add-source-file-input';
 
   const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal']);
 
@@ -1074,6 +1081,19 @@ function AddSourceDialog({
   ];
 
   const containerLabel = t(`resources.addSourceDialog.locations.${containerType}`);
+
+  const addFiles = (incoming: FileList | File[]) => {
+    const arr = Array.from(incoming);
+    onFilesChange([...files, ...arr]);
+  };
+
+  const removeFile = (index: number) => {
+    onFilesChange(files.filter((_, i) => i !== index));
+  };
+
+  const canSubmit = isInternal
+    ? files.some((f) => isFileAllowed(f.name)) && !!containerId
+    : !!url.trim() && !!containerId;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1098,25 +1118,6 @@ function AddSourceDialog({
             {t('resources.addSourceDialog.description')}
           </DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.url')}</p>
-          <Input
-            value={url}
-            onChange={(e) => onUrlChange(e.target.value)}
-            placeholder={t('resources.addSourceDialog.urlPlaceholder')}
-            autoFocus
-          />
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.titleLabel')}</p>
-          <Input
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            placeholder={t('resources.addSourceDialog.titlePlaceholder')}
-          />
-        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
@@ -1159,13 +1160,97 @@ function AddSourceDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                
                 <SelectItem value="project">{t('resources.addSourceDialog.locations.project')}</SelectItem>
                 <SelectItem value="notebook">{t('resources.addSourceDialog.locations.notebook')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
+
+        {isInternal ? (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Files</p>
+            <div
+              className={cn(
+                'relative border-2 border-dashed rounded-lg p-5 text-center transition-colors cursor-pointer',
+                isDragging ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50 hover:bg-accent/5'
+              )}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+                if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
+              }}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+              onClick={() => document.getElementById(fileInputId)?.click()}
+            >
+              <input
+                id={fileInputId}
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.pptx,.eml,.msg,.txt,.txtx,.md,.rtf,.xml,.json,.log"
+                onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ''; }}
+                className="hidden"
+              />
+              <Upload className={cn('h-7 w-7 mx-auto mb-2', isDragging ? 'text-accent' : 'text-muted-foreground')} />
+              <p className="text-xs font-medium text-foreground">Drop files or click to browse</p>
+              <p className="text-[11px] text-muted-foreground mt-1">PDF, DOCX, XLSX, PPTX, CSV, TXT, MD, images and more</p>
+            </div>
+
+            {files.length > 0 && (
+              <div className="space-y-1.5 max-h-[160px] overflow-auto">
+                {files.map((f, i) => {
+                  const allowed = isFileAllowed(f.name);
+                  return (
+                    <div
+                      key={`${f.name}-${i}`}
+                      className={cn(
+                        'flex items-center gap-2 px-2 py-1.5 rounded border bg-card text-xs',
+                        !allowed && 'border-destructive/30 bg-destructive/5'
+                      )}
+                    >
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-foreground">{f.name}</p>
+                        {!allowed && <p className="text-destructive text-[10px]">Unsupported type</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                        className="text-muted-foreground hover:text-destructive"
+                        disabled={submitting}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.url')}</p>
+              <Input
+                value={url}
+                onChange={(e) => onUrlChange(e.target.value)}
+                placeholder={t('resources.addSourceDialog.urlPlaceholder')}
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.titleLabel')}</p>
+              <Input
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                placeholder={t('resources.addSourceDialog.titlePlaceholder')}
+              />
+            </div>
+          </>
+        )}
 
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.target', { type: containerLabel })}</p>
@@ -1187,7 +1272,7 @@ function AddSourceDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('resources.addSourceDialog.cancel')}</Button>
-          <Button onClick={onSubmit} disabled={submitting || !url.trim()}>
+          <Button onClick={onSubmit} disabled={submitting || !canSubmit}>
             {submitting ? t('resources.addSourceDialog.submitting') : t('resources.addSourceDialog.submit')}
           </Button>
         </DialogFooter>
