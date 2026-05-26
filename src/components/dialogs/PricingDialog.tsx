@@ -156,7 +156,7 @@ export function PricingDialog({ open, onOpenChange, currentPlan: currentPlanProp
     } finally {
       setProcessing(false);
     }
-  }, [qc, user, onSelectPlan, onOpenChange, refreshProfile]);
+  }, [qc, onSelectPlan, onOpenChange, refreshProfile]);
 
   return (
     <>
