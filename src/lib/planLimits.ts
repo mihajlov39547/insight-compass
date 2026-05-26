@@ -43,7 +43,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     canShareProjects: false,
     canShareNotebooks: false,
     maxShareMembers: 0,
-    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'gemma-4', 'gemini-3.1'],
+    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'gemma-4', 'gemini-3.1', 'google/gemini-3.5-flash'],
     webCrawl: { limit: 10, maxDepth: 1, maxBreadth: 10, extractDepth: 'basic' },
   },
   basic: {
