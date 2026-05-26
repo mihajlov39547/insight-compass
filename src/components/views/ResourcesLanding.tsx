@@ -110,6 +110,8 @@ export function ResourcesLanding() {
   const { data: projects = [] } = useProjects();
   const { data: notebooks = [] } = useNotebooks();
   const createLinkMutation = useCreateLinkResource();
+  const uploadMutation = useUploadDocuments();
+  const queryClient = useQueryClient();
   const deleteMutation = useDeleteResource();
   const renameMutation = useRenameResource();
   const retryTranscriptMutation = useRetryYouTubeTranscriptIngestion();
