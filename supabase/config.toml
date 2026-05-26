@@ -1,49 +1,35 @@
 project_id = "mdrxzwudhtmkyqcxwvcy"
 
-[functions.workflow-start]
-verify_jwt = false
-
-[functions.workflow-worker]
-verify_jwt = false
-
-[functions.workflow-maintenance]
-verify_jwt = false
-
-
-
-[functions.process-email-queue]
-verify_jwt = true
-
-[functions.send-transactional-email]
-verify_jwt = false
-
-[functions.preview-transactional-email]
-verify_jwt = false
-
-[functions.handle-email-unsubscribe]
-verify_jwt = false
-
-[functions.handle-email-suppression]
-verify_jwt = false
-
-[functions.validation-harness]
-verify_jwt = false
-
-[functions.register-otp-start]
-verify_jwt = false
-
-[functions.register-otp-verify]
-verify_jwt = false
-
-[functions.password-reset-request]
-verify_jwt = false
-
-[functions.password-reset-verify]
-verify_jwt = false
-
-[functions.paypal-subscription-approved]
-verify_jwt = false
-
-[functions.paypal-webhook]
-verify_jwt = false
-
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.handle-email-suppression]
+    verify_jwt = false
+  [functions.handle-email-unsubscribe]
+    verify_jwt = false
+  [functions.password-reset-request]
+    verify_jwt = false
+  [functions.password-reset-verify]
+    verify_jwt = false
+  [functions.paypal-subscription-approved]
+    verify_jwt = false
+  [functions.paypal-webhook]
+    verify_jwt = false
+  [functions.preview-transactional-email]
+    verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.register-otp-start]
+    verify_jwt = false
+  [functions.register-otp-verify]
+    verify_jwt = false
+  [functions.send-transactional-email]
+    verify_jwt = false
+  [functions.validation-harness]
+    verify_jwt = false
+  [functions.workflow-maintenance]
+    verify_jwt = false
+  [functions.workflow-start]
+    verify_jwt = false
+  [functions.workflow-worker]
+    verify_jwt = false
