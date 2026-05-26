@@ -134,6 +134,7 @@ export function ResourcesLanding() {
   const [linkProvider, setLinkProvider] = useState('unknown');
   const [linkContainerType, setLinkContainerType] = useState<ContainerType>('project');
   const [linkContainerId, setLinkContainerId] = useState<string | null>(null);
+  const [linkFiles, setLinkFiles] = useState<File[]>([]);
 
   // ── Stats ───────────────────────────────────────────────────────
   const totalCount = resources.length;
