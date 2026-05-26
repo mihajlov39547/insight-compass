@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DeleteWithConfirmDialog } from '@/components/dialogs/DeleteWithConfirmDialog';
 import { useApp } from '@/contexts/useApp';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useNotebooks, useUpdateNotebook } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
@@ -169,8 +170,8 @@ export function NotebookWorkspace() {
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isChatNearBottom, setIsChatNearBottom] = useState(true);
   const [showChatScrollTop, setShowChatScrollTop] = useState(false);
-  const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
-  const [notesCollapsed, setNotesCollapsed] = useState(false);
+  const [sourcesCollapsed, setSourcesCollapsed] = usePersistedState('notebook:sourcesCollapsed', false);
+  const [notesCollapsed, setNotesCollapsed] = usePersistedState('notebook:notesCollapsed', false);
 
   const linkedVideoEnabledById = useMemo(() => {
     const map = new Map<string, boolean>();

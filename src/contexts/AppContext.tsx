@@ -8,6 +8,7 @@ import { DbProject } from '@/hooks/useProjects';
 import { DbChat } from '@/hooks/useChats';
 import { AppContext } from '@/contexts/app-context';
 import { useInboxUnreadCount } from '@/hooks/useInboxMessages';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 export type ActiveView = 'default' | 'home' | 'projects' | 'project-documents' | 'chat-documents' | 'notebooks' | 'notebook-documents' | 'notebook-workspace' | 'resources' | 'starred' | 'recents' | 'shared' | 'search';
 
@@ -67,7 +68,7 @@ export interface AppContextType {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser>(DEFAULT_APP_USER);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = usePersistedState('app:sidebarCollapsed', false);
   const [selectedProjectId, setSelectedProjectIdRaw] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatIdRaw] = useState<string | null>(null);
   const [selectedNotebookId, setSelectedNotebookIdRaw] = useState<string | null>(null);
