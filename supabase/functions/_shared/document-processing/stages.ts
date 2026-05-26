@@ -1914,10 +1914,16 @@ export async function generateChunkQuestionsStage(
   documentId: string,
   lovableApiKey?: string | null
 ): Promise<Record<string, unknown>> {
+  // Only advertise the in-progress status when the document is not already in a
+  // terminal state. This stage runs in an optional branch that can finish AFTER
+  // finalize_document — without this guard, a late/retried run would clobber
+  // `completed` / `failed` back to `generating_chunk_questions` and leave the
+  // document UI inconsistent with the workflow run status.
   await supabase
     .from("documents")
     .update({ processing_status: "generating_chunk_questions" })
-    .eq("id", documentId);
+    .eq("id", documentId)
+    .not("processing_status", "in", "(completed,failed)");
 
   const doc = await loadDocumentRow(supabase, documentId);
 
