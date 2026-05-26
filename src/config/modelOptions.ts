@@ -11,6 +11,7 @@ export const DEFAULT_MODEL_ID = 'auto';
 export const modelOptions: ModelOption[] = [
   { id: 'auto', name: 'Auto (recommended)', description: 'Chooses the best model for the task' },
   { id: 'google/gemini-3-flash-preview', name: 'gemini-3-flash-preview', description: 'Best default for everyday chat' },
+  { id: 'google/gemini-3.5-flash', name: 'gemini-3.5-flash', description: 'Basic, Premium & Enterprise. Efficient Gemini 3.5 for fast coding, reasoning, and agentic workflows.' },
   { id: 'google/gemini-2.5-flash', name: 'gemini-2.5-flash', description: 'Balanced speed and quality' },
   { id: 'google/gemini-2.5-flash-lite', name: 'gemini-2.5-flash-lite', description: 'Fastest and cheapest for simple tasks' },
   { id: 'google/gemini-2.5-pro', name: 'gemini-2.5-pro', description: 'Best for hard reasoning' },
