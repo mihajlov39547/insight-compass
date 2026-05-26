@@ -383,16 +383,57 @@ export function ResourcesLanding() {
     setLinkProvider('unknown');
     setLinkContainerType('project');
     setLinkContainerId(null);
+    setLinkFiles([]);
   };
 
-  const handleAddSource = () => {
-    if (!linkUrl.trim()) {
-      toast({ title: 'Add source failed', description: 'URL is required.', variant: 'destructive' });
+  const handleAddSource = async () => {
+    if (!linkContainerId) {
+      toast({ title: 'Add source failed', description: 'Choose a target workspace.', variant: 'destructive' });
       return;
     }
 
-    if (!linkContainerId) {
-      toast({ title: 'Add source failed', description: 'Choose a target workspace.', variant: 'destructive' });
+    if (linkProvider === 'internal') {
+      const validFiles = linkFiles.filter((f) => isFileAllowed(f.name));
+      if (validFiles.length === 0) {
+        toast({ title: 'Add source failed', description: 'Select at least one supported file.', variant: 'destructive' });
+        return;
+      }
+
+      try {
+        const result = await uploadMutation.mutateAsync({
+          files: validFiles,
+          projectId: linkContainerId,
+          chatId: null,
+          notebookId: linkContainerType === 'notebook' ? linkContainerId : undefined,
+        });
+
+        if (result.errors.length > 0) {
+          toast({
+            title: `${result.errors.length} file${result.errors.length !== 1 ? 's' : ''} failed`,
+            description: result.errors.join(', '),
+            variant: 'destructive',
+          });
+        }
+
+        const successCount = result.uploaded.length;
+        if (successCount > 0) {
+          toast({
+            title: `${successCount} document${successCount !== 1 ? 's' : ''} uploaded`,
+            description: 'Processing started — it will appear in Resources shortly.',
+          });
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['resources'] });
+        setAddSourceOpen(false);
+        resetAddSourceDialog();
+      } catch (err: any) {
+        toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+      }
+      return;
+    }
+
+    if (!linkUrl.trim()) {
+      toast({ title: 'Add source failed', description: 'URL is required.', variant: 'destructive' });
       return;
     }
 
