@@ -434,19 +434,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
 
     // ---- Gemini 3.1 branch: route to Google GenAI directly (Basic + Premium) ----
     if (requestedModel === "gemini-3.1") {
-      let userPlan = "free";
       try {
-        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.4");
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-        );
-        const { data: profile } = await supabaseAdmin
-          .from("profiles")
-          .select("plan")
-          .eq("user_id", auth.user.id)
-          .single();
-        userPlan = profile?.plan ?? "free";
         assertCanUseGemini31(userPlan);
       } catch (guardError: any) {
         if (guardError.statusCode === 403) {
