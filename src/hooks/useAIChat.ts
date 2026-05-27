@@ -545,8 +545,9 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
         role: 'assistant',
         content: fullContent,
         sources: persistedSourcesPayload,
-        model_id: resolvedModel,
+        model_id: respondedModel,
       });
+      setLastRespondedModel(respondedModel);
 
       // 7. Auto-rename chat if still "New Chat"
       if (isDefaultChatName(chatName) && fullContent) {
