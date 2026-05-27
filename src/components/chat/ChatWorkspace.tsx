@@ -351,6 +351,7 @@ export function ChatWorkspace() {
           previousUserMessage={previousUserMessage}
           previousAssistantMessage={previousAssistantMessage}
           responseLanguage={selectedChat?.language || selectedProject?.language}
+          syncedModelId={lastRespondedModel}
         />
       )}
     </div>
