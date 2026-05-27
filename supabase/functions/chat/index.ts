@@ -9,6 +9,7 @@ import {
 import { requireUser } from "../_shared/auth/require-user.ts";
 import { assertCanUseGemma4, streamGemma4Response } from "../_shared/ai/gemma4-provider.ts";
 import { assertCanUseGemini31, streamGemini31Response } from "../_shared/ai/gemini31-provider.ts";
+import { attemptGatewayStream, buildFailoverChain } from "../_shared/ai/failover.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
