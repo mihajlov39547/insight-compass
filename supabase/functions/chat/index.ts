@@ -513,7 +513,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
           priorFailures: failureLog,
         });
         return new Response(attempt.stream, {
-          headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+          headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": candidate },
         });
       }
 
