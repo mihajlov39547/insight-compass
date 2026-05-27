@@ -554,7 +554,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace, lastRespondedModel };
 }
 
 export function useDeleteNotebookMessagePair() {
