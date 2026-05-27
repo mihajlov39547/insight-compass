@@ -144,7 +144,7 @@ export function NotebookWorkspace() {
   const deleteNote = useDeleteNotebookNote();
   const { mutate: deleteMessagePair } = useDeleteNotebookMessagePair();
 
-  const { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace } = useNotebookAIChat({
+  const { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace, lastRespondedModel } = useNotebookAIChat({
     notebookId: selectedNotebookId ?? '',
     notebookName: notebook?.name,
     notebookDescription: notebook?.description,
