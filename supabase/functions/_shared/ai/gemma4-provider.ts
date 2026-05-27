@@ -220,10 +220,14 @@ export async function streamGemma4Response(
   }
 
   if (!success) {
-    await writeSSE("I'm sorry, the Gemma 4 model is temporarily unavailable. Please try again or switch to another model.");
+    // Do NOT write an apology or close the writer here — the caller is
+    // responsible for triggering failover to another model. Returning false
+    // signals "this provider could not produce a response".
+    return { success: false };
   }
 
-  // Send SSE termination
+  // Send SSE termination on success only.
   await writer.write(encoder.encode("data: [DONE]\n\n"));
   await writer.close();
+  return { success: true };
 }

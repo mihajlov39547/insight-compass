@@ -9,6 +9,7 @@ import {
 import { requireUser } from "../_shared/auth/require-user.ts";
 import { assertCanUseGemma4, streamGemma4Response } from "../_shared/ai/gemma4-provider.ts";
 import { assertCanUseGemini31, streamGemini31Response } from "../_shared/ai/gemini31-provider.ts";
+import { attemptGatewayStream, buildFailoverChain } from "../_shared/ai/failover.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -184,6 +185,26 @@ serve(async (req) => {
       model: resolvedModel,
     });
 
+    // Load user plan once — used by both special-provider guards and the
+    // gateway failover chain selector.
+    let userPlan = "free";
+    try {
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.4");
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("plan")
+        .eq("user_id", auth.user.id)
+        .single();
+      userPlan = profile?.plan ?? "free";
+    } catch (planErr) {
+      console.warn("[chat] could not load user plan, defaulting to free:", planErr);
+    }
+
+
     // Build document grounding section
     let documentGrounding = "";
     if (docs.length > 0) {
@@ -355,21 +376,14 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       hasLengthInstruction,
     });
 
+    // Tracks whether we already exhausted the specialized Gemma path and
+    // need to fall over to the gateway chain below.
+    let gemmaFailedOver = false;
+
     // ---- Gemma 4 branch: route to Google GenAI directly ----
     if (requestedModel === "gemma-4") {
       // Plan guard — only premium/enterprise may use Gemma 4
       try {
-        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.4");
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-        );
-        const { data: profile } = await supabaseAdmin
-          .from("profiles")
-          .select("plan")
-          .eq("user_id", auth.user.id)
-          .single();
-        const userPlan = profile?.plan ?? "free";
         assertCanUseGemma4(userPlan);
       } catch (guardError: any) {
         if (guardError.statusCode === 403) {
@@ -386,45 +400,41 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       const { readable, writable } = new TransformStream<Uint8Array>();
       const gemmaWriter = writable.getWriter();
 
-      // Fire the streaming into the transform stream
-      streamGemma4Response(
-        {
-          messages: [{ role: "system", content: systemPrompt }, ...chatMessages],
-          systemPrompt,
-          promptForHeuristic: latestUserPrompt,
-          enableGoogleSearch: false, // Will be toggled via future UI control
-          contextDocumentCount: docs.length,
-          hasCode,
-        },
-        gemmaWriter,
-      ).catch((err) => {
+      let gemmaResult: { success: boolean } = { success: false };
+      try {
+        gemmaResult = await streamGemma4Response(
+          {
+            messages: [{ role: "system", content: systemPrompt }, ...chatMessages],
+            systemPrompt,
+            promptForHeuristic: latestUserPrompt,
+            enableGoogleSearch: false,
+            contextDocumentCount: docs.length,
+            hasCode,
+          },
+          gemmaWriter,
+        );
+      } catch (err) {
         console.error("[gemma4] fatal stream error:", err);
-        const encoder = new TextEncoder();
-        gemmaWriter.write(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: "Gemma 4 encountered an error. Please try again." }, index: 0 }] })}\n\n`));
-        gemmaWriter.write(encoder.encode("data: [DONE]\n\n"));
-        gemmaWriter.close();
-      });
+        gemmaResult = { success: false };
+      }
 
-      return new Response(readable, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-      });
+      if (gemmaResult.success) {
+        return new Response(readable, {
+          headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        });
+      }
+
+      // Gemma is unavailable — discard the half-built transform stream and
+      // fall through to the gateway failover chain.
+      try { await gemmaWriter.close(); } catch { /* noop */ }
+      console.warn("[chat:failover] gemma-4 unavailable, falling over to gateway chain");
+      gemmaFailedOver = true;
     }
+
 
     // ---- Gemini 3.1 branch: route to Google GenAI directly (Basic + Premium) ----
     if (requestedModel === "gemini-3.1") {
-      let userPlan = "free";
       try {
-        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.4");
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-        );
-        const { data: profile } = await supabaseAdmin
-          .from("profiles")
-          .select("plan")
-          .eq("user_id", auth.user.id)
-          .single();
-        userPlan = profile?.plan ?? "free";
         assertCanUseGemini31(userPlan);
       } catch (guardError: any) {
         if (guardError.statusCode === 403) {
@@ -468,81 +478,78 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       });
     }
 
-    // Reasoning-style models spend a (sometimes large) portion of the budget on
-    // hidden chain-of-thought tokens. If we cap them at the visible-answer budget
-    // they often emit truncated or empty answers. Detect those models and grant
-    // them a much larger ceiling so the user-visible answer always fits.
-    //
-    // - All OpenAI gpt-5 family (incl. mini/nano) reject `max_tokens` and use
-    //   `max_completion_tokens`, which counts reasoning tokens.
-    // - Gemini 2.5 Pro and Gemini 3.x preview models also do internal reasoning.
-    const isOpenAI = resolvedModel.startsWith("openai/");
-    const isReasoningModel =
-      isOpenAI ||
-      resolvedModel.includes("gemini-2.5-pro") ||
-      resolvedModel.includes("gemini-3");
-    const reasoningMultiplier = isReasoningModel ? 6 : 1;
-    const reasoningFloor = isReasoningModel ? 2048 : 0;
-    const effectiveMaxTokens = Math.max(
-      responseLengthConfig.maxOutputTokens * reasoningMultiplier,
-      reasoningFloor || responseLengthConfig.maxOutputTokens,
-    );
-    const tokenLimitField = isOpenAI
-      ? { max_completion_tokens: effectiveMaxTokens }
-      : { max_tokens: effectiveMaxTokens };
+    // ---- Gateway path with automatic failover ----
+    // Build the failover chain. If we got here via gemma-4 unavailability,
+    // the initial entry is "gemma-4" but it's filtered out below so we start
+    // with the plan's primary fallback.
+    const initialModel = gemmaFailedOver ? "gemma-4" : resolvedModel;
+    const rawChain = buildFailoverChain(initialModel, userPlan);
+    const gatewayChain = rawChain.filter((m) => m !== "gemma-4" && m !== "gemini-3.1");
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: resolvedModel,
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...messages,
-          ],
-          ...tokenLimitField,
-          stream: true,
-        }),
-      }
-    );
-    console.log("[chat:length] provider-call", {
-      strategy: responseLengthConfig.strategy,
-      model: resolvedModel,
-      visibleBudget: responseLengthConfig.maxOutputTokens,
-      effectiveMaxTokens,
-      isReasoningModel,
-      usedField: isOpenAI ? "max_completion_tokens" : "max_tokens",
+    console.log("[chat:failover] chain", {
+      userPlan,
+      initialModel,
+      gemmaFailedOver,
+      gatewayChain,
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "The workspace has reached its current AI request limit. Please try again shortly." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    const failureLog: string[] = [];
+    let lastStatus: number | undefined;
+
+    for (const candidate of gatewayChain) {
+      const attempt = await attemptGatewayStream({
+        apiKey: LOVABLE_API_KEY,
+        model: candidate,
+        systemPrompt,
+        messages,
+        responseMaxOutputTokens: responseLengthConfig.maxOutputTokens,
+      });
+
+      if (attempt.ok && attempt.stream) {
+        console.log("[chat:failover] success", {
+          candidate,
+          attemptsTried: failureLog.length + 1,
+          priorFailures: failureLog,
+        });
+        return new Response(attempt.stream, {
+          headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        });
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI usage credits exhausted. Please add funds in Settings > Workspace > Usage." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const text = await response.text();
-      console.error("AI gateway error:", response.status, text);
+
+      console.warn("[chat:failover] candidate failed", {
+        candidate,
+        status: attempt.status,
+        reason: attempt.reason,
+      });
+      failureLog.push(`${candidate}:${attempt.reason ?? "unknown"}`);
+      lastStatus = attempt.status;
+
+      // Rate-limit / credits errors apply workspace-wide — failover won't help.
+      if (attempt.status === 429 || attempt.status === 402) break;
+    }
+
+    if (lastStatus === 429) {
       return new Response(
-        JSON.stringify({ error: "AI service temporarily unavailable." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "The workspace has reached its current AI request limit. Please try again shortly." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (lastStatus === 402) {
+      return new Response(
+        JSON.stringify({ error: "AI usage credits exhausted. Please add funds in Settings > Workspace > Usage." }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
+    console.error("[chat:failover] all candidates failed", { failureLog });
+    return new Response(
+      JSON.stringify({
+        error: "AI service temporarily unavailable. Please try again or switch to another model.",
+        attempts: failureLog,
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+
   } catch (e) {
     console.error("chat error:", e);
     return new Response(
