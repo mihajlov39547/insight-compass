@@ -609,5 +609,5 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
     setFailedPrompt(null);
   }, []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace, webSearchTrace };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace, webSearchTrace, lastRespondedModel };
 }
