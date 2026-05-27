@@ -471,6 +471,12 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
 
       if (!resp.body) throw new Error('No response stream');
 
+      // Read which model actually responded (may differ from requested due to failover).
+      const respondedModel = resp.headers.get('x-resolved-model') || resolvedModel;
+      if (respondedModel && respondedModel !== resolvedModel) {
+        console.log('[chat:failover] frontend received fallback model', { requested: resolvedModel, responded: respondedModel });
+      }
+
       // 5. Stream the response
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
