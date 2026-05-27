@@ -49,7 +49,7 @@ export function ChatWorkspace() {
   const { data: myRole } = useItemRole(selectedProjectId, 'project');
   const permissions = getItemPermissions(myRole);
 
-  const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace, webSearchTrace } = useAIChat({
+  const { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace, webSearchTrace, lastRespondedModel } = useAIChat({
     chatId: selectedChatId ?? '',
     chatName: selectedChat?.name,
     projectId: selectedProjectId ?? undefined,
@@ -351,6 +351,7 @@ export function ChatWorkspace() {
           previousUserMessage={previousUserMessage}
           previousAssistantMessage={previousAssistantMessage}
           responseLanguage={selectedChat?.language || selectedProject?.language}
+          syncedModelId={lastRespondedModel}
         />
       )}
     </div>

@@ -15,6 +15,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Expose-Headers": "x-resolved-model",
 };
 
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL;
@@ -420,7 +421,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
 
       if (gemmaResult.success) {
         return new Response(readable, {
-          headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+          headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": "gemma-4" },
         });
       }
 
@@ -474,7 +475,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       });
 
       return new Response(readable, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": "gemini-3.1" },
       });
     }
 
@@ -512,7 +513,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
           priorFailures: failureLog,
         });
         return new Response(attempt.stream, {
-          headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+          headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": candidate },
         });
       }
 

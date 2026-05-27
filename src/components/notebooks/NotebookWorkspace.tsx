@@ -144,7 +144,7 @@ export function NotebookWorkspace() {
   const deleteNote = useDeleteNotebookNote();
   const { mutate: deleteMessagePair } = useDeleteNotebookMessagePair();
 
-  const { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace } = useNotebookAIChat({
+  const { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace, lastRespondedModel } = useNotebookAIChat({
     notebookId: selectedNotebookId ?? '',
     notebookName: notebook?.name,
     notebookDescription: notebook?.description,
@@ -915,6 +915,7 @@ export function NotebookWorkspace() {
                     previousAssistantMessage={previousAssistantMessage}
                     variant="notebook"
                     responseLanguage={notebook?.language}
+                    syncedModelId={lastRespondedModel}
                     footerLeft={
                       <span className="text-xs text-muted-foreground">
                         {t('notebookWorkspace.sources.footerEnabled', { count: enabledSourceCount })}

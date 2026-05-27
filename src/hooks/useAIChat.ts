@@ -114,6 +114,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
   const [failedPrompt, setFailedPrompt] = useState<{ content: string; modelId: string; options?: MessageOptions; webSearchResponse?: WebSearchResponse | null } | null>(null);
   const [researchTrace, setResearchTrace] = useState<ResearchTraceState | null>(null);
   const [webSearchTrace, setWebSearchTrace] = useState<WebSearchTraceState | null>(null);
+  const [lastRespondedModel, setLastRespondedModel] = useState<string | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions, cachedWebSearchResponse?: WebSearchResponse | null) => {
     if (!user || !chatId || isGenerating) return;
@@ -470,6 +471,12 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
 
       if (!resp.body) throw new Error('No response stream');
 
+      // Read which model actually responded (may differ from requested due to failover).
+      const respondedModel = resp.headers.get('x-resolved-model') || resolvedModel;
+      if (respondedModel && respondedModel !== resolvedModel) {
+        console.log('[chat:failover] frontend received fallback model', { requested: resolvedModel, responded: respondedModel });
+      }
+
       // 5. Stream the response
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -538,8 +545,9 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
         role: 'assistant',
         content: fullContent,
         sources: persistedSourcesPayload,
-        model_id: resolvedModel,
+        model_id: respondedModel,
       });
+      setLastRespondedModel(respondedModel);
 
       // 7. Auto-rename chat if still "New Chat"
       if (isDefaultChatName(chatName) && fullContent) {
@@ -601,5 +609,5 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
     setFailedPrompt(null);
   }, []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace, webSearchTrace };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, retry, failedPrompt, researchTrace, webSearchTrace, lastRespondedModel };
 }

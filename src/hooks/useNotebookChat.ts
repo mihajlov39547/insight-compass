@@ -116,6 +116,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
   const [error, setError] = useState<string | null>(null);
   const [researchTrace, setResearchTrace] = useState<ResearchTraceState | null>(null);
   const [webSearchTrace, setWebSearchTrace] = useState<WebSearchTraceState | null>(null);
+  const [lastRespondedModel, setLastRespondedModel] = useState<string | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions) => {
     if (!user || !notebookId || isGenerating) return;
@@ -410,6 +411,11 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       }
       if (!resp.body) throw new Error('No response stream');
 
+      const respondedModel = resp.headers.get('x-resolved-model') || resolvedModel;
+      if (respondedModel && respondedModel !== resolvedModel) {
+        console.log('[chat:failover] notebook frontend received fallback model', { requested: resolvedModel, responded: respondedModel });
+      }
+
       // 5. Stream response
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -475,9 +481,10 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         user_id: user.id,
         role: 'assistant',
         content: fullContent,
-        model_id: resolvedModel,
+        model_id: respondedModel,
         sources: persistedSourcesPayload,
       });
+      setLastRespondedModel(respondedModel);
 
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
 
@@ -547,7 +554,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace };
+  return { sendMessage, isGenerating, streamingContent, error, clearError, researchTrace, webSearchTrace, lastRespondedModel };
 }
 
 export function useDeleteNotebookMessagePair() {

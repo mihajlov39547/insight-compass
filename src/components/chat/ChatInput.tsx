@@ -59,13 +59,23 @@ interface ChatInputProps {
   footerLeft?: React.ReactNode;
   /** Language the improved draft should be written in. */
   responseLanguage?: string;
+  /** When set and changes, force-sync the picker to this model (e.g. after failover). */
+  syncedModelId?: string | null;
 }
 
-export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage, variant = 'project', footerLeft, responseLanguage }: ChatInputProps) {
+export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage, variant = 'project', footerLeft, responseLanguage, syncedModelId }: ChatInputProps) {
   const { t } = useTranslation();
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
+
+  // Sync model selection from parent (e.g. after a failover response).
+  useEffect(() => {
+    if (syncedModelId && syncedModelId !== selectedModel && modelOptions.some(m => m.id === syncedModelId)) {
+      setSelectedModel(syncedModelId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncedModelId]);
   const [isImproving, setIsImproving] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [promptOptions, setPromptOptions] = useState<ChatPromptOptions>({
