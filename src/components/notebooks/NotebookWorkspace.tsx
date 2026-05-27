@@ -915,6 +915,7 @@ export function NotebookWorkspace() {
                     previousAssistantMessage={previousAssistantMessage}
                     variant="notebook"
                     responseLanguage={notebook?.language}
+                    syncedModelId={lastRespondedModel}
                     footerLeft={
                       <span className="text-xs text-muted-foreground">
                         {t('notebookWorkspace.sources.footerEnabled', { count: enabledSourceCount })}
