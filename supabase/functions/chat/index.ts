@@ -376,21 +376,14 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       hasLengthInstruction,
     });
 
+    // Tracks whether we already exhausted the specialized Gemma path and
+    // need to fall over to the gateway chain below.
+    let gemmaFailedOver = false;
+
     // ---- Gemma 4 branch: route to Google GenAI directly ----
     if (requestedModel === "gemma-4") {
       // Plan guard — only premium/enterprise may use Gemma 4
       try {
-        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.4");
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-        );
-        const { data: profile } = await supabaseAdmin
-          .from("profiles")
-          .select("plan")
-          .eq("user_id", auth.user.id)
-          .single();
-        const userPlan = profile?.plan ?? "free";
         assertCanUseGemma4(userPlan);
       } catch (guardError: any) {
         if (guardError.statusCode === 403) {
@@ -407,29 +400,37 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       const { readable, writable } = new TransformStream<Uint8Array>();
       const gemmaWriter = writable.getWriter();
 
-      // Fire the streaming into the transform stream
-      streamGemma4Response(
-        {
-          messages: [{ role: "system", content: systemPrompt }, ...chatMessages],
-          systemPrompt,
-          promptForHeuristic: latestUserPrompt,
-          enableGoogleSearch: false, // Will be toggled via future UI control
-          contextDocumentCount: docs.length,
-          hasCode,
-        },
-        gemmaWriter,
-      ).catch((err) => {
+      let gemmaResult: { success: boolean } = { success: false };
+      try {
+        gemmaResult = await streamGemma4Response(
+          {
+            messages: [{ role: "system", content: systemPrompt }, ...chatMessages],
+            systemPrompt,
+            promptForHeuristic: latestUserPrompt,
+            enableGoogleSearch: false,
+            contextDocumentCount: docs.length,
+            hasCode,
+          },
+          gemmaWriter,
+        );
+      } catch (err) {
         console.error("[gemma4] fatal stream error:", err);
-        const encoder = new TextEncoder();
-        gemmaWriter.write(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: "Gemma 4 encountered an error. Please try again." }, index: 0 }] })}\n\n`));
-        gemmaWriter.write(encoder.encode("data: [DONE]\n\n"));
-        gemmaWriter.close();
-      });
+        gemmaResult = { success: false };
+      }
 
-      return new Response(readable, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-      });
+      if (gemmaResult.success) {
+        return new Response(readable, {
+          headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        });
+      }
+
+      // Gemma is unavailable — discard the half-built transform stream and
+      // fall through to the gateway failover chain.
+      try { await gemmaWriter.close(); } catch { /* noop */ }
+      console.warn("[chat:failover] gemma-4 unavailable, falling over to gateway chain");
+      gemmaFailedOver = true;
     }
+
 
     // ---- Gemini 3.1 branch: route to Google GenAI directly (Basic + Premium) ----
     if (requestedModel === "gemini-3.1") {
