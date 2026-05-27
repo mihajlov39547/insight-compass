@@ -475,7 +475,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       });
 
       return new Response(readable, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": "gemini-3.1" },
       });
     }
 
