@@ -185,6 +185,26 @@ serve(async (req) => {
       model: resolvedModel,
     });
 
+    // Load user plan once — used by both special-provider guards and the
+    // gateway failover chain selector.
+    let userPlan = "free";
+    try {
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.4");
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("plan")
+        .eq("user_id", auth.user.id)
+        .single();
+      userPlan = profile?.plan ?? "free";
+    } catch (planErr) {
+      console.warn("[chat] could not load user plan, defaulting to free:", planErr);
+    }
+
+
     // Build document grounding section
     let documentGrounding = "";
     if (docs.length > 0) {
