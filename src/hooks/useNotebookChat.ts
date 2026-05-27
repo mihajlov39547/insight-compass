@@ -411,6 +411,11 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       }
       if (!resp.body) throw new Error('No response stream');
 
+      const respondedModel = resp.headers.get('x-resolved-model') || resolvedModel;
+      if (respondedModel && respondedModel !== resolvedModel) {
+        console.log('[chat:failover] notebook frontend received fallback model', { requested: resolvedModel, responded: respondedModel });
+      }
+
       // 5. Stream response
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
