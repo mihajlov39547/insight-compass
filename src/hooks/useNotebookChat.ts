@@ -481,9 +481,10 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         user_id: user.id,
         role: 'assistant',
         content: fullContent,
-        model_id: resolvedModel,
+        model_id: respondedModel,
         sources: persistedSourcesPayload,
       });
+      setLastRespondedModel(respondedModel);
 
       qc.invalidateQueries({ queryKey: ['notebook-messages', notebookId] });
 
