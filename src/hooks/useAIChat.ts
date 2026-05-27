@@ -114,6 +114,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
   const [failedPrompt, setFailedPrompt] = useState<{ content: string; modelId: string; options?: MessageOptions; webSearchResponse?: WebSearchResponse | null } | null>(null);
   const [researchTrace, setResearchTrace] = useState<ResearchTraceState | null>(null);
   const [webSearchTrace, setWebSearchTrace] = useState<WebSearchTraceState | null>(null);
+  const [lastRespondedModel, setLastRespondedModel] = useState<string | null>(null);
 
   const sendMessage = useCallback(async (content: string, modelId?: string, options?: MessageOptions, cachedWebSearchResponse?: WebSearchResponse | null) => {
     if (!user || !chatId || isGenerating) return;
