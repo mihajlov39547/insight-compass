@@ -19,12 +19,26 @@ const GATEWAY_CHAT_MODELS = [
   "openai/gpt-5-mini",
   "openai/gpt-5",
   "openai/gpt-5.2",
+  "openai/gpt-5.4",
+  "openai/gpt-5.4-mini",
+  "openai/gpt-5.4-nano",
+  "openai/gpt-5.4-pro",
+  "openai/gpt-5.5",
+  "openai/gpt-5.5-pro",
 ];
 
 // Mirrors src/lib/planLimits.ts (restricted IDs that overlap the gateway set).
+const GPT_54_55 = [
+  "openai/gpt-5.4",
+  "openai/gpt-5.4-mini",
+  "openai/gpt-5.4-nano",
+  "openai/gpt-5.4-pro",
+  "openai/gpt-5.5",
+  "openai/gpt-5.5-pro",
+];
 const PLAN_RESTRICTED: Record<string, string[]> = {
-  free: ["openai/gpt-5", "openai/gpt-5.2", "google/gemini-3.5-flash"],
-  basic: ["openai/gpt-5", "openai/gpt-5.2"],
+  free: ["openai/gpt-5", "openai/gpt-5.2", "google/gemini-3.5-flash", ...GPT_54_55],
+  basic: ["openai/gpt-5", "openai/gpt-5.2", ...GPT_54_55],
   premium: [],
   enterprise: [],
 };
