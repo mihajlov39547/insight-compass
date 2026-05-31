@@ -65,17 +65,6 @@ export interface ModelResolutionDecision {
 }
 
 export const MODEL_REGISTRY: Record<ModelId, ModelMetadata> = {
-  "google/gemini-2.5-flash": {
-    id: "google/gemini-2.5-flash",
-    displayName: "gemini-3-flash-preview",
-    visibility: "public",
-    internalOnly: false,
-    selectable: true,
-    costTier: "medium",
-    latencyTier: "balanced",
-    reasoningTier: "standard",
-    suitableTasks: ["chat_default", "chat_grounded"],
-  },
   "google/gemini-2.5-flash-lite": {
     id: "google/gemini-2.5-flash-lite",
     displayName: "gemini-2.5-flash-lite",
@@ -105,7 +94,7 @@ export const MODEL_REGISTRY: Record<ModelId, ModelMetadata> = {
     costTier: "medium",
     latencyTier: "balanced",
     reasoningTier: "standard",
-    suitableTasks: ["notebook_metadata", "project_description", "summarization_rich", "extract_synthesis"],
+    suitableTasks: ["chat_default", "chat_grounded", "notebook_metadata", "project_description", "summarization_rich", "extract_synthesis"],
   },
   "google/gemini-2.5-pro": {
     id: "google/gemini-2.5-pro",
