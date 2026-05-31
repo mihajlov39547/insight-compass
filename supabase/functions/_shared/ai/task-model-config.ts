@@ -20,7 +20,6 @@ export type ModelTask =
 export type ModelId =
   | "google/gemini-2.5-flash"
   | "google/gemini-2.5-flash-lite"
-  | "google/gemini-2.5-flash"
   | "google/gemini-2.5-pro"
   | "openai/gpt-5-mini"
   | "openai/gpt-5"
