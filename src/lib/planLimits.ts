@@ -43,7 +43,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     canShareProjects: false,
     canShareNotebooks: false,
     maxShareMembers: 0,
-    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'gemma-4', 'gemini-3.1', 'google/gemini-3.5-flash'],
+    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'openai/gpt-5.4', 'openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.4-pro', 'openai/gpt-5.5', 'openai/gpt-5.5-pro', 'gemma-4', 'gemini-3.1', 'google/gemini-3.5-flash'],
     webCrawl: { limit: 10, maxDepth: 1, maxBreadth: 10, extractDepth: 'basic' },
   },
   basic: {
@@ -55,7 +55,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     canShareProjects: true,
     canShareNotebooks: false,
     maxShareMembers: 3,
-    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'gemma-4'],
+    restrictedModelIds: ['openai/gpt-5', 'openai/gpt-5.2', 'openai/gpt-5.4', 'openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.4-pro', 'openai/gpt-5.5', 'openai/gpt-5.5-pro', 'gemma-4'],
     webCrawl: { limit: 25, maxDepth: 2, maxBreadth: 20, extractDepth: 'basic' },
   },
   premium: {
