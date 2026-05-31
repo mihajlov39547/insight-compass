@@ -8,7 +8,7 @@
 //
 // Distribution target:
 //   ~70%  gemini-3.1-flash-lite   (HIGH thinking)  — default
-//   ~15%  gemini-3-flash-preview  (MEDIUM/HIGH)    — complex / search-heavy
+//   ~15%  gemini-2.5-flash  (MEDIUM/HIGH)    — complex / search-heavy
 //   ~15%  gemini-3.1-pro-preview  (LOW/MEDIUM/HIGH) — very complex
 
 import { GoogleGenAI } from "https://esm.sh/@google/genai@0.14.1";
@@ -19,7 +19,7 @@ import { GoogleGenAI } from "https://esm.sh/@google/genai@0.14.1";
 
 type Gemini31ModelId =
   | "gemini-3.1-flash-lite"
-  | "gemini-3-flash-preview"
+  | "gemini-2.5-flash"
   | "gemini-3.1-pro-preview";
 
 type ThinkingLevel = "LOW" | "MEDIUM" | "HIGH";
@@ -119,7 +119,7 @@ export function selectGemini31Route(input: {
   // Complex sampled escalation to Flash Preview (~10%)
   if (complex && sampler >= 5 && sampler < 15) {
     return {
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       thinkingLevel: input.webSearchEnabled || input.hasCode ? "HIGH" : "MEDIUM",
       reason: "complex_sampled_flash_preview",
     };

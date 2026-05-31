@@ -574,9 +574,15 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                         <p className="text-xs text-muted-foreground">{currentModel.description}</p>
                       </TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuContent align="end" className="w-72">
                       {modelOptions.map((model) => {
                         const restricted = isModelRestricted(model.id);
+                        const providerClass =
+                          model.provider === 'Google'
+                            ? 'border-blue-500/40 text-blue-500'
+                            : model.provider === 'OpenAI'
+                              ? 'border-emerald-500/40 text-emerald-500'
+                              : 'border-accent/40 text-accent';
                         return (
                           <Tooltip key={model.id}>
                             <TooltipTrigger asChild>
@@ -592,12 +598,25 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                                 }}
                                 disabled={restricted}
                                 className={cn(
-                                  "text-sm",
+                                  "text-sm flex items-center justify-between gap-2",
                                   selectedModel === model.id && "bg-accent/10 text-accent font-medium",
                                   restricted && "opacity-50"
                                 )}
                               >
-                                {model.name}{restricted ? ' 🔒' : ''}
+                                <span className="truncate">{model.name}{restricted ? ' 🔒' : ''}</span>
+                                <span className="flex items-center gap-1 shrink-0">
+                                  <span className={cn("text-[10px] px-1.5 py-0.5 rounded border", providerClass)}>
+                                    {model.provider}
+                                  </span>
+                                  {model.capabilities.map((cap) => (
+                                    <span
+                                      key={cap}
+                                      className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground"
+                                    >
+                                      {cap}
+                                    </span>
+                                  ))}
+                                </span>
                               </DropdownMenuItem>
                             </TooltipTrigger>
                             <TooltipContent side="left" className="max-w-[240px]">

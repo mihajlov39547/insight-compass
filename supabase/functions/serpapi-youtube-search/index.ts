@@ -3,7 +3,7 @@
 // - Calls SerpApi (engine=youtube) with the user's query
 // - Filters out ads, keeps only the first 5 real video results
 // - Returns normalized YouTubeSearchSource[] for the UI
-// - Uses gemini-3-flash-preview (non-streaming) to summarize the results
+// - Uses gemini-2.5-flash (non-streaming) to summarize the results
 //
 // The synthesized summary is what the assistant message body shows; the
 // 5 YouTube source items are displayed separately by the Sources UI.
@@ -19,7 +19,7 @@ const corsHeaders = {
 
 const SERPAPI_URL = "https://serpapi.com/search.json";
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const SYNTHESIS_MODEL = "google/gemini-3-flash-preview";
+const SYNTHESIS_MODEL = "google/gemini-2.5-flash";
 
 const MAX_RESULTS = 5;
 const MAX_QUERY_LENGTH = 500;
