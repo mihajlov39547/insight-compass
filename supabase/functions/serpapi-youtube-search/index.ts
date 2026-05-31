@@ -3,7 +3,7 @@
 // - Calls SerpApi (engine=youtube) with the user's query
 // - Filters out ads, keeps only the first 5 real video results
 // - Returns normalized YouTubeSearchSource[] for the UI
-// - Uses gemini-3-flash-preview (non-streaming) to summarize the results
+// - Uses gemini-2.5-flash (non-streaming) to summarize the results
 //
 // The synthesized summary is what the assistant message body shows; the
 // 5 YouTube source items are displayed separately by the Sources UI.

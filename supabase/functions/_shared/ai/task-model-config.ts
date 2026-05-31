@@ -360,7 +360,7 @@ export function resolveModelDecision(
   appliedRules.push("normal-user-chat-default");
   return {
     model: "google/gemini-2.5-flash",
-    reason: "Normal user-facing chat uses gemini-3-flash-preview baseline",
+    reason: "Normal user-facing chat uses gemini-2.5-flash baseline",
     appliedRules,
     task,
     candidates,
