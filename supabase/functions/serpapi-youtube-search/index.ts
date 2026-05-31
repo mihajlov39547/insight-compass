@@ -19,7 +19,7 @@ const corsHeaders = {
 
 const SERPAPI_URL = "https://serpapi.com/search.json";
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const SYNTHESIS_MODEL = "google/gemini-3-flash-preview";
+const SYNTHESIS_MODEL = "google/gemini-2.5-flash";
 
 const MAX_RESULTS = 5;
 const MAX_QUERY_LENGTH = 500;

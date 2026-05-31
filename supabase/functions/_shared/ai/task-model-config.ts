@@ -18,7 +18,7 @@ export type ModelTask =
   | "extract_synthesis";
 
 export type ModelId =
-  | "google/gemini-3-flash-preview"
+  | "google/gemini-2.5-flash"
   | "google/gemini-2.5-flash-lite"
   | "google/gemini-2.5-flash"
   | "google/gemini-2.5-pro"
@@ -66,8 +66,8 @@ export interface ModelResolutionDecision {
 }
 
 export const MODEL_REGISTRY: Record<ModelId, ModelMetadata> = {
-  "google/gemini-3-flash-preview": {
-    id: "google/gemini-3-flash-preview",
+  "google/gemini-2.5-flash": {
+    id: "google/gemini-2.5-flash",
     displayName: "gemini-3-flash-preview",
     visibility: "public",
     internalOnly: false,
@@ -157,8 +157,8 @@ export const MODEL_REGISTRY: Record<ModelId, ModelMetadata> = {
 };
 
 export const TASK_MODEL_CONFIG: Record<ModelTask, ModelId> = {
-  chat_default: "google/gemini-3-flash-preview",
-  chat_grounded: "google/gemini-3-flash-preview",
+  chat_default: "google/gemini-2.5-flash",
+  chat_grounded: "google/gemini-2.5-flash",
   chat_complex: "google/gemini-2.5-pro",
   scope_check: "google/gemini-2.5-flash-lite",
   classification: "google/gemini-2.5-flash-lite",
@@ -257,7 +257,7 @@ export function resolveModelDecision(
   };
 
   const candidates: ModelId[] = [
-    "google/gemini-3-flash-preview",
+    "google/gemini-2.5-flash",
     "openai/gpt-5-mini",
     "google/gemini-2.5-flash",
     "google/gemini-2.5-pro",
@@ -372,7 +372,7 @@ export function resolveModelDecision(
 
   appliedRules.push("normal-user-chat-default");
   return {
-    model: "google/gemini-3-flash-preview",
+    model: "google/gemini-2.5-flash",
     reason: "Normal user-facing chat uses gemini-3-flash-preview baseline",
     appliedRules,
     task,
