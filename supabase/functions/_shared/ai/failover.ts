@@ -14,7 +14,6 @@
 const GATEWAY_CHAT_MODELS = [
   "google/gemini-2.5-flash",
   "google/gemini-3.5-flash",
-  "google/gemini-2.5-flash",
   "google/gemini-2.5-flash-lite",
   "google/gemini-2.5-pro",
   "openai/gpt-5-mini",
