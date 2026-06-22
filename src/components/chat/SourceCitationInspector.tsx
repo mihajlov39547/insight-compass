@@ -16,7 +16,9 @@ interface SourceCitationInspectorProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function providerLabel(provider: string | null, sourceType: string | null, t: (k: string, d?: string) => string): string {
+type Translator = (key: string, defaultValue?: string) => string;
+
+function providerLabel(provider: string | null, sourceType: string | null, t: Translator): string {
   const p = (provider ?? "").toLowerCase();
   if (p === "google_drive") return t("citationInspector.provider.googleDrive", "Google Drive");
   if (p === "google_docs") return t("citationInspector.provider.googleDocs", "Google Docs");
@@ -33,7 +35,7 @@ function providerLabel(provider: string | null, sourceType: string | null, t: (k
   return t("citationInspector.provider.unknown", "Source");
 }
 
-function traceabilityLabel(trace: string, t: (k: string, d?: string) => string): string {
+function traceabilityLabel(trace: string, t: Translator): string {
   switch (trace) {
     case "chunk":
       return t("citationInspector.trace.chunk", "Exact chunk");
