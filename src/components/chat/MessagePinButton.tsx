@@ -33,7 +33,6 @@ export function MessagePinButton({ ctx, messageId, messageRole, content, classNa
     );
   };
 
-  const Icon = pinned ? Pin : Pin;
   const iconCls = size === 'sm' ? 'h-2.5 w-2.5' : 'h-3 w-3';
 
   return (
