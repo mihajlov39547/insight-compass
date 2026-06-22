@@ -15,6 +15,8 @@ import type { WebSearchTraceState } from '@/services/web-search/webSearchTrace';
 import type { ExtractDepth } from '@/services/tavily-extract';
 import type { ExtractSelection, CrawlSelectionInput } from './SourceAttribution';
 import { useApp } from '@/contexts/useApp';
+import { MessagePinButton } from './MessagePinButton';
+import type { PinContext } from '@/hooks/useMessagePins';
 
 interface ChatMessageProps {
   message: ChatDisplayMessage;
@@ -28,9 +30,10 @@ interface ChatMessageProps {
   onAddYouTubeToSources?: (source: SourceItem) => void | Promise<void>;
   addingYouTubeUrl?: string | null;
   addedYouTubeUrls?: Set<string>;
+  pinContext?: PinContext | null;
 }
 
-export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls }: ChatMessageProps) {
+export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls, pinContext }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const { setActiveView, setSelectedProjectId } = useApp();
   const [copied, setCopied] = React.useState(false);
