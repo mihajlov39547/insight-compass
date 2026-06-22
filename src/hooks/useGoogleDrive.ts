@@ -13,6 +13,7 @@ export interface DriveFile {
   webViewLink: string | null;
   iconLink: string | null;
   parents: string[];
+  canDownload?: boolean;
   supported: boolean;
 }
 
