@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.cleanup_stale_external_reference_temp_files();
