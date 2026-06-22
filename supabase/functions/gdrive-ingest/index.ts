@@ -11,13 +11,15 @@ const corsHeaders = {
 };
 
 const GATEWAY = 'https://connector-gateway.lovable.dev/google_drive/drive/v3';
-const MAX_BYTES = 25 * 1024 * 1024; // 25 MB cap for v1
+const MAX_BYTES_BINARY = 25 * 1024 * 1024; // 25 MB for binary downloads
+const MAX_BYTES_EXPORT = 10 * 1024 * 1024; // 10 MB Drive export cap
 
 interface IngestPlan {
   ext: string;
   fileType: string; // documents.file_type
   storedMime: string;
   exportMime?: string; // present when we must export (Workspace docs)
+  exportFallbackMime?: string; // fallback export mime if primary fails
 }
 
 function planForMime(mimeType: string): IngestPlan | null {
@@ -28,6 +30,7 @@ function planForMime(mimeType: string): IngestPlan | null {
         fileType: 'md',
         storedMime: 'text/markdown',
         exportMime: 'text/markdown',
+        exportFallbackMime: 'text/plain',
       };
     case 'application/pdf':
       return { ext: 'pdf', fileType: 'pdf', storedMime: 'application/pdf' };
@@ -45,6 +48,11 @@ function planForMime(mimeType: string): IngestPlan | null {
     default:
       return null;
   }
+}
+
+function planFromExportMime(exportMime: string): { ext: string; fileType: string; storedMime: string } {
+  if (exportMime === 'text/markdown') return { ext: 'md', fileType: 'md', storedMime: 'text/markdown' };
+  return { ext: 'txt', fileType: 'txt', storedMime: 'text/plain' };
 }
 
 function jsonResponse(body: unknown, status = 200) {
@@ -103,7 +111,7 @@ Deno.serve(async (req: Request) => {
     const metaUrl = new URL(`${GATEWAY}/files/${encodeURIComponent(fileId)}`);
     metaUrl.searchParams.set(
       'fields',
-      'id,name,mimeType,modifiedTime,size,webViewLink,owners(displayName,emailAddress),parents',
+      'id,name,mimeType,modifiedTime,size,webViewLink,owners(displayName,emailAddress),parents,capabilities(canDownload)',
     );
     const metaResp = await fetch(metaUrl.toString(), {
       headers: { Authorization: `Bearer ${lovableKey}`, 'X-Connection-Api-Key': driveKey },
@@ -125,53 +133,96 @@ Deno.serve(async (req: Request) => {
         415,
       );
     }
-    if (meta.size && Number(meta.size) > MAX_BYTES) {
+    if (meta.capabilities && meta.capabilities.canDownload === false) {
+      return jsonResponse(
+        { error: 'not_downloadable', message: 'The owner has disabled downloading for this file.' },
+        403,
+      );
+    }
+    const isExport = !!plan.exportMime;
+    const sizeCap = isExport ? MAX_BYTES_EXPORT : MAX_BYTES_BINARY;
+    if (!isExport && meta.size && Number(meta.size) > sizeCap) {
       return jsonResponse(
         { error: 'file_too_large', message: 'This file exceeds the 25 MB limit for now.' },
         413,
       );
     }
 
-    // 2) Fetch content
-    const contentUrl = plan.exportMime
-      ? new URL(`${GATEWAY}/files/${encodeURIComponent(fileId)}/export`)
-      : new URL(`${GATEWAY}/files/${encodeURIComponent(fileId)}`);
-    if (plan.exportMime) {
-      contentUrl.searchParams.set('mimeType', plan.exportMime);
-    } else {
-      contentUrl.searchParams.set('alt', 'media');
+    // 2) Fetch content (with markdown→plain fallback for Google Docs)
+    async function fetchExport(mime: string): Promise<Response> {
+      const u = new URL(`${GATEWAY}/files/${encodeURIComponent(fileId)}/export`);
+      u.searchParams.set('mimeType', mime);
+      return fetch(u.toString(), {
+        headers: { Authorization: `Bearer ${lovableKey}`, 'X-Connection-Api-Key': driveKey },
+      });
     }
-    const contentResp = await fetch(contentUrl.toString(), {
-      headers: { Authorization: `Bearer ${lovableKey}`, 'X-Connection-Api-Key': driveKey },
-    });
+
+    let contentResp: Response;
+    let effectiveExportMime: string | undefined;
+    if (isExport) {
+      effectiveExportMime = plan.exportMime!;
+      contentResp = await fetchExport(effectiveExportMime);
+      if (!contentResp.ok && plan.exportFallbackMime) {
+        const t = await contentResp.text().catch(() => '');
+        console.warn('[gdrive-ingest] primary export failed, falling back', contentResp.status, t);
+        effectiveExportMime = plan.exportFallbackMime;
+        contentResp = await fetchExport(effectiveExportMime);
+      }
+    } else {
+      const u = new URL(`${GATEWAY}/files/${encodeURIComponent(fileId)}`);
+      u.searchParams.set('alt', 'media');
+      contentResp = await fetch(u.toString(), {
+        headers: { Authorization: `Bearer ${lovableKey}`, 'X-Connection-Api-Key': driveKey },
+      });
+    }
     if (!contentResp.ok) {
       const text = await contentResp.text().catch(() => '');
       console.error('[gdrive-ingest] content fail', contentResp.status, text);
+      // Drive returns 403 with "exportSizeLimitExceeded" for >10MB Docs exports.
+      if (isExport && /exportSizeLimitExceeded/i.test(text)) {
+        return jsonResponse(
+          { error: 'export_too_large', message: 'This Google Doc is too large to export (Drive limits exports to 10 MB).' },
+          413,
+        );
+      }
       return jsonResponse({ error: 'content_failed', message: `Could not read file content (${contentResp.status}).` }, 502);
     }
     const bytes = new Uint8Array(await contentResp.arrayBuffer());
-    if (bytes.byteLength > MAX_BYTES) {
-      return jsonResponse({ error: 'file_too_large', message: 'This file exceeds the 25 MB limit for now.' }, 413);
+    if (bytes.byteLength > sizeCap) {
+      return jsonResponse(
+        {
+          error: isExport ? 'export_too_large' : 'file_too_large',
+          message: isExport
+            ? 'This Google Doc is too large to export (Drive limits exports to 10 MB).'
+            : 'This file exceeds the 25 MB limit for now.',
+        },
+        413,
+      );
     }
+
+    // Recompute extension/mime if we exported (and possibly fell back)
+    const effectivePlan = isExport
+      ? { ...plan, ...planFromExportMime(effectiveExportMime!) }
+      : plan;
 
     // 3) Upload to Storage as service role.
     const admin = createClient(supaUrl, supaService, { auth: { persistSession: false } });
-    // Use the same bucket and path shape as useUploadDocuments.
     const projectIdForPath = containerType === 'project' ? containerId : 'notebooks';
     const newDocId = crypto.randomUUID();
-    const storagePath = `${userId}/${projectIdForPath}/${newDocId}.${plan.ext}`;
+    const storagePath = `${userId}/${projectIdForPath}/${newDocId}.${effectivePlan.ext}`;
     const safeName = (meta.name || 'untitled').replace(/[/\\\\]+/g, '_');
-    const fileName = safeName.toLowerCase().endsWith(`.${plan.ext}`)
+    const fileName = safeName.toLowerCase().endsWith(`.${effectivePlan.ext}`)
       ? safeName
-      : `${safeName}.${plan.ext}`;
+      : `${safeName}.${effectivePlan.ext}`;
 
     const { error: storageErr } = await admin.storage
       .from('insight-navigator')
-      .upload(storagePath, bytes, { contentType: plan.storedMime, upsert: false });
+      .upload(storagePath, bytes, { contentType: effectivePlan.storedMime, upsert: false });
     if (storageErr) {
       console.error('[gdrive-ingest] storage upload failed', storageErr.message);
       return jsonResponse({ error: 'storage_failed', message: storageErr.message }, 500);
     }
+
 
     // 4) Insert document row.
     const insertRow: Record<string, unknown> = {
@@ -181,8 +232,8 @@ Deno.serve(async (req: Request) => {
       notebook_id: containerType === 'notebook' ? containerId : null,
       chat_id: null,
       file_name: fileName,
-      file_type: plan.fileType,
-      mime_type: plan.storedMime,
+      file_type: effectivePlan.fileType,
+      mime_type: effectivePlan.storedMime,
       file_size: bytes.byteLength,
       storage_path: storagePath,
       processing_status: 'uploaded',
@@ -192,6 +243,7 @@ Deno.serve(async (req: Request) => {
       external_modified_at: meta.modifiedTime || null,
       external_metadata: {
         original_mime_type: meta.mimeType,
+        export_mime_type: effectiveExportMime || null,
         owner: meta.owners?.[0]?.displayName || meta.owners?.[0]?.emailAddress || null,
         parents: meta.parents || [],
       },
