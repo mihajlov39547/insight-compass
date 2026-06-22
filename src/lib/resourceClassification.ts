@@ -57,7 +57,7 @@ export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
 // ── Provider ─────────────────────────────────────────────────────────
 export type SourceProvider =
   | 'local_upload' | 'google_drive' | 'google_docs' | 'youtube' | 'dropbox'
-  | 'notion' | 'internal' | 'email_import' | 'unknown';
+  | 'notion' | 'internal' | 'email_import' | 'website' | 'unknown';
 
 // ── Container Types ──────────────────────────────────────────────────
 export type ContainerType = 'project' | 'notebook' | 'personal';
