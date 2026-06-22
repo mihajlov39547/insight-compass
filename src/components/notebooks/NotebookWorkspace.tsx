@@ -213,6 +213,13 @@ export function NotebookWorkspace() {
     return set;
   }, [resources, selectedNotebookId]);
 
+  const pinCtx = useMemo<PinContext | null>(
+    () => (selectedNotebookId ? { type: 'notebook', notebookId: selectedNotebookId } : null),
+    [selectedNotebookId],
+  );
+  const { data: pins } = usePinnedMessages(pinCtx);
+  const pinnedByMessageId = useMemo(() => buildPinnedByMessageId(pins), [pins]);
+
   const handleAddYouTubeToSources = async (source: SourceItem) => {
     if (!selectedNotebookId || !source.url) return;
     setAddingYouTubeUrl(source.url);
