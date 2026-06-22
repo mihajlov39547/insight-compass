@@ -20,6 +20,9 @@ interface NavItem {
   answerSize: 'sm' | 'md' | 'lg';
 }
 
+const SCROLL_OFFSET_PX = 24;
+const MAX_VISIBLE_ROWS = 100;
+
 function classifyAnswerSize(len: number): 'sm' | 'md' | 'lg' {
   if (len < 400) return 'sm';
   if (len < 1500) return 'md';
@@ -49,9 +52,17 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [scrollable, setScrollable] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const railRef = useRef<HTMLDivElement>(null);
+  const [focusIndex, setFocusIndex] = useState<number>(-1);
   const popoverRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<number | null>(null);
+  const rowRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  // Cap visible items, keep most-recent window when extremely long.
+  const visibleItems = useMemo<NavItem[]>(() => {
+    if (items.length <= MAX_VISIBLE_ROWS) return items;
+    return items.slice(items.length - MAX_VISIBLE_ROWS);
+  }, [items]);
+  const trimmedCount = items.length - visibleItems.length;
 
   // Track viewport
   useEffect(() => {
@@ -61,7 +72,7 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Detect scrollable
+  // Detect scrollable — observe both container and inner content
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -69,15 +80,23 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
     check();
     const ro = new ResizeObserver(check);
     ro.observe(el);
-    return () => ro.disconnect();
+    // Observe first child wrapper as well so newly streamed messages trigger update
+    const inner = el.firstElementChild as HTMLElement | null;
+    if (inner) ro.observe(inner);
+    const mo = new MutationObserver(check);
+    mo.observe(el, { childList: true, subtree: true, characterData: true });
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+    };
   }, [scrollContainerRef, items.length]);
 
   // IntersectionObserver to track which user message is closest to top
   useEffect(() => {
     const root = scrollContainerRef.current;
-    if (!root || items.length === 0) return;
+    if (!root || visibleItems.length === 0) return;
 
-    const visible = new Map<string, number>(); // id -> top offset within root
+    const visible = new Map<string, number>();
     const observer = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -91,7 +110,6 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
             visible.delete(id);
           }
         }
-        // Pick id with smallest |top| (closest to top edge)
         let best: { id: string; dist: number } | null = null;
         for (const [id, top] of visible) {
           const dist = Math.abs(top);
@@ -102,16 +120,12 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
       { root, threshold: [0, 0.25, 0.5, 1], rootMargin: '0px 0px -60% 0px' },
     );
 
-    const elements: HTMLElement[] = [];
-    for (const item of items) {
+    for (const item of visibleItems) {
       const el = root.querySelector<HTMLElement>(`[data-chat-turn-id="${CSS.escape(item.id)}"]`);
-      if (el) {
-        observer.observe(el);
-        elements.push(el);
-      }
+      if (el) observer.observe(el);
     }
     return () => observer.disconnect();
-  }, [scrollContainerRef, items]);
+  }, [scrollContainerRef, visibleItems]);
 
   const handleJump = useCallback(
     (id: string) => {
@@ -119,11 +133,17 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
       if (!root) return;
       const el = root.querySelector<HTMLElement>(`[data-chat-turn-id="${CSS.escape(id)}"]`);
       if (!el) return;
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Manual offset for comfortable spacing (avoids sticky header overlap)
+      const rootRect = root.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const target = root.scrollTop + (elRect.top - rootRect.top) - SCROLL_OFFSET_PX;
+      root.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
       setActiveId(id);
       el.classList.add('chat-turn-highlight');
       window.setTimeout(() => el.classList.remove('chat-turn-highlight'), 1500);
       onJumpToMessage?.(id);
+      // Close popover after jump (consistent behavior)
+      setPopoverOpen(false);
     },
     [scrollContainerRef, onJumpToMessage],
   );
@@ -141,15 +161,61 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
     closeTimer.current = window.setTimeout(() => setPopoverOpen(false), 180);
   };
 
-  // Escape closes popover
+  // Keyboard handling on the listbox
+  const onListKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setPopoverOpen(false);
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusIndex((prev) => {
+        const next = Math.min(visibleItems.length - 1, (prev < 0 ? -1 : prev) + 1);
+        rowRefs.current[next]?.focus();
+        return next;
+      });
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusIndex((prev) => {
+        const next = Math.max(0, (prev < 0 ? visibleItems.length : prev) - 1);
+        rowRefs.current[next]?.focus();
+        return next;
+      });
+      return;
+    }
+    if (e.key === 'Home') {
+      e.preventDefault();
+      rowRefs.current[0]?.focus();
+      setFocusIndex(0);
+      return;
+    }
+    if (e.key === 'End') {
+      e.preventDefault();
+      const last = visibleItems.length - 1;
+      rowRefs.current[last]?.focus();
+      setFocusIndex(last);
+      return;
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && focusIndex >= 0) {
+      e.preventDefault();
+      const it = visibleItems[focusIndex];
+      if (it) handleJump(it.id);
+    }
+  };
+
+  // Auto-focus first option when popover opens via keyboard tab into it
   useEffect(() => {
-    if (!popoverOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPopoverOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [popoverOpen]);
+    if (popoverOpen) {
+      // pre-position focus on active row
+      const idx = visibleItems.findIndex((i) => i.id === activeId);
+      setFocusIndex(idx >= 0 ? idx : -1);
+    } else {
+      setFocusIndex(-1);
+    }
+  }, [popoverOpen, activeId, visibleItems]);
 
   if (isMobile) return null;
   if (items.length < 3) return null;
@@ -162,11 +228,11 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
       onMouseLeave={scheduleClose}
     >
       <div
-        ref={railRef}
-        className="pointer-events-auto flex flex-col items-end gap-1.5 py-2 px-1"
+        className="pointer-events-auto flex flex-col items-end gap-1.5 py-2 px-1 max-h-full overflow-y-auto"
         aria-label="Chat question navigator"
+        role="navigation"
       >
-        {items.map((it) => {
+        {visibleItems.map((it) => {
           const active = it.id === activeId;
           const widthClass =
             it.answerSize === 'lg' ? 'w-5' : it.answerSize === 'md' ? 'w-4' : 'w-2.5';
@@ -177,13 +243,14 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
               type="button"
               aria-label={`Jump to question: ${it.fullText}`}
               onClick={() => handleJump(it.id)}
+              onFocus={openPopover}
               className={cn(
-                'rounded-full transition-all',
+                'rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 heightClass,
                 widthClass,
                 active
-                  ? 'bg-foreground/80 scale-110'
-                  : 'bg-muted-foreground/30 hover:bg-muted-foreground/60',
+                  ? 'bg-foreground/90 dark:bg-foreground scale-110'
+                  : 'bg-muted-foreground/20 hover:bg-muted-foreground/50 dark:bg-muted-foreground/25 dark:hover:bg-muted-foreground/60',
               )}
             />
           );
@@ -195,26 +262,37 @@ export function ChatQuestionNavigator({ messages, scrollContainerRef, onJumpToMe
           ref={popoverRef}
           onMouseEnter={openPopover}
           onMouseLeave={scheduleClose}
+          onKeyDown={onListKeyDown}
+          tabIndex={-1}
           className="pointer-events-auto absolute right-7 top-0 w-72 max-h-[60vh] overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 animate-fade-in"
           role="listbox"
+          aria-label="Previous questions"
+          aria-activedescendant={focusIndex >= 0 ? `chat-nav-opt-${visibleItems[focusIndex]?.id}` : undefined}
         >
-          <div className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-            Questions
+          <div className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide flex items-center justify-between">
+            <span>Questions</span>
+            {trimmedCount > 0 && (
+              <span className="normal-case text-[10px] text-muted-foreground/80">
+                showing last {visibleItems.length} of {items.length}
+              </span>
+            )}
           </div>
-          {items.map((it) => {
+          {visibleItems.map((it, idx) => {
             const active = it.id === activeId;
             return (
               <button
                 key={it.id}
+                id={`chat-nav-opt-${it.id}`}
+                ref={(el) => (rowRefs.current[idx] = el)}
                 type="button"
                 role="option"
                 aria-selected={active}
+                tabIndex={focusIndex === idx ? 0 : -1}
                 title={it.fullText}
-                onClick={() => {
-                  handleJump(it.id);
-                }}
+                onFocus={() => setFocusIndex(idx)}
+                onClick={() => handleJump(it.id)}
                 className={cn(
-                  'w-full text-left px-2 py-1.5 rounded-md text-xs truncate transition-colors',
+                  'w-full text-left px-2 py-1.5 rounded-md text-xs truncate transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   active
                     ? 'bg-accent/15 text-foreground font-medium'
                     : 'text-foreground/80 hover:bg-muted',
