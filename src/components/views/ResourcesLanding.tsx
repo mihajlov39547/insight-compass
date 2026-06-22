@@ -1196,6 +1196,10 @@ function AddSourceDialog({
   docFileId,
   docFileName,
   onDocSelect,
+  crawlInstructions,
+  crawlIncludeImages,
+  onCrawlInstructionsChange,
+  onCrawlIncludeImagesChange,
   onOpenChange,
   onUrlChange,
   onTitleChange,
@@ -1221,6 +1225,10 @@ function AddSourceDialog({
   docFileId: string | null;
   docFileName: string | null;
   onDocSelect: (file: GoogleDoc | null) => void;
+  crawlInstructions: string;
+  crawlIncludeImages: boolean;
+  onCrawlInstructionsChange: (value: string) => void;
+  onCrawlIncludeImagesChange: (value: boolean) => void;
   onOpenChange: (open: boolean) => void;
   onUrlChange: (value: string) => void;
   onTitleChange: (value: string) => void;
@@ -1234,6 +1242,7 @@ function AddSourceDialog({
   const isInternal = provider === 'internal';
   const isDrive = provider === 'google_drive';
   const isDocs = provider === 'google_docs';
+  const isWebsite = provider === 'unknown';
   const [isDragging, setIsDragging] = useState(false);
   const fileInputId = 'add-source-file-input';
 
