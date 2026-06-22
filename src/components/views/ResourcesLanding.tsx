@@ -1336,6 +1336,12 @@ function AddSourceDialog({
             onSelect={onDriveSelect}
             disabled={submitting}
           />
+        ) : isDocs ? (
+          <GoogleDocsPicker
+            selectedFileId={docFileId}
+            onSelect={onDocSelect}
+            disabled={submitting}
+          />
         ) : (
           <>
             <div className="space-y-2">
