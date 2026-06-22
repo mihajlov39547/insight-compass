@@ -1434,14 +1434,54 @@ function AddSourceDialog({
               />
             </div>
 
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.titleLabel')}</p>
-              <Input
-                value={title}
-                onChange={(e) => onTitleChange(e.target.value)}
-                placeholder={t('resources.addSourceDialog.titlePlaceholder')}
-              />
-            </div>
+            {!isWebsite && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.titleLabel')}</p>
+                <Input
+                  value={title}
+                  onChange={(e) => onTitleChange(e.target.value)}
+                  placeholder={t('resources.addSourceDialog.titlePlaceholder')}
+                />
+              </div>
+            )}
+
+            {isWebsite && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground" htmlFor="crawl-instructions">
+                    {t('resources.addSourceDialog.crawlInstructionsLabel')}
+                  </label>
+                  <Textarea
+                    id="crawl-instructions"
+                    value={crawlInstructions}
+                    onChange={(e) => onCrawlInstructionsChange(e.target.value)}
+                    placeholder={t('resources.addSourceDialog.crawlInstructionsPlaceholder')}
+                    rows={3}
+                    maxLength={1000}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('resources.addSourceDialog.crawlInstructionsHelper')}
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="crawl-include-images"
+                    checked={crawlIncludeImages}
+                    onCheckedChange={(v) => onCrawlIncludeImagesChange(v === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-0.5">
+                    <label htmlFor="crawl-include-images" className="text-xs font-medium text-foreground cursor-pointer">
+                      {t('resources.addSourceDialog.includeImagesLabel')}
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t('resources.addSourceDialog.includeImagesHelper')}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
