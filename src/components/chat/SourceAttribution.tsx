@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SourceCitationInspector } from './SourceCitationInspector';
+import { normalizeSourceItemToCitation, type CanonicalCitation } from '@/lib/citations';
 
 export interface SourceItem {
   id: string;
