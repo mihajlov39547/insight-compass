@@ -164,10 +164,14 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
     : allSourceItems;
 
   return (
-    <div className={cn(
-      "flex gap-3 animate-fade-in",
-      isUser ? "flex-row-reverse" : "flex-row"
-    )}>
+    <div
+      data-chat-turn-id={message.id}
+      data-chat-turn-role={message.role}
+      className={cn(
+        "flex gap-3 animate-fade-in",
+        isUser ? "flex-row-reverse" : "flex-row"
+      )}
+    >
       <Avatar className={cn(
         "h-8 w-8 shrink-0",
         isUser ? "bg-primary" : "bg-gradient-to-br from-accent to-accent/70"
