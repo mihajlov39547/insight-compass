@@ -427,6 +427,8 @@ export function ResourcesLanding() {
     setDriveFileName(null);
     setDocFileId(null);
     setDocFileName(null);
+    setCrawlInstructions('');
+    setCrawlIncludeImages(false);
   };
 
   const handleAddSource = async () => {
