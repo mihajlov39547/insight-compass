@@ -27,6 +27,7 @@ import { SharedLanding } from '@/components/views/SharedLanding';
 import { SearchDashboard } from '@/components/views/SearchDashboard';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/useApp';
+import { ChatSearchBridgeProvider } from '@/contexts/ChatSearchBridge';
 import { useCreateProject, useProjects } from '@/hooks/useProjects';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { toast } from 'sonner';
