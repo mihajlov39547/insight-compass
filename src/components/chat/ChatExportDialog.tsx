@@ -3,16 +3,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Download, Printer } from 'lucide-react';
+import { Download, FileDown, Loader2 } from 'lucide-react';
 import {
   buildChatMarkdownExport,
   buildExportFilename,
   downloadMarkdown,
-  openPrintPreview,
+  downloadChatPdf,
   type ChatExportOptions,
   type ChatMessageLike,
 } from '@/lib/chatExport';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 
 const APP_NAME = 'Researcher';
 
@@ -59,6 +60,9 @@ export function ChatExportDialog({
     pinnedMessageIds,
   };
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const { toast } = useToast();
+
   const handleMarkdown = () => {
     const md = buildChatMarkdownExport(baseArgs);
     const filename = buildExportFilename({ contextType, contextName, extension: 'md' });
@@ -66,9 +70,21 @@ export function ChatExportDialog({
     onOpenChange(false);
   };
 
-  const handlePrint = () => {
-    openPrintPreview(baseArgs);
-    onOpenChange(false);
+  const handlePdf = async () => {
+    setPdfLoading(true);
+    try {
+      await downloadChatPdf(baseArgs);
+      onOpenChange(false);
+    } catch (err) {
+      console.error('PDF export failed', err);
+      toast({
+        title: t('chatExport.pdfErrorTitle', 'Could not generate PDF'),
+        description: t('chatExport.pdfErrorDesc', 'Please try Markdown export instead.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   const Toggle = ({ id, label, hint, value, set }: { id: string; label: string; hint?: string; value: boolean; set: (v: boolean) => void }) => (
@@ -87,7 +103,7 @@ export function ChatExportDialog({
         <DialogHeader>
           <DialogTitle>{t('chatExport.title', 'Export conversation')}</DialogTitle>
           <DialogDescription>
-            {t('chatExport.description', 'Download a Markdown transcript or open a print-ready view to save as PDF.')}
+            {t('chatExport.description', 'Download this conversation as Markdown or PDF.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -103,13 +119,13 @@ export function ChatExportDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={handlePrint} className="gap-1.5">
-            <Printer className="h-4 w-4" />
-            {t('chatExport.openPrint', 'Open print preview')}
-          </Button>
-          <Button onClick={handleMarkdown} className="gap-1.5">
+          <Button variant="outline" onClick={handleMarkdown} className="gap-1.5">
             <Download className="h-4 w-4" />
             {t('chatExport.exportMd', 'Export Markdown')}
+          </Button>
+          <Button onClick={handlePdf} disabled={pdfLoading} className="gap-1.5">
+            {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+            {pdfLoading ? t('chatExport.generatingPdf', 'Generating PDF…') : t('chatExport.exportPdf', 'Download PDF')}
           </Button>
         </DialogFooter>
       </DialogContent>
