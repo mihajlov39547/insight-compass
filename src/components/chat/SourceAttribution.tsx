@@ -313,6 +313,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                 key={docId}
                 role="button"
                 tabIndex={0}
+                aria-label={t('citationInspector.inspectAria', { defaultValue: 'Inspect source: {{title}}', title: displayTitle }) as string}
                 onClick={() => openInspectorFor(primary)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
