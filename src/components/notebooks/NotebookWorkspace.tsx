@@ -893,6 +893,12 @@ export function NotebookWorkspace() {
                     </div>
                   </div>
 
+                  <ChatSearchControl
+                    mode="notebook"
+                    messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
+                    scrollContainerRef={chatViewportRef}
+                  />
+
                   {showChatScrollTop && (
                     <Button
                       variant="secondary"
