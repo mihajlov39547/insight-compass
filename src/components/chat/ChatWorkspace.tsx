@@ -345,6 +345,17 @@ export function ChatWorkspace() {
           scrollContainerRef={messagesViewportRef}
         />
 
+        {selectedProjectId && selectedChatId && (
+          <div className="absolute top-3 right-3 z-20 hidden md:block">
+            <PinnedMessagesPanel
+              ctx={{ type: 'project', projectId: selectedProjectId, chatId: selectedChatId }}
+              scrollContainerRef={messagesViewportRef}
+            />
+          </div>
+        )}
+
+
+
 
         {showScrollTop && (
           <Button
