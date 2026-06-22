@@ -31,9 +31,11 @@ interface ChatMessageProps {
   addingYouTubeUrl?: string | null;
   addedYouTubeUrls?: Set<string>;
   pinContext?: PinContext | null;
+  isPinned?: boolean;
+  pinId?: string | null;
 }
 
-export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls, pinContext }: ChatMessageProps) {
+export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls, pinContext, isPinned = false, pinId = null }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const { setActiveView, setSelectedProjectId } = useApp();
   const [copied, setCopied] = React.useState(false);
@@ -258,6 +260,8 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
               messageId={message.id}
               messageRole={message.role}
               content={message.content}
+              pinned={isPinned}
+              pinId={pinId}
             />
           )}
           {isUser && onDeletePair && (

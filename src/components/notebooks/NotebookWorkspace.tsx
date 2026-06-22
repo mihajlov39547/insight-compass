@@ -19,10 +19,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 import { ChatQuestionNavigator } from '@/components/chat/ChatQuestionNavigator';
-import { ChatSearchControl } from '@/components/chat/ChatSearchControl';
-import { PinnedMessagesPanel } from '@/components/chat/PinnedMessagesPanel';
+import { ChatFloatingTools } from '@/components/chat/ChatFloatingTools';
 import { MessagePinButton } from '@/components/chat/MessagePinButton';
-import type { PinContext } from '@/hooks/useMessagePins';
+import { usePinnedMessages, buildPinnedByMessageId, type PinContext } from '@/hooks/useMessagePins';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -213,6 +212,13 @@ export function NotebookWorkspace() {
     }
     return set;
   }, [resources, selectedNotebookId]);
+
+  const pinCtx = useMemo<PinContext | null>(
+    () => (selectedNotebookId ? { type: 'notebook', notebookId: selectedNotebookId } : null),
+    [selectedNotebookId],
+  );
+  const { data: pins } = usePinnedMessages(pinCtx);
+  const pinnedByMessageId = useMemo(() => buildPinnedByMessageId(pins), [pins]);
 
   const handleAddYouTubeToSources = async (source: SourceItem) => {
     if (!selectedNotebookId || !source.url) return;
@@ -845,7 +851,9 @@ export function NotebookWorkspace() {
                           onAddYouTubeToSources={msg.role === 'assistant' ? handleAddYouTubeToSources : undefined}
                           addingYouTubeUrl={addingYouTubeUrl}
                           addedYouTubeUrls={addedYouTubeUrls}
-                          pinContext={selectedNotebookId ? { type: 'notebook', notebookId: selectedNotebookId } : null}
+                          pinContext={pinCtx}
+                          isPinned={pinnedByMessageId.has(msg.id)}
+                          pinId={pinnedByMessageId.get(msg.id) ?? null}
                         />
                       ))
                     )}
@@ -897,20 +905,12 @@ export function NotebookWorkspace() {
                     </div>
                   </div>
 
-                  <div className="absolute top-3 right-12 md:right-14 z-20 hidden md:flex items-center gap-2">
-                    {selectedNotebookId && (
-                      <PinnedMessagesPanel
-                        ctx={{ type: 'notebook', notebookId: selectedNotebookId }}
-                        scrollContainerRef={chatViewportRef}
-                      />
-                    )}
-                    <ChatSearchControl
-                      mode="notebook"
-                      variant="inline"
-                      messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
-                      scrollContainerRef={chatViewportRef}
-                    />
-                  </div>
+                  <ChatFloatingTools
+                    pinCtx={pinCtx}
+                    searchMode="notebook"
+                    messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
+                    scrollContainerRef={chatViewportRef}
+                  />
 
                   {showChatScrollTop && (
                     <Button
@@ -1311,7 +1311,7 @@ export function NotebookWorkspace() {
 }
 
 /* --- Notebook Chat Message --- */
-function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls, pinContext }: {
+function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls, pinContext, isPinned = false, pinId = null }: {
   message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
@@ -1323,6 +1323,8 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
   addingYouTubeUrl?: string | null;
   addedYouTubeUrls?: Set<string>;
   pinContext?: PinContext | null;
+  isPinned?: boolean;
+  pinId?: string | null;
 }) {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
@@ -1420,6 +1422,8 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
               messageId={message.id}
               messageRole={message.role}
               content={message.content}
+              pinned={isPinned}
+              pinId={pinId}
             />
           )}
           {isUser && onDeletePair && (
