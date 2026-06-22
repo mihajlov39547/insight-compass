@@ -79,7 +79,7 @@ Deno.serve(async (req: Request) => {
     url.searchParams.set('q', buildQuery(body));
     url.searchParams.set(
       'fields',
-      'nextPageToken, files(id,name,mimeType,modifiedTime,size,owners(displayName,emailAddress),webViewLink,parents,iconLink)',
+      'nextPageToken, files(id,name,mimeType,modifiedTime,size,owners(displayName,emailAddress),webViewLink,parents,iconLink,capabilities(canDownload))',
     );
     url.searchParams.set('pageSize', String(Math.min(Number(body.pageSize) || 25, 50)));
     url.searchParams.set('orderBy', 'modifiedTime desc');
