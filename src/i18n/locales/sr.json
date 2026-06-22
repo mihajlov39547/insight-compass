@@ -1682,5 +1682,20 @@
     "invalidEmail": "Unesite ispravnu email adresu.",
     "subjectRequired": "Naslov je obavezan.",
     "messageRequired": "Poruka je obavezna."
+  },
+  "chatPins": {
+    "pin": "Zakači",
+    "unpin": "Otkači poruku",
+    "pinned": "Zakačeno",
+    "unpinAction": "Otkači",
+    "panelTitle": "Zakačene poruke",
+    "empty": "Još nema zakačenih poruka",
+    "emptyHint": "Zakačite važne trenutke kako biste ih kasnije brzo pronašli.",
+    "jump": "Idi na poruku",
+    "notLoaded": "Ova poruka trenutno nije učitana.",
+    "you": "Vi",
+    "assistant": "Asistent",
+    "toggleFailed": "Neuspešno ažuriranje zakačke",
+    "unpinFailed": "Neuspešno otkačivanje"
   }
 }
