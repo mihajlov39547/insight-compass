@@ -470,6 +470,10 @@ export type Database = {
           chat_id: string | null
           created_at: string
           detected_language: string | null
+          external_id: string | null
+          external_metadata: Json | null
+          external_modified_at: string | null
+          external_url: string | null
           file_name: string
           file_size: number
           file_type: string
@@ -482,6 +486,7 @@ export type Database = {
           processing_error: string | null
           processing_status: string
           project_id: string | null
+          provider: string
           retry_count: number
           storage_path: string
           summary: string | null
@@ -494,6 +499,10 @@ export type Database = {
           chat_id?: string | null
           created_at?: string
           detected_language?: string | null
+          external_id?: string | null
+          external_metadata?: Json | null
+          external_modified_at?: string | null
+          external_url?: string | null
           file_name: string
           file_size: number
           file_type: string
@@ -506,6 +515,7 @@ export type Database = {
           processing_error?: string | null
           processing_status?: string
           project_id?: string | null
+          provider?: string
           retry_count?: number
           storage_path: string
           summary?: string | null
@@ -518,6 +528,10 @@ export type Database = {
           chat_id?: string | null
           created_at?: string
           detected_language?: string | null
+          external_id?: string | null
+          external_metadata?: Json | null
+          external_modified_at?: string | null
+          external_url?: string | null
           file_name?: string
           file_size?: number
           file_type?: string
@@ -530,6 +544,7 @@ export type Database = {
           processing_error?: string | null
           processing_status?: string
           project_id?: string | null
+          provider?: string
           retry_count?: number
           storage_path?: string
           summary?: string | null
