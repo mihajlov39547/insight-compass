@@ -488,6 +488,7 @@ export type Database = {
           project_id: string | null
           provider: string
           retry_count: number
+          storage_mode: string
           storage_path: string
           summary: string | null
           updated_at: string
@@ -517,6 +518,7 @@ export type Database = {
           project_id?: string | null
           provider?: string
           retry_count?: number
+          storage_mode?: string
           storage_path: string
           summary?: string | null
           updated_at?: string
@@ -546,6 +548,7 @@ export type Database = {
           project_id?: string | null
           provider?: string
           retry_count?: number
+          storage_mode?: string
           storage_path?: string
           summary?: string | null
           updated_at?: string
