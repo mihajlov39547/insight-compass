@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles, ArrowUp, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
+import { ChatQuestionNavigator } from './ChatQuestionNavigator';
 import { useCreateChat, useChats } from '@/hooks/useChats';
 import { useDeleteMessagePair } from '@/hooks/useMessages';
 import { ChatInput } from './ChatInput';
