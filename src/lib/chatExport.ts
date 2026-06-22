@@ -299,7 +299,7 @@ function pdfInline(text: string): PdfContent[] {
     if (tok.startsWith("**")) {
       runs.push({ text: tok.slice(2, -2), bold: true });
     } else if (tok.startsWith("`")) {
-      runs.push({ text: tok.slice(1, -1) });
+      runs.push({ text: tok.slice(1, -1), background: "#f1f3f5" });
     } else if (tok.startsWith("[")) {
       const linkMatch = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(tok);
       if (linkMatch) {
