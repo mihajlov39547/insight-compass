@@ -768,6 +768,15 @@
     "share": "Podeli",
     "noDescription": "Nema opisa",
     "searchInChat": "Pretraži u ovom ćaskanju",
+    "searchInNotebook": "Pretraži u ovoj beležnici",
+    "searchNoResults": "Nema rezultata",
+    "searchPrev": "Prethodni rezultat",
+    "searchNext": "Sledeći rezultat",
+    "searchClear": "Obriši pretragu",
+    "searchResults": "Rezultati pretrage",
+    "searchYou": "Vi",
+    "searchAssistant": "Asistent",
+    "searchMore": "+{{count}} više",
     "features": {
       "documentAnalysis": {
         "title": "Analiza dokumenata",
