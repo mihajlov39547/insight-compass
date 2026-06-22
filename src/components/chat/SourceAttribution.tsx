@@ -384,11 +384,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                         toggleSelect(url);
                         return;
                       }
-                      if (isWeb && primary.url) {
-                        window.open(primary.url, '_blank', 'noopener,noreferrer');
-                        return;
-                      }
-                      onSourceClick?.(primary);
+                      openInspectorFor(primary);
                     }}
                   >
                     {isYouTube ? (
@@ -420,10 +416,21 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                     <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 h-4 font-normal">
                       {Math.round(primary.relevance * 100)}%
                     </Badge>
-                    {!selectMode && (isWeb || onSourceClick) && (
-                      <ExternalLink className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                    )}
                   </button>
+                  {/* Explicit open-original for web sources */}
+                  {!selectMode && isWeb && !!url && (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 inline-flex items-center px-1.5 py-1 rounded text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors"
+                      title="Open original"
+                      aria-label={`Open ${displayTitle}`}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
                   {/* Per-source Crawl trigger (web sources only, not in select mode) */}
                   {!selectMode && isWeb && !!url && !!onCrawl && (
                     <Popover
