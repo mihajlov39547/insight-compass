@@ -1969,18 +1969,19 @@ function ResourceDetailsDrawer({
                 <Globe className="h-3.5 w-3.5" /> {t('resources.actions.viewInPersonal')}
               </Button>
             )}
-            {resource.canDownload && (
+            {resource.storageMode !== 'external_reference' && resource.canDownload && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
-                {resource.provider === 'google_drive' || resource.provider === 'google_docs' ? (
-                  <>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {resource.provider === 'google_docs' ? 'Open in Google Docs' : 'Open in Google Drive'}
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
-                  </>
-                )}
+                <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
+              </Button>
+            )}
+            {resource.canOpenExternal && resource.storageMode === 'external_reference' && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
+                <ExternalLink className="h-3.5 w-3.5" />
+                {resource.provider === 'google_docs'
+                  ? 'Open in Google Docs'
+                  : resource.provider === 'google_drive'
+                    ? 'Open in Google Drive'
+                    : 'Open original'}
               </Button>
             )}
             {resource.canRename && (
