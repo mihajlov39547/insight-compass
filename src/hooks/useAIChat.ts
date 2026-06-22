@@ -6,7 +6,8 @@ import { DEFAULT_MODEL_ID } from '@/config/modelOptions';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { hybridRetrieve, toDocumentContext, toSources } from '@/hooks/useHybridRetrieval';
-import { trimChatHistory } from '@/lib/chatHistoryConfig';
+import { trimChatHistoryForPlan } from '@/lib/chatHistoryConfig';
+import { normalizePlan } from '@/types/app';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { searchWeb, type WebSearchResponse, type WebSearchResult } from '@/services/web-search';
 import { persistWebSearchResponse } from '@/services/web-search/persistWebSearch';
@@ -102,9 +103,9 @@ function toWebSources(results: WebSearchResult[]): UnifiedSource[] {
 }
 
 export function useAIChat({ chatId, chatName, projectId, projectDescription, responseLanguage }: UseAIChatOptions) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { data: userSettings } = useUserSettings();
-  const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
+  const subscriptionPlan = normalizePlan(profile?.plan);
   const responseLength = normalizeResponseLength(userSettings?.response_length);
   const responseLengthConfig = getResponseLengthConfig(responseLength);
   const qc = useQueryClient();
@@ -433,9 +434,10 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
         .eq('chat_id', chatId)
         .order('created_at', { ascending: true });
 
-      const contextMessages = trimChatHistory(
+      // Chat transcript history depth is determined by the user's subscription plan.
+      const contextMessages = trimChatHistoryForPlan(
         (history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
-        retrievalDepth
+        subscriptionPlan
       );
 
       // 4. Call AI edge function with document context
@@ -596,7 +598,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
       setResearchTrace(null);
       setWebSearchTrace(null);
     }
-  }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, responseLanguage, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
+  }, [user, chatId, chatName, projectId, isGenerating, qc, projectDescription, responseLanguage, subscriptionPlan, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
   const retry = useCallback(() => {
     if (failedPrompt) {
