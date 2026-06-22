@@ -83,7 +83,7 @@ export function buildExportFilename(args: {
   contextType: "project" | "notebook";
   contextName: string;
   date?: Date;
-  extension: "md" | "html";
+  extension: "md" | "html" | "pdf";
 }): string {
   const date = args.date ?? new Date();
   const dateStr = date.toISOString().slice(0, 10);
