@@ -280,312 +280,398 @@ export function downloadMarkdown(filename: string, markdown: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// ----- Minimal Markdown -> HTML converter for the print preview.
-// Intentionally tiny; escapes HTML first so no unsafe HTML is produced.
+// ============================================================
+// PDF export (lazy-loaded pdfmake, client-side, no popup).
+// ============================================================
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+type PdfContent = any; // pdfmake content nodes — shape is dynamic.
+
+function pdfInline(text: string): PdfContent[] {
+  // Convert inline markdown (bold, italic, code, links) into pdfmake text runs.
+  // Escapes nothing — pdfmake renders plain strings safely (no HTML).
+  const runs: PdfContent[] = [];
+  const re = /(\*\*[^*]+\*\*|\*[^*\n]+\*|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) runs.push({ text: text.slice(last, m.index) });
+    const tok = m[0];
+    if (tok.startsWith("**")) {
+      runs.push({ text: tok.slice(2, -2), bold: true });
+    } else if (tok.startsWith("`")) {
+      runs.push({ text: tok.slice(1, -1), font: "Courier" });
+    } else if (tok.startsWith("[")) {
+      const linkMatch = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(tok);
+      if (linkMatch) {
+        const [, label, href] = linkMatch;
+        const safe = /^(https?:|mailto:)/i.test(href) ? href : "";
+        runs.push(safe ? { text: label, link: safe, color: "#1d4ed8", decoration: "underline" } : { text: label });
+      }
+    } else {
+      runs.push({ text: tok.slice(1, -1), italics: true });
+    }
+    last = m.index + tok.length;
+  }
+  if (last < text.length) runs.push({ text: text.slice(last) });
+  return runs.length ? runs : [{ text }];
 }
 
-function renderInline(s: string): string {
-  let out = escapeHtml(s);
-  // code spans
-  out = out.replace(/`([^`]+)`/g, (_m, code) => `<code>${code}</code>`);
-  // bold
-  out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-  // italics
-  out = out.replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
-  // links [text](url)
-  out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, text, href) => {
-    const safeHref = /^(https?:|mailto:|\/|#)/i.test(href) ? href : "#";
-    return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-  });
-  return out;
-}
-
-export function markdownToSafeHtml(md: string): string {
-  if (!md) return "";
+function markdownToPdfContent(md: string): PdfContent[] {
+  if (!md) return [];
   const lines = md.replace(/\r\n/g, "\n").split("\n");
-  const html: string[] = [];
-  let inCode = false;
-  let codeLang = "";
-  let codeBuf: string[] = [];
-  let listType: "ul" | "ol" | null = null;
+  const out: PdfContent[] = [];
+  let i = 0;
   let para: string[] = [];
+  let listType: "ul" | "ol" | null = null;
+  let listItems: PdfContent[] = [];
 
   const flushPara = () => {
     if (para.length) {
-      html.push(`<p>${renderInline(para.join(" "))}</p>`);
+      out.push({ text: pdfInline(para.join(" ")), margin: [0, 2, 0, 4] });
       para = [];
     }
   };
-  const closeList = () => {
-    if (listType) {
-      html.push(`</${listType}>`);
-      listType = null;
+  const flushList = () => {
+    if (listType && listItems.length) {
+      out.push(listType === "ul" ? { ul: listItems, margin: [0, 2, 0, 4] } : { ol: listItems, margin: [0, 2, 0, 4] });
     }
+    listType = null;
+    listItems = [];
   };
 
-  for (const raw of lines) {
-    const line = raw;
-    if (inCode) {
-      if (/^```/.test(line)) {
-        html.push(`<pre><code${codeLang ? ` class="lang-${escapeHtml(codeLang)}"` : ""}>${escapeHtml(codeBuf.join("\n"))}</code></pre>`);
-        inCode = false;
-        codeBuf = [];
-        codeLang = "";
-      } else {
-        codeBuf.push(line);
-      }
-      continue;
-    }
-    const codeOpen = /^```(\w+)?\s*$/.exec(line);
-    if (codeOpen) {
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // fenced code
+    const codeFence = /^```(\w+)?\s*$/.exec(line);
+    if (codeFence) {
       flushPara();
-      closeList();
-      inCode = true;
-      codeLang = codeOpen[1] ?? "";
+      flushList();
+      const buf: string[] = [];
+      i++;
+      while (i < lines.length && !/^```/.test(lines[i])) {
+        buf.push(lines[i]);
+        i++;
+      }
+      i++;
+      out.push({
+        text: buf.join("\n"),
+        font: "Courier",
+        fontSize: 9,
+        background: "#f1f3f5",
+        margin: [0, 4, 0, 6],
+        preserveLeadingSpaces: true,
+      });
       continue;
     }
+
     if (/^\s*$/.test(line)) {
       flushPara();
-      closeList();
+      flushList();
+      i++;
       continue;
     }
+
     const h = /^(#{1,6})\s+(.*)$/.exec(line);
     if (h) {
       flushPara();
-      closeList();
+      flushList();
       const lvl = h[1].length;
-      html.push(`<h${lvl}>${renderInline(h[2])}</h${lvl}>`);
+      const sizes = [16, 14, 13, 12, 11, 11];
+      out.push({
+        text: pdfInline(h[2]),
+        fontSize: sizes[lvl - 1],
+        bold: true,
+        margin: [0, lvl === 1 ? 8 : 6, 0, 4],
+      });
+      i++;
       continue;
     }
+
     if (/^\s*>\s?/.test(line)) {
       flushPara();
-      closeList();
-      html.push(`<blockquote>${renderInline(line.replace(/^\s*>\s?/, ""))}</blockquote>`);
+      flushList();
+      out.push({
+        text: pdfInline(line.replace(/^\s*>\s?/, "")),
+        italics: true,
+        color: "#475569",
+        margin: [10, 2, 0, 4],
+      });
+      i++;
       continue;
     }
+
     const ul = /^\s*[-*+]\s+(.*)$/.exec(line);
     const ol = /^\s*\d+\.\s+(.*)$/.exec(line);
     if (ul || ol) {
       flushPara();
       const want: "ul" | "ol" = ul ? "ul" : "ol";
-      if (listType !== want) {
-        closeList();
-        html.push(`<${want}>`);
-        listType = want;
-      }
-      html.push(`<li>${renderInline((ul ?? ol)![1])}</li>`);
+      if (listType && listType !== want) flushList();
+      listType = want;
+      listItems.push({ text: pdfInline((ul ?? ol)![1]) });
+      i++;
       continue;
     }
+
     if (/^---+$/.test(line)) {
       flushPara();
-      closeList();
-      html.push("<hr/>");
+      flushList();
+      out.push({ canvas: [{ type: "line", x1: 0, y1: 2, x2: 515, y2: 2, lineWidth: 0.5, lineColor: "#cbd5e1" }], margin: [0, 4, 0, 4] });
+      i++;
       continue;
     }
+
     para.push(line.trim());
-  }
-  if (inCode) {
-    html.push(`<pre><code>${escapeHtml(codeBuf.join("\n"))}</code></pre>`);
+    i++;
   }
   flushPara();
-  closeList();
-  return html.join("\n");
+  flushList();
+  return out;
 }
 
-export interface OpenPrintPreviewArgs extends BuildExportArgs {
-  filename?: string;
+function buildRetrievalTraceLines(sources: unknown, citations: CanonicalCitation[]): string[] {
+  if (!sources || typeof sources !== "object" || Array.isArray(sources)) return [];
+  const s = sources as Record<string, unknown>;
+  const lines: string[] = [];
+  const augmentationMode = safeStr(s.augmentationMode);
+  if (augmentationMode) lines.push(`Mode: ${augmentationMode}`);
+  const wsr = s.webSearchResponse as Record<string, unknown> | undefined;
+  if (wsr && typeof wsr === "object") {
+    const provider = safeStr(wsr.provider) || safeStr(s.webSearchProvider);
+    if (provider) lines.push(`Web provider: ${provider}`);
+    if (safeStr(wsr.query)) lines.push(`Web query: ${safeStr(wsr.query)}`);
+    const results = Array.isArray(wsr.results) ? wsr.results.length : 0;
+    if (results) lines.push(`Web results: ${results}`);
+  } else if (safeStr(s.webSearchProvider)) {
+    lines.push(`Web provider: ${safeStr(s.webSearchProvider)}`);
+  }
+  if (safeStr(s.youtubeProvider)) lines.push(`YouTube provider: ${safeStr(s.youtubeProvider)}`);
+  if (safeStr(s.youtubeQuery)) lines.push(`YouTube query: ${safeStr(s.youtubeQuery)}`);
+  const crawl = s.crawl as Record<string, unknown> | undefined;
+  if (crawl && typeof crawl === "object") {
+    if (safeStr(crawl.rootUrl)) lines.push(`Crawl root: ${safeStr(crawl.rootUrl)}`);
+    const pageCount = Array.isArray(crawl.results) ? crawl.results.length : (typeof crawl.pageCount === "number" ? crawl.pageCount : null);
+    if (pageCount !== null) lines.push(`Crawl pages: ${pageCount}`);
+  }
+  if (citations.length) {
+    const byType = citations.reduce<Record<string, number>>((acc, c) => {
+      acc[c.source_type] = (acc[c.source_type] ?? 0) + 1;
+      return acc;
+    }, {});
+    lines.push(`Citation summary: ${Object.entries(byType).map(([k, v]) => `${k}:${v}`).join(", ")}`);
+  }
+  return lines;
 }
 
-export function openPrintPreview(args: OpenPrintPreviewArgs): void {
+function buildPdfDocDefinition(args: BuildExportArgs): any {
   const { appName, contextType, contextName, chatTitle, exportedByLabel, messages, options } = args;
   const exportedAt = new Date().toLocaleString();
-
   const assistantMessages = messages.filter(m => m.role === "assistant");
-  const totalSources = assistantMessages.reduce(
-    (sum, m) => sum + normalizeCitationsFromMessageSources(m.sources, { messageId: m.id }).length,
-    0,
+  const allCitations = assistantMessages.flatMap(m =>
+    normalizeCitationsFromMessageSources(m.sources, { messageId: m.id }),
   );
+
+  const content: PdfContent[] = [];
+
+  content.push({ text: `${appName} Research Export`, fontSize: 20, bold: true, margin: [0, 0, 0, 6] });
+  content.push({
+    text: `This export was generated from ${appName}. It contains the selected chat conversation, assistant responses, and source metadata available at export time.`,
+    fontSize: 10,
+    color: "#475569",
+    margin: [0, 0, 0, 10],
+  });
+
+  const metaRows: PdfContent[][] = [];
+  const pushMeta = (k: string, v: string) => metaRows.push([{ text: k, bold: true, fontSize: 10 }, { text: v, fontSize: 10 }]);
+  pushMeta("Exported at", exportedAt);
+  pushMeta("App", appName);
+  pushMeta(contextType === "project" ? "Project" : "Notebook", contextName);
+  if (chatTitle) pushMeta("Chat", chatTitle);
+  if (exportedByLabel) pushMeta("Exported by", exportedByLabel);
+  pushMeta("Messages", String(messages.length));
+  pushMeta("Sources", String(allCitations.length));
+
+  content.push({
+    table: { widths: ["auto", "*"], body: metaRows },
+    layout: {
+      hLineWidth: () => 0.3,
+      vLineWidth: () => 0,
+      hLineColor: () => "#e2e8f0",
+      paddingTop: () => 3,
+      paddingBottom: () => 3,
+    },
+    margin: [0, 0, 0, 16],
+  });
+
+  if (options.includePinnedSummary && args.pinnedMessageIds && args.pinnedMessageIds.length > 0) {
+    content.push({ text: "Pinned messages", fontSize: 13, bold: true, margin: [0, 4, 0, 6] });
+    args.pinnedMessageIds.forEach(id => {
+      const m = messages.find(mm => mm.id === id);
+      if (!m) return;
+      content.push({
+        text: [
+          { text: m.role === "user" ? "Question: " : "Answer: ", bold: true },
+          { text: trimSnippet(m.content, false) },
+        ],
+        fontSize: 10,
+        margin: [0, 0, 0, 3],
+      });
+    });
+    content.push({ text: "", margin: [0, 0, 0, 6] });
+  }
+
+  content.push({ text: "Conversation", fontSize: 14, bold: true, margin: [0, 6, 0, 8] });
 
   let qIndex = 0;
   let aIndex = 0;
-  const turnsHtml = messages
-    .map(m => {
-      const stamp = fmtDate(m.created_at);
-      if (m.role === "user") {
-        qIndex += 1;
-        return `
-          <section class="turn turn-user">
-            <div class="bubble bubble-user">
-              <header><span class="role">Q${qIndex} · User</span>${stamp ? `<span class="stamp">${escapeHtml(stamp)}</span>` : ""}</header>
-              <div class="content">${markdownToSafeHtml(m.content || "")}</div>
-            </div>
-          </section>`;
-      }
-      if (m.role !== "assistant") return "";
-      aIndex += 1;
-      const citations = normalizeCitationsFromMessageSources(m.sources, { messageId: m.id });
-      const sourcesHtml =
-        options.includeSources && citations.length
-          ? `<div class="sources">
-              <h4>Sources</h4>
-              <ol>
-                ${citations
-                  .map(c => {
-                    const url = c.url ?? c.external_url;
-                    const meta: string[] = [];
-                    meta.push(sourceTypeLabel(c.source_type));
-                    if (c.provider) meta.push(escapeHtml(c.provider));
-                    if (c.page !== null) meta.push(`p.${c.page}`);
-                    if (c.section) meta.push(escapeHtml(c.section));
-                    if (c.relevance !== null || c.score !== null) {
-                      const r = (c.relevance ?? c.score)!;
-                      meta.push(r <= 1 ? `${Math.round(r * 100)}%` : `${Math.round(r)}`);
-                    }
-                    if (c.match_type) meta.push(escapeHtml(c.match_type));
-                    const snippet =
-                      options.includeSourceSnippets && c.snippet
-                        ? `<div class="snippet">${markdownToSafeHtml(trimSnippet(c.snippet, options.includeFullCitationExcerpts))}</div>`
-                        : "";
-                    const titleHtml = url
-                      ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(c.title)}</a>`
-                      : escapeHtml(c.title);
-                    const urlHtml = url ? `<div class="url">${escapeHtml(url)}</div>` : "";
-                    return `<li class="source"><div class="title">${titleHtml}</div><div class="meta">${meta.join(" · ")}</div>${urlHtml}${snippet}</li>`;
-                  })
-                  .join("")}
-              </ol>
-            </div>`
-          : "";
-      const traceHtml =
-        options.includeRetrievalTraces
-          ? (() => {
-              const md = buildRetrievalMetadataMd(m.sources, citations);
-              return md ? `<div class="trace">${markdownToSafeHtml(md)}</div>` : "";
-            })()
-          : "";
-      return `
-        <section class="turn turn-assistant">
-          <div class="bubble bubble-assistant">
-            <header><span class="role">A${aIndex} · Assistant</span>${stamp ? `<span class="stamp">${escapeHtml(stamp)}</span>` : ""}${m.model_id ? `<span class="model">${escapeHtml(m.model_id)}</span>` : ""}</header>
-            <div class="content">${markdownToSafeHtml(m.content || "")}</div>
-            ${traceHtml}
-            ${sourcesHtml}
-          </div>
-        </section>`;
-    })
-    .join("\n");
-
-  const css = `
-    *,*::before,*::after { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color:#111; background:#f6f7f9; margin:0; padding:24px; line-height:1.55; }
-    .page { max-width: 880px; margin: 0 auto; }
-    .toolbar { position: sticky; top:0; background:#fff; border:1px solid #e3e6ea; border-radius:10px; padding:10px 14px; display:flex; gap:8px; align-items:center; justify-content:space-between; margin-bottom:18px; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
-    .toolbar button { font: inherit; cursor:pointer; padding:6px 12px; border:1px solid #d4d8de; background:#fff; border-radius:6px; }
-    .toolbar button.primary { background:#111; color:#fff; border-color:#111; }
-    .doc-header { background:#fff; border:1px solid #e3e6ea; border-radius:10px; padding:20px 24px; margin-bottom:18px; }
-    .doc-header h1 { margin:0 0 6px; font-size: 22px; }
-    .doc-header .intro { color:#475569; font-size:13px; margin:8px 0 14px; }
-    .meta-grid { display:grid; grid-template-columns: max-content 1fr; gap:4px 16px; font-size:12.5px; color:#334155; }
-    .meta-grid dt { font-weight:600; color:#0f172a; }
-    .meta-grid dd { margin:0; }
-    .turn { margin: 14px 0; display:flex; }
-    .turn-user { justify-content: flex-end; }
-    .turn-assistant { justify-content: flex-start; }
-    .bubble { border-radius: 14px; padding: 14px 16px; max-width: 78%; border:1px solid #e3e6ea; background:#fff; }
-    .bubble-user { background:#eef4ff; border-color:#cfdcf7; }
-    .bubble header { display:flex; gap:10px; align-items:baseline; font-size:11.5px; color:#64748b; margin-bottom:6px; }
-    .bubble header .role { font-weight:600; color:#0f172a; }
-    .content { font-size:14px; }
-    .content h1 { font-size:18px; margin:10px 0 6px; }
-    .content h2 { font-size:16px; margin:10px 0 6px; }
-    .content h3, .content h4 { font-size:14px; margin:8px 0 4px; }
-    .content p { margin: 6px 0; }
-    .content ul, .content ol { padding-left: 22px; margin:6px 0; }
-    .content code { background:#f1f3f5; padding:1px 5px; border-radius:4px; font-size: 12.5px; }
-    .content pre { background:#0f172a; color:#f8fafc; padding:10px 12px; border-radius:8px; overflow:auto; font-size:12px; }
-    .content pre code { background:transparent; color:inherit; padding:0; }
-    .content blockquote { border-left:3px solid #cbd5e1; margin: 6px 0; padding:2px 10px; color:#475569; }
-    .content a { color:#1d4ed8; }
-    .trace { margin-top:10px; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:12px; color:#334155; }
-    .trace h4 { margin:0 0 4px; font-size:12px; text-transform:uppercase; letter-spacing:0.04em; color:#475569; }
-    .sources { margin-top:12px; }
-    .sources h4 { font-size:12px; text-transform:uppercase; letter-spacing:0.04em; color:#475569; margin:6px 0 8px; }
-    .sources ol { padding-left:0; list-style:none; counter-reset: src; }
-    .source { counter-increment: src; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:8px; background:#fafbfc; page-break-inside: avoid; }
-    .source .title::before { content: counter(src) ". "; font-weight:600; color:#475569; }
-    .source .title { font-weight:500; }
-    .source .meta { font-size:11.5px; color:#64748b; margin-top:2px; }
-    .source .url { font-size:11px; color:#1d4ed8; word-break: break-all; margin-top:2px; }
-    .source .snippet { font-size:12px; color:#334155; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; margin-top:6px; }
-    footer.doc-footer { margin-top:24px; text-align:center; color:#94a3b8; font-size:11.5px; }
-
-    @media print {
-      @page { margin: 14mm; }
-      body { background:#fff; padding:0; color:#000; }
-      .toolbar { display:none !important; }
-      .page { max-width:none; }
-      .bubble { max-width:100%; border-color:#cbd5e1; box-shadow:none; }
-      .bubble-user { background:#f1f5f9; }
-      .turn { page-break-inside: avoid; }
-      .source { page-break-inside: avoid; }
-      a { color:#000; text-decoration: underline; }
-      .content a[href]::after { content: " (" attr(href) ")"; font-size: 0.85em; color:#475569; }
+  messages.forEach(m => {
+    const stamp = fmtDate(m.created_at);
+    if (m.role === "user") {
+      qIndex += 1;
+      content.push({
+        stack: [
+          { text: `Q${qIndex} — User${stamp ? `  ·  ${stamp}` : ""}`, fontSize: 10, bold: true, color: "#0f172a", margin: [0, 0, 0, 4] },
+          ...markdownToPdfContent(m.content || ""),
+        ],
+        margin: [0, 4, 0, 8],
+        unbreakable: false,
+      });
+      return;
     }
-  `;
+    if (m.role !== "assistant") return;
+    aIndex += 1;
+    const citations = normalizeCitationsFromMessageSources(m.sources, { messageId: m.id });
 
-  const html = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>${escapeHtml(appName)} Research Export — ${escapeHtml(contextName)}</title>
-  <style>${css}</style>
-</head>
-<body>
-  <div class="page">
-    <div class="toolbar">
-      <div><strong>${escapeHtml(appName)}</strong> Research Export</div>
-      <div>
-        <button onclick="window.close()">Close</button>
-        <button class="primary" onclick="window.print()">Print / Save as PDF</button>
-      </div>
-    </div>
-    <header class="doc-header">
-      <h1>${escapeHtml(appName)} Research Export</h1>
-      <p class="intro">This export was generated from ${escapeHtml(appName)}. It contains the selected chat conversation, assistant responses, and source metadata available at export time.</p>
-      <dl class="meta-grid">
-        <dt>Exported at</dt><dd>${escapeHtml(exportedAt)}</dd>
-        <dt>${contextType === "project" ? "Project" : "Notebook"}</dt><dd>${escapeHtml(contextName)}</dd>
-        ${chatTitle ? `<dt>Chat</dt><dd>${escapeHtml(chatTitle)}</dd>` : ""}
-        ${exportedByLabel ? `<dt>Exported by</dt><dd>${escapeHtml(exportedByLabel)}</dd>` : ""}
-        <dt>Messages</dt><dd>${messages.length}</dd>
-        <dt>Sources</dt><dd>${totalSources}</dd>
-      </dl>
-    </header>
-    <main>${turnsHtml}</main>
-    <footer class="doc-footer">${escapeHtml(appName)} · Generated ${escapeHtml(exportedAt)}</footer>
-  </div>
-</body>
-</html>`;
+    const block: PdfContent[] = [
+      {
+        text: `A${aIndex} — Assistant${stamp ? `  ·  ${stamp}` : ""}${m.model_id ? `  ·  ${m.model_id}` : ""}`,
+        fontSize: 10,
+        bold: true,
+        color: "#0f172a",
+        margin: [0, 0, 0, 4],
+      },
+      ...markdownToPdfContent(m.content || ""),
+    ];
 
-  const w = window.open("", "_blank", "noopener,noreferrer,width=900,height=1000");
-  if (!w) {
-    // Popup blocked — fall back to data URL download
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    window.location.href = url;
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-    return;
-  }
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+    if (options.includeRetrievalTraces) {
+      const trace = buildRetrievalTraceLines(m.sources, citations);
+      if (trace.length) {
+        block.push({
+          stack: [
+            { text: "Retrieval metadata", fontSize: 9, bold: true, color: "#475569", margin: [0, 0, 0, 2] },
+            ...trace.map(l => ({ text: l, fontSize: 9, color: "#334155" })),
+          ],
+          margin: [0, 4, 0, 4],
+        });
+      }
+    }
+
+    if (options.includeSources && citations.length) {
+      const srcStack: PdfContent[] = [
+        { text: `Sources for A${aIndex}`, fontSize: 10, bold: true, color: "#475569", margin: [0, 6, 0, 4] },
+      ];
+      citations.forEach((c, idx) => {
+        const url = c.url ?? c.external_url;
+        const meta: string[] = [sourceTypeLabel(c.source_type)];
+        if (c.provider) meta.push(c.provider);
+        if (c.page !== null) meta.push(`p.${c.page}`);
+        if (c.section) meta.push(c.section);
+        if (c.timestamp_start !== null) {
+          meta.push(c.timestamp_end !== null ? `${c.timestamp_start}–${c.timestamp_end}s` : `${c.timestamp_start}s`);
+        }
+        if (c.relevance !== null || c.score !== null) {
+          const r = (c.relevance ?? c.score)!;
+          meta.push(r <= 1 ? `${Math.round(r * 100)}%` : `${Math.round(r)}`);
+        }
+        if (c.match_type) meta.push(c.match_type);
+
+        const itemStack: PdfContent[] = [
+          {
+            text: [
+              { text: `${idx + 1}. `, bold: true },
+              url ? { text: c.title, link: url, color: "#1d4ed8", decoration: "underline" } : { text: c.title },
+            ],
+            fontSize: 10,
+          },
+          { text: meta.join(" · "), fontSize: 8.5, color: "#64748b", margin: [0, 1, 0, 0] },
+        ];
+        if (url) itemStack.push({ text: url, fontSize: 8, color: "#1d4ed8", margin: [0, 1, 0, 0] });
+        if (options.includeTechnicalIds) {
+          const ids: string[] = [];
+          if (c.document_id) ids.push(`document_id: ${c.document_id}`);
+          if (c.chunk_id) ids.push(`chunk_id: ${c.chunk_id}`);
+          if (c.chunk_index !== null) ids.push(`chunk_index: ${c.chunk_index}`);
+          if (c.resource_link_id) ids.push(`resource_link_id: ${c.resource_link_id}`);
+          if (ids.length) itemStack.push({ text: ids.join("  ·  "), fontSize: 8, font: "Courier", color: "#475569", margin: [0, 1, 0, 0] });
+        }
+        if (options.includeSourceSnippets && c.snippet) {
+          itemStack.push({
+            text: trimSnippet(c.snippet, options.includeFullCitationExcerpts),
+            fontSize: 9,
+            color: "#334155",
+            margin: [0, 3, 0, 0],
+            italics: true,
+          });
+        }
+        srcStack.push({ stack: itemStack, margin: [0, 0, 0, 6] });
+      });
+      block.push({ stack: srcStack });
+    }
+
+    content.push({ stack: block, margin: [0, 4, 0, 10] });
+  });
+
+  return {
+    info: {
+      title: `${appName} Research Export — ${contextName}`,
+      author: exportedByLabel || appName,
+      subject: chatTitle || `${contextType} chat export`,
+    },
+    pageSize: "A4",
+    pageMargins: [40, 50, 40, 50],
+    defaultStyle: { font: "Roboto", fontSize: 10, lineHeight: 1.35, color: "#111111" },
+    footer: (current: number, total: number) => ({
+      columns: [
+        { text: `${appName} · ${contextName}`, fontSize: 8, color: "#94a3b8", margin: [40, 0, 0, 0] },
+        { text: `Page ${current} / ${total}`, alignment: "right", fontSize: 8, color: "#94a3b8", margin: [0, 0, 40, 0] },
+      ],
+    }),
+    content,
+  };
 }
+
+let pdfMakeCache: any = null;
+async function loadPdfMake(): Promise<any> {
+  if (pdfMakeCache) return pdfMakeCache;
+  const [pdfMakeMod, vfsMod]: any[] = await Promise.all([
+    import("pdfmake/build/pdfmake"),
+    import("pdfmake/build/vfs_fonts"),
+  ]);
+  const pdfMake = pdfMakeMod.default ?? pdfMakeMod;
+  const vfs =
+    (vfsMod as any).default?.pdfMake?.vfs ??
+    (vfsMod as any).pdfMake?.vfs ??
+    (vfsMod as any).default?.vfs ??
+    (vfsMod as any).vfs;
+  if (vfs) pdfMake.vfs = vfs;
+  pdfMakeCache = pdfMake;
+  return pdfMake;
+}
+
+export async function downloadChatPdf(args: BuildExportArgs): Promise<void> {
+  const pdfMake = await loadPdfMake();
+  const docDef = buildPdfDocDefinition(args);
+  const filename = buildExportFilename({
+    contextType: args.contextType,
+    contextName: args.contextName,
+    extension: "pdf",
+  });
+  await new Promise<void>((resolve, reject) => {
+    try {
+      pdfMake.createPdf(docDef).download(filename, () => resolve());
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
