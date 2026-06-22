@@ -2156,12 +2156,41 @@ export async function finalizeDocumentStage(
     });
   }
 
+  // For external_reference sources (e.g. Google Drive/Docs), the bytes uploaded
+  // to Storage during ingestion are temporary — only the indexed chunks/embeddings
+  // are kept long-term. Delete the storage object now that processing succeeded.
+  let clearedStoragePath = false;
+  if (doc.storage_mode === "external_reference" && doc.storage_path) {
+    try {
+      const { error: removeErr } = await supabase.storage
+        .from("insight-navigator")
+        .remove([doc.storage_path]);
+      if (removeErr) {
+        console.warn(
+          `[finalize] failed to remove temp external_reference object ${doc.storage_path}: ${removeErr.message}`
+        );
+      } else {
+        clearedStoragePath = true;
+      }
+    } catch (err) {
+      console.warn(
+        `[finalize] unexpected error removing temp external_reference object`,
+        err
+      );
+    }
+  }
+
+  const completedUpdate: Record<string, unknown> = {
+    processing_status: "completed",
+    processing_error: null,
+  };
+  if (clearedStoragePath) {
+    completedUpdate.storage_path = null;
+  }
+
   const { error } = await supabase
     .from("documents")
-    .update({
-      processing_status: "completed",
-      processing_error: null,
-    })
+    .update(completedUpdate)
     .eq("id", documentId);
 
   if (error) {
