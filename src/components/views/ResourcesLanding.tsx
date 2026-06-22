@@ -42,6 +42,9 @@ import {
   useIngestGoogleDoc,
   type GoogleDoc,
 } from '@/hooks/useGoogleDocs';
+import { useIngestWebsiteCrawl } from '@/hooks/useWebsiteCrawl';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
