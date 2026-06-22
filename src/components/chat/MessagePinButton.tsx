@@ -2,7 +2,7 @@ import React from 'react';
 import { Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
-import { useIsMessagePinned, useToggleMessagePin, type PinContext } from '@/hooks/useMessagePins';
+import { useToggleMessagePin, type PinContext } from '@/hooks/useMessagePins';
 import { toast } from 'sonner';
 
 interface MessagePinButtonProps {
@@ -10,13 +10,24 @@ interface MessagePinButtonProps {
   messageId: string;
   messageRole: string;
   content: string;
+  /** Pre-resolved pin state from parent — avoids per-button query subscriptions. */
+  pinned: boolean;
+  pinId: string | null;
   className?: string;
   size?: 'sm' | 'md';
 }
 
-export function MessagePinButton({ ctx, messageId, messageRole, content, className, size = 'sm' }: MessagePinButtonProps) {
+export function MessagePinButton({
+  ctx,
+  messageId,
+  messageRole,
+  content,
+  pinned,
+  pinId,
+  className,
+  size = 'sm',
+}: MessagePinButtonProps) {
   const { t } = useTranslation();
-  const { pinned, pinId } = useIsMessagePinned(ctx, messageId);
   const toggle = useToggleMessagePin();
 
   if (!ctx) return null;
