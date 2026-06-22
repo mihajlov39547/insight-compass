@@ -252,6 +252,14 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
           <p className="text-[10px] text-muted-foreground">
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
+          {pinContext && (
+            <MessagePinButton
+              ctx={pinContext}
+              messageId={message.id}
+              messageRole={message.role}
+              content={message.content}
+            />
+          )}
           {isUser && onDeletePair && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
