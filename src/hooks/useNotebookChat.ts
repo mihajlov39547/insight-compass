@@ -106,9 +106,9 @@ function buildNotebookScopeRefusal(topicHint: string, reason: string, language?:
 }
 
 export function useNotebookAIChat({ notebookId, notebookName, notebookDescription, notebookLanguage }: UseNotebookAIChatOptions) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { data: userSettings } = useUserSettings();
-  const retrievalDepth = userSettings?.retrieval_depth ?? 'Medium';
+  const subscriptionPlan = normalizePlan(profile?.plan);
   const responseLength = normalizeResponseLength(userSettings?.response_length);
   const responseLengthConfig = getResponseLengthConfig(responseLength);
   const qc = useQueryClient();
@@ -350,9 +350,10 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         .eq('notebook_id', notebookId)
         .order('created_at', { ascending: true });
 
-      const contextMessages = trimChatHistory(
+      // Chat transcript history depth is determined by the user's subscription plan.
+      const contextMessages = trimChatHistoryForPlan(
         (history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
-        retrievalDepth
+        subscriptionPlan
       );
 
       // Build extra instruction for partially aligned questions
@@ -551,7 +552,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       setResearchTrace(null);
       setWebSearchTrace(null);
     }
-  }, [user, notebookId, notebookName, notebookDescription, notebookLanguage, isGenerating, qc, retrievalDepth, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
+  }, [user, notebookId, notebookName, notebookDescription, notebookLanguage, isGenerating, qc, subscriptionPlan, responseLength, responseLengthConfig.maxOutputTokens, responseLengthConfig.strategy]);
 
   const clearError = useCallback(() => setError(null), []);
 
