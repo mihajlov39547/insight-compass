@@ -29,6 +29,13 @@ import {
   useRetryResourceProcessing,
   type ResourceActionInput,
 } from '@/hooks/useResourceActions';
+import {
+  useGoogleDriveSearch,
+  useIngestGoogleDriveFile,
+  type DriveFile,
+  type DriveMimeFilter,
+  SUPPORTED_DRIVE_MIME_LABELS,
+} from '@/hooks/useGoogleDrive';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
@@ -135,6 +142,9 @@ export function ResourcesLanding() {
   const [linkContainerType, setLinkContainerType] = useState<ContainerType>('project');
   const [linkContainerId, setLinkContainerId] = useState<string | null>(null);
   const [linkFiles, setLinkFiles] = useState<File[]>([]);
+  const [driveFileId, setDriveFileId] = useState<string | null>(null);
+  const [driveFileName, setDriveFileName] = useState<string | null>(null);
+  const ingestDriveMutation = useIngestGoogleDriveFile();
 
   // ── Stats ───────────────────────────────────────────────────────
   const totalCount = resources.length;
@@ -384,6 +394,8 @@ export function ResourcesLanding() {
     setLinkContainerType('project');
     setLinkContainerId(null);
     setLinkFiles([]);
+    setDriveFileId(null);
+    setDriveFileName(null);
   };
 
   const handleAddSource = async () => {
@@ -428,6 +440,30 @@ export function ResourcesLanding() {
         resetAddSourceDialog();
       } catch (err: any) {
         toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+      }
+      return;
+    }
+
+    if (linkProvider === 'google_drive') {
+      if (!driveFileId) {
+        toast({ title: 'Add source failed', description: 'Pick a Google Drive file first.', variant: 'destructive' });
+        return;
+      }
+      try {
+        const result = await ingestDriveMutation.mutateAsync({
+          fileId: driveFileId,
+          containerType: linkContainerType === 'notebook' ? 'notebook' : 'project',
+          containerId: linkContainerId,
+        });
+        toast({
+          title: 'Source added',
+          description: `${result.title} is being processed and will appear in Resources shortly.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['resources'] });
+        setAddSourceOpen(false);
+        resetAddSourceDialog();
+      } catch (err: any) {
+        toast({ title: 'Add source failed', description: err?.message || 'Could not add Drive file.', variant: 'destructive' });
       }
       return;
     }
@@ -683,9 +719,15 @@ export function ResourcesLanding() {
         containerId={linkContainerId}
         projects={projects.map((p) => ({ id: p.id, name: p.name }))}
         notebooks={notebooks.map((n) => ({ id: n.id, name: n.name }))}
-        submitting={createLinkMutation.isPending || uploadMutation.isPending}
+        submitting={createLinkMutation.isPending || uploadMutation.isPending || ingestDriveMutation.isPending}
         files={linkFiles}
         onFilesChange={setLinkFiles}
+        driveFileId={driveFileId}
+        driveFileName={driveFileName}
+        onDriveSelect={(file) => {
+          setDriveFileId(file?.id ?? null);
+          setDriveFileName(file?.name ?? null);
+        }}
         onOpenChange={(open) => {
           setAddSourceOpen(open);
           if (!open) resetAddSourceDialog();
@@ -1036,6 +1078,9 @@ function AddSourceDialog({
   submitting,
   files,
   onFilesChange,
+  driveFileId,
+  driveFileName,
+  onDriveSelect,
   onOpenChange,
   onUrlChange,
   onTitleChange,
@@ -1055,6 +1100,9 @@ function AddSourceDialog({
   submitting: boolean;
   files: File[];
   onFilesChange: (files: File[]) => void;
+  driveFileId: string | null;
+  driveFileName: string | null;
+  onDriveSelect: (file: DriveFile | null) => void;
   onOpenChange: (open: boolean) => void;
   onUrlChange: (value: string) => void;
   onTitleChange: (value: string) => void;
@@ -1066,15 +1114,16 @@ function AddSourceDialog({
   const { t } = useTranslation();
   const targetOptions = containerType === 'project' ? projects : notebooks;
   const isInternal = provider === 'internal';
+  const isDrive = provider === 'google_drive';
   const [isDragging, setIsDragging] = useState(false);
   const fileInputId = 'add-source-file-input';
 
-  const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal']);
+  const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal', 'google_drive']);
 
   const providerOptions: Array<{ value: string; labelKey: string; implemented: boolean }> = [
     { value: 'unknown', labelKey: 'anyUrl', implemented: true },
     { value: 'youtube', labelKey: 'youtube', implemented: true },
-    { value: 'google_drive', labelKey: 'googleDrive', implemented: false },
+    { value: 'google_drive', labelKey: 'googleDrive', implemented: true },
     { value: 'dropbox', labelKey: 'dropbox', implemented: false },
     { value: 'notion', labelKey: 'notion', implemented: false },
     { value: 'internal', labelKey: 'internal', implemented: true },
@@ -1093,11 +1142,13 @@ function AddSourceDialog({
 
   const canSubmit = isInternal
     ? files.some((f) => isFileAllowed(f.name)) && !!containerId
-    : !!url.trim() && !!containerId;
+    : isDrive
+      ? !!driveFileId && !!containerId
+      : !!url.trim() && !!containerId;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <DialogTitle>{t('resources.addSourceDialog.title')}</DialogTitle>
@@ -1229,6 +1280,12 @@ function AddSourceDialog({
               </div>
             )}
           </div>
+        ) : isDrive ? (
+          <GoogleDrivePicker
+            selectedFileId={driveFileId}
+            onSelect={onDriveSelect}
+            disabled={submitting}
+          />
         ) : (
           <>
             <div className="space-y-2">
@@ -1280,6 +1337,162 @@ function AddSourceDialog({
     </Dialog>
   );
 }
+
+function GoogleDrivePicker({
+  selectedFileId,
+  onSelect,
+  disabled,
+}: {
+  selectedFileId: string | null;
+  onSelect: (file: DriveFile | null) => void;
+  disabled?: boolean;
+}) {
+  const [rawQuery, setRawQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [filter, setFilter] = useState<DriveMimeFilter>('all');
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(rawQuery.trim()), 300);
+    return () => clearTimeout(t);
+  }, [rawQuery]);
+
+  const { data: files = [], isLoading, error, refetch, isFetching } = useGoogleDriveSearch({
+    query: debouncedQuery,
+    mimeFilter: filter,
+    enabled: true,
+  });
+
+  const errCode: string | undefined = (error as any)?.code;
+  const notConnected = errCode === 'google_drive_not_connected';
+  const permissionDenied = errCode === 'google_drive_permission_denied';
+
+  const filterChips: Array<{ value: DriveMimeFilter; label: string }> = [
+    { value: 'all', label: 'All' },
+    { value: 'docs', label: 'Docs' },
+    { value: 'pdf', label: 'PDFs' },
+    { value: 'text', label: 'Text & DOCX' },
+  ];
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={rawQuery}
+            onChange={(e) => setRawQuery(e.target.value)}
+            placeholder="Search Google Drive"
+            className="h-9 pl-7 text-sm"
+            disabled={disabled || notConnected}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {filterChips.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            onClick={() => setFilter(c.value)}
+            disabled={disabled || notConnected}
+            className={cn(
+              'text-[11px] px-2 py-0.5 rounded-full border transition-colors',
+              filter === c.value
+                ? 'bg-accent text-accent-foreground border-accent'
+                : 'bg-card text-muted-foreground border-border hover:border-accent/50',
+            )}
+          >
+            {c.label}
+          </button>
+        ))}
+        {isFetching && !isLoading && (
+          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-auto" />
+        )}
+      </div>
+
+      <div className="border border-border rounded-md max-h-[260px] overflow-auto bg-card">
+        {notConnected ? (
+          <div className="p-4 text-center text-xs">
+            <p className="text-foreground font-medium mb-1">Google Drive isn't connected</p>
+            <p className="text-muted-foreground">
+              Ask the workspace owner to connect Google Drive in project settings, then try again.
+            </p>
+          </div>
+        ) : permissionDenied ? (
+          <div className="p-4 text-center text-xs">
+            <p className="text-foreground font-medium mb-1">Drive access denied</p>
+            <p className="text-muted-foreground">Reconnect Google Drive with read access and retry.</p>
+          </div>
+        ) : isLoading ? (
+          <div className="p-6 flex items-center justify-center">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : error ? (
+          <div className="p-4 text-center text-xs">
+            <p className="text-destructive mb-2">{(error as any)?.message || 'Drive search failed.'}</p>
+            <Button size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
+          </div>
+        ) : files.length === 0 ? (
+          <div className="p-6 text-center text-xs text-muted-foreground">
+            {debouncedQuery ? 'No files match this search.' : 'Type to search your Drive, or pick from recent files above.'}
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {files.map((f) => {
+              const selected = f.id === selectedFileId;
+              const label = SUPPORTED_DRIVE_MIME_LABELS[f.mimeType] || f.mimeType;
+              return (
+                <li key={f.id}>
+                  <button
+                    type="button"
+                    disabled={disabled || !f.supported}
+                    onClick={() => onSelect(selected ? null : f)}
+                    className={cn(
+                      'w-full text-left px-3 py-2 flex items-start gap-2 text-xs transition-colors',
+                      selected ? 'bg-accent/10' : 'hover:bg-muted/50',
+                      !f.supported && 'opacity-60 cursor-not-allowed',
+                    )}
+                  >
+                    <span className={cn(
+                      'mt-0.5 h-3.5 w-3.5 rounded-full border shrink-0',
+                      selected ? 'bg-accent border-accent' : 'border-muted-foreground/40',
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">{f.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        <span>{label}</span>
+                        {f.owner && <> · {f.owner}</>}
+                        {f.modifiedTime && <> · {new Date(f.modifiedTime).toLocaleDateString()}</>}
+                        {!f.supported && <> · Not supported yet</>}
+                      </p>
+                    </div>
+                    {f.webViewLink && (
+                      <a
+                        href={f.webViewLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-muted-foreground hover:text-foreground shrink-0"
+                        title="Open in Drive"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+      <p className="text-[10.5px] text-muted-foreground">
+        Read-only. Supports Google Docs, PDFs, plain text, Markdown, and DOCX up to 25 MB.
+      </p>
+    </div>
+  );
+}
+
+
 
 function PermissionRow({ label, enabled }: { label: string; enabled: boolean }) {
   const { t } = useTranslation();
