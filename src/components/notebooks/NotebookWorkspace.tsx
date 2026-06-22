@@ -851,7 +851,9 @@ export function NotebookWorkspace() {
                           onAddYouTubeToSources={msg.role === 'assistant' ? handleAddYouTubeToSources : undefined}
                           addingYouTubeUrl={addingYouTubeUrl}
                           addedYouTubeUrls={addedYouTubeUrls}
-                          pinContext={selectedNotebookId ? { type: 'notebook', notebookId: selectedNotebookId } : null}
+                          pinContext={pinCtx}
+                          isPinned={pinnedByMessageId.has(msg.id)}
+                          pinId={pinnedByMessageId.get(msg.id) ?? null}
                         />
                       ))
                     )}
