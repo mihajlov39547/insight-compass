@@ -444,6 +444,30 @@ export function ResourcesLanding() {
       return;
     }
 
+    if (linkProvider === 'google_drive') {
+      if (!driveFileId) {
+        toast({ title: 'Add source failed', description: 'Pick a Google Drive file first.', variant: 'destructive' });
+        return;
+      }
+      try {
+        const result = await ingestDriveMutation.mutateAsync({
+          fileId: driveFileId,
+          containerType: linkContainerType,
+          containerId: linkContainerId,
+        });
+        toast({
+          title: 'Source added',
+          description: `${result.title} is being processed and will appear in Resources shortly.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['resources'] });
+        setAddSourceOpen(false);
+        resetAddSourceDialog();
+      } catch (err: any) {
+        toast({ title: 'Add source failed', description: err?.message || 'Could not add Drive file.', variant: 'destructive' });
+      }
+      return;
+    }
+
     if (!linkUrl.trim()) {
       toast({ title: 'Add source failed', description: 'URL is required.', variant: 'destructive' });
       return;
