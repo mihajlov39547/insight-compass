@@ -491,8 +491,8 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
                       className="shrink-0 inline-flex items-center px-1.5 py-1 rounded text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors"
-                      title="Open original"
-                      aria-label={`Open ${displayTitle}`}
+                      title={t('citationInspector.openOriginal', { defaultValue: 'Open original' }) as string}
+                      aria-label={t('citationInspector.openOriginalAria', { defaultValue: 'Open original source: {{title}}', title: displayTitle }) as string}
                     >
                       <ExternalLink className="h-3 w-3" />
                     </a>
