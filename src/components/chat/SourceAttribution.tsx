@@ -293,6 +293,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                       href={ytUrl || '#'}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="block hover:underline"
                     >
                       <p className="text-xs font-medium text-foreground line-clamp-2 leading-snug">
