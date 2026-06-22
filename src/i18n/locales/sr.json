@@ -623,6 +623,11 @@
       "urlPlaceholder": "https://example.com/resource",
       "titleLabel": "Naslov (opciono)",
       "titlePlaceholder": "Čitljiv naslov resursa",
+      "crawlInstructionsLabel": "Uputstva za kroler",
+      "crawlInstructionsPlaceholder": "Uputstva u prirodnom jeziku koja vode kroler.",
+      "crawlInstructionsHelper": "Opcionо. Koristite za fokus na određene teme, dokumentaciju, cene, SDK-ove, FAQ itd.",
+      "includeImagesLabel": "Uključi slike",
+      "includeImagesHelper": "Čuvaju se samo URL-ovi slika kao metapodaci. Same slike ostaju na izvornom sajtu.",
       "provider": "Provajder",
       "providers": {
         "anyUrl": "Veb sajt",

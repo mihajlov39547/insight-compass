@@ -42,6 +42,9 @@ import {
   useIngestGoogleDoc,
   type GoogleDoc,
 } from '@/hooks/useGoogleDocs';
+import { useIngestWebsiteCrawl } from '@/hooks/useWebsiteCrawl';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
@@ -152,8 +155,11 @@ export function ResourcesLanding() {
   const [driveFileName, setDriveFileName] = useState<string | null>(null);
   const [docFileId, setDocFileId] = useState<string | null>(null);
   const [docFileName, setDocFileName] = useState<string | null>(null);
+  const [crawlInstructions, setCrawlInstructions] = useState('');
+  const [crawlIncludeImages, setCrawlIncludeImages] = useState(false);
   const ingestDriveMutation = useIngestGoogleDriveFile();
   const ingestDocMutation = useIngestGoogleDoc();
+  const ingestWebsiteMutation = useIngestWebsiteCrawl();
 
   // ── Stats ───────────────────────────────────────────────────────
   const totalCount = resources.length;
@@ -421,6 +427,8 @@ export function ResourcesLanding() {
     setDriveFileName(null);
     setDocFileId(null);
     setDocFileName(null);
+    setCrawlInstructions('');
+    setCrawlIncludeImages(false);
   };
 
   const handleAddSource = async () => {
@@ -522,25 +530,58 @@ export function ResourcesLanding() {
       return;
     }
 
-    createLinkMutation.mutate(
-      {
-        url: linkUrl,
-        title: linkTitle || undefined,
-        provider: linkProvider,
-        containerType: linkContainerType,
-        containerId: linkContainerId,
-      },
-      {
-        onSuccess: () => {
-          toast({ title: 'Source added', description: 'Your resource now appears in Resources.' });
-          setAddSourceOpen(false);
-          resetAddSourceDialog();
+    // YouTube and other URL-based providers keep using the legacy link stub.
+    if (linkProvider !== 'unknown') {
+      createLinkMutation.mutate(
+        {
+          url: linkUrl,
+          title: linkTitle || undefined,
+          provider: linkProvider,
+          containerType: linkContainerType,
+          containerId: linkContainerId,
         },
-        onError: (err: any) => {
-          toast({ title: 'Add source failed', description: err.message, variant: 'destructive' });
+        {
+          onSuccess: () => {
+            toast({ title: 'Source added', description: 'Your resource now appears in Resources.' });
+            setAddSourceOpen(false);
+            resetAddSourceDialog();
+          },
+          onError: (err: any) => {
+            toast({ title: 'Add source failed', description: err.message, variant: 'destructive' });
+          },
         },
-      },
-    );
+      );
+      return;
+    }
+
+
+    // Website provider: crawl the root URL with Tavily and ingest as a document.
+    try {
+      const result = await ingestWebsiteMutation.mutateAsync({
+        url: linkUrl.trim(),
+        instructions: crawlInstructions.trim() || undefined,
+        includeImages: crawlIncludeImages,
+        containerType: linkContainerType === 'notebook' ? 'notebook' : 'project',
+        containerId: linkContainerId!,
+      });
+      toast({
+        title: 'Website added',
+        description: `Crawled ${result.pages} page${result.pages === 1 ? '' : 's'}. Indexing now — it will appear in Resources shortly.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      setAddSourceOpen(false);
+      resetAddSourceDialog();
+    } catch (err: any) {
+      const code = err?.code as string | undefined;
+      const friendly =
+        code === 'invalid_url' ? 'Provide a public http(s) URL. Local or private addresses are not allowed.' :
+        code === 'forbidden' ? 'You do not have edit access to this workspace.' :
+        code === 'crawl_rate_limited' ? 'The crawler is busy right now. Try again shortly.' :
+        code === 'no_content' ? 'No crawlable content was found at this URL.' :
+        code === 'crawl_failed' ? 'The website could not be crawled. It may be unreachable.' :
+        err?.message || 'Could not add website.';
+      toast({ title: 'Add source failed', description: friendly, variant: 'destructive' });
+    }
   };
 
   return (
@@ -768,7 +809,7 @@ export function ResourcesLanding() {
         containerId={linkContainerId}
         projects={projects.map((p) => ({ id: p.id, name: p.name }))}
         notebooks={notebooks.map((n) => ({ id: n.id, name: n.name }))}
-        submitting={createLinkMutation.isPending || uploadMutation.isPending || ingestDriveMutation.isPending || ingestDocMutation.isPending}
+        submitting={createLinkMutation.isPending || uploadMutation.isPending || ingestDriveMutation.isPending || ingestDocMutation.isPending || ingestWebsiteMutation.isPending}
         files={linkFiles}
         onFilesChange={setLinkFiles}
         driveFileId={driveFileId}
@@ -783,6 +824,10 @@ export function ResourcesLanding() {
           setDocFileId(file?.id ?? null);
           setDocFileName(file?.name ?? null);
         }}
+        crawlInstructions={crawlInstructions}
+        crawlIncludeImages={crawlIncludeImages}
+        onCrawlInstructionsChange={setCrawlInstructions}
+        onCrawlIncludeImagesChange={setCrawlIncludeImages}
         onOpenChange={(open) => {
           setAddSourceOpen(open);
           if (!open) resetAddSourceDialog();
@@ -1151,6 +1196,10 @@ function AddSourceDialog({
   docFileId,
   docFileName,
   onDocSelect,
+  crawlInstructions,
+  crawlIncludeImages,
+  onCrawlInstructionsChange,
+  onCrawlIncludeImagesChange,
   onOpenChange,
   onUrlChange,
   onTitleChange,
@@ -1176,6 +1225,10 @@ function AddSourceDialog({
   docFileId: string | null;
   docFileName: string | null;
   onDocSelect: (file: GoogleDoc | null) => void;
+  crawlInstructions: string;
+  crawlIncludeImages: boolean;
+  onCrawlInstructionsChange: (value: string) => void;
+  onCrawlIncludeImagesChange: (value: boolean) => void;
   onOpenChange: (open: boolean) => void;
   onUrlChange: (value: string) => void;
   onTitleChange: (value: string) => void;
@@ -1189,6 +1242,7 @@ function AddSourceDialog({
   const isInternal = provider === 'internal';
   const isDrive = provider === 'google_drive';
   const isDocs = provider === 'google_docs';
+  const isWebsite = provider === 'unknown';
   const [isDragging, setIsDragging] = useState(false);
   const fileInputId = 'add-source-file-input';
 
@@ -1380,14 +1434,54 @@ function AddSourceDialog({
               />
             </div>
 
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.titleLabel')}</p>
-              <Input
-                value={title}
-                onChange={(e) => onTitleChange(e.target.value)}
-                placeholder={t('resources.addSourceDialog.titlePlaceholder')}
-              />
-            </div>
+            {!isWebsite && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.titleLabel')}</p>
+                <Input
+                  value={title}
+                  onChange={(e) => onTitleChange(e.target.value)}
+                  placeholder={t('resources.addSourceDialog.titlePlaceholder')}
+                />
+              </div>
+            )}
+
+            {isWebsite && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground" htmlFor="crawl-instructions">
+                    {t('resources.addSourceDialog.crawlInstructionsLabel')}
+                  </label>
+                  <Textarea
+                    id="crawl-instructions"
+                    value={crawlInstructions}
+                    onChange={(e) => onCrawlInstructionsChange(e.target.value)}
+                    placeholder={t('resources.addSourceDialog.crawlInstructionsPlaceholder')}
+                    rows={3}
+                    maxLength={1000}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('resources.addSourceDialog.crawlInstructionsHelper')}
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="crawl-include-images"
+                    checked={crawlIncludeImages}
+                    onCheckedChange={(v) => onCrawlIncludeImagesChange(v === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-0.5">
+                    <label htmlFor="crawl-include-images" className="text-xs font-medium text-foreground cursor-pointer">
+                      {t('resources.addSourceDialog.includeImagesLabel')}
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t('resources.addSourceDialog.includeImagesHelper')}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
