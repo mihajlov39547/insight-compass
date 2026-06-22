@@ -184,6 +184,7 @@ Deno.serve(async (req: Request) => {
         containerType,
         containerId,
       },
+      storage_mode: 'external_reference',
     };
 
     const { data: inserted, error: insertErr } = await admin

@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useResources } from '@/hooks/useResources';
+import { supabase } from '@/integrations/supabase/client';
 import {
   downloadResourceFromStorage,
   useCreateLinkResource,
@@ -317,6 +318,29 @@ export function ResourcesLanding() {
   const handleDownload = async (resource: Resource) => {
     if (!resource.canDownload) return;
     try {
+      // For Google Drive/Docs sources we don't keep a permanent Storage copy —
+      // the original file lives in Google. Open the source link instead.
+      if (resource.provider === 'google_drive' || resource.provider === 'google_docs') {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('external_url, storage_mode, storage_path')
+          .eq('id', resource.id)
+          .maybeSingle();
+        if (error) throw error;
+        const externalUrl = (data as any)?.external_url as string | null;
+        if (externalUrl) {
+          window.open(externalUrl, '_blank', 'noopener,noreferrer');
+          return;
+        }
+        // Fall through to Storage only if a stored copy still exists.
+        if ((data as any)?.storage_mode === 'external_reference' || !(data as any)?.storage_path) {
+          toast({
+            title: 'Open original',
+            description: 'This source lives in Google. Use the source link to open it.',
+          });
+          return;
+        }
+      }
       const signedUrl = await downloadResourceFromStorage(resource.storagePath);
       window.open(signedUrl, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
@@ -1926,6 +1950,11 @@ function ResourceDetailsDrawer({
             </div>
           </ScrollArea>
 
+          {(resource.provider === 'google_drive' || resource.provider === 'google_docs') && (
+            <div className="border-t border-border px-6 pt-3 text-xs text-muted-foreground">
+              Original file is kept in Google. Insight Navigator stores only indexed text needed for chat.
+            </div>
+          )}
           <div className="border-t border-border px-6 py-3 flex items-center gap-2 flex-wrap">
             {canOpenWorkspace && (
               <Button size="sm" className="gap-1.5" onClick={() => onOpenResource(resource)}>
@@ -1939,7 +1968,16 @@ function ResourceDetailsDrawer({
             )}
             {resource.canDownload && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
-                <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
+                {resource.provider === 'google_drive' || resource.provider === 'google_docs' ? (
+                  <>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {resource.provider === 'google_docs' ? 'Open in Google Docs' : 'Open in Google Drive'}
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
+                  </>
+                )}
               </Button>
             )}
             {resource.canRename && (
