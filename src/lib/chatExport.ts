@@ -668,7 +668,8 @@ async function loadPdfMake(): Promise<any> {
     vfsMod?.default,
     vfsMod,
   ];
-  const vfs = vfsCandidates.find(looksLikePdfMakeVfs);
+  const vfsCandidate = vfsCandidates.find(looksLikePdfMakeVfs);
+  const vfs = vfsCandidate ? { ...vfsCandidate } : undefined;
 
   if (!vfs || !vfs["Roboto-Medium.ttf"]) {
     if (import.meta.env.DEV) {
