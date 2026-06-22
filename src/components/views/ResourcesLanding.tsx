@@ -530,25 +530,33 @@ export function ResourcesLanding() {
       return;
     }
 
-    createLinkMutation.mutate(
-      {
-        url: linkUrl,
-        title: linkTitle || undefined,
-        provider: linkProvider,
-        containerType: linkContainerType,
-        containerId: linkContainerId,
-      },
-      {
-        onSuccess: () => {
-          toast({ title: 'Source added', description: 'Your resource now appears in Resources.' });
-          setAddSourceOpen(false);
-          resetAddSourceDialog();
-        },
-        onError: (err: any) => {
-          toast({ title: 'Add source failed', description: err.message, variant: 'destructive' });
-        },
-      },
-    );
+    // Website provider: crawl the root URL with Tavily and ingest as a document.
+    try {
+      const result = await ingestWebsiteMutation.mutateAsync({
+        url: linkUrl.trim(),
+        instructions: crawlInstructions.trim() || undefined,
+        includeImages: crawlIncludeImages,
+        containerType: linkContainerType === 'notebook' ? 'notebook' : 'project',
+        containerId: linkContainerId!,
+      });
+      toast({
+        title: 'Website added',
+        description: `Crawled ${result.pages} page${result.pages === 1 ? '' : 's'}. Indexing now — it will appear in Resources shortly.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      setAddSourceOpen(false);
+      resetAddSourceDialog();
+    } catch (err: any) {
+      const code = err?.code as string | undefined;
+      const friendly =
+        code === 'invalid_url' ? 'Provide a public http(s) URL. Local or private addresses are not allowed.' :
+        code === 'forbidden' ? 'You do not have edit access to this workspace.' :
+        code === 'crawl_rate_limited' ? 'The crawler is busy right now. Try again shortly.' :
+        code === 'no_content' ? 'No crawlable content was found at this URL.' :
+        code === 'crawl_failed' ? 'The website could not be crawled. It may be unreachable.' :
+        err?.message || 'Could not add website.';
+      toast({ title: 'Add source failed', description: friendly, variant: 'destructive' });
+    }
   };
 
   return (
