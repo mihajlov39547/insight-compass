@@ -333,11 +333,15 @@ export function ChatWorkspace() {
           )}
 
             <div className="h-0.5" />
+          </div>
+        </div>
+
         <ChatSearchControl
           mode="project"
           messages={messages.map(m => ({ id: m.id, role: m.role, content: m.content }))}
           scrollContainerRef={messagesViewportRef}
         />
+
 
         {showScrollTop && (
           <Button
