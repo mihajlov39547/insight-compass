@@ -11,13 +11,15 @@ const corsHeaders = {
 };
 
 const GATEWAY = 'https://connector-gateway.lovable.dev/google_drive/drive/v3';
-const MAX_BYTES = 25 * 1024 * 1024; // 25 MB cap for v1
+const MAX_BYTES_BINARY = 25 * 1024 * 1024; // 25 MB for binary downloads
+const MAX_BYTES_EXPORT = 10 * 1024 * 1024; // 10 MB Drive export cap
 
 interface IngestPlan {
   ext: string;
   fileType: string; // documents.file_type
   storedMime: string;
   exportMime?: string; // present when we must export (Workspace docs)
+  exportFallbackMime?: string; // fallback export mime if primary fails
 }
 
 function planForMime(mimeType: string): IngestPlan | null {
@@ -28,6 +30,7 @@ function planForMime(mimeType: string): IngestPlan | null {
         fileType: 'md',
         storedMime: 'text/markdown',
         exportMime: 'text/markdown',
+        exportFallbackMime: 'text/plain',
       };
     case 'application/pdf':
       return { ext: 'pdf', fileType: 'pdf', storedMime: 'application/pdf' };
@@ -45,6 +48,11 @@ function planForMime(mimeType: string): IngestPlan | null {
     default:
       return null;
   }
+}
+
+function planFromExportMime(exportMime: string): { ext: string; fileType: string; storedMime: string } {
+  if (exportMime === 'text/markdown') return { ext: 'md', fileType: 'md', storedMime: 'text/markdown' };
+  return { ext: 'txt', fileType: 'txt', storedMime: 'text/plain' };
 }
 
 function jsonResponse(body: unknown, status = 200) {
