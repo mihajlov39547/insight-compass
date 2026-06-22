@@ -20,6 +20,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 import { ChatQuestionNavigator } from '@/components/chat/ChatQuestionNavigator';
 import { ChatSearchControl } from '@/components/chat/ChatSearchControl';
+import { PinnedMessagesPanel } from '@/components/chat/PinnedMessagesPanel';
+import { MessagePinButton } from '@/components/chat/MessagePinButton';
+import type { PinContext } from '@/hooks/useMessagePins';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -842,6 +845,7 @@ export function NotebookWorkspace() {
                           onAddYouTubeToSources={msg.role === 'assistant' ? handleAddYouTubeToSources : undefined}
                           addingYouTubeUrl={addingYouTubeUrl}
                           addedYouTubeUrls={addedYouTubeUrls}
+                          pinContext={selectedNotebookId ? { type: 'notebook', notebookId: selectedNotebookId } : null}
                         />
                       ))
                     )}
@@ -893,11 +897,20 @@ export function NotebookWorkspace() {
                     </div>
                   </div>
 
-                  <ChatSearchControl
-                    mode="notebook"
-                    messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
-                    scrollContainerRef={chatViewportRef}
-                  />
+                  <div className="absolute top-3 right-12 md:right-14 z-20 hidden md:flex items-center gap-2">
+                    {selectedNotebookId && (
+                      <PinnedMessagesPanel
+                        ctx={{ type: 'notebook', notebookId: selectedNotebookId }}
+                        scrollContainerRef={chatViewportRef}
+                      />
+                    )}
+                    <ChatSearchControl
+                      mode="notebook"
+                      variant="inline"
+                      messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
+                      scrollContainerRef={chatViewportRef}
+                    />
+                  </div>
 
                   {showChatScrollTop && (
                     <Button
@@ -1298,7 +1311,7 @@ export function NotebookWorkspace() {
 }
 
 /* --- Notebook Chat Message --- */
-function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls }: {
+function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls, pinContext }: {
   message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
@@ -1309,6 +1322,7 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
   onAddYouTubeToSources?: (source: SourceItem) => void | Promise<void>;
   addingYouTubeUrl?: string | null;
   addedYouTubeUrls?: Set<string>;
+  pinContext?: PinContext | null;
 }) {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
@@ -1400,6 +1414,14 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
           <p className="text-[10px] text-muted-foreground">
             {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
+          {pinContext && (
+            <MessagePinButton
+              ctx={pinContext}
+              messageId={message.id}
+              messageRole={message.role}
+              content={message.content}
+            />
+          )}
           {isUser && onDeletePair && (
             <AlertDialog>
               <AlertDialogTrigger asChild>

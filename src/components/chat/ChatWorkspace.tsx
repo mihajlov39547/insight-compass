@@ -30,6 +30,8 @@ import { normalizeLanguageCode } from '@/lib/languages';
 import { useGenerationCompleteSound } from '@/hooks/useGenerationCompleteSound';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { ChatSearchControl } from './ChatSearchControl';
+import { PinnedMessagesPanel } from './PinnedMessagesPanel';
+import type { PinContext } from '@/hooks/useMessagePins';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
@@ -276,6 +278,7 @@ export function ChatWorkspace() {
                 onAddYouTubeToSources={message.role === 'assistant' ? handleAddYouTubeToSources : undefined}
                 addingYouTubeUrl={addingYouTubeUrl}
                 addedYouTubeUrls={addedYouTubeUrls}
+                pinContext={selectedProjectId && selectedChatId ? { type: 'project', projectId: selectedProjectId, chatId: selectedChatId } : null}
               />
             ))
           )}
@@ -336,11 +339,24 @@ export function ChatWorkspace() {
           </div>
         </div>
 
-        <ChatSearchControl
-          mode="project"
-          messages={messages.map(m => ({ id: m.id, role: m.role, content: m.content }))}
-          scrollContainerRef={messagesViewportRef}
-        />
+        <div className="absolute top-3 right-12 md:right-14 z-20 hidden md:flex items-center gap-2">
+          {selectedProjectId && selectedChatId && (
+            <PinnedMessagesPanel
+              ctx={{ type: 'project', projectId: selectedProjectId, chatId: selectedChatId }}
+              scrollContainerRef={messagesViewportRef}
+            />
+          )}
+          <ChatSearchControl
+            mode="project"
+            variant="inline"
+            messages={messages.map(m => ({ id: m.id, role: m.role, content: m.content }))}
+            scrollContainerRef={messagesViewportRef}
+          />
+        </div>
+
+
+
+
 
 
         {showScrollTop && (

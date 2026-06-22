@@ -1666,5 +1666,20 @@
     "invalidEmail": "Please enter a valid email address.",
     "subjectRequired": "Subject is required.",
     "messageRequired": "Message is required."
+  },
+  "chatPins": {
+    "pin": "Pin",
+    "unpin": "Unpin message",
+    "pinned": "Pinned",
+    "unpinAction": "Unpin",
+    "panelTitle": "Pinned messages",
+    "empty": "No pinned messages yet",
+    "emptyHint": "Pin important moments to find them quickly later.",
+    "jump": "Jump to message",
+    "notLoaded": "This message is not currently loaded.",
+    "you": "You",
+    "assistant": "Assistant",
+    "toggleFailed": "Failed to update pin",
+    "unpinFailed": "Failed to unpin"
   }
 }

@@ -218,6 +218,48 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_message_pins: {
+        Row: {
+          chat_id: string | null
+          id: string
+          message_content_snapshot: string | null
+          message_id: string
+          message_role: string
+          message_snippet: string
+          metadata: Json
+          notebook_id: string | null
+          pinned_at: string
+          project_id: string | null
+          user_id: string
+        }
+        Insert: {
+          chat_id?: string | null
+          id?: string
+          message_content_snapshot?: string | null
+          message_id: string
+          message_role: string
+          message_snippet: string
+          metadata?: Json
+          notebook_id?: string | null
+          pinned_at?: string
+          project_id?: string | null
+          user_id: string
+        }
+        Update: {
+          chat_id?: string | null
+          id?: string
+          message_content_snapshot?: string | null
+          message_id?: string
+          message_role?: string
+          message_snippet?: string
+          metadata?: Json
+          notebook_id?: string | null
+          pinned_at?: string
+          project_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       chats: {
         Row: {
           created_at: string
