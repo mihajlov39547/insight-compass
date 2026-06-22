@@ -338,20 +338,12 @@ export function ChatWorkspace() {
           </div>
         </div>
 
-        <div className="absolute top-3 right-12 md:right-14 z-20 hidden md:flex items-center gap-2">
-          {selectedProjectId && selectedChatId && (
-            <PinnedMessagesPanel
-              ctx={{ type: 'project', projectId: selectedProjectId, chatId: selectedChatId }}
-              scrollContainerRef={messagesViewportRef}
-            />
-          )}
-          <ChatSearchControl
-            mode="project"
-            variant="inline"
-            messages={messages.map(m => ({ id: m.id, role: m.role, content: m.content }))}
-            scrollContainerRef={messagesViewportRef}
-          />
-        </div>
+        <ChatFloatingTools
+          pinCtx={pinCtx}
+          searchMode="project"
+          messages={messages.map(m => ({ id: m.id, role: m.role, content: m.content }))}
+          scrollContainerRef={messagesViewportRef}
+        />
 
 
 
