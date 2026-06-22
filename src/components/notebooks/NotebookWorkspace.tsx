@@ -4,7 +4,7 @@ import {
   Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
   FileUp, ArrowUp, Video, RotateCcw,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose,
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -110,6 +110,278 @@ function TranscriptStatusLabel({ status }: { status: string }) {
   const { t } = useTranslation();
   return (
     <span className="text-[10px] text-muted-foreground">• {t('notebookWorkspace.sources.transcriptStatus', { status })}</span>
+  );
+}
+
+type NotebookNotesPanelProps = {
+  notes: DbNotebookNote[];
+  canCreateNotes: boolean;
+  canEditNotes: boolean;
+  createNotePending: boolean;
+  onAddNote: () => void;
+  onStartEdit: (note: DbNotebookNote) => void;
+  onClose: () => void;
+};
+
+function NotebookNotesPanel({
+  notes,
+  canCreateNotes,
+  canEditNotes,
+  createNotePending,
+  onAddNote,
+  onStartEdit,
+  onClose,
+}: NotebookNotesPanelProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col h-full border-r border-border">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+            onClick={onClose}
+            aria-label={t('notebookWorkspace.notes.collapse')}
+            title={t('notebookWorkspace.notes.collapse')}
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </Button>
+          <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.notes.title')}</h2>
+        </div>
+        {canCreateNotes && (
+          <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={onAddNote} disabled={createNotePending}>
+            <Plus className="h-3 w-3" /> {t('notebookWorkspace.notes.addNote')}
+          </Button>
+        )}
+      </div>
+      <ScrollArea className="flex-1">
+        {notes.length === 0 ? (
+          <div className="p-4 text-center">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
+              <StickyNote className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">{t('notebookWorkspace.notes.empty.title')}</p>
+            <p className="text-xs text-muted-foreground">{t('notebookWorkspace.notes.empty.description')}</p>
+          </div>
+        ) : (
+          <div className="p-2 space-y-2">
+            {notes.map((note) => (
+              <button
+                key={note.id}
+                className="w-full text-left p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
+                onClick={() => canEditNotes && onStartEdit(note)}
+              >
+                {note.title && <p className="text-sm font-medium text-foreground mb-1 truncate">{note.title}</p>}
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">{note.content || t('notebookWorkspace.notes.emptyNote')}</p>
+                <div className="flex items-center gap-1 mt-2">
+                  <Pencil className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground ml-auto">
+                    {new Date(note.updated_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  );
+}
+
+type NotebookSourcesPanelProps = {
+  documents: DbDocument[];
+  linkedVideos: Resource[];
+  linkedVideoEnabledById: Map<string, boolean>;
+  hasSources: boolean;
+  canUploadDocuments: boolean;
+  canManageDocumentState: boolean;
+  canDeleteDocuments: boolean;
+  onToggleSource: (doc: DbDocument) => void;
+  onToggleLinkedSource: (resource: Resource) => void;
+  onRetryTranscript: (resource: Resource) => void;
+  onShowUpload: () => void;
+  onShowLinkDialog: (kind: 'youtube' | 'web') => void;
+  onClose: () => void;
+  onDeleteDoc: (doc: DbDocument) => void;
+  onDeleteVideo: (video: any) => void;
+};
+
+function NotebookSourcesPanel({
+  documents,
+  linkedVideos,
+  linkedVideoEnabledById,
+  hasSources,
+  canUploadDocuments,
+  canManageDocumentState,
+  canDeleteDocuments,
+  onToggleSource,
+  onToggleLinkedSource,
+  onRetryTranscript,
+  onShowUpload,
+  onShowLinkDialog,
+  onClose,
+  onDeleteDoc,
+  onDeleteVideo,
+}: NotebookSourcesPanelProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col h-full border-r border-border">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+            onClick={onClose}
+            title={t('notebookWorkspace.sources.collapse')}
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </Button>
+          <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.sources.title')}</h2>
+        </div>
+        {canUploadDocuments && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Plus className="h-3 w-3" /> {t('notebookWorkspace.sources.addSource')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={onShowUpload}>
+                <Upload className="h-4 w-4 mr-2" />
+                {t('notebookWorkspace.sources.addMenu.uploadDocument')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onShowLinkDialog('youtube')}>
+                <Video className="h-4 w-4 mr-2" />
+                {t('notebookWorkspace.sources.addMenu.youtube')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onShowLinkDialog('web')}>
+                <Globe className="h-4 w-4 mr-2" />
+                {t('notebookWorkspace.sources.addMenu.website')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+      <ScrollArea className="flex-1">
+        {documents.length === 0 && linkedVideos.length === 0 ? (
+          <div className="p-4 text-center">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
+              <FileText className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">{t('notebookWorkspace.sources.empty.title')}</p>
+            <p className="text-xs text-muted-foreground mb-3">{t('notebookWorkspace.sources.empty.description')}</p>
+            {canUploadDocuments && (
+              <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={onShowUpload}>
+                <Upload className="h-3 w-3" /> {t('notebookWorkspace.sources.empty.upload')}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="p-2 space-y-1">
+            {documents.map((doc) => {
+              const enabled = (doc as any).notebook_enabled !== false;
+              return (
+                <div key={doc.id} className={cn(
+                  "flex items-start gap-2 p-2 rounded-lg transition-colors",
+                  enabled ? "bg-card" : "bg-muted/50 opacity-60"
+                )}>
+                  {canManageDocumentState ? (
+                    <button
+                      onClick={() => onToggleSource(doc)}
+                      className="mt-0.5 shrink-0"
+                      title={enabled ? t('notebookWorkspace.sources.disableSource') : t('notebookWorkspace.sources.enableSource')}
+                    >
+                      {enabled ? (
+                        <ToggleRight className="h-4 w-4 text-accent" />
+                      ) : (
+                        <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  ) : (
+                    enabled ? (
+                      <ToggleRight className="h-4 w-4 text-accent/50 mt-0.5 shrink-0" />
+                    ) : (
+                      <ToggleLeft className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    )
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate">{doc.file_name}</p>
+                    <NotebookSourceStatus doc={doc} />
+                  </div>
+                  {canDeleteDocuments && (
+                    <Button
+                      variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => onDeleteDoc(doc)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+
+            {linkedVideos.map((video) => {
+              const isTranscriptReady = video.transcriptStatus === 'ready';
+              const enabled = linkedVideoEnabledById.get(video.id) !== false;
+              return (
+                <div key={video.id} className={cn(
+                  "flex items-start gap-2 p-2 rounded-lg transition-colors",
+                  isTranscriptReady && enabled ? "bg-card" : "bg-muted/50 opacity-60"
+                )}>
+                  {canManageDocumentState ? (
+                    <button
+                      onClick={() => onToggleLinkedSource(video)}
+                      className="mt-0.5 shrink-0"
+                      title={enabled ? t('notebookWorkspace.sources.disableSource') : t('notebookWorkspace.sources.enableSource')}
+                    >
+                      {enabled ? (
+                        <ToggleRight className="h-4 w-4 text-accent" />
+                      ) : (
+                        <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  ) : (
+                    enabled ? (
+                      <ToggleRight className="h-4 w-4 text-accent/50 mt-0.5 shrink-0" />
+                    ) : (
+                      <ToggleLeft className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    )
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate flex items-center gap-1.5">
+                      <Video className="h-3 w-3 text-red-500 shrink-0" />
+                      <span className="truncate">{video.title}</span>
+                    </p>
+                    <NotebookVideoSourceStatus resource={video} />
+                  </div>
+                  {video.transcriptStatus === 'failed' && canManageDocumentState && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0 text-muted-foreground hover:text-accent"
+                      onClick={() => onRetryTranscript(video)}
+                      title={t('notebookWorkspace.sources.retryTranscript')}
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </Button>
+                  )}
+                  {canDeleteDocuments && (
+                    <Button
+                      variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => onDeleteVideo(video)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
   );
 }
 
