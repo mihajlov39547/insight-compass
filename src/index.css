@@ -300,3 +300,9 @@
     100% { box-shadow: 0 0 0 0 hsl(var(--accent) / 0); background-color: hsl(var(--accent) / 0); }
   }
 }
+
+@layer utilities {
+  [data-chat-turn-id] {
+    scroll-margin-top: 1.5rem;
+  }
+}
