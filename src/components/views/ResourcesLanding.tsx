@@ -452,7 +452,7 @@ export function ResourcesLanding() {
       try {
         const result = await ingestDriveMutation.mutateAsync({
           fileId: driveFileId,
-          containerType: linkContainerType,
+          containerType: linkContainerType === 'notebook' ? 'notebook' : 'project',
           containerId: linkContainerId,
         });
         toast({
