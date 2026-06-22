@@ -60,6 +60,9 @@ export function ChatExportDialog({
     pinnedMessageIds,
   };
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const { toast } = useToast();
+
   const handleMarkdown = () => {
     const md = buildChatMarkdownExport(baseArgs);
     const filename = buildExportFilename({ contextType, contextName, extension: 'md' });
@@ -67,9 +70,21 @@ export function ChatExportDialog({
     onOpenChange(false);
   };
 
-  const handlePrint = () => {
-    openPrintPreview(baseArgs);
-    onOpenChange(false);
+  const handlePdf = async () => {
+    setPdfLoading(true);
+    try {
+      await downloadChatPdf(baseArgs);
+      onOpenChange(false);
+    } catch (err) {
+      console.error('PDF export failed', err);
+      toast({
+        title: t('chatExport.pdfErrorTitle', 'Could not generate PDF'),
+        description: t('chatExport.pdfErrorDesc', 'Please try Markdown export instead.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   const Toggle = ({ id, label, hint, value, set }: { id: string; label: string; hint?: string; value: boolean; set: (v: boolean) => void }) => (
