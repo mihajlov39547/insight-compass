@@ -29,6 +29,13 @@ import {
   useRetryResourceProcessing,
   type ResourceActionInput,
 } from '@/hooks/useResourceActions';
+import {
+  useGoogleDriveSearch,
+  useIngestGoogleDriveFile,
+  type DriveFile,
+  type DriveMimeFilter,
+  SUPPORTED_DRIVE_MIME_LABELS,
+} from '@/hooks/useGoogleDrive';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
