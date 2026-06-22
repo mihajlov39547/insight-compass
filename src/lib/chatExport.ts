@@ -641,6 +641,18 @@ function buildPdfDocDefinition(args: BuildExportArgs): any {
 }
 
 let pdfMakeCache: any = null;
+
+const PDFMAKE_FONT_FILES = [
+  "Roboto-Regular.ttf",
+  "Roboto-Medium.ttf",
+  "Roboto-Italic.ttf",
+  "Roboto-MediumItalic.ttf",
+] as const;
+
+function looksLikePdfMakeVfs(value: unknown): value is Record<string, string | { data: string; encoding?: string }> {
+  return !!value && typeof value === "object" && PDFMAKE_FONT_FILES.every(file => file in value);
+}
+
 async function loadPdfMake(): Promise<any> {
   if (pdfMakeCache) return pdfMakeCache;
   const [pdfMakeMod, vfsMod]: any[] = await Promise.all([
@@ -648,14 +660,75 @@ async function loadPdfMake(): Promise<any> {
     import("pdfmake/build/vfs_fonts"),
   ]);
   const pdfMake = pdfMakeMod.default ?? pdfMakeMod;
-  const vfs =
-    (vfsMod as any).default?.pdfMake?.vfs ??
-    (vfsMod as any).pdfMake?.vfs ??
-    (vfsMod as any).default?.vfs ??
-    (vfsMod as any).vfs;
-  if (vfs) pdfMake.vfs = vfs;
+  const vfsCandidates = [
+    vfsMod?.pdfMake?.vfs,
+    vfsMod?.default?.pdfMake?.vfs,
+    vfsMod?.default?.vfs,
+    vfsMod?.vfs,
+    vfsMod?.default,
+    vfsMod,
+  ];
+  const vfsCandidate = vfsCandidates.find(looksLikePdfMakeVfs);
+  const vfs = vfsCandidate ? { ...vfsCandidate } : undefined;
+
+  if (!vfs || !vfs["Roboto-Medium.ttf"]) {
+    if (import.meta.env.DEV) {
+      console.error(
+        "pdfmake vfs_fonts import shape:",
+        Object.keys(vfsMod ?? {}),
+        vfsMod?.default ? Object.keys(vfsMod.default) : [],
+      );
+    }
+    throw new Error("PDF fonts were not loaded correctly.");
+  }
+
+  const fonts = {
+    Roboto: {
+      normal: "Roboto-Regular.ttf",
+      bold: "Roboto-Medium.ttf",
+      italics: "Roboto-Italic.ttf",
+      bolditalics: "Roboto-MediumItalic.ttf",
+    },
+  };
+
+  if (typeof pdfMake.addVirtualFileSystem === "function") {
+    pdfMake.addVirtualFileSystem(vfs);
+  } else {
+    pdfMake.vfs = vfs;
+  }
+
+  if (typeof pdfMake.addFonts === "function") {
+    pdfMake.addFonts(fonts);
+  } else {
+    pdfMake.fonts = { ...(pdfMake.fonts ?? {}), ...fonts };
+  }
+
   pdfMakeCache = pdfMake;
   return pdfMake;
+}
+
+function triggerBlobDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function getPdfBlob(pdfDoc: any): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    try {
+      const maybePromise = pdfDoc.getBlob((blob: Blob) => resolve(blob));
+      if (maybePromise && typeof maybePromise.then === "function") {
+        maybePromise.then(resolve, reject);
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
 }
 
 export async function downloadChatPdf(args: BuildExportArgs): Promise<void> {
@@ -666,12 +739,7 @@ export async function downloadChatPdf(args: BuildExportArgs): Promise<void> {
     contextName: args.contextName,
     extension: "pdf",
   });
-  await new Promise<void>((resolve, reject) => {
-    try {
-      pdfMake.createPdf(docDef).download(filename, () => resolve());
-    } catch (err) {
-      reject(err);
-    }
-  });
+  const blob = await getPdfBlob(pdfMake.createPdf(docDef));
+  triggerBlobDownload(blob, filename);
 }
 
