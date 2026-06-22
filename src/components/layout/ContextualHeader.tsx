@@ -48,7 +48,6 @@ export function ContextualHeader() {
       )}
       subtitle={selectedProject.description}
       language={selectedProject.language}
-      showShare={permissions.canManageSharing}
     />
   );
 }
