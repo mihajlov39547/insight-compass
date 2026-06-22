@@ -641,6 +641,14 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
           </div>
         </div>
       )}
+      <SourceCitationInspector
+        citation={inspectorCitation}
+        open={inspectorOpen}
+        onOpenChange={(open) => {
+          setInspectorOpen(open);
+          if (!open) setInspectorCitation(null);
+        }}
+      />
     </div>
   );
 }
