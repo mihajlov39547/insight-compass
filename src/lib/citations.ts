@@ -131,8 +131,6 @@ const KNOWN_KEYS = new Set([
   "external_url",
   "externalUrl",
   "favicon",
-  "videoId",
-  "video_id",
   "timestamp_start",
   "timestampStart",
   "start",
