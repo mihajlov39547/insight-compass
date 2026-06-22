@@ -394,6 +394,8 @@ export function ResourcesLanding() {
     setLinkContainerType('project');
     setLinkContainerId(null);
     setLinkFiles([]);
+    setDriveFileId(null);
+    setDriveFileName(null);
   };
 
   const handleAddSource = async () => {
