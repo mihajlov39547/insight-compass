@@ -38,9 +38,7 @@ function MainContent() {
   const { activeView } = useApp();
 
   return (
-    <ChatSearchBridgeProvider>
-      <main className="flex-1 min-h-0 h-full flex flex-col">{renderActiveView(activeView)}</main>
-    </ChatSearchBridgeProvider>
+    <main className="flex-1 min-h-0 h-full flex flex-col">{renderActiveView(activeView)}</main>
   );
 }
 
