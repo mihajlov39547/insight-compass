@@ -119,6 +119,15 @@ export function ChatWorkspace() {
     return userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content : undefined;
   }, [messages]);
 
+  const pinCtx = useMemo<PinContext | null>(
+    () => (selectedProjectId && selectedChatId
+      ? { type: 'project', projectId: selectedProjectId, chatId: selectedChatId }
+      : null),
+    [selectedProjectId, selectedChatId],
+  );
+  const { data: pins } = usePinnedMessages(pinCtx);
+  const pinnedByMessageId = useMemo(() => buildPinnedByMessageId(pins), [pins]);
+
   const previousAssistantMessage = useMemo(() => {
     const assistantMsgs = messages.filter(m => m.role === 'assistant');
     return assistantMsgs.length > 0 ? assistantMsgs[assistantMsgs.length - 1].content : undefined;
