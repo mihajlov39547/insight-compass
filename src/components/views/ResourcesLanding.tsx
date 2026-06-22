@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useResources } from '@/hooks/useResources';
+import { supabase } from '@/integrations/supabase/client';
 import {
   downloadResourceFromStorage,
   useCreateLinkResource,
