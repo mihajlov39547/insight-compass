@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SourceCitationInspector } from './SourceCitationInspector';
+import { normalizeSourceItemToCitation, type CanonicalCitation } from '@/lib/citations';
 
 export interface SourceItem {
   id: string;
@@ -84,6 +86,17 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
   const [questionOpen, setQuestionOpen] = useState(false);
   const [crawlPopoverUrl, setCrawlPopoverUrl] = useState<string | null>(null);
   const [crawlInstructions, setCrawlInstructions] = useState('');
+  const [inspectorCitation, setInspectorCitation] = useState<CanonicalCitation | null>(null);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+
+  const openInspectorFor = (item: SourceItem) => {
+    const citation = normalizeSourceItemToCitation(item, { index: 0 });
+    if (!citation) return;
+    setInspectorCitation(citation);
+    setInspectorOpen(true);
+  };
+
+
 
   // Group by document (or url for web). Memoized so hooks below don't depend on a fresh Map each render.
   const grouped = useMemo(() => {
@@ -234,13 +247,23 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
             return (
               <div
                 key={docId}
-                className="block rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors overflow-hidden"
+                role="button"
+                tabIndex={0}
+                onClick={() => openInspectorFor(primary)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openInspectorFor(primary);
+                  }
+                }}
+                className="block rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors overflow-hidden cursor-pointer"
               >
                 <div className="flex gap-3 p-2">
                   <a
                     href={ytUrl || '#'}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     className="shrink-0"
                     aria-label={`Open ${displayTitle} on YouTube`}
                   >
@@ -270,6 +293,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                       href={ytUrl || '#'}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="block hover:underline"
                     >
                       <p className="text-xs font-medium text-foreground line-clamp-2 leading-snug">
@@ -360,11 +384,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                         toggleSelect(url);
                         return;
                       }
-                      if (isWeb && primary.url) {
-                        window.open(primary.url, '_blank', 'noopener,noreferrer');
-                        return;
-                      }
-                      onSourceClick?.(primary);
+                      openInspectorFor(primary);
                     }}
                   >
                     {isYouTube ? (
@@ -396,10 +416,21 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                     <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 h-4 font-normal">
                       {Math.round(primary.relevance * 100)}%
                     </Badge>
-                    {!selectMode && (isWeb || onSourceClick) && (
-                      <ExternalLink className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                    )}
                   </button>
+                  {/* Explicit open-original for web sources */}
+                  {!selectMode && isWeb && !!url && (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 inline-flex items-center px-1.5 py-1 rounded text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors"
+                      title="Open original"
+                      aria-label={`Open ${displayTitle}`}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
                   {/* Per-source Crawl trigger (web sources only, not in select mode) */}
                   {!selectMode && isWeb && !!url && !!onCrawl && (
                     <Popover
@@ -610,6 +641,14 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
           </div>
         </div>
       )}
+      <SourceCitationInspector
+        citation={inspectorCitation}
+        open={inspectorOpen}
+        onOpenChange={(open) => {
+          setInspectorOpen(open);
+          if (!open) setInspectorCitation(null);
+        }}
+      />
     </div>
   );
 }

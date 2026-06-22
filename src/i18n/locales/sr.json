@@ -1697,5 +1697,51 @@
     "assistant": "Asistent",
     "toggleFailed": "Neuspešno ažuriranje zakačke",
     "unpinFailed": "Neuspešno otkačivanje"
+  },
+  "citationInspector": {
+    "description": "Detalji izvora",
+    "untitled": "Izvor bez naziva",
+    "source": "Izvor",
+    "evidenceExcerpt": "Izvod kao dokaz",
+    "noExcerpt": "Nema dostupnog izvoda",
+    "loadingExcerpt": "Učitavanje izvoda…",
+    "location": "Lokacija",
+    "page": "Strana",
+    "section": "Odeljak",
+    "chunkIndex": "Segment",
+    "timestamp": "Vremenska oznaka",
+    "relevance": "Relevantnost",
+    "matchedQuestion": "Pogođeno pitanje",
+    "metadata": "Metapodaci",
+    "mimeType": "Tip",
+    "storage": "Skladište",
+    "modified": "Izmenjeno",
+    "technical": "Tehnički",
+    "loading": "Učitavanje…",
+    "openOriginal": "Otvori original",
+    "copyExcerpt": "Kopiraj izvod",
+    "copiedExcerpt": "Izvod kopiran",
+    "copyFailed": "Kopiranje nije uspelo",
+    "enrichmentFailed": "Dodatni detalji nisu mogli biti učitani.",
+    "provider": {
+      "googleDrive": "Google Drive",
+      "googleDocs": "Google Docs",
+      "website": "Veb-sajt",
+      "youtube": "YouTube",
+      "upload": "Otpremljeno",
+      "notion": "Notion",
+      "document": "Dokument",
+      "web": "Veb",
+      "crawl": "Pretraga sajta",
+      "transcript": "Transkript",
+      "unknown": "Izvor"
+    },
+    "trace": {
+      "chunk": "Tačan segment",
+      "document": "Metapodaci dokumenta",
+      "resourceLink": "Povezani izvor",
+      "urlOnly": "Samo URL",
+      "none": "Ograničeni detalji"
+    }
   }
 }
