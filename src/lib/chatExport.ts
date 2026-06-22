@@ -299,7 +299,7 @@ function pdfInline(text: string): PdfContent[] {
     if (tok.startsWith("**")) {
       runs.push({ text: tok.slice(2, -2), bold: true });
     } else if (tok.startsWith("`")) {
-      runs.push({ text: tok.slice(1, -1), font: "Courier" });
+      runs.push({ text: tok.slice(1, -1), background: "#f1f3f5" });
     } else if (tok.startsWith("[")) {
       const linkMatch = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(tok);
       if (linkMatch) {
@@ -356,7 +356,7 @@ function markdownToPdfContent(md: string): PdfContent[] {
       i++;
       out.push({
         text: buf.join("\n"),
-        font: "Courier",
+        bold: false,
         fontSize: 9,
         background: "#f1f3f5",
         margin: [0, 4, 0, 6],
@@ -602,7 +602,7 @@ function buildPdfDocDefinition(args: BuildExportArgs): any {
           if (c.chunk_id) ids.push(`chunk_id: ${c.chunk_id}`);
           if (c.chunk_index !== null) ids.push(`chunk_index: ${c.chunk_index}`);
           if (c.resource_link_id) ids.push(`resource_link_id: ${c.resource_link_id}`);
-          if (ids.length) itemStack.push({ text: ids.join("  ·  "), fontSize: 8, font: "Courier", color: "#475569", margin: [0, 1, 0, 0] });
+          if (ids.length) itemStack.push({ text: ids.join("  ·  "), fontSize: 8, color: "#475569", margin: [0, 1, 0, 0] });
         }
         if (options.includeSourceSnippets && c.snippet) {
           itemStack.push({
