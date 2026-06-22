@@ -4,7 +4,7 @@ import {
   Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
   FileUp, ArrowUp, Video, RotateCcw,
-  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -178,8 +178,12 @@ export function NotebookWorkspace() {
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isChatNearBottom, setIsChatNearBottom] = useState(true);
   const [showChatScrollTop, setShowChatScrollTop] = useState(false);
-  const [sourcesCollapsed, setSourcesCollapsed] = usePersistedState('notebook:sourcesCollapsed', false);
-  const [notesCollapsed, setNotesCollapsed] = usePersistedState('notebook:notesCollapsed', false);
+  // Notebook left side panel: only one of Sources / Notes can be open at a time.
+  // `null` means the side panel is collapsed and the chat area gets max width.
+  type NotebookSidePanel = 'sources' | 'notes' | null;
+  const [leftPanel, setLeftPanel] = usePersistedState<NotebookSidePanel>('notebook:leftPanel', 'sources');
+  const toggleLeftPanel = (panel: Exclude<NotebookSidePanel, null>) =>
+    setLeftPanel((prev) => (prev === panel ? null : panel));
 
   const linkedVideoEnabledById = useMemo(() => {
     const map = new Map<string, boolean>();
@@ -615,28 +619,44 @@ export function NotebookWorkspace() {
 
       {/* 3-column layout */}
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
-        {/* LEFT — Sources */}
-        {sourcesCollapsed ? (
-          <div className="flex flex-col items-center w-10 shrink-0 border-r border-border bg-muted/20 py-3 gap-2">
+        {/* LEFT RAIL — always visible when no panel is open. Hosts Sources + Notes toggles. */}
+        {leftPanel === null && (
+          <div className="flex flex-col items-center w-10 shrink-0 border-r border-border bg-muted/20 py-3 gap-3">
             <Button
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => setSourcesCollapsed(false)}
+              onClick={() => toggleLeftPanel('sources')}
+              aria-pressed={false}
+              aria-label={t('notebookWorkspace.sources.expand')}
               title={t('notebookWorkspace.sources.expand')}
             >
               <PanelLeftOpen className="h-4 w-4" />
             </Button>
             <button
-              onClick={() => setSourcesCollapsed(false)}
-              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide mt-2"
+              onClick={() => toggleLeftPanel('sources')}
+              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide"
+              aria-label={t('notebookWorkspace.sources.expand')}
               title={t('notebookWorkspace.sources.expand')}
             >
-              {t('notebookWorkspace.sources.title')} {hasSources ? `(${documents.length + linkedVideos.length})` : ''}
+              {t('notebookWorkspace.sources.title')}{hasSources ? ` (${documents.length + linkedVideos.length})` : ''}
+            </button>
+            <div className="h-px w-6 bg-border my-1" />
+            <button
+              onClick={() => toggleLeftPanel('notes')}
+              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide"
+              aria-label={t('notebookWorkspace.notes.expand')}
+              title={t('notebookWorkspace.notes.expand')}
+            >
+              {t('notebookWorkspace.notes.title')}{notes.length > 0 ? ` (${notes.length})` : ''}
             </button>
           </div>
-        ) : (
+        )}
+
+        {/* LEFT PANEL — Sources */}
+        {leftPanel === 'sources' && (
         <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
+
           <div className="flex flex-col h-full border-r border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <div className="flex items-center gap-1">
@@ -644,7 +664,7 @@ export function NotebookWorkspace() {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
-                  onClick={() => setSourcesCollapsed(true)}
+                  onClick={() => setLeftPanel(null)}
                   title={t('notebookWorkspace.sources.collapse')}
                 >
                   <PanelLeftClose className="h-4 w-4" />
@@ -796,10 +816,70 @@ export function NotebookWorkspace() {
         </ResizablePanel>
         )}
 
-        {!sourcesCollapsed && <ResizableHandle />}
+        {/* LEFT PANEL — Notes (shares the left column with Sources; mutually exclusive). */}
+        {leftPanel === 'notes' && (
+        <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
+          <div className="flex flex-col h-full border-r border-border">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+                  onClick={() => setLeftPanel(null)}
+                  aria-label={t('notebookWorkspace.notes.collapse')}
+                  title={t('notebookWorkspace.notes.collapse')}
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+                <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.notes.title')}</h2>
+              </div>
+              {permissions.canCreateNotes && (
+                <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddNote} disabled={createNote.isPending}>
+                  <Plus className="h-3 w-3" /> {t('notebookWorkspace.notes.addNote')}
+                </Button>
+              )}
+            </div>
+            <ScrollArea className="flex-1">
+              {notes.length === 0 ? (
+                <div className="p-4 text-center">
+                  <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
+                    <StickyNote className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground mb-1">{t('notebookWorkspace.notes.empty.title')}</p>
+                  <p className="text-xs text-muted-foreground">{t('notebookWorkspace.notes.empty.description')}</p>
+                </div>
+              ) : (
+                <div className="p-2 space-y-2">
+                  {notes.map((note) => (
+                    <button
+                      key={note.id}
+                      className="w-full text-left p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
+                      onClick={() => permissions.canEditNotes && handleStartEdit(note)}
+                    >
+                      {note.title && <p className="text-sm font-medium text-foreground mb-1 truncate">{note.title}</p>}
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">{note.content || t('notebookWorkspace.notes.emptyNote')}</p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground ml-auto">
+                          {new Date(note.updated_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </ResizablePanel>
+        )}
 
-        {/* CENTER — Chat */}
-        <ResizablePanel defaultSize={50} minSize={30}>
+        {leftPanel !== null && <ResizableHandle />}
+
+
+        {/* CENTER — Chat (expands to fill remaining width; right-side notes panel removed). */}
+        <ResizablePanel defaultSize={78} minSize={30}>
+
           <div className="flex flex-col h-full min-h-0">
             {!hasSources ? (
               /* Empty state: no sources */
@@ -971,85 +1051,8 @@ export function NotebookWorkspace() {
             )}
           </div>
         </ResizablePanel>
-
-        {!notesCollapsed && <ResizableHandle />}
-
-        {/* RIGHT — Notes */}
-        {notesCollapsed ? (
-          <div className="flex flex-col items-center w-10 shrink-0 border-l border-border bg-muted/20 py-3 gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => setNotesCollapsed(false)}
-              title={t('notebookWorkspace.notes.expand')}
-            >
-              <PanelRightOpen className="h-4 w-4" />
-            </Button>
-            <button
-              onClick={() => setNotesCollapsed(false)}
-              className="[writing-mode:vertical-rl] text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide mt-2"
-              title={t('notebookWorkspace.notes.expand')}
-            >
-              {t('notebookWorkspace.notes.title')} {notes.length > 0 ? `(${notes.length})` : ''}
-            </button>
-          </div>
-        ) : (
-        <ResizablePanel defaultSize={28} minSize={16} maxSize={40}>
-          <div className="flex flex-col h-full border-l border-border">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
-                  onClick={() => setNotesCollapsed(true)}
-                  title={t('notebookWorkspace.notes.collapse')}
-                >
-                  <PanelRightClose className="h-4 w-4" />
-                </Button>
-                <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.notes.title')}</h2>
-              </div>
-              {permissions.canCreateNotes && (
-                <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddNote} disabled={createNote.isPending}>
-                  <Plus className="h-3 w-3" /> {t('notebookWorkspace.notes.addNote')}
-                </Button>
-              )}
-            </div>
-            <ScrollArea className="flex-1">
-              {notes.length === 0 ? (
-                <div className="p-4 text-center">
-                  <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
-                    <StickyNote className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground mb-1">{t('notebookWorkspace.notes.empty.title')}</p>
-                  <p className="text-xs text-muted-foreground">{t('notebookWorkspace.notes.empty.description')}</p>
-                </div>
-              ) : (
-                <div className="p-2 space-y-2">
-                  {notes.map((note) => (
-                    <button
-                      key={note.id}
-                      className="w-full text-left p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
-                      onClick={() => permissions.canEditNotes && handleStartEdit(note)}
-                    >
-                      {note.title && <p className="text-sm font-medium text-foreground mb-1 truncate">{note.title}</p>}
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">{note.content || t('notebookWorkspace.notes.emptyNote')}</p>
-                      <div className="flex items-center gap-1 mt-2">
-                        <Pencil className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-[10px] text-muted-foreground ml-auto">
-                          {new Date(note.updated_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-        </ResizablePanel>
-        )}
       </ResizablePanelGroup>
+
 
       {/* Edit Note Modal */}
       <Dialog open={noteModalOpen} onOpenChange={(open) => { if (!open) { setNoteModalOpen(false); setEditingNote(null); } }}>
