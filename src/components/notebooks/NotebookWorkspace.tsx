@@ -1422,6 +1422,8 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
               messageId={message.id}
               messageRole={message.role}
               content={message.content}
+              pinned={isPinned}
+              pinId={pinId}
             />
           )}
           {isUser && onDeletePair && (
