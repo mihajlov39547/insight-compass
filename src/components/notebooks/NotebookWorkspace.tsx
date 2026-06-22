@@ -905,6 +905,10 @@ export function NotebookWorkspace() {
                     searchMode="notebook"
                     messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
                     scrollContainerRef={chatViewportRef}
+                    onShare={permissions.canManageSharing ? () => {
+                      if (!planLimits.canShareNotebooks) { setShowPricing(true); return; }
+                      setShowShare(true);
+                    } : undefined}
                   />
 
                   {showChatScrollTop && (
