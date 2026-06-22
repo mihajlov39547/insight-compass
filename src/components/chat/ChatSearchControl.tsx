@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface SearchableMessage {
   id: string;
@@ -13,6 +14,8 @@ interface ChatSearchControlProps {
   messages: SearchableMessage[];
   scrollContainerRef: React.RefObject<HTMLDivElement>;
   mode: 'project' | 'notebook';
+  variant?: 'floating' | 'inline';
+  defaultOpen?: boolean;
   onJumpToMessage?: (id: string) => void;
 }
 
@@ -24,6 +27,7 @@ interface SearchResult {
 
 const MIN_QUERY = 2;
 const SCROLL_OFFSET_PX = 24;
+const MIN_MESSAGES_TO_SHOW = 2;
 
 function buildSnippet(content: string, query: string): string {
   const lc = content.toLowerCase();
@@ -43,11 +47,13 @@ export function ChatSearchControl({
   messages,
   scrollContainerRef,
   mode,
+  variant = 'floating',
+  defaultOpen = false,
   onJumpToMessage,
 }: ChatSearchControlProps) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(defaultOpen);
   const [query, setQuery] = useState('');
-  const [focused, setFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [showPopover, setShowPopover] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,10 +77,7 @@ export function ChatSearchControl({
     return out;
   }, [query, messages]);
 
-  // Reset active index when results change
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
+  useEffect(() => { setActiveIndex(0); }, [query]);
 
   const jumpTo = useCallback((index: number) => {
     if (results.length === 0) return;
@@ -97,45 +100,53 @@ export function ChatSearchControl({
   const next = useCallback(() => jumpTo(activeIndex + 1), [jumpTo, activeIndex]);
   const prev = useCallback(() => jumpTo(activeIndex - 1), [jumpTo, activeIndex]);
 
-  const clear = useCallback(() => {
-    setQuery('');
-    setShowPopover(false);
-    inputRef.current?.blur();
+  const openSearch = useCallback(() => {
+    setOpen(true);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
   }, []);
 
-  // Global Ctrl/Cmd+F focuses our search while mounted
+  const closeSearch = useCallback(() => {
+    setOpen(false);
+    setShowPopover(false);
+    setQuery('');
+  }, []);
+
+  // Cmd/Ctrl+F — only active while this component is mounted (i.e. in chat view).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
-      if (meta && (e.key === 'f' || e.key === 'F')) {
-        const active = document.activeElement as HTMLElement | null;
+      if (!meta) return;
+      if (e.key !== 'f' && e.key !== 'F') return;
+
+      const active = document.activeElement as HTMLElement | null;
+      const insideOurControl = !!(active && containerRef.current?.contains(active));
+
+      // Don't hijack when user is typing in another input/editor — unless they're already in our search box.
+      if (!insideOurControl) {
         const tag = active?.tagName;
-        const isEditable = active?.isContentEditable;
-        // Allow native find if user is editing rich text outside our control
-        if (isEditable) return;
-        // If focus is in our own input, do nothing extra
-        if (active === inputRef.current) {
-          e.preventDefault();
-          inputRef.current?.select();
-          return;
-        }
-        // Allow native find if focused inside another text input/textarea (e.g., composer)
-        if (tag === 'INPUT' || tag === 'TEXTAREA') {
-          // Override anyway — chat search is the expected affordance
-        }
-        e.preventDefault();
-        inputRef.current?.focus();
-        inputRef.current?.select();
+        if (active?.isContentEditable) return;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       }
+
+      e.preventDefault();
+      openSearch();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [openSearch]);
 
   const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      clear();
+      if (query.length > 0) {
+        setQuery('');
+        setShowPopover(false);
+      } else {
+        closeSearch();
+      }
       return;
     }
     if (e.key === 'Enter') {
@@ -153,12 +164,7 @@ export function ChatSearchControl({
     }
   };
 
-  const active = focused || query.length > 0;
-  const hasQuery = query.trim().length >= MIN_QUERY;
-  const resultCount = results.length;
-  const shortcutLabel = isMac() ? '⌘F' : 'Ctrl F';
-
-  // Close popover when click outside
+  // Click outside collapses popover (not the find bar)
   useEffect(() => {
     if (!showPopover) return;
     const onDown = (e: MouseEvent) => {
@@ -169,92 +175,98 @@ export function ChatSearchControl({
     return () => document.removeEventListener('mousedown', onDown);
   }, [showPopover]);
 
+  if (messages.length < MIN_MESSAGES_TO_SHOW) return null;
+
+  const hasQuery = query.trim().length >= MIN_QUERY;
+  const resultCount = results.length;
+  const shortcutLabel = isMac() ? '⌘F' : 'Ctrl+F';
   const topResults = results.slice(0, 5);
 
+  // Position the floating control at the top-right of the chat scroll container,
+  // offset left enough not to collide with the right-side ChatQuestionNavigator rail.
+  const floatingPos = variant === 'floating'
+    ? 'absolute top-3 right-12 md:right-14 z-20 hidden md:block'
+    : 'relative';
+
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        'relative flex items-center transition-[width] duration-200 ease-out',
-        active ? 'w-80' : 'w-64',
-      )}
-    >
-      <div
-        className={cn(
-          'flex items-center gap-1.5 w-full h-9 rounded-full border bg-secondary/40 hover:bg-secondary/60 transition-colors px-2.5',
-          active ? 'border-ring/50 bg-background shadow-sm ring-1 ring-ring/10' : 'border-border/60',
-        )}
-      >
-        <Search className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          aria-label={placeholder}
-          placeholder={placeholder}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setShowPopover(true);
-          }}
-          onFocus={() => { setFocused(true); if (query) setShowPopover(true); }}
-          onBlur={() => setFocused(false)}
-          onKeyDown={onInputKeyDown}
-          className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-w-0"
-        />
-
-        {hasQuery ? (
-          <div className="flex items-center gap-0.5 shrink-0">
-            <span
-              className="text-[11px] tabular-nums text-muted-foreground px-1"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {resultCount > 0
-                ? `${activeIndex + 1}/${resultCount}`
-                : t('projectDashboard.searchNoResults', 'No results')}
-            </span>
-            <button
-              type="button"
-              aria-label={t('projectDashboard.searchPrev', 'Previous result')}
-              disabled={resultCount === 0}
-              onClick={prev}
-              className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent"
-            >
-              <ChevronUp className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              aria-label={t('projectDashboard.searchNext', 'Next result')}
-              disabled={resultCount === 0}
-              onClick={next}
-              className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent"
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              aria-label={t('projectDashboard.searchClear', 'Clear search')}
-              onClick={clear}
-              className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ) : (
-          <kbd
-            className="hidden md:inline-flex shrink-0 items-center rounded border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-            aria-hidden="true"
+    <div ref={containerRef} className={floatingPos}>
+      {!open ? (
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={openSearch}
+                aria-label={placeholder}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-full border border-border/60 bg-background/90 backdrop-blur text-muted-foreground hover:text-foreground hover:bg-background shadow-sm transition-colors"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {placeholder} <span className="ml-1 opacity-60">({shortcutLabel})</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <div className="flex items-center gap-1 w-[22rem] max-w-[80vw] h-9 rounded-full border border-border bg-popover/95 backdrop-blur text-popover-foreground shadow-lg ring-1 ring-ring/10 px-2.5 animate-fade-in">
+          <Search className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            aria-label={placeholder}
+            placeholder={placeholder}
+            onChange={(e) => { setQuery(e.target.value); setShowPopover(true); }}
+            onFocus={() => { if (query) setShowPopover(true); }}
+            onKeyDown={onInputKeyDown}
+            className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-w-0"
+          />
+          <span
+            className="text-[11px] tabular-nums text-muted-foreground px-1 shrink-0"
+            aria-live="polite"
+            aria-atomic="true"
           >
-            {shortcutLabel}
-          </kbd>
-        )}
-      </div>
+            {hasQuery
+              ? (resultCount > 0
+                ? `${activeIndex + 1}/${resultCount}`
+                : t('projectDashboard.searchNoResults', 'No results'))
+              : ''}
+          </span>
+          <button
+            type="button"
+            aria-label={t('projectDashboard.searchPrev', 'Previous result')}
+            disabled={resultCount === 0}
+            onClick={prev}
+            className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent shrink-0"
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label={t('projectDashboard.searchNext', 'Next result')}
+            disabled={resultCount === 0}
+            onClick={next}
+            className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent shrink-0"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label={t('projectDashboard.searchClear', 'Close search')}
+            onClick={closeSearch}
+            className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
-      {showPopover && hasQuery && resultCount > 0 && (
+      {open && showPopover && hasQuery && resultCount > 0 && (
         <div
           role="listbox"
           aria-label={t('projectDashboard.searchResults', 'Search results')}
-          className="absolute left-0 right-0 top-full mt-1 z-30 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 animate-fade-in"
+          className="absolute right-0 top-full mt-1 w-[22rem] max-w-[80vw] max-h-72 overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 animate-fade-in z-30"
         >
           {topResults.map((r, idx) => (
             <button
@@ -266,9 +278,7 @@ export function ChatSearchControl({
               onClick={() => { jumpTo(idx); setShowPopover(false); }}
               className={cn(
                 'w-full text-left px-2 py-1.5 rounded-md text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                idx === activeIndex
-                  ? 'bg-accent/15 text-foreground'
-                  : 'text-foreground/80 hover:bg-muted',
+                idx === activeIndex ? 'bg-accent/15 text-foreground' : 'text-foreground/80 hover:bg-muted',
               )}
             >
               <div className="flex items-center gap-2">
