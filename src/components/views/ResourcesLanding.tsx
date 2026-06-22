@@ -149,7 +149,10 @@ export function ResourcesLanding() {
   const [linkFiles, setLinkFiles] = useState<File[]>([]);
   const [driveFileId, setDriveFileId] = useState<string | null>(null);
   const [driveFileName, setDriveFileName] = useState<string | null>(null);
+  const [docFileId, setDocFileId] = useState<string | null>(null);
+  const [docFileName, setDocFileName] = useState<string | null>(null);
   const ingestDriveMutation = useIngestGoogleDriveFile();
+  const ingestDocMutation = useIngestGoogleDoc();
 
   // ── Stats ───────────────────────────────────────────────────────
   const totalCount = resources.length;
