@@ -19,7 +19,6 @@ export function ContextualHeader() {
   const { data: myRole } = useItemRole(selectedProjectId, 'project');
   const permissions = getItemPermissions(myRole);
   const { data: bridgeData } = useChatSearchBridge();
-  void bridgeData;
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
