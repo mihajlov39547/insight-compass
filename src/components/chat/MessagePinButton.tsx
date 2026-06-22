@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pin, PinOff } from 'lucide-react';
+import { Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useIsMessagePinned, useToggleMessagePin, type PinContext } from '@/hooks/useMessagePins';
