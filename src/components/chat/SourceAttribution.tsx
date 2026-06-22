@@ -444,6 +444,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                       !hasSnippet && !selectMode && "pl-2 rounded-l-lg",
                       !hasSnippet && selectMode && "pl-2"
                     )}
+                    aria-label={t('citationInspector.inspectAria', { defaultValue: 'Inspect source: {{title}}', title: displayTitle }) as string}
                     onClick={() => {
                       if (selectMode && isExtractable) {
                         toggleSelect(url);
