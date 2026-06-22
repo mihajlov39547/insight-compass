@@ -1505,8 +1505,9 @@ function AddSourceDialog({
         <p className="text-[11px] text-muted-foreground">
           {t('resources.addSourceDialog.footnote')}
         </p>
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('resources.addSourceDialog.cancel')}</Button>
           <Button onClick={onSubmit} disabled={submitting || !canSubmit}>
             {submitting ? t('resources.addSourceDialog.submitting') : t('resources.addSourceDialog.submit')}
