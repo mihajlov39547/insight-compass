@@ -1280,6 +1280,12 @@ function AddSourceDialog({
               </div>
             )}
           </div>
+        ) : isDrive ? (
+          <GoogleDrivePicker
+            selectedFileId={driveFileId}
+            onSelect={onDriveSelect}
+            disabled={submitting}
+          />
         ) : (
           <>
             <div className="space-y-2">
