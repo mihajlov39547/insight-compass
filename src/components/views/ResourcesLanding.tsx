@@ -478,6 +478,30 @@ export function ResourcesLanding() {
       return;
     }
 
+    if (linkProvider === 'google_docs') {
+      if (!docFileId) {
+        toast({ title: 'Add source failed', description: 'Pick a Google Doc first.', variant: 'destructive' });
+        return;
+      }
+      try {
+        const result = await ingestDocMutation.mutateAsync({
+          fileId: docFileId,
+          containerType: linkContainerType === 'notebook' ? 'notebook' : 'project',
+          containerId: linkContainerId,
+        });
+        toast({
+          title: 'Source added',
+          description: `${result.title} is being processed and will appear in Resources shortly.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['resources'] });
+        setAddSourceOpen(false);
+        resetAddSourceDialog();
+      } catch (err: any) {
+        toast({ title: 'Add source failed', description: err?.message || 'Could not add Google Doc.', variant: 'destructive' });
+      }
+      return;
+    }
+
     if (!linkUrl.trim()) {
       toast({ title: 'Add source failed', description: 'URL is required.', variant: 'destructive' });
       return;
