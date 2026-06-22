@@ -29,9 +29,8 @@ import { useTranslation } from 'react-i18next';
 import { normalizeLanguageCode } from '@/lib/languages';
 import { useGenerationCompleteSound } from '@/hooks/useGenerationCompleteSound';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
-import { ChatSearchControl } from './ChatSearchControl';
-import { PinnedMessagesPanel } from './PinnedMessagesPanel';
-import type { PinContext } from '@/hooks/useMessagePins';
+import { ChatFloatingTools } from './ChatFloatingTools';
+import { usePinnedMessages, buildPinnedByMessageId, type PinContext } from '@/hooks/useMessagePins';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
