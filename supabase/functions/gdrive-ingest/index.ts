@@ -247,6 +247,7 @@ Deno.serve(async (req: Request) => {
         owner: meta.owners?.[0]?.displayName || meta.owners?.[0]?.emailAddress || null,
         parents: meta.parents || [],
       },
+      storage_mode: 'external_reference',
     };
 
     const { data: inserted, error: insertErr } = await admin
