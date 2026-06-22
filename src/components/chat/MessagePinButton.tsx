@@ -51,7 +51,7 @@ export function MessagePinButton({ ctx, messageId, messageRole, content, classNa
         className,
       )}
     >
-      <Icon className={cn(iconCls, pinned && 'fill-current')} />
+      <Pin className={cn(iconCls, pinned && 'fill-current')} />
       {pinned ? t('chatPins.pinned', 'Pinned') : t('chatPins.pin', 'Pin')}
     </button>
   );
