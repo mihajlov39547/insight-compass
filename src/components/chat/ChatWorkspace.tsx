@@ -346,13 +346,14 @@ export function ChatWorkspace() {
         />
 
         {selectedProjectId && selectedChatId && (
-          <div className="absolute top-3 right-3 z-20 hidden md:block">
+          <div className="absolute top-3 right-24 md:right-28 z-20 hidden md:block">
             <PinnedMessagesPanel
               ctx={{ type: 'project', projectId: selectedProjectId, chatId: selectedChatId }}
               scrollContainerRef={messagesViewportRef}
             />
           </div>
         )}
+
 
 
 
