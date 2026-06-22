@@ -761,6 +761,15 @@
     "share": "Share",
     "noDescription": "No description",
     "searchInChat": "Search in this chat",
+    "searchInNotebook": "Search in this notebook",
+    "searchNoResults": "No results",
+    "searchPrev": "Previous result",
+    "searchNext": "Next result",
+    "searchClear": "Clear search",
+    "searchResults": "Search results",
+    "searchYou": "You",
+    "searchAssistant": "Assistant",
+    "searchMore": "+{{count}} more",
     "features": {
       "documentAnalysis": {
         "title": "Document Analysis",
