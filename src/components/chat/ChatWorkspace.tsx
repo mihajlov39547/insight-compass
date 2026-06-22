@@ -277,7 +277,9 @@ export function ChatWorkspace() {
                 onAddYouTubeToSources={message.role === 'assistant' ? handleAddYouTubeToSources : undefined}
                 addingYouTubeUrl={addingYouTubeUrl}
                 addedYouTubeUrls={addedYouTubeUrls}
-                pinContext={selectedProjectId && selectedChatId ? { type: 'project', projectId: selectedProjectId, chatId: selectedChatId } : null}
+                pinContext={pinCtx}
+                isPinned={pinnedByMessageId.has(message.id)}
+                pinId={pinnedByMessageId.get(message.id) ?? null}
               />
             ))
           )}
