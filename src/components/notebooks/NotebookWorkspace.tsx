@@ -1311,7 +1311,7 @@ export function NotebookWorkspace() {
 }
 
 /* --- Notebook Chat Message --- */
-function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls, pinContext }: {
+function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, onDeletePair, onExtract, isExtracting, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls, pinContext, isPinned = false, pinId = null }: {
   message: { id: string; role: string; content: string; sources?: any | null; created_at: string; model_id?: string | null };
   onSaveToNote: (content: string) => void;
   onCopy: (content: string) => void;
@@ -1323,6 +1323,8 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
   addingYouTubeUrl?: string | null;
   addedYouTubeUrls?: Set<string>;
   pinContext?: PinContext | null;
+  isPinned?: boolean;
+  pinId?: string | null;
 }) {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
