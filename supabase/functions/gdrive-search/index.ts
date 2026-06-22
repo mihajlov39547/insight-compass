@@ -113,18 +113,22 @@ Deno.serve(async (req: Request) => {
     }
 
     const data = await resp.json();
-    const files = (data.files || []).map((f: any) => ({
-      id: f.id,
-      name: f.name,
-      mimeType: f.mimeType,
-      modifiedTime: f.modifiedTime,
-      size: f.size ? Number(f.size) : null,
-      owner: f.owners?.[0]?.displayName || f.owners?.[0]?.emailAddress || null,
-      webViewLink: f.webViewLink || null,
-      iconLink: f.iconLink || null,
-      parents: f.parents || [],
-      supported: SUPPORTED_MIME.has(f.mimeType),
-    }));
+    const files = (data.files || []).map((f: any) => {
+      const canDownload = f.capabilities?.canDownload !== false;
+      return {
+        id: f.id,
+        name: f.name,
+        mimeType: f.mimeType,
+        modifiedTime: f.modifiedTime,
+        size: f.size ? Number(f.size) : null,
+        owner: f.owners?.[0]?.displayName || f.owners?.[0]?.emailAddress || null,
+        webViewLink: f.webViewLink || null,
+        iconLink: f.iconLink || null,
+        parents: f.parents || [],
+        canDownload,
+        supported: SUPPORTED_MIME.has(f.mimeType) && canDownload,
+      };
+    });
 
     return jsonResponse({ files, nextPageToken: data.nextPageToken || null });
   } catch (err: any) {
