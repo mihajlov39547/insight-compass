@@ -172,7 +172,7 @@ export function SourceCitationInspector({ citation, open, onOpenChange }: Source
                       {t("citationInspector.loading", "Loading…")}
                     </span>
                   ) : (
-                    traceabilityLabel(merged.traceability, t)
+                    traceabilityLabel(merged.traceability, (k, d) => t(k, { defaultValue: d ?? "" }) as string)
                   )}
                 </Badge>
               </div>
