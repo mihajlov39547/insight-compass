@@ -2248,6 +2248,10 @@ export type Database = {
         }[]
       }
       cleanup_workflow_logs: { Args: never; Returns: Json }
+      clear_external_reference_storage_paths: {
+        Args: { _document_ids: string[] }
+        Returns: number
+      }
       complete_youtube_transcript_job: {
         Args: {
           p_chunk_count?: number
@@ -2491,6 +2495,13 @@ export type Database = {
         Returns: boolean
       }
       is_feature_enabled: { Args: { p_key: string }; Returns: boolean }
+      list_stale_external_reference_temp_files: {
+        Args: never
+        Returns: {
+          document_id: string
+          storage_path: string
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
