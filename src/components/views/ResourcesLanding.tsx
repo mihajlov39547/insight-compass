@@ -1950,6 +1950,11 @@ function ResourceDetailsDrawer({
             </div>
           </ScrollArea>
 
+          {(resource.provider === 'google_drive' || resource.provider === 'google_docs') && (
+            <div className="border-t border-border px-6 pt-3 text-xs text-muted-foreground">
+              Original file is kept in Google. Insight Navigator stores only indexed text needed for chat.
+            </div>
+          )}
           <div className="border-t border-border px-6 py-3 flex items-center gap-2 flex-wrap">
             {canOpenWorkspace && (
               <Button size="sm" className="gap-1.5" onClick={() => onOpenResource(resource)}>
