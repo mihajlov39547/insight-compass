@@ -29,7 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { normalizeLanguageCode } from '@/lib/languages';
 import { useGenerationCompleteSound } from '@/hooks/useGenerationCompleteSound';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
-import { useChatSearchBridge } from '@/contexts/ChatSearchBridge';
+import { ChatSearchControl } from './ChatSearchControl';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
