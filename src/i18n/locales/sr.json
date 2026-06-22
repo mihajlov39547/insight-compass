@@ -1700,7 +1700,7 @@
   },
   "chatExport": {
     "title": "Izvezi razgovor",
-    "description": "Preuzmite Markdown transkript ili otvorite prikaz za štampu radi čuvanja kao PDF.",
+    "description": "Preuzmite ovaj razgovor kao Markdown ili PDF.",
     "includeSources": "Uključi izvore",
     "includeSnippets": "Uključi isečke izvora",
     "includeTraces": "Uključi tragove pretrage",
@@ -1710,7 +1710,10 @@
     "includeIds": "Uključi tehničke ID-jeve",
     "includePinned": "Uključi rezime zakačenih poruka",
     "exportMd": "Izvezi Markdown",
-    "openPrint": "Otvori prikaz za štampu"
+    "exportPdf": "Preuzmi PDF",
+    "generatingPdf": "Generisanje PDF-a…",
+    "pdfErrorTitle": "Nije moguće generisati PDF",
+    "pdfErrorDesc": "Pokušajte sa Markdown izvozom."
   },
   "citationInspector": {
     "description": "Detalji izvora",
