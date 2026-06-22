@@ -317,6 +317,29 @@ export function ResourcesLanding() {
   const handleDownload = async (resource: Resource) => {
     if (!resource.canDownload) return;
     try {
+      // For Google Drive/Docs sources we don't keep a permanent Storage copy —
+      // the original file lives in Google. Open the source link instead.
+      if (resource.provider === 'google_drive' || resource.provider === 'google_docs') {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('external_url, storage_mode, storage_path')
+          .eq('id', resource.id)
+          .maybeSingle();
+        if (error) throw error;
+        const externalUrl = (data as any)?.external_url as string | null;
+        if (externalUrl) {
+          window.open(externalUrl, '_blank', 'noopener,noreferrer');
+          return;
+        }
+        // Fall through to Storage only if a stored copy still exists.
+        if ((data as any)?.storage_mode === 'external_reference' || !(data as any)?.storage_path) {
+          toast({
+            title: 'Open original',
+            description: 'This source lives in Google. Use the source link to open it.',
+          });
+          return;
+        }
+      }
       const signedUrl = await downloadResourceFromStorage(resource.storagePath);
       window.open(signedUrl, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
