@@ -27,7 +27,7 @@ import { SharedLanding } from '@/components/views/SharedLanding';
 import { SearchDashboard } from '@/components/views/SearchDashboard';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/useApp';
-import { ChatSearchBridgeProvider } from '@/contexts/ChatSearchBridge';
+
 import { useCreateProject, useProjects } from '@/hooks/useProjects';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { toast } from 'sonner';
@@ -38,9 +38,7 @@ function MainContent() {
   const { activeView } = useApp();
 
   return (
-    <ChatSearchBridgeProvider>
-      <main className="flex-1 min-h-0 h-full flex flex-col">{renderActiveView(activeView)}</main>
-    </ChatSearchBridgeProvider>
+    <main className="flex-1 min-h-0 h-full flex flex-col">{renderActiveView(activeView)}</main>
   );
 }
 

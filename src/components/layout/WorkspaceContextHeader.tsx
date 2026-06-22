@@ -1,7 +1,6 @@
 import React from 'react';
-import { Search, Share2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useTranslation } from 'react-i18next';
 import { AVAILABLE_LANGUAGES, normalizeLanguageCode } from '@/lib/languages';
 
@@ -12,8 +11,6 @@ interface WorkspaceContextHeaderProps {
   languageContext?: 'workspace' | 'notebook';
   showShare?: boolean;
   onShare?: () => void;
-  /** Custom search slot — replaces the default static search input when provided. */
-  searchSlot?: React.ReactNode;
 }
 
 export function WorkspaceContextHeader({
@@ -23,7 +20,6 @@ export function WorkspaceContextHeader({
   languageContext = 'workspace',
   showShare = false,
   onShare,
-  searchSlot,
 }: WorkspaceContextHeaderProps) {
   const { t } = useTranslation();
   const normalizedLanguage = normalizeLanguageCode(language);
@@ -42,22 +38,13 @@ export function WorkspaceContextHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        {searchSlot !== undefined ? (
-          searchSlot
-        ) : (
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder={t('projectDashboard.searchInChat')} className="pl-9 h-8 text-sm bg-secondary/50" />
-          </div>
-        )}
-
-        {showShare && (
+      {showShare && (
+        <div className="flex items-center gap-2 shrink-0">
           <Button variant="outline" size="sm" className="gap-2" onClick={onShare}>
             <Share2 className="h-4 w-4" /> {t('projectDashboard.share')}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
