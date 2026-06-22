@@ -13,7 +13,7 @@ import {
 } from "@/lib/citations";
 
 export interface ChatExportOptions {
-  format: "markdown" | "print";
+  format: "markdown" | "pdf";
   includeSources: boolean;
   includeSourceSnippets: boolean;
   includeTechnicalIds: boolean;
