@@ -753,7 +753,7 @@ export function ResourcesLanding() {
         containerId={linkContainerId}
         projects={projects.map((p) => ({ id: p.id, name: p.name }))}
         notebooks={notebooks.map((n) => ({ id: n.id, name: n.name }))}
-        submitting={createLinkMutation.isPending || uploadMutation.isPending || ingestDriveMutation.isPending}
+        submitting={createLinkMutation.isPending || uploadMutation.isPending || ingestDriveMutation.isPending || ingestDocMutation.isPending}
         files={linkFiles}
         onFilesChange={setLinkFiles}
         driveFileId={driveFileId}
@@ -761,6 +761,12 @@ export function ResourcesLanding() {
         onDriveSelect={(file) => {
           setDriveFileId(file?.id ?? null);
           setDriveFileName(file?.name ?? null);
+        }}
+        docFileId={docFileId}
+        docFileName={docFileName}
+        onDocSelect={(file) => {
+          setDocFileId(file?.id ?? null);
+          setDocFileName(file?.name ?? null);
         }}
         onOpenChange={(open) => {
           setAddSourceOpen(open);
