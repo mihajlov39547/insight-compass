@@ -260,6 +260,8 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
               messageId={message.id}
               messageRole={message.role}
               content={message.content}
+              pinned={isPinned}
+              pinId={pinId}
             />
           )}
           {isUser && onDeletePair && (
