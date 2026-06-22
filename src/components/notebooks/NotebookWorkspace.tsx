@@ -896,20 +896,12 @@ export function NotebookWorkspace() {
                     </div>
                   </div>
 
-                  <div className="absolute top-3 right-12 md:right-14 z-20 hidden md:flex items-center gap-2">
-                    {selectedNotebookId && (
-                      <PinnedMessagesPanel
-                        ctx={{ type: 'notebook', notebookId: selectedNotebookId }}
-                        scrollContainerRef={chatViewportRef}
-                      />
-                    )}
-                    <ChatSearchControl
-                      mode="notebook"
-                      variant="inline"
-                      messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
-                      scrollContainerRef={chatViewportRef}
-                    />
-                  </div>
+                  <ChatFloatingTools
+                    pinCtx={pinCtx}
+                    searchMode="notebook"
+                    messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
+                    scrollContainerRef={chatViewportRef}
+                  />
 
                   {showChatScrollTop && (
                     <Button
