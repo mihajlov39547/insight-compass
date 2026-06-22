@@ -1006,6 +1006,16 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
                   {t('resources.actions.download')}
                 </DropdownMenuItem>
               )}
+              {canOpenExternal && !canDownload && (
+                <DropdownMenuItem className="text-xs gap-2" onClick={onDownload}>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {resource.provider === 'google_docs'
+                    ? 'Open in Google Docs'
+                    : resource.provider === 'google_drive'
+                      ? 'Open in Google Drive'
+                      : 'Open original'}
+                </DropdownMenuItem>
+              )}
               {canRename && (
                 <DropdownMenuItem className="text-xs gap-2" onClick={onRename}>
                   <FileType className="h-3.5 w-3.5" />
