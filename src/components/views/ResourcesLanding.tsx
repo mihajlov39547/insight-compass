@@ -404,6 +404,8 @@ export function ResourcesLanding() {
     setLinkFiles([]);
     setDriveFileId(null);
     setDriveFileName(null);
+    setDocFileId(null);
+    setDocFileName(null);
   };
 
   const handleAddSource = async () => {
