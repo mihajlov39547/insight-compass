@@ -623,6 +623,7 @@
       "includeImagesHelper": "Store image URLs from the website as metadata. Images remain hosted on the original website.",
       "provider": "Provider",
       "providers": {
+        "website": "Website",
         "anyUrl": "Website",
         "youtube": "YouTube",
         "googleDrive": "Google Drive",

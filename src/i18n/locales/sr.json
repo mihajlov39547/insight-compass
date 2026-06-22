@@ -630,6 +630,7 @@
       "includeImagesHelper": "Čuvaju se samo URL-ovi slika kao metapodaci. Same slike ostaju na izvornom sajtu.",
       "provider": "Provajder",
       "providers": {
+        "website": "Veb sajt",
         "anyUrl": "Veb sajt",
         "youtube": "YouTube",
         "googleDrive": "Google Drive",

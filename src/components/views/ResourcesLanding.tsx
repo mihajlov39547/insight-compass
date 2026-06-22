@@ -147,7 +147,7 @@ export function ResourcesLanding() {
   const [addSourceOpen, setAddSourceOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
-  const [linkProvider, setLinkProvider] = useState('unknown');
+  const [linkProvider, setLinkProvider] = useState('website');
   const [linkContainerType, setLinkContainerType] = useState<ContainerType>('project');
   const [linkContainerId, setLinkContainerId] = useState<string | null>(null);
   const [linkFiles, setLinkFiles] = useState<File[]>([]);
@@ -419,7 +419,7 @@ export function ResourcesLanding() {
   const resetAddSourceDialog = () => {
     setLinkUrl('');
     setLinkTitle('');
-    setLinkProvider('unknown');
+    setLinkProvider('website');
     setLinkContainerType('project');
     setLinkContainerId(null);
     setLinkFiles([]);
@@ -531,7 +531,8 @@ export function ResourcesLanding() {
     }
 
     // YouTube and other URL-based providers keep using the legacy link stub.
-    if (linkProvider !== 'unknown') {
+    // Only the "website" provider triggers the Tavily crawl ingestion below.
+    if (linkProvider !== 'website' && linkProvider !== 'unknown') {
       createLinkMutation.mutate(
         {
           url: linkUrl,
@@ -575,9 +576,10 @@ export function ResourcesLanding() {
       const code = err?.code as string | undefined;
       const friendly =
         code === 'invalid_url' ? 'Provide a public http(s) URL. Local or private addresses are not allowed.' :
-        code === 'forbidden' ? 'You do not have edit access to this workspace.' :
+        code === 'forbidden' ? 'You do not have permission to add sources here.' :
         code === 'crawl_rate_limited' ? 'The crawler is busy right now. Try again shortly.' :
         code === 'no_content' ? 'No crawlable content was found at this URL.' :
+        code === 'too_large' ? 'The crawled content is too large for your plan. Try narrowing the crawl with instructions.' :
         code === 'crawl_failed' ? 'The website could not be crawled. It may be unreachable.' :
         err?.message || 'Could not add website.';
       toast({ title: 'Add source failed', description: friendly, variant: 'destructive' });
@@ -1242,15 +1244,15 @@ function AddSourceDialog({
   const isInternal = provider === 'internal';
   const isDrive = provider === 'google_drive';
   const isDocs = provider === 'google_docs';
-  const isWebsite = provider === 'unknown';
+  const isWebsite = provider === 'website' || provider === 'unknown';
   const [isDragging, setIsDragging] = useState(false);
   const fileInputId = 'add-source-file-input';
 
-  const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal', 'google_drive', 'google_docs']);
+  const IMPLEMENTED_PROVIDERS = new Set(['website', 'youtube', 'internal', 'google_drive', 'google_docs']);
 
   const providerOptions: Array<{ value: string; labelKey: string; implemented: boolean }> = [
     { value: 'internal', labelKey: 'internal', implemented: true },
-    { value: 'unknown', labelKey: 'anyUrl', implemented: true },
+    { value: 'website', labelKey: 'website', implemented: true },
     { value: 'youtube', labelKey: 'youtube', implemented: true },
     { value: 'google_drive', labelKey: 'googleDrive', implemented: true },
     { value: 'google_docs', labelKey: 'googleDocs', implemented: true },
