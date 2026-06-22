@@ -106,9 +106,37 @@ export function useToggleMessagePin() {
       if (error) throw error;
       return { pinned: true };
     },
-    onSuccess: (_data, args) => {
+    onMutate: async (args) => {
+      const key = pinsKey(user?.id, args.ctx);
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<PinnedMessage[]>(key) || [];
+
+      if (args.isCurrentlyPinned) {
+        qc.setQueryData<PinnedMessage[]>(key, previous.filter(p => p.message_id !== args.messageId));
+      } else if (user) {
+        const optimistic: PinnedMessage = {
+          id: `optimistic-${args.messageId}`,
+          user_id: user.id,
+          message_id: args.messageId,
+          chat_id: args.ctx.chatId ?? null,
+          project_id: args.ctx.type === 'project' ? args.ctx.projectId : null,
+          notebook_id: args.ctx.type === 'notebook' ? args.ctx.notebookId : null,
+          message_role: args.messageRole,
+          message_snippet: buildSnippet(args.content),
+          message_content_snapshot: (args.content || '').slice(0, SNAPSHOT_MAX),
+          pinned_at: new Date().toISOString(),
+          metadata: {},
+        };
+        qc.setQueryData<PinnedMessage[]>(key, [optimistic, ...previous]);
+      }
+
+      return { previous, key };
+    },
+    onError: (_err, _args, ctx) => {
+      if (ctx?.key && ctx.previous) qc.setQueryData(ctx.key, ctx.previous);
+    },
+    onSettled: (_data, _err, args) => {
       qc.invalidateQueries({ queryKey: pinsKey(user?.id, args.ctx) });
-      qc.invalidateQueries({ queryKey: ['message-pins'] });
     },
   });
 }
@@ -126,11 +154,31 @@ export function useUnpinMessage() {
         .eq('user_id', user.id);
       if (error) throw error;
     },
-    onSuccess: (_data, vars) => {
+    onMutate: async ({ pinId, ctx }) => {
+      const key = pinsKey(user?.id, ctx);
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<PinnedMessage[]>(key) || [];
+      qc.setQueryData<PinnedMessage[]>(key, previous.filter(p => p.id !== pinId));
+      return { previous, key };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.key && ctx.previous) qc.setQueryData(ctx.key, ctx.previous);
+    },
+    onSettled: (_data, _err, vars) => {
       qc.invalidateQueries({ queryKey: pinsKey(user?.id, vars.ctx) });
-      qc.invalidateQueries({ queryKey: ['message-pins'] });
     },
   });
+}
+
+/**
+ * Build a Map<messageId, pinId> once per workspace render so chat
+ * messages don't each subscribe to their own pin query.
+ */
+export function buildPinnedByMessageId(pins: PinnedMessage[] | undefined): Map<string, string> {
+  const map = new Map<string, string>();
+  if (!pins) return map;
+  for (const p of pins) map.set(p.message_id, p.id);
+  return map;
 }
 
 export function useIsMessagePinned(ctx: PinContext | null, messageId: string | undefined) {
