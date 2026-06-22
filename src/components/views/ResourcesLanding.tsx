@@ -1142,11 +1142,13 @@ function AddSourceDialog({
 
   const canSubmit = isInternal
     ? files.some((f) => isFileAllowed(f.name)) && !!containerId
-    : !!url.trim() && !!containerId;
+    : isDrive
+      ? !!driveFileId && !!containerId
+      : !!url.trim() && !!containerId;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <DialogTitle>{t('resources.addSourceDialog.title')}</DialogTitle>
