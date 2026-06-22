@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2 } from 'lucide-react';
+import { Share2, Download } from 'lucide-react';
 import { PinnedMessagesPanel } from './PinnedMessagesPanel';
 import { ChatSearchControl } from './ChatSearchControl';
 import type { PinContext } from '@/hooks/useMessagePins';
@@ -12,6 +12,7 @@ interface ChatFloatingToolsProps {
   messages: Array<{ id: string; role: string; content: string }>;
   scrollContainerRef: React.RefObject<HTMLDivElement>;
   onShare?: () => void;
+  onExport?: () => void;
 }
 
 /**
@@ -21,8 +22,9 @@ interface ChatFloatingToolsProps {
  * and Notebook Chat — and don't conflict with the minimap or
  * scroll-to-top button.
  */
-export function ChatFloatingTools({ pinCtx, searchMode, messages, scrollContainerRef, onShare }: ChatFloatingToolsProps) {
+export function ChatFloatingTools({ pinCtx, searchMode, messages, scrollContainerRef, onShare, onExport }: ChatFloatingToolsProps) {
   const { t } = useTranslation();
+  const iconBtn = "h-8 w-8 inline-flex items-center justify-center rounded-full border border-border/60 bg-background/90 backdrop-blur text-muted-foreground hover:text-foreground hover:bg-background shadow-sm transition-colors";
   return (
     <div className="absolute top-3 right-12 md:right-14 z-20 hidden md:flex items-center gap-2">
       {pinCtx && (
@@ -34,6 +36,25 @@ export function ChatFloatingTools({ pinCtx, searchMode, messages, scrollContaine
         messages={messages}
         scrollContainerRef={scrollContainerRef}
       />
+      {onExport && (
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onExport}
+                aria-label={t('chatExport.title', 'Export conversation')}
+                className={iconBtn}
+              >
+                <Download className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {t('chatExport.title', 'Export conversation')}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
       {onShare && (
         <TooltipProvider delayDuration={200}>
           <Tooltip>
@@ -42,7 +63,7 @@ export function ChatFloatingTools({ pinCtx, searchMode, messages, scrollContaine
                 type="button"
                 onClick={onShare}
                 aria-label={t('projectDashboard.share', 'Share')}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-full border border-border/60 bg-background/90 backdrop-blur text-muted-foreground hover:text-foreground hover:bg-background shadow-sm transition-colors"
+                className={iconBtn}
               >
                 <Share2 className="h-4 w-4" />
               </button>
