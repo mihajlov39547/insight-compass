@@ -1681,5 +1681,51 @@
     "assistant": "Assistant",
     "toggleFailed": "Failed to update pin",
     "unpinFailed": "Failed to unpin"
+  },
+  "citationInspector": {
+    "description": "Source details",
+    "untitled": "Untitled source",
+    "source": "Source",
+    "evidenceExcerpt": "Evidence excerpt",
+    "noExcerpt": "No excerpt available",
+    "loadingExcerpt": "Loading excerpt…",
+    "location": "Location",
+    "page": "Page",
+    "section": "Section",
+    "chunkIndex": "Chunk",
+    "timestamp": "Timestamp",
+    "relevance": "Relevance",
+    "matchedQuestion": "Matched question",
+    "metadata": "Metadata",
+    "mimeType": "Type",
+    "storage": "Storage",
+    "modified": "Modified",
+    "technical": "Technical",
+    "loading": "Loading…",
+    "openOriginal": "Open original",
+    "copyExcerpt": "Copy excerpt",
+    "copiedExcerpt": "Excerpt copied",
+    "copyFailed": "Copy failed",
+    "enrichmentFailed": "Additional details could not be loaded.",
+    "provider": {
+      "googleDrive": "Google Drive",
+      "googleDocs": "Google Docs",
+      "website": "Website",
+      "youtube": "YouTube",
+      "upload": "Upload",
+      "notion": "Notion",
+      "document": "Document",
+      "web": "Web",
+      "crawl": "Website crawl",
+      "transcript": "Transcript",
+      "unknown": "Source"
+    },
+    "trace": {
+      "chunk": "Exact chunk",
+      "document": "Document metadata",
+      "resourceLink": "Linked source",
+      "urlOnly": "URL only",
+      "none": "Limited details"
+    }
   }
 }
