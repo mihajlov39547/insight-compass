@@ -155,8 +155,11 @@ export function ResourcesLanding() {
   const [driveFileName, setDriveFileName] = useState<string | null>(null);
   const [docFileId, setDocFileId] = useState<string | null>(null);
   const [docFileName, setDocFileName] = useState<string | null>(null);
+  const [crawlInstructions, setCrawlInstructions] = useState('');
+  const [crawlIncludeImages, setCrawlIncludeImages] = useState(false);
   const ingestDriveMutation = useIngestGoogleDriveFile();
   const ingestDocMutation = useIngestGoogleDoc();
+  const ingestWebsiteMutation = useIngestWebsiteCrawl();
 
   // ── Stats ───────────────────────────────────────────────────────
   const totalCount = resources.length;
