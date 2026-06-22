@@ -1698,6 +1698,20 @@
     "toggleFailed": "Neuspešno ažuriranje zakačke",
     "unpinFailed": "Neuspešno otkačivanje"
   },
+  "chatExport": {
+    "title": "Izvezi razgovor",
+    "description": "Preuzmite Markdown transkript ili otvorite prikaz za štampu radi čuvanja kao PDF.",
+    "includeSources": "Uključi izvore",
+    "includeSnippets": "Uključi isečke izvora",
+    "includeTraces": "Uključi tragove pretrage",
+    "includeTracesHint": "Provajder, upit i broj rezultata za web/YouTube/crawl.",
+    "includeFull": "Pune izvore citata",
+    "includeFullHint": "Podrazumevano isključeno radi kompaktnijeg izvoza.",
+    "includeIds": "Uključi tehničke ID-jeve",
+    "includePinned": "Uključi rezime zakačenih poruka",
+    "exportMd": "Izvezi Markdown",
+    "openPrint": "Otvori prikaz za štampu"
+  },
   "citationInspector": {
     "description": "Detalji izvora",
     "untitled": "Izvor bez naziva",

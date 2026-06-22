@@ -1682,6 +1682,20 @@
     "toggleFailed": "Failed to update pin",
     "unpinFailed": "Failed to unpin"
   },
+  "chatExport": {
+    "title": "Export conversation",
+    "description": "Download a Markdown transcript or open a print-ready view to save as PDF.",
+    "includeSources": "Include sources",
+    "includeSnippets": "Include source snippets",
+    "includeTraces": "Include retrieval traces",
+    "includeTracesHint": "Web/YouTube/crawl provider, query, counts.",
+    "includeFull": "Full citation excerpts",
+    "includeFullHint": "Off by default to keep the export compact.",
+    "includeIds": "Include technical IDs",
+    "includePinned": "Include pinned messages summary",
+    "exportMd": "Export Markdown",
+    "openPrint": "Open print preview"
+  },
   "citationInspector": {
     "description": "Source details",
     "untitled": "Untitled source",

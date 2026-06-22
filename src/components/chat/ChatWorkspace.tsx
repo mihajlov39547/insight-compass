@@ -31,10 +31,14 @@ import { useGenerationCompleteSound } from '@/hooks/useGenerationCompleteSound';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { ChatFloatingTools } from './ChatFloatingTools';
 import { usePinnedMessages, buildPinnedByMessageId, type PinContext } from '@/hooks/useMessagePins';
+import { ChatExportDialog } from './ChatExportDialog';
+import { useAuth } from '@/contexts/useAuth';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
   const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare, setShowPricing } = useApp();
+  const { user } = useAuth();
+  const [showExport, setShowExport] = useState(false);
   const { data: projects = [] } = useProjects();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedChatId ?? undefined);
   const createChat = useCreateChat();
@@ -354,7 +358,19 @@ export function ChatWorkspace() {
           searchMode="project"
           messages={messages.map(m => ({ id: m.id, role: m.role, content: m.content }))}
           scrollContainerRef={messagesViewportRef}
+          onExport={messages.length > 0 ? () => setShowExport(true) : undefined}
         />
+
+        <ChatExportDialog
+          open={showExport}
+          onOpenChange={setShowExport}
+          contextType="project"
+          contextName={selectedProject?.name ?? 'project'}
+          chatTitle={selectedChat?.name}
+          exportedByLabel={user?.email ?? undefined}
+          messages={messages as any}
+        />
+
 
 
 
