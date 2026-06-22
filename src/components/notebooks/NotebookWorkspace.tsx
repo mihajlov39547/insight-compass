@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
+import { ChatQuestionNavigator } from '@/components/chat/ChatQuestionNavigator';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -901,7 +902,13 @@ export function NotebookWorkspace() {
                       <ArrowUp className="h-4 w-4" />
                     </Button>
                   )}
+
+                  <ChatQuestionNavigator
+                    messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
+                    scrollContainerRef={chatViewportRef}
+                  />
                 </div>
+
 
                 {/* Chat input — shared component */}
                 {permissions.canSendMessages ? (
@@ -1327,7 +1334,11 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
   })();
 
   return (
-    <div className={cn("flex gap-3 animate-fade-in", isUser ? "flex-row-reverse" : "flex-row")}>
+    <div
+      data-chat-turn-id={message.id}
+      data-chat-turn-role={message.role}
+      className={cn("flex gap-3 animate-fade-in", isUser ? "flex-row-reverse" : "flex-row")}
+    >
       <Avatar className={cn("h-8 w-8 shrink-0", isUser ? "bg-primary" : "bg-gradient-to-br from-accent to-accent/70")}>
         <AvatarFallback className={cn(isUser ? "bg-primary text-primary-foreground" : "bg-transparent text-accent-foreground")}>
           {isUser ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
