@@ -38,6 +38,15 @@ const TIER_PARAMS: Record<Tier, TierParams> = {
 const MAX_INSTRUCTIONS_LENGTH = 1000;
 const MAX_DEPTH = 5;
 
+// Hard cap on the merged Markdown size we will upload + index, per tier.
+// Keeps us under typical document size limits and avoids runaway storage/cost.
+const TIER_MAX_MARKDOWN_BYTES: Record<Tier, number> = {
+  free: 2 * 1024 * 1024,        // 2 MB
+  basic: 8 * 1024 * 1024,       // 8 MB
+  premium: 20 * 1024 * 1024,    // 20 MB
+  enterprise: 40 * 1024 * 1024, // 40 MB
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
