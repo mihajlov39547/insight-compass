@@ -1548,6 +1548,135 @@ function GoogleDrivePicker({
   );
 }
 
+function GoogleDocsPicker({
+  selectedFileId,
+  onSelect,
+  disabled,
+}: {
+  selectedFileId: string | null;
+  onSelect: (file: GoogleDoc | null) => void;
+  disabled?: boolean;
+}) {
+  const { t } = useTranslation();
+  const [rawQuery, setRawQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  useEffect(() => {
+    const tm = setTimeout(() => setDebouncedQuery(rawQuery.trim()), 300);
+    return () => clearTimeout(tm);
+  }, [rawQuery]);
+
+  const { data: files = [], isLoading, error, refetch, isFetching } = useGoogleDocsSearch({
+    query: debouncedQuery,
+    enabled: true,
+  });
+
+  const errCode: string | undefined = (error as any)?.code;
+  const notConnected = errCode === 'google_docs_not_connected';
+  const permissionDenied = errCode === 'google_docs_permission_denied';
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={rawQuery}
+            onChange={(e) => setRawQuery(e.target.value)}
+            placeholder={t('resources.addSourceDialog.googleDocs.searchPlaceholder')}
+            className="h-9 pl-7 text-sm"
+            disabled={disabled || notConnected}
+          />
+        </div>
+        {isFetching && !isLoading && (
+          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+        )}
+      </div>
+
+      <div className="border border-border rounded-md max-h-[260px] overflow-auto bg-card">
+        {notConnected ? (
+          <div className="p-4 text-center text-xs">
+            <p className="text-foreground font-medium mb-1">
+              {t('resources.addSourceDialog.googleDocs.notConnected')}
+            </p>
+          </div>
+        ) : permissionDenied ? (
+          <div className="p-4 text-center text-xs">
+            <p className="text-foreground font-medium mb-1">Access denied</p>
+            <p className="text-muted-foreground">Reconnect Google Docs with read access and retry.</p>
+          </div>
+        ) : isLoading ? (
+          <div className="p-6 flex items-center justify-center">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : error ? (
+          <div className="p-4 text-center text-xs">
+            <p className="text-destructive mb-2">{(error as any)?.message || 'Search failed.'}</p>
+            <Button size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
+          </div>
+        ) : files.length === 0 ? (
+          <div className="p-6 text-center text-xs text-muted-foreground">
+            {debouncedQuery
+              ? t('resources.addSourceDialog.googleDocs.noResults')
+              : t('resources.addSourceDialog.googleDocs.searchPlaceholder')}
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {files.map((f) => {
+              const selected = f.id === selectedFileId;
+              return (
+                <li key={f.id}>
+                  <button
+                    type="button"
+                    disabled={disabled || !f.supported}
+                    onClick={() => onSelect(selected ? null : f)}
+                    className={cn(
+                      'w-full text-left px-3 py-2 flex items-start gap-2 text-xs transition-colors',
+                      selected ? 'bg-accent/10' : 'hover:bg-muted/50',
+                      !f.supported && 'opacity-60 cursor-not-allowed',
+                    )}
+                  >
+                    <span className={cn(
+                      'mt-0.5 h-3.5 w-3.5 rounded-full border shrink-0',
+                      selected ? 'bg-accent border-accent' : 'border-muted-foreground/40',
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">{f.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        <span>Google Doc</span>
+                        {f.ownerName && <> · {f.ownerName}</>}
+                        {f.modifiedTime && <> · {new Date(f.modifiedTime).toLocaleDateString()}</>}
+                        {!f.supported && <> · {t('resources.addSourceDialog.googleDocs.cannotExport')}</>}
+                      </p>
+                    </div>
+                    {f.webViewLink && (
+                      <a
+                        href={f.webViewLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-muted-foreground hover:text-foreground shrink-0"
+                        title={t('resources.addSourceDialog.googleDocs.openOriginal')}
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+      <p className="text-[10.5px] text-muted-foreground">
+        Read-only. Exported as Markdown when possible (10 MB Google Docs export limit).
+      </p>
+    </div>
+  );
+}
+
+
+
 
 
 function PermissionRow({ label, enabled }: { label: string; enabled: boolean }) {
