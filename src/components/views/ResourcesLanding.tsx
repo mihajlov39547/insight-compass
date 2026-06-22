@@ -824,6 +824,10 @@ export function ResourcesLanding() {
           setDocFileId(file?.id ?? null);
           setDocFileName(file?.name ?? null);
         }}
+        crawlInstructions={crawlInstructions}
+        crawlIncludeImages={crawlIncludeImages}
+        onCrawlInstructionsChange={setCrawlInstructions}
+        onCrawlIncludeImagesChange={setCrawlIncludeImages}
         onOpenChange={(open) => {
           setAddSourceOpen(open);
           if (!open) resetAddSourceDialog();
