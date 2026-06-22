@@ -1078,6 +1078,9 @@ function AddSourceDialog({
   submitting,
   files,
   onFilesChange,
+  driveFileId,
+  driveFileName,
+  onDriveSelect,
   onOpenChange,
   onUrlChange,
   onTitleChange,
@@ -1097,6 +1100,9 @@ function AddSourceDialog({
   submitting: boolean;
   files: File[];
   onFilesChange: (files: File[]) => void;
+  driveFileId: string | null;
+  driveFileName: string | null;
+  onDriveSelect: (file: DriveFile | null) => void;
   onOpenChange: (open: boolean) => void;
   onUrlChange: (value: string) => void;
   onTitleChange: (value: string) => void;
