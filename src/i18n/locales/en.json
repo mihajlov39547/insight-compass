@@ -616,6 +616,11 @@
       "urlPlaceholder": "https://example.com/resource",
       "titleLabel": "Title (optional)",
       "titlePlaceholder": "Readable resource title",
+      "crawlInstructionsLabel": "Crawler instructions",
+      "crawlInstructionsPlaceholder": "Natural language instructions to guide the crawler.",
+      "crawlInstructionsHelper": "Optional. Use this to focus the crawl on specific topics, docs, pricing pages, SDKs, FAQs, etc.",
+      "includeImagesLabel": "Include images",
+      "includeImagesHelper": "Store image URLs from the website as metadata. Images remain hosted on the original website.",
       "provider": "Provider",
       "providers": {
         "anyUrl": "Website",
