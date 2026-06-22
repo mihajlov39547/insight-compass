@@ -621,6 +621,7 @@
         "anyUrl": "Any URL",
         "youtube": "YouTube",
         "googleDrive": "Google Drive",
+        "googleDocs": "Google Docs",
         "dropbox": "Dropbox",
         "notion": "Notion",
         "internal": "Internal"
