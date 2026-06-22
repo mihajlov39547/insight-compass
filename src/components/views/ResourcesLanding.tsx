@@ -1121,6 +1121,9 @@ function AddSourceDialog({
   driveFileId,
   driveFileName,
   onDriveSelect,
+  docFileId,
+  docFileName,
+  onDocSelect,
   onOpenChange,
   onUrlChange,
   onTitleChange,
@@ -1143,6 +1146,9 @@ function AddSourceDialog({
   driveFileId: string | null;
   driveFileName: string | null;
   onDriveSelect: (file: DriveFile | null) => void;
+  docFileId: string | null;
+  docFileName: string | null;
+  onDocSelect: (file: GoogleDoc | null) => void;
   onOpenChange: (open: boolean) => void;
   onUrlChange: (value: string) => void;
   onTitleChange: (value: string) => void;
@@ -1155,15 +1161,17 @@ function AddSourceDialog({
   const targetOptions = containerType === 'project' ? projects : notebooks;
   const isInternal = provider === 'internal';
   const isDrive = provider === 'google_drive';
+  const isDocs = provider === 'google_docs';
   const [isDragging, setIsDragging] = useState(false);
   const fileInputId = 'add-source-file-input';
 
-  const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal', 'google_drive']);
+  const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal', 'google_drive', 'google_docs']);
 
   const providerOptions: Array<{ value: string; labelKey: string; implemented: boolean }> = [
     { value: 'unknown', labelKey: 'anyUrl', implemented: true },
     { value: 'youtube', labelKey: 'youtube', implemented: true },
     { value: 'google_drive', labelKey: 'googleDrive', implemented: true },
+    { value: 'google_docs', labelKey: 'googleDocs', implemented: true },
     { value: 'dropbox', labelKey: 'dropbox', implemented: false },
     { value: 'notion', labelKey: 'notion', implemented: false },
     { value: 'internal', labelKey: 'internal', implemented: true },
@@ -1184,7 +1192,9 @@ function AddSourceDialog({
     ? files.some((f) => isFileAllowed(f.name)) && !!containerId
     : isDrive
       ? !!driveFileId && !!containerId
-      : !!url.trim() && !!containerId;
+      : isDocs
+        ? !!docFileId && !!containerId
+        : !!url.trim() && !!containerId;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
