@@ -1619,14 +1619,21 @@ function GoogleDrivePicker({
             {files.map((f) => {
               const selected = f.id === selectedFileId;
               const label = SUPPORTED_DRIVE_MIME_LABELS[f.mimeType] || f.mimeType;
+              const metaText = [
+                label,
+                f.owner,
+                f.modifiedTime ? new Date(f.modifiedTime).toLocaleDateString() : null,
+                !f.supported ? 'Not supported yet' : null,
+              ].filter(Boolean).join(' · ');
               return (
-                <li key={f.id}>
+                <li key={f.id} className="flex items-stretch">
                   <button
                     type="button"
                     disabled={disabled || !f.supported}
                     onClick={() => onSelect(selected ? null : f)}
+                    title={`${f.name}\n${metaText}`}
                     className={cn(
-                      'w-full text-left px-3 py-2 flex items-start gap-2 text-xs transition-colors',
+                      'flex-1 min-w-0 text-left px-3 py-2 flex items-start gap-2 text-xs transition-colors',
                       selected ? 'bg-accent/10' : 'hover:bg-muted/50',
                       !f.supported && 'opacity-60 cursor-not-allowed',
                     )}
@@ -1637,26 +1644,21 @@ function GoogleDrivePicker({
                     )} />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground truncate">{f.name}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        <span>{label}</span>
-                        {f.owner && <> · {f.owner}</>}
-                        {f.modifiedTime && <> · {new Date(f.modifiedTime).toLocaleDateString()}</>}
-                        {!f.supported && <> · Not supported yet</>}
-                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">{metaText}</p>
                     </div>
-                    {f.webViewLink && (
-                      <a
-                        href={f.webViewLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-muted-foreground hover:text-foreground shrink-0"
-                        title="Open in Drive"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    )}
                   </button>
+                  {f.webViewLink && (
+                    <a
+                      href={f.webViewLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center px-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0 border-l border-border"
+                      title="Open in Drive"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
                 </li>
               );
             })}
