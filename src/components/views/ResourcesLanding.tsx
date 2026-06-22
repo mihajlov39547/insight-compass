@@ -1280,7 +1280,8 @@ function AddSourceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden p-0">
+        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto px-6 py-6">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <DialogTitle>{t('resources.addSourceDialog.title')}</DialogTitle>
@@ -1504,8 +1505,9 @@ function AddSourceDialog({
         <p className="text-[11px] text-muted-foreground">
           {t('resources.addSourceDialog.footnote')}
         </p>
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('resources.addSourceDialog.cancel')}</Button>
           <Button onClick={onSubmit} disabled={submitting || !canSubmit}>
             {submitting ? t('resources.addSourceDialog.submitting') : t('resources.addSourceDialog.submit')}
