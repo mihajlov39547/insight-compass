@@ -151,21 +151,6 @@ export function ChatWorkspace() {
     wasGeneratingRef.current = isGenerating;
   }, [isGenerating]);
 
-  // Register messages + scroll container with the search bridge so the
-  // top contextual header can render a chat-aware ChatSearchControl.
-  const { setData: setSearchBridge } = useChatSearchBridge();
-  useEffect(() => {
-    if (!selectedChatId) {
-      setSearchBridge(null);
-      return;
-    }
-    setSearchBridge({
-      mode: 'project',
-      messages: messages.map(m => ({ id: m.id, role: m.role, content: m.content })),
-      scrollContainerRef: messagesViewportRef,
-    });
-    return () => setSearchBridge(null);
-  }, [messages, selectedChatId, setSearchBridge]);
 
   if (!selectedProjectId || !selectedProject) {
     return <ProjectsLanding />;
