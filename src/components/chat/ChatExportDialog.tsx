@@ -103,7 +103,7 @@ export function ChatExportDialog({
         <DialogHeader>
           <DialogTitle>{t('chatExport.title', 'Export conversation')}</DialogTitle>
           <DialogDescription>
-            {t('chatExport.description', 'Download a Markdown transcript or open a print-ready view to save as PDF.')}
+            {t('chatExport.description', 'Download this conversation as Markdown or PDF.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -119,13 +119,13 @@ export function ChatExportDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={handlePrint} className="gap-1.5">
-            <Printer className="h-4 w-4" />
-            {t('chatExport.openPrint', 'Open print preview')}
-          </Button>
-          <Button onClick={handleMarkdown} className="gap-1.5">
+          <Button variant="outline" onClick={handleMarkdown} className="gap-1.5">
             <Download className="h-4 w-4" />
             {t('chatExport.exportMd', 'Export Markdown')}
+          </Button>
+          <Button onClick={handlePdf} disabled={pdfLoading} className="gap-1.5">
+            {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+            {pdfLoading ? t('chatExport.generatingPdf', 'Generating PDF…') : t('chatExport.exportPdf', 'Download PDF')}
           </Button>
         </DialogFooter>
       </DialogContent>
