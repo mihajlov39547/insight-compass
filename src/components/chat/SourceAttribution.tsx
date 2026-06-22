@@ -8,7 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SourceCitationInspector } from './SourceCitationInspector';
-import { normalizeSourceItemToCitation, type CanonicalCitation } from '@/lib/citations';
+import { normalizeSourceItemToCitation, normalizeCitationsFromMessageSources, type CanonicalCitation } from '@/lib/citations';
+import { useTranslation } from 'react-i18next';
 
 export interface SourceItem {
   id: string;
