@@ -130,6 +130,7 @@ export interface Resource {
   canOpen: boolean;
   canViewDetails: boolean;
   canDownload: boolean;
+  canOpenExternal: boolean;
   canRename: boolean;
   canDelete: boolean;
   canRetry: boolean;
@@ -153,7 +154,11 @@ export interface Resource {
   mediaDurationSeconds: number | null;
   transcriptStatus: string | null;
   transcriptError: string | null;
+  externalUrl: string | null;
+  storageMode: 'stored_copy' | 'external_reference';
+  externalModifiedAt: string | null;
 }
+
 
 function parseResourceType(value: unknown): ResourceType {
   if (typeof value === 'string' && RESOURCE_TYPE_VALUES.includes(value as ResourceType)) {
@@ -198,6 +203,9 @@ export function mapRpcRowToResource(row: Record<string, any>): Resource {
   const sourceType = parseSourceType(row.source_type);
   const sharedWithMe = row.is_shared_with_me ?? row.is_shared ?? false;
   const ownedByMe = row.is_owned_by_me ?? !sharedWithMe;
+  const storageMode: 'stored_copy' | 'external_reference' =
+    row.storage_mode === 'external_reference' ? 'external_reference' : 'stored_copy';
+  const externalUrl = (row.external_url || null) as string | null;
 
   return {
     id: row.id,
@@ -227,7 +235,10 @@ export function mapRpcRowToResource(row: Record<string, any>): Resource {
     isShared: !!sharedWithMe,
     canOpen: row.can_open ?? true,
     canViewDetails: row.can_view_details ?? true,
-    canDownload: row.can_download ?? true,
+    // External-reference Google sources don't have a downloadable Storage copy;
+    // their action is "Open original" (canOpenExternal), not download.
+    canDownload: storageMode === 'external_reference' ? false : (row.can_download ?? true),
+    canOpenExternal: Boolean(externalUrl),
     canRename: row.can_rename ?? false,
     canDelete: row.can_delete ?? false,
     canRetry: row.can_retry ?? false,
@@ -254,8 +265,12 @@ export function mapRpcRowToResource(row: Record<string, any>): Resource {
     mediaDurationSeconds: row.media_duration_seconds ?? null,
     transcriptStatus: row.transcript_status || null,
     transcriptError: row.transcript_error || null,
+    externalUrl,
+    storageMode,
+    externalModifiedAt: row.external_modified_at || null,
   };
 }
+
 
 // ── Helpers ──────────────────────────────────────────────────────────
 export function formatFileSize(bytes: number): string {

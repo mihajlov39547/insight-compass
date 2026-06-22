@@ -2074,12 +2074,41 @@ export async function finalizeDocumentStage(
       : "completed";
 
   if (finalStatus === "failed") {
+    // For external_reference sources (Google Drive/Docs), the bytes uploaded
+    // during ingestion are temporary. On failure, also delete the temp object
+    // and clear storage_path so we don't leak storage on stuck/failed docs.
+    let clearedStoragePath = false;
+    if (doc.storage_mode === "external_reference" && doc.storage_path) {
+      try {
+        const { error: removeErr } = await supabase.storage
+          .from("insight-navigator")
+          .remove([doc.storage_path]);
+        if (removeErr) {
+          console.warn(
+            `[finalize] failed to remove temp external_reference object on failure ${doc.storage_path}: ${removeErr.message}`
+          );
+        } else {
+          clearedStoragePath = true;
+        }
+      } catch (err) {
+        console.warn(
+          `[finalize] unexpected error removing temp external_reference object on failure`,
+          err
+        );
+      }
+    }
+
+    const failedUpdate: Record<string, unknown> = {
+      processing_status: "failed",
+      processing_error: requestedError ?? doc.processing_error ?? "Document processing failed",
+    };
+    if (clearedStoragePath) {
+      failedUpdate.storage_path = null;
+    }
+
     const { error } = await supabase
       .from("documents")
-      .update({
-        processing_status: "failed",
-        processing_error: requestedError ?? doc.processing_error ?? "Document processing failed",
-      })
+      .update(failedUpdate)
       .eq("id", documentId);
 
     if (error) {
@@ -2095,6 +2124,7 @@ export async function finalizeDocumentStage(
       finalized_at: new Date().toISOString(),
     };
   }
+
 
   // Strict readiness gate: never report `completed` unless the document
   // actually has searchable content (chunks) AND at least one embedded chunk.

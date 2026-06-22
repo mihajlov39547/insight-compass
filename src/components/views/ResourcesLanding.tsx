@@ -316,37 +316,28 @@ export function ResourcesLanding() {
   };
 
   const handleDownload = async (resource: Resource) => {
+    // External-reference Google sources: open original, never try Storage.
+    if (resource.storageMode === 'external_reference') {
+      if (resource.externalUrl) {
+        window.open(resource.externalUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      toast({
+        title: 'Original not available',
+        description: 'No external link is recorded for this source.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (!resource.canDownload) return;
     try {
-      // For Google Drive/Docs sources we don't keep a permanent Storage copy —
-      // the original file lives in Google. Open the source link instead.
-      if (resource.provider === 'google_drive' || resource.provider === 'google_docs') {
-        const { data, error } = await supabase
-          .from('documents')
-          .select('external_url, storage_mode, storage_path')
-          .eq('id', resource.id)
-          .maybeSingle();
-        if (error) throw error;
-        const externalUrl = (data as any)?.external_url as string | null;
-        if (externalUrl) {
-          window.open(externalUrl, '_blank', 'noopener,noreferrer');
-          return;
-        }
-        // Fall through to Storage only if a stored copy still exists.
-        if ((data as any)?.storage_mode === 'external_reference' || !(data as any)?.storage_path) {
-          toast({
-            title: 'Open original',
-            description: 'This source lives in Google. Use the source link to open it.',
-          });
-          return;
-        }
-      }
       const signedUrl = await downloadResourceFromStorage(resource.storagePath);
       window.open(signedUrl, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
       toast({ title: 'Download failed', description: err.message || 'Unable to create download link', variant: 'destructive' });
     }
   };
+
 
   const openRenameDialog = (resource: Resource) => {
     if (!resource.canRename) return;
@@ -881,9 +872,11 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   const canDelete = resource.canDelete;
   const canOpen = resource.canOpen && !!resource.containerId;
   const canViewDetails = resource.canViewDetails;
-  const canDownload = resource.canDownload && !!resource.storagePath;
+  const canDownload = resource.canDownload && !!resource.storagePath && resource.storageMode !== 'external_reference';
+  const canOpenExternal = resource.canOpenExternal;
   const canRename = resource.canRename;
-  const showActions = canOpen || canViewDetails || canDownload || canRetry || canDelete || canRename;
+  const showActions = canOpen || canViewDetails || canDownload || canOpenExternal || canRetry || canDelete || canRename;
+
   const isLinkedResource = resource.resourceType === 'link' || resource.sourceType === 'linked';
   const previewImage = resource.mediaThumbnailUrl || resource.previewFaviconUrl;
   const retryLabel = resource.provider === 'youtube' && resource.transcriptStatus === 'failed'
@@ -1011,6 +1004,16 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
                 <DropdownMenuItem className="text-xs gap-2" onClick={onDownload}>
                   <Download className="h-3.5 w-3.5" />
                   {t('resources.actions.download')}
+                </DropdownMenuItem>
+              )}
+              {canOpenExternal && !canDownload && (
+                <DropdownMenuItem className="text-xs gap-2" onClick={onDownload}>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {resource.provider === 'google_docs'
+                    ? 'Open in Google Docs'
+                    : resource.provider === 'google_drive'
+                      ? 'Open in Google Drive'
+                      : 'Open original'}
                 </DropdownMenuItem>
               )}
               {canRename && (
@@ -1966,18 +1969,19 @@ function ResourceDetailsDrawer({
                 <Globe className="h-3.5 w-3.5" /> {t('resources.actions.viewInPersonal')}
               </Button>
             )}
-            {resource.canDownload && (
+            {resource.storageMode !== 'external_reference' && resource.canDownload && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
-                {resource.provider === 'google_drive' || resource.provider === 'google_docs' ? (
-                  <>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {resource.provider === 'google_docs' ? 'Open in Google Docs' : 'Open in Google Drive'}
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
-                  </>
-                )}
+                <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
+              </Button>
+            )}
+            {resource.canOpenExternal && resource.storageMode === 'external_reference' && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
+                <ExternalLink className="h-3.5 w-3.5" />
+                {resource.provider === 'google_docs'
+                  ? 'Open in Google Docs'
+                  : resource.provider === 'google_drive'
+                    ? 'Open in Google Drive'
+                    : 'Open original'}
               </Button>
             )}
             {resource.canRename && (

@@ -489,7 +489,7 @@ export type Database = {
           provider: string
           retry_count: number
           storage_mode: string
-          storage_path: string
+          storage_path: string | null
           summary: string | null
           updated_at: string
           user_id: string
@@ -519,7 +519,7 @@ export type Database = {
           provider?: string
           retry_count?: number
           storage_mode?: string
-          storage_path: string
+          storage_path?: string | null
           summary?: string | null
           updated_at?: string
           user_id: string
@@ -549,7 +549,7 @@ export type Database = {
           provider?: string
           retry_count?: number
           storage_mode?: string
-          storage_path?: string
+          storage_path?: string | null
           summary?: string | null
           updated_at?: string
           user_id?: string
@@ -2240,6 +2240,13 @@ export type Database = {
       }
       cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
       cleanup_expired_pending_registrations: { Args: never; Returns: undefined }
+      cleanup_stale_external_reference_temp_files: {
+        Args: never
+        Returns: {
+          document_id: string
+          storage_path: string
+        }[]
+      }
       cleanup_workflow_logs: { Args: never; Returns: Json }
       complete_youtube_transcript_job: {
         Args: {
@@ -2382,6 +2389,8 @@ export type Database = {
           container_type: string
           detected_language: string
           extension: string
+          external_modified_at: string
+          external_url: string
           id: string
           is_owned_by_me: boolean
           is_shared: boolean
@@ -2410,6 +2419,7 @@ export type Database = {
           resource_type: string
           size_bytes: number
           source_type: string
+          storage_mode: string
           storage_path: string
           summary: string
           title: string
