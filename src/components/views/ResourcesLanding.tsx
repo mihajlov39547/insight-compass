@@ -872,9 +872,11 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   const canDelete = resource.canDelete;
   const canOpen = resource.canOpen && !!resource.containerId;
   const canViewDetails = resource.canViewDetails;
-  const canDownload = resource.canDownload && !!resource.storagePath;
+  const canDownload = resource.canDownload && !!resource.storagePath && resource.storageMode !== 'external_reference';
+  const canOpenExternal = resource.canOpenExternal;
   const canRename = resource.canRename;
-  const showActions = canOpen || canViewDetails || canDownload || canRetry || canDelete || canRename;
+  const showActions = canOpen || canViewDetails || canDownload || canOpenExternal || canRetry || canDelete || canRename;
+
   const isLinkedResource = resource.resourceType === 'link' || resource.sourceType === 'linked';
   const previewImage = resource.mediaThumbnailUrl || resource.previewFaviconUrl;
   const retryLabel = resource.provider === 'youtube' && resource.transcriptStatus === 'failed'
