@@ -206,8 +206,8 @@ export function SourceCitationInspector({ citation, open, onOpenChange }: Source
                 {t("citationInspector.evidenceExcerpt", "Evidence excerpt")}
               </div>
               {merged.excerpt ? (
-                <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-foreground/90 whitespace-pre-wrap max-h-72 overflow-auto">
-                  {merged.excerpt}
+                <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-foreground/90 max-h-72 overflow-auto">
+                  <MarkdownContent content={merged.excerpt} />
                 </div>
               ) : isLoading ? (
                 <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground inline-flex items-center gap-2">
