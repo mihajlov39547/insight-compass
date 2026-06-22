@@ -240,6 +240,21 @@ Deno.serve(async (req: Request) => {
     const markdown = buildMarkdown(url.toString(), instructions, results);
     const bytes = new TextEncoder().encode(markdown);
 
+    const maxBytes = TIER_MAX_MARKDOWN_BYTES[tier];
+    if (bytes.byteLength > maxBytes) {
+      const mb = (maxBytes / (1024 * 1024)).toFixed(0);
+      return jsonResponse({
+        error: 'too_large',
+        message: `Crawled content (${(bytes.byteLength / (1024 * 1024)).toFixed(1)} MB) exceeds the ${mb} MB limit for your plan. Try narrowing the crawl with instructions.`,
+      }, 413);
+    }
+
+    // Dedupe URLs / images while preserving order.
+    const crawledUrls = Array.from(new Set(
+      results.map((r: any) => (typeof r?.url === 'string' ? r.url : '')).filter(Boolean),
+    ));
+    const dedupedImageUrls = Array.from(new Set(imageUrls));
+
     // Insert document + temp markdown in storage. storage_mode='external_reference'
     // means the finalize stage will delete the temp object after processing.
     const projectIdForPath = containerType === 'project' ? containerId : 'notebooks';
@@ -255,8 +270,6 @@ Deno.serve(async (req: Request) => {
       console.error('[website-crawl-ingest] storage upload failed', storageErr.message);
       return jsonResponse({ error: 'storage_failed', message: storageErr.message }, 500);
     }
-
-    const crawledUrls = results.map((r: any) => (typeof r?.url === 'string' ? r.url : '')).filter(Boolean);
 
     const insertRow: Record<string, unknown> = {
       id: newDocId,
@@ -284,7 +297,7 @@ Deno.serve(async (req: Request) => {
         chunks_per_source: params.chunksPerSource,
         crawled_pages: results.length,
         crawled_urls: crawledUrls.slice(0, 500),
-        image_urls: includeImages ? imageUrls.slice(0, 500) : [],
+        image_urls: includeImages ? dedupedImageUrls.slice(0, 500) : [],
         tavily_request_id: typeof data?.request_id === 'string' ? data.request_id : null,
         tavily_response_time: typeof data?.response_time === 'number' ? data.response_time : null,
         tier,
@@ -304,9 +317,12 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'insert_failed', message: insertErr.message }, 500);
     }
 
-    // Kick processing workflow
+    // Kick processing workflow. If this fails we must NOT leave an orphaned
+    // document + temp storage object behind — roll both back and surface the error.
+    let workflowOk = false;
+    let workflowErrMessage: string | null = null;
     try {
-      await fetch(`${supaUrl}/functions/v1/workflow-start`, {
+      const wfResp = await fetch(`${supaUrl}/functions/v1/workflow-start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -328,8 +344,24 @@ Deno.serve(async (req: Request) => {
           create_initial_context_snapshot: true,
         }),
       });
-    } catch (err) {
-      console.warn('[website-crawl-ingest] workflow-start error', err);
+      if (wfResp.ok) {
+        workflowOk = true;
+      } else {
+        const text = await wfResp.text().catch(() => '');
+        workflowErrMessage = `workflow-start ${wfResp.status}: ${text.slice(0, 200)}`;
+      }
+    } catch (err: any) {
+      workflowErrMessage = err?.message || 'workflow-start threw';
+    }
+
+    if (!workflowOk) {
+      console.error('[website-crawl-ingest] workflow-start failed; rolling back', workflowErrMessage);
+      await admin.from('documents').delete().eq('id', inserted.id).catch(() => {});
+      await admin.storage.from('insight-navigator').remove([storagePath]).catch(() => {});
+      return jsonResponse({
+        error: 'workflow_start_failed',
+        message: 'Could not start indexing the crawled content. Please try again.',
+      }, 502);
     }
 
     return jsonResponse({
