@@ -1684,7 +1684,7 @@
   },
   "chatExport": {
     "title": "Export conversation",
-    "description": "Download a Markdown transcript or open a print-ready view to save as PDF.",
+    "description": "Download this conversation as Markdown or PDF.",
     "includeSources": "Include sources",
     "includeSnippets": "Include source snippets",
     "includeTraces": "Include retrieval traces",
@@ -1694,7 +1694,10 @@
     "includeIds": "Include technical IDs",
     "includePinned": "Include pinned messages summary",
     "exportMd": "Export Markdown",
-    "openPrint": "Open print preview"
+    "exportPdf": "Download PDF",
+    "generatingPdf": "Generating PDF…",
+    "pdfErrorTitle": "Could not generate PDF",
+    "pdfErrorDesc": "Please try Markdown export instead."
   },
   "citationInspector": {
     "description": "Source details",
