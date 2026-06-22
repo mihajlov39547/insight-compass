@@ -247,13 +247,23 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
             return (
               <div
                 key={docId}
-                className="block rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors overflow-hidden"
+                role="button"
+                tabIndex={0}
+                onClick={() => openInspectorFor(primary)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openInspectorFor(primary);
+                  }
+                }}
+                className="block rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors overflow-hidden cursor-pointer"
               >
                 <div className="flex gap-3 p-2">
                   <a
                     href={ytUrl || '#'}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     className="shrink-0"
                     aria-label={`Open ${displayTitle} on YouTube`}
                   >
