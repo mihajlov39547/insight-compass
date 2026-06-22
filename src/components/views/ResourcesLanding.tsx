@@ -1487,7 +1487,7 @@ function AddSourceDialog({
 
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">{t('resources.addSourceDialog.target', { type: containerLabel })}</p>
-          <Select value={containerId ?? undefined} onValueChange={(v) => onContainerIdChange(v || null)}>
+          <Select value={containerId ?? '__none__'} onValueChange={(v) => onContainerIdChange(v === '__none__' ? null : v)}>
             <SelectTrigger className="h-9 text-sm">
               <SelectValue placeholder={t('resources.addSourceDialog.selectTarget', { type: containerLabel })} />
             </SelectTrigger>
