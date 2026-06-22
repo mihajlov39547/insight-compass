@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { useCitationDetails } from "@/hooks/useCitationDetails";
 import type { CanonicalCitation } from "@/lib/citations";
+import { MarkdownContent } from "@/components/chat/MarkdownContent";
 
 interface SourceCitationInspectorProps {
   citation: CanonicalCitation | null;
