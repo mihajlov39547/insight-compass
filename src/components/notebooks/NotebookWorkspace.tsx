@@ -889,268 +889,106 @@ export function NotebookWorkspace() {
         languageContext="notebook"
       />
 
-      {/* 3-column layout */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
-        {/* LEFT RAIL — always visible when no panel is open. Hosts Sources + Notes toggles. */}
-        {leftPanel === null && (
-          <div className="flex flex-col items-center w-10 shrink-0 border-r border-border bg-muted/20 py-3 gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => toggleLeftPanel('sources')}
-              aria-pressed={false}
-              aria-label={t('notebookWorkspace.sources.expand')}
-              title={t('notebookWorkspace.sources.expand')}
-            >
-              <PanelLeftOpen className="h-4 w-4" />
-            </Button>
-            <button
-              onClick={() => toggleLeftPanel('sources')}
-              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide"
-              aria-label={t('notebookWorkspace.sources.expand')}
-              title={t('notebookWorkspace.sources.expand')}
-            >
+      {/* Rail + optional panel + chat */}
+      <div className="flex flex-1 min-h-0">
+        {/* LEFT RAIL — always visible. Hosts Sources + Notes toggles. */}
+        <div
+          className="flex flex-col items-center w-10 shrink-0 border-r border-border bg-muted/20 py-3 gap-2"
+          role="toolbar"
+          aria-label={t('notebookWorkspace.sideRail.title', 'Sidebar')}
+        >
+          <button
+            type="button"
+            onClick={() => toggleLeftPanel('sources')}
+            className={cn(
+              "flex flex-col items-center justify-center w-8 rounded-md py-2 gap-1 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+              leftPanel === 'sources'
+                ? "bg-accent/10 text-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
+            aria-pressed={leftPanel === 'sources'}
+            aria-label={leftPanel === 'sources' ? t('notebookWorkspace.sources.collapse') : t('notebookWorkspace.sources.expand')}
+            title={leftPanel === 'sources' ? t('notebookWorkspace.sources.collapse') : t('notebookWorkspace.sources.expand')}
+          >
+            <FileText className="h-4 w-4" />
+            <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-semibold tracking-wide leading-none">
               {t('notebookWorkspace.sources.title')}{hasSources ? ` (${documents.length + linkedVideos.length})` : ''}
-            </button>
-            <div className="h-px w-6 bg-border my-1" />
-            <button
-              onClick={() => toggleLeftPanel('notes')}
-              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide"
-              aria-label={t('notebookWorkspace.notes.expand')}
-              title={t('notebookWorkspace.notes.expand')}
-            >
+            </span>
+          </button>
+
+          <div className="h-px w-6 bg-border my-1" />
+
+          <button
+            type="button"
+            onClick={() => toggleLeftPanel('notes')}
+            className={cn(
+              "flex flex-col items-center justify-center w-8 rounded-md py-2 gap-1 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+              leftPanel === 'notes'
+                ? "bg-accent/10 text-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
+            aria-pressed={leftPanel === 'notes'}
+            aria-label={leftPanel === 'notes' ? t('notebookWorkspace.notes.collapse') : t('notebookWorkspace.notes.expand')}
+            title={leftPanel === 'notes' ? t('notebookWorkspace.notes.collapse') : t('notebookWorkspace.notes.expand')}
+          >
+            <StickyNote className="h-4 w-4" />
+            <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-semibold tracking-wide leading-none">
               {t('notebookWorkspace.notes.title')}{notes.length > 0 ? ` (${notes.length})` : ''}
-            </button>
-          </div>
-        )}
+            </span>
+          </button>
+        </div>
 
-        {/* LEFT PANEL — Sources */}
-        {leftPanel === 'sources' && (
-        <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
+        <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
+          {/* LEFT PANEL — Sources */}
+          {leftPanel === 'sources' && (
+            <>
+              <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
+                <NotebookSourcesPanel
+                  documents={documents}
+                  linkedVideos={linkedVideos}
+                  linkedVideoEnabledById={linkedVideoEnabledById}
+                  hasSources={hasSources}
+                  canUploadDocuments={permissions.canUploadDocuments}
+                  canManageDocumentState={permissions.canManageDocumentState}
+                  canDeleteDocuments={permissions.canDeleteDocuments}
+                  onToggleSource={handleToggleSource}
+                  onToggleLinkedSource={handleToggleLinkedSource}
+                  onRetryTranscript={(video) => retryTranscript.mutate(toResourceActionInput(video))}
+                  onShowUpload={() => setShowUpload(true)}
+                  onShowLinkDialog={(kind) => {
+                    setLinkDialogUrl('');
+                    setLinkDialogTitle('');
+                    setLinkDialogKind(kind);
+                  }}
+                  onClose={() => setLeftPanel(null)}
+                  onDeleteDoc={setPendingDeleteDoc}
+                  onDeleteVideo={setPendingDeleteVideo}
+                />
+              </ResizablePanel>
+              <ResizableHandle />
+            </>
+          )}
 
-          <div className="flex flex-col h-full border-r border-border">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
-                  onClick={() => setLeftPanel(null)}
-                  title={t('notebookWorkspace.sources.collapse')}
-                >
-                  <PanelLeftClose className="h-4 w-4" />
-                </Button>
-                <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.sources.title')}</h2>
-              </div>
-              {permissions.canUploadDocuments && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground">
-                      <Plus className="h-3 w-3" /> {t('notebookWorkspace.sources.addSource')}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem onClick={() => setShowUpload(true)}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      {t('notebookWorkspace.sources.addMenu.uploadDocument')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { setLinkDialogUrl(''); setLinkDialogTitle(''); setLinkDialogKind('youtube'); }}>
-                      <Video className="h-4 w-4 mr-2" />
-                      {t('notebookWorkspace.sources.addMenu.youtube')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { setLinkDialogUrl(''); setLinkDialogTitle(''); setLinkDialogKind('web'); }}>
-                      <Globe className="h-4 w-4 mr-2" />
-                      {t('notebookWorkspace.sources.addMenu.website')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
-            <ScrollArea className="flex-1">
-              {documents.length === 0 && linkedVideos.length === 0 ? (
-                <div className="p-4 text-center">
-                  <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
-                    <FileText className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground mb-1">{t('notebookWorkspace.sources.empty.title')}</p>
-                  <p className="text-xs text-muted-foreground mb-3">{t('notebookWorkspace.sources.empty.description')}</p>
-                  {permissions.canUploadDocuments && (
-                    <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => setShowUpload(true)}>
-                      <Upload className="h-3 w-3" /> {t('notebookWorkspace.sources.empty.upload')}
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="p-2 space-y-1">
-                  {documents.map((doc) => {
-                    const enabled = (doc as any).notebook_enabled !== false;
-                    return (
-                      <div key={doc.id} className={cn(
-                        "flex items-start gap-2 p-2 rounded-lg transition-colors",
-                        enabled ? "bg-card" : "bg-muted/50 opacity-60"
-                      )}>
-                        {permissions.canManageDocumentState ? (
-                          <button
-                            onClick={() => handleToggleSource(doc)}
-                            className="mt-0.5 shrink-0"
-                            title={enabled ? t('notebookWorkspace.sources.disableSource') : t('notebookWorkspace.sources.enableSource')}
-                          >
-                            {enabled ? (
-                              <ToggleRight className="h-4 w-4 text-accent" />
-                            ) : (
-                              <ToggleLeft className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </button>
-                        ) : (
-                          enabled ? (
-                            <ToggleRight className="h-4 w-4 text-accent/50 mt-0.5 shrink-0" />
-                          ) : (
-                            <ToggleLeft className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                          )
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground truncate">{doc.file_name}</p>
-                          <NotebookSourceStatus doc={doc} />
-                        </div>
-                        {permissions.canDeleteDocuments && (
-                          <Button
-                            variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => setPendingDeleteDoc(doc)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
+          {/* LEFT PANEL — Notes (shares the left column with Sources; mutually exclusive). */}
+          {leftPanel === 'notes' && (
+            <>
+              <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
+                <NotebookNotesPanel
+                  notes={notes}
+                  canCreateNotes={permissions.canCreateNotes}
+                  canEditNotes={permissions.canEditNotes}
+                  createNotePending={createNote.isPending}
+                  onAddNote={handleAddNote}
+                  onStartEdit={handleStartEdit}
+                  onClose={() => setLeftPanel(null)}
+                />
+              </ResizablePanel>
+              <ResizableHandle />
+            </>
+          )}
 
-                  {linkedVideos.map((video) => {
-                    const isTranscriptReady = video.transcriptStatus === 'ready';
-                    const enabled = linkedVideoEnabledById.get(video.id) !== false;
-                    return (
-                      <div key={video.id} className={cn(
-                        "flex items-start gap-2 p-2 rounded-lg transition-colors",
-                        isTranscriptReady && enabled ? "bg-card" : "bg-muted/50 opacity-60"
-                      )}>
-                        {permissions.canManageDocumentState ? (
-                          <button
-                            onClick={() => handleToggleLinkedSource(video)}
-                            className="mt-0.5 shrink-0"
-                            title={enabled ? t('notebookWorkspace.sources.disableSource') : t('notebookWorkspace.sources.enableSource')}
-                          >
-                            {enabled ? (
-                              <ToggleRight className="h-4 w-4 text-accent" />
-                            ) : (
-                              <ToggleLeft className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </button>
-                        ) : (
-                          enabled ? (
-                            <ToggleRight className="h-4 w-4 text-accent/50 mt-0.5 shrink-0" />
-                          ) : (
-                            <ToggleLeft className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                          )
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground truncate flex items-center gap-1.5">
-                            <Video className="h-3 w-3 text-red-500 shrink-0" />
-                            <span className="truncate">{video.title}</span>
-                          </p>
-                          <NotebookVideoSourceStatus resource={video} />
-                        </div>
-                        {video.transcriptStatus === 'failed' && permissions.canManageDocumentState && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-accent"
-                            onClick={() => retryTranscript.mutate(toResourceActionInput(video))}
-                            title={t('notebookWorkspace.sources.retryTranscript')}
-                          >
-                            <RotateCcw className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {permissions.canDeleteDocuments && (
-                          <Button
-                            variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => setPendingDeleteVideo(video)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-        </ResizablePanel>
-        )}
-
-        {/* LEFT PANEL — Notes (shares the left column with Sources; mutually exclusive). */}
-        {leftPanel === 'notes' && (
-        <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
-          <div className="flex flex-col h-full border-r border-border">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
-                  onClick={() => setLeftPanel(null)}
-                  aria-label={t('notebookWorkspace.notes.collapse')}
-                  title={t('notebookWorkspace.notes.collapse')}
-                >
-                  <PanelLeftClose className="h-4 w-4" />
-                </Button>
-                <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.notes.title')}</h2>
-              </div>
-              {permissions.canCreateNotes && (
-                <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddNote} disabled={createNote.isPending}>
-                  <Plus className="h-3 w-3" /> {t('notebookWorkspace.notes.addNote')}
-                </Button>
-              )}
-            </div>
-            <ScrollArea className="flex-1">
-              {notes.length === 0 ? (
-                <div className="p-4 text-center">
-                  <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
-                    <StickyNote className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground mb-1">{t('notebookWorkspace.notes.empty.title')}</p>
-                  <p className="text-xs text-muted-foreground">{t('notebookWorkspace.notes.empty.description')}</p>
-                </div>
-              ) : (
-                <div className="p-2 space-y-2">
-                  {notes.map((note) => (
-                    <button
-                      key={note.id}
-                      className="w-full text-left p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
-                      onClick={() => permissions.canEditNotes && handleStartEdit(note)}
-                    >
-                      {note.title && <p className="text-sm font-medium text-foreground mb-1 truncate">{note.title}</p>}
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">{note.content || t('notebookWorkspace.notes.emptyNote')}</p>
-                      <div className="flex items-center gap-1 mt-2">
-                        <Pencil className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-[10px] text-muted-foreground ml-auto">
-                          {new Date(note.updated_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-        </ResizablePanel>
-        )}
-
-        {leftPanel !== null && <ResizableHandle />}
-
-
-        {/* CENTER — Chat (expands to fill remaining width; right-side notes panel removed). */}
-        <ResizablePanel defaultSize={78} minSize={30}>
+          {/* CENTER — Chat (expands to fill remaining width; right-side notes panel removed). */}
+          <ResizablePanel defaultSize={leftPanel ? 78 : 100} minSize={30}>
 
           <div className="flex flex-col h-full min-h-0">
             {!hasSources ? (
@@ -1324,6 +1162,7 @@ export function NotebookWorkspace() {
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      </div>
 
 
       {/* Edit Note Modal */}
