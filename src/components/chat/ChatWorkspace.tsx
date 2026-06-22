@@ -344,6 +344,11 @@ export function ChatWorkspace() {
             <ArrowUp className="h-4 w-4" />
           </Button>
         )}
+
+        <ChatQuestionNavigator
+          messages={messages.map(m => ({ id: m.id, role: m.role, content: m.content }))}
+          scrollContainerRef={messagesViewportRef}
+        />
       </div>
       {permissions.canSendMessages && (
         <ChatInput
