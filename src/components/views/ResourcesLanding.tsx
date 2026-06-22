@@ -1195,13 +1195,12 @@ function AddSourceDialog({
   const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal', 'google_drive', 'google_docs']);
 
   const providerOptions: Array<{ value: string; labelKey: string; implemented: boolean }> = [
+    { value: 'internal', labelKey: 'internal', implemented: true },
     { value: 'unknown', labelKey: 'anyUrl', implemented: true },
     { value: 'youtube', labelKey: 'youtube', implemented: true },
     { value: 'google_drive', labelKey: 'googleDrive', implemented: true },
     { value: 'google_docs', labelKey: 'googleDocs', implemented: true },
-    { value: 'dropbox', labelKey: 'dropbox', implemented: false },
     { value: 'notion', labelKey: 'notion', implemented: false },
-    { value: 'internal', labelKey: 'internal', implemented: true },
   ];
 
   const containerLabel = t(`resources.addSourceDialog.locations.${containerType}`);
