@@ -530,6 +530,31 @@ export function ResourcesLanding() {
       return;
     }
 
+    // YouTube and other URL-based providers keep using the legacy link stub.
+    if (linkProvider !== 'unknown') {
+      createLinkMutation.mutate(
+        {
+          url: linkUrl,
+          title: linkTitle || undefined,
+          provider: linkProvider,
+          containerType: linkContainerType,
+          containerId: linkContainerId,
+        },
+        {
+          onSuccess: () => {
+            toast({ title: 'Source added', description: 'Your resource now appears in Resources.' });
+            setAddSourceOpen(false);
+            resetAddSourceDialog();
+          },
+          onError: (err: any) => {
+            toast({ title: 'Add source failed', description: err.message, variant: 'destructive' });
+          },
+        },
+      );
+      return;
+    }
+
+
     // Website provider: crawl the root URL with Tavily and ingest as a document.
     try {
       const result = await ingestWebsiteMutation.mutateAsync({
