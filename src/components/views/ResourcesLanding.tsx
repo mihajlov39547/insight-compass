@@ -1114,10 +1114,11 @@ function AddSourceDialog({
   const { t } = useTranslation();
   const targetOptions = containerType === 'project' ? projects : notebooks;
   const isInternal = provider === 'internal';
+  const isDrive = provider === 'google_drive';
   const [isDragging, setIsDragging] = useState(false);
   const fileInputId = 'add-source-file-input';
 
-  const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal']);
+  const IMPLEMENTED_PROVIDERS = new Set(['unknown', 'youtube', 'internal', 'google_drive']);
 
   const providerOptions: Array<{ value: string; labelKey: string; implemented: boolean }> = [
     { value: 'unknown', labelKey: 'anyUrl', implemented: true },
