@@ -809,7 +809,7 @@ export function ResourcesLanding() {
         containerId={linkContainerId}
         projects={projects.map((p) => ({ id: p.id, name: p.name }))}
         notebooks={notebooks.map((n) => ({ id: n.id, name: n.name }))}
-        submitting={createLinkMutation.isPending || uploadMutation.isPending || ingestDriveMutation.isPending || ingestDocMutation.isPending}
+        submitting={createLinkMutation.isPending || uploadMutation.isPending || ingestDriveMutation.isPending || ingestDocMutation.isPending || ingestWebsiteMutation.isPending}
         files={linkFiles}
         onFilesChange={setLinkFiles}
         driveFileId={driveFileId}
