@@ -3,16 +3,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Download, Printer } from 'lucide-react';
+import { Download, FileDown, Loader2 } from 'lucide-react';
 import {
   buildChatMarkdownExport,
   buildExportFilename,
   downloadMarkdown,
-  openPrintPreview,
+  downloadChatPdf,
   type ChatExportOptions,
   type ChatMessageLike,
 } from '@/lib/chatExport';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 
 const APP_NAME = 'Researcher';
 
