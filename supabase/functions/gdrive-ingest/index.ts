@@ -232,8 +232,8 @@ Deno.serve(async (req: Request) => {
       notebook_id: containerType === 'notebook' ? containerId : null,
       chat_id: null,
       file_name: fileName,
-      file_type: plan.fileType,
-      mime_type: plan.storedMime,
+      file_type: effectivePlan.fileType,
+      mime_type: effectivePlan.storedMime,
       file_size: bytes.byteLength,
       storage_path: storagePath,
       processing_status: 'uploaded',
@@ -243,6 +243,7 @@ Deno.serve(async (req: Request) => {
       external_modified_at: meta.modifiedTime || null,
       external_metadata: {
         original_mime_type: meta.mimeType,
+        export_mime_type: effectiveExportMime || null,
         owner: meta.owners?.[0]?.displayName || meta.owners?.[0]?.emailAddress || null,
         parents: meta.parents || [],
       },
