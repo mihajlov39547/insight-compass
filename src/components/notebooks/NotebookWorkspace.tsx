@@ -20,6 +20,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 import { ChatQuestionNavigator } from '@/components/chat/ChatQuestionNavigator';
 import { ChatFloatingTools } from '@/components/chat/ChatFloatingTools';
+import { ChatExportDialog } from '@/components/chat/ChatExportDialog';
+import { useAuth } from '@/contexts/useAuth';
 import { MessagePinButton } from '@/components/chat/MessagePinButton';
 import { usePinnedMessages, buildPinnedByMessageId, type PinContext } from '@/hooks/useMessagePins';
 
@@ -114,6 +116,8 @@ function TranscriptStatusLabel({ status }: { status: string }) {
 export function NotebookWorkspace() {
   const { t } = useTranslation();
   const { selectedNotebookId, setShowShare, setShowPricing } = useApp();
+  const { user } = useAuth();
+  const [showExport, setShowExport] = useState(false);
   const { limits: planLimits } = usePlanLimits();
   const queryClient = useQueryClient();
   const { data: myRole } = useItemRole(selectedNotebookId, 'notebook');
@@ -905,10 +909,20 @@ export function NotebookWorkspace() {
                     searchMode="notebook"
                     messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
                     scrollContainerRef={chatViewportRef}
+                    onExport={messages.length > 0 ? () => setShowExport(true) : undefined}
                     onShare={permissions.canManageSharing ? () => {
                       if (!planLimits.canShareNotebooks) { setShowPricing(true); return; }
                       setShowShare(true);
                     } : undefined}
+                  />
+
+                  <ChatExportDialog
+                    open={showExport}
+                    onOpenChange={setShowExport}
+                    contextType="notebook"
+                    contextName={notebook?.name ?? 'notebook'}
+                    exportedByLabel={user?.email ?? undefined}
+                    messages={messages as any}
                   />
 
                   {showChatScrollTop && (
