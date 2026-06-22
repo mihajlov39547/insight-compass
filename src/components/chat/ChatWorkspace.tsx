@@ -29,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { normalizeLanguageCode } from '@/lib/languages';
 import { useGenerationCompleteSound } from '@/hooks/useGenerationCompleteSound';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useChatSearchBridge } from '@/contexts/ChatSearchBridge';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
@@ -149,6 +150,22 @@ export function ChatWorkspace() {
     }
     wasGeneratingRef.current = isGenerating;
   }, [isGenerating]);
+
+  // Register messages + scroll container with the search bridge so the
+  // top contextual header can render a chat-aware ChatSearchControl.
+  const { setData: setSearchBridge } = useChatSearchBridge();
+  useEffect(() => {
+    if (!selectedChatId) {
+      setSearchBridge(null);
+      return;
+    }
+    setSearchBridge({
+      mode: 'project',
+      messages: messages.map(m => ({ id: m.id, role: m.role, content: m.content })),
+      scrollContainerRef: messagesViewportRef,
+    });
+    return () => setSearchBridge(null);
+  }, [messages, selectedChatId, setSearchBridge]);
 
   if (!selectedProjectId || !selectedProject) {
     return <ProjectsLanding />;

@@ -8,6 +8,8 @@ import { useProjects, useUpdateProject } from '@/hooks/useProjects';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 import { useItemRole } from '@/hooks/useItemRole';
 import { getItemPermissions } from '@/lib/permissions';
+import { ChatSearchControl } from '@/components/chat/ChatSearchControl';
+import { useChatSearchBridge } from '@/contexts/ChatSearchBridge';
 import { toast } from 'sonner';
 
 export function ContextualHeader() {
@@ -16,7 +18,8 @@ export function ContextualHeader() {
   const updateProject = useUpdateProject();
   const { data: myRole } = useItemRole(selectedProjectId, 'project');
   const permissions = getItemPermissions(myRole);
-  
+  const { data: bridgeData } = useChatSearchBridge();
+
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
   if (!selectedProject) {
@@ -26,6 +29,14 @@ export function ContextualHeader() {
       </div>
     );
   }
+
+  const searchSlot = bridgeData && bridgeData.mode === 'project' ? (
+    <ChatSearchControl
+      mode="project"
+      messages={bridgeData.messages}
+      scrollContainerRef={bridgeData.scrollContainerRef}
+    />
+  ) : undefined;
 
   return (
     <WorkspaceContextHeader
@@ -49,6 +60,7 @@ export function ContextualHeader() {
       subtitle={selectedProject.description}
       language={selectedProject.language}
       showShare={permissions.canManageSharing}
+      searchSlot={searchSlot}
     />
   );
 }
