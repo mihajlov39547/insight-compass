@@ -172,7 +172,7 @@ Deno.serve(async (req: Request) => {
       p_min_role: 'editor',
     });
     if (permErr || !hasPerm) {
-      return jsonResponse({ error: 'forbidden', message: 'You do not have edit access to this workspace.' }, 403);
+      return jsonResponse({ error: 'forbidden', message: 'You do not have permission to add sources here.' }, 403);
     }
 
     // Resolve plan tier (server-side)
