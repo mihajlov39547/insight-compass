@@ -160,7 +160,7 @@ export function SourceCitationInspector({ citation, open, onOpenChange }: Source
               </SheetDescription>
               <div className="flex flex-wrap items-center gap-1 mt-1.5">
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal">
-                  {providerLabel(merged.provider, sourceType, t)}
+                  {providerLabel(merged.provider, sourceType, (k, d) => t(k, { defaultValue: d ?? "" }) as string)}
                 </Badge>
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal capitalize">
                   {sourceType}
