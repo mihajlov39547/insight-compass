@@ -90,10 +90,10 @@ Deno.serve(async (req: Request) => {
 
     // Permission check: editor on the target container.
     const { data: hasPerm, error: permErr } = await userClient.rpc('check_item_permission', {
-      _user_id: userId,
-      _item_id: containerId,
-      _item_type: containerType,
-      _required_role: 'editor',
+      p_user_id: userId,
+      p_item_id: containerId,
+      p_item_type: containerType,
+      p_min_role: 'editor',
     });
     if (permErr || !hasPerm) {
       return jsonResponse({ error: 'forbidden', message: 'You do not have edit access to this workspace.' }, 403);
