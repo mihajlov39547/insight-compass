@@ -36,6 +36,11 @@ import {
   type DriveMimeFilter,
   SUPPORTED_DRIVE_MIME_LABELS,
 } from '@/hooks/useGoogleDrive';
+import {
+  useGoogleDocsSearch,
+  useIngestGoogleDoc,
+  type GoogleDoc,
+} from '@/hooks/useGoogleDocs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/useApp';
 import { useAuth } from '@/contexts/useAuth';
