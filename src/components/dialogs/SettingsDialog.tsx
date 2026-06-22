@@ -68,7 +68,6 @@ export function SettingsDialog() {
   };
 
   const responseLengthLabel = (v: string) => t(`settingsDialog.responseLengths.${v.toLowerCase()}`, { defaultValue: v });
-  const retrievalDepthLabel = (v: string) => t(`settingsDialog.retrievalDepths.${v.toLowerCase()}`, { defaultValue: v });
 
   return (
     <Dialog open={!!showSettings} onOpenChange={() => setShowSettings(null)}>
@@ -97,17 +96,7 @@ export function SettingsDialog() {
               }}
               onChange={v => update('response_length', v)}
             />
-            <SettingSelect
-              label={t('settingsDialog.retrievalDepth')}
-              value={local.retrieval_depth}
-              options={['Shallow', 'Medium', 'Deep']}
-              optionLabels={{
-                Shallow: retrievalDepthLabel('Shallow'),
-                Medium: retrievalDepthLabel('Medium'),
-                Deep: retrievalDepthLabel('Deep'),
-              }}
-              onChange={v => update('retrieval_depth', v)}
-            />
+            {/* Conversation history depth is plan-based (see chatHistoryConfig.ts); no UI control. */}
             <SettingToggle
               label={t('settingsDialog.citeSources')}
               checked={true}
