@@ -1963,7 +1963,16 @@ function ResourceDetailsDrawer({
             )}
             {resource.canDownload && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onDownload(resource)}>
-                <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
+                {resource.provider === 'google_drive' || resource.provider === 'google_docs' ? (
+                  <>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {resource.provider === 'google_docs' ? 'Open in Google Docs' : 'Open in Google Drive'}
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-3.5 w-3.5" /> {t('resources.actions.download')}
+                  </>
+                )}
               </Button>
             )}
             {resource.canRename && (
