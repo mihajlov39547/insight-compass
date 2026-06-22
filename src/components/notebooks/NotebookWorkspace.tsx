@@ -178,8 +178,12 @@ export function NotebookWorkspace() {
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isChatNearBottom, setIsChatNearBottom] = useState(true);
   const [showChatScrollTop, setShowChatScrollTop] = useState(false);
-  const [sourcesCollapsed, setSourcesCollapsed] = usePersistedState('notebook:sourcesCollapsed', false);
-  const [notesCollapsed, setNotesCollapsed] = usePersistedState('notebook:notesCollapsed', false);
+  // Notebook left side panel: only one of Sources / Notes can be open at a time.
+  // `null` means the side panel is collapsed and the chat area gets max width.
+  type NotebookSidePanel = 'sources' | 'notes' | null;
+  const [leftPanel, setLeftPanel] = usePersistedState<NotebookSidePanel>('notebook:leftPanel', 'sources');
+  const toggleLeftPanel = (panel: Exclude<NotebookSidePanel, null>) =>
+    setLeftPanel((prev) => (prev === panel ? null : panel));
 
   const linkedVideoEnabledById = useMemo(() => {
     const map = new Map<string, boolean>();
