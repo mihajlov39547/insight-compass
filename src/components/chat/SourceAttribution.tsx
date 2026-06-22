@@ -86,6 +86,17 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
   const [questionOpen, setQuestionOpen] = useState(false);
   const [crawlPopoverUrl, setCrawlPopoverUrl] = useState<string | null>(null);
   const [crawlInstructions, setCrawlInstructions] = useState('');
+  const [inspectorCitation, setInspectorCitation] = useState<CanonicalCitation | null>(null);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+
+  const openInspectorFor = (item: SourceItem) => {
+    const citation = normalizeSourceItemToCitation(item, { index: 0 });
+    if (!citation) return;
+    setInspectorCitation(citation);
+    setInspectorOpen(true);
+  };
+
+
 
   // Group by document (or url for web). Memoized so hooks below don't depend on a fresh Map each render.
   const grouped = useMemo(() => {
