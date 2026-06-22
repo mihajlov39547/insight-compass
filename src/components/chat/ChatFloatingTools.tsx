@@ -1,13 +1,17 @@
 import React from 'react';
+import { Share2 } from 'lucide-react';
 import { PinnedMessagesPanel } from './PinnedMessagesPanel';
 import { ChatSearchControl } from './ChatSearchControl';
 import type { PinContext } from '@/hooks/useMessagePins';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTranslation } from 'react-i18next';
 
 interface ChatFloatingToolsProps {
   pinCtx: PinContext | null;
   searchMode: 'project' | 'notebook';
   messages: Array<{ id: string; role: string; content: string }>;
   scrollContainerRef: React.RefObject<HTMLDivElement>;
+  onShare?: () => void;
 }
 
 /**
