@@ -619,28 +619,44 @@ export function NotebookWorkspace() {
 
       {/* 3-column layout */}
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
-        {/* LEFT — Sources */}
-        {sourcesCollapsed ? (
-          <div className="flex flex-col items-center w-10 shrink-0 border-r border-border bg-muted/20 py-3 gap-2">
+        {/* LEFT RAIL — always visible when no panel is open. Hosts Sources + Notes toggles. */}
+        {leftPanel === null && (
+          <div className="flex flex-col items-center w-10 shrink-0 border-r border-border bg-muted/20 py-3 gap-3">
             <Button
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => setSourcesCollapsed(false)}
+              onClick={() => toggleLeftPanel('sources')}
+              aria-pressed={false}
+              aria-label={t('notebookWorkspace.sources.expand')}
               title={t('notebookWorkspace.sources.expand')}
             >
               <PanelLeftOpen className="h-4 w-4" />
             </Button>
             <button
-              onClick={() => setSourcesCollapsed(false)}
-              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide mt-2"
+              onClick={() => toggleLeftPanel('sources')}
+              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide"
+              aria-label={t('notebookWorkspace.sources.expand')}
               title={t('notebookWorkspace.sources.expand')}
             >
-              {t('notebookWorkspace.sources.title')} {hasSources ? `(${documents.length + linkedVideos.length})` : ''}
+              {t('notebookWorkspace.sources.title')}{hasSources ? ` (${documents.length + linkedVideos.length})` : ''}
+            </button>
+            <div className="h-px w-6 bg-border my-1" />
+            <button
+              onClick={() => toggleLeftPanel('notes')}
+              className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground hover:text-foreground tracking-wide"
+              aria-label={t('notebookWorkspace.notes.expand')}
+              title={t('notebookWorkspace.notes.expand')}
+            >
+              {t('notebookWorkspace.notes.title')}{notes.length > 0 ? ` (${notes.length})` : ''}
             </button>
           </div>
-        ) : (
+        )}
+
+        {/* LEFT PANEL — Sources */}
+        {leftPanel === 'sources' && (
         <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
+
           <div className="flex flex-col h-full border-r border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <div className="flex items-center gap-1">
@@ -648,7 +664,7 @@ export function NotebookWorkspace() {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
-                  onClick={() => setSourcesCollapsed(true)}
+                  onClick={() => setLeftPanel(null)}
                   title={t('notebookWorkspace.sources.collapse')}
                 >
                   <PanelLeftClose className="h-4 w-4" />
