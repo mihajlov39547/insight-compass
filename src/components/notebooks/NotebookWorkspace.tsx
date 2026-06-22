@@ -902,7 +902,13 @@ export function NotebookWorkspace() {
                       <ArrowUp className="h-4 w-4" />
                     </Button>
                   )}
+
+                  <ChatQuestionNavigator
+                    messages={messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content }))}
+                    scrollContainerRef={chatViewportRef}
+                  />
                 </div>
+
 
                 {/* Chat input — shared component */}
                 {permissions.canSendMessages ? (
