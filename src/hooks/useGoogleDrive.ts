@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
+import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 
 export interface DriveFile {
   id: string;
@@ -28,6 +29,31 @@ export const SUPPORTED_DRIVE_MIME_LABELS: Record<string, string> = {
   'application/vnd.google-apps.folder': 'Folder',
 };
 
+async function callDriveFunction<T>(path: string, body: unknown): Promise<T> {
+  const { data: session } = await supabase.auth.getSession();
+  const accessToken = session?.session?.access_token;
+  const resp = await fetch(getFunctionUrl(`/functions/v1/${path}`), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: accessToken
+        ? `Bearer ${accessToken}`
+        : `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify(body || {}),
+  });
+  let payload: any = null;
+  try { payload = await resp.json(); } catch { /* ignore */ }
+  if (!resp.ok) {
+    const err = new Error(payload?.message || `${path} failed (${resp.status})`);
+    (err as any).code = payload?.error;
+    (err as any).status = resp.status;
+    throw err;
+  }
+  return payload as T;
+}
+
 export function useGoogleDriveSearch(params: {
   query: string;
   mimeFilter: DriveMimeFilter;
@@ -38,21 +64,14 @@ export function useGoogleDriveSearch(params: {
     queryKey: ['gdrive-search', params.query, params.mimeFilter],
     enabled: !!user && params.enabled,
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('gdrive-search', {
-        body: { query: params.query, mimeFilter: params.mimeFilter },
-      });
-      if (error) {
-        // Surface server-provided friendly error if available.
-        const ctxBody: any = (error as any).context?.body;
-        let parsed: any = null;
-        try { parsed = ctxBody ? JSON.parse(ctxBody) : null; } catch { /* ignore */ }
-        const err = new Error(parsed?.message || error.message || 'Drive search failed');
-        (err as any).code = parsed?.error;
-        throw err;
-      }
-      return (data?.files || []) as DriveFile[];
+      const data = await callDriveFunction<{ files: DriveFile[] }>(
+        'gdrive-search',
+        { query: params.query, mimeFilter: params.mimeFilter },
+      );
+      return data.files || [];
     },
     staleTime: 15_000,
+    retry: false,
   });
 }
 
@@ -66,18 +85,10 @@ export function useIngestGoogleDriveFile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: IngestDriveFileInput) => {
-      const { data, error } = await supabase.functions.invoke('gdrive-ingest', {
-        body: input,
-      });
-      if (error) {
-        const ctxBody: any = (error as any).context?.body;
-        let parsed: any = null;
-        try { parsed = ctxBody ? JSON.parse(ctxBody) : null; } catch { /* ignore */ }
-        const err = new Error(parsed?.message || error.message || 'Drive ingest failed');
-        (err as any).code = parsed?.error;
-        throw err;
-      }
-      return data as { documentId: string; title: string; status: string };
+      return callDriveFunction<{ documentId: string; title: string; status: string }>(
+        'gdrive-ingest',
+        input,
+      );
     },
     onSuccess: (_, input) => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
