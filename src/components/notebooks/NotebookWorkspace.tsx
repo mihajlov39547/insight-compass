@@ -4,7 +4,7 @@ import {
   Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
   FileUp, ArrowUp, Video, RotateCcw,
-  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
 import { ChatInput } from '@/components/chat/ChatInput';
