@@ -816,7 +816,66 @@ export function NotebookWorkspace() {
         </ResizablePanel>
         )}
 
+        {/* LEFT PANEL — Notes (shares the left column with Sources; mutually exclusive). */}
+        {leftPanel === 'notes' && (
+        <ResizablePanel defaultSize={22} minSize={16} maxSize={35}>
+          <div className="flex flex-col h-full border-r border-border">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+                  onClick={() => setLeftPanel(null)}
+                  aria-label={t('notebookWorkspace.notes.collapse')}
+                  title={t('notebookWorkspace.notes.collapse')}
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+                <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.notes.title')}</h2>
+              </div>
+              {permissions.canCreateNotes && (
+                <Button size="sm" className="h-7 gap-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddNote} disabled={createNote.isPending}>
+                  <Plus className="h-3 w-3" /> {t('notebookWorkspace.notes.addNote')}
+                </Button>
+              )}
+            </div>
+            <ScrollArea className="flex-1">
+              {notes.length === 0 ? (
+                <div className="p-4 text-center">
+                  <div className="w-12 h-12 mx-auto rounded-xl bg-muted flex items-center justify-center mb-3">
+                    <StickyNote className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground mb-1">{t('notebookWorkspace.notes.empty.title')}</p>
+                  <p className="text-xs text-muted-foreground">{t('notebookWorkspace.notes.empty.description')}</p>
+                </div>
+              ) : (
+                <div className="p-2 space-y-2">
+                  {notes.map((note) => (
+                    <button
+                      key={note.id}
+                      className="w-full text-left p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
+                      onClick={() => permissions.canEditNotes && handleStartEdit(note)}
+                    >
+                      {note.title && <p className="text-sm font-medium text-foreground mb-1 truncate">{note.title}</p>}
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">{note.content || t('notebookWorkspace.notes.emptyNote')}</p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground ml-auto">
+                          {new Date(note.updated_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </ResizablePanel>
+        )}
+
         {leftPanel !== null && <ResizableHandle />}
+
 
         {/* CENTER — Chat (expands to fill remaining width; right-side notes panel removed). */}
         <ResizablePanel defaultSize={78} minSize={30}>
