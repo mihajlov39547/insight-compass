@@ -1408,6 +1408,9 @@ function NotebookChatMessage({ message, onSaveToNote, onCopy, canSaveToNotes, on
             onAddYouTubeToSources={onAddYouTubeToSources}
             addingYouTubeUrl={addingYouTubeUrl}
             addedYouTubeUrls={addedYouTubeUrls}
+            messageId={message.id}
+            context="notebook"
+            parentSourcesPayload={message.sources}
           />
         )}
 

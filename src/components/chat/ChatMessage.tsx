@@ -221,6 +221,9 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
             onAddYouTubeToSources={onAddYouTubeToSources}
             addingYouTubeUrl={addingYouTubeUrl}
             addedYouTubeUrls={addedYouTubeUrls}
+            messageId={message.id}
+            context="project"
+            parentSourcesPayload={message.sources}
           />
         )}
 

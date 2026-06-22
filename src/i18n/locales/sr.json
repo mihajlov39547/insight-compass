@@ -1719,6 +1719,8 @@
     "technical": "Tehnički",
     "loading": "Učitavanje…",
     "openOriginal": "Otvori original",
+    "openOriginalAria": "Otvori originalni izvor: {{title}}",
+    "inspectAria": "Pregledaj izvor: {{title}}",
     "copyExcerpt": "Kopiraj izvod",
     "copiedExcerpt": "Izvod kopiran",
     "copyFailed": "Kopiranje nije uspelo",

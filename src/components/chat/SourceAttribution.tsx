@@ -8,7 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SourceCitationInspector } from './SourceCitationInspector';
-import { normalizeSourceItemToCitation, type CanonicalCitation } from '@/lib/citations';
+import { normalizeSourceItemToCitation, normalizeCitationsFromMessageSources, type CanonicalCitation } from '@/lib/citations';
+import { useTranslation } from 'react-i18next';
 
 export interface SourceItem {
   id: string;
@@ -76,9 +77,22 @@ interface SourceAttributionProps {
   addingYouTubeUrl?: string | null;
   /** URLs already present as sources in the current container — show "Added". */
   addedYouTubeUrls?: Set<string>;
+  /**
+   * Optional context for richer citation normalization when a source card is
+   * clicked. When provided, the inspector builds CanonicalCitations from the
+   * full parent payload (preserves crawl/transcript hints, stable IDs, etc.).
+   *
+   * TODO(future): hoist a single SourceCitationInspector to the
+   * ChatWorkspace/NotebookWorkspace level instead of mounting one per
+   * SourceAttribution instance.
+   */
+  messageId?: string;
+  context?: 'project' | 'notebook';
+  parentSourcesPayload?: unknown;
 }
 
-export function SourceAttribution({ sources, onSourceClick, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls }: SourceAttributionProps) {
+export function SourceAttribution({ sources, onSourceClick, onExtract, isExtracting, onCrawl, isCrawling, crawlingUrl, onAddYouTubeToSources, addingYouTubeUrl, addedYouTubeUrls, messageId, context, parentSourcesPayload }: SourceAttributionProps) {
+  const { t } = useTranslation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
@@ -89,12 +103,62 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
   const [inspectorCitation, setInspectorCitation] = useState<CanonicalCitation | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
 
+  // Build canonical citations once for the parent payload (when available)
+  // so the inspector receives stable IDs and richer context (crawl, etc.).
+  const canonicalCitations = useMemo<CanonicalCitation[]>(() => {
+    if (parentSourcesPayload === undefined || parentSourcesPayload === null) return [];
+    return normalizeCitationsFromMessageSources(parentSourcesPayload, { messageId, context });
+  }, [parentSourcesPayload, messageId, context]);
+
+  const canonicalIndex = useMemo(() => {
+    const byId = new Map<string, CanonicalCitation>();
+    const byChunk = new Map<string, CanonicalCitation>();
+    const byDocChunk = new Map<string, CanonicalCitation>();
+    const byUrl = new Map<string, CanonicalCitation>();
+    for (const c of canonicalCitations) {
+      if (c.citation_id) byId.set(c.citation_id, c);
+      if (c.chunk_id) byChunk.set(c.chunk_id, c);
+      if (c.document_id && c.chunk_index !== null) {
+        byDocChunk.set(`${c.document_id}#${c.chunk_index}`, c);
+      }
+      if (c.url) byUrl.set(c.url, c);
+    }
+    return { byId, byChunk, byDocChunk, byUrl };
+  }, [canonicalCitations]);
+
+  const findCanonicalFor = (item: SourceItem): CanonicalCitation | null => {
+    if (item.id && canonicalIndex.byId.has(item.id)) return canonicalIndex.byId.get(item.id)!;
+    if (item.chunkId && canonicalIndex.byChunk.has(item.chunkId)) return canonicalIndex.byChunk.get(item.chunkId)!;
+    if (item.documentId && item.chunkIndex !== undefined && item.chunkIndex !== null) {
+      const key = `${item.documentId}#${item.chunkIndex}`;
+      if (canonicalIndex.byDocChunk.has(key)) return canonicalIndex.byDocChunk.get(key)!;
+    }
+    if (item.url && canonicalIndex.byUrl.has(item.url)) return canonicalIndex.byUrl.get(item.url)!;
+    return null;
+  };
+
   const openInspectorFor = (item: SourceItem) => {
-    const citation = normalizeSourceItemToCitation(item, { index: 0 });
+    const matched = findCanonicalFor(item);
+    if (matched) {
+      setInspectorCitation(matched);
+      setInspectorOpen(true);
+      return;
+    }
+    // Fallback: normalize the single item using the real index in the
+    // current sources list, and preserve parent payload for type inference.
+    const realIndex = Math.max(0, sources.indexOf(item));
+    const citation = normalizeSourceItemToCitation(item, {
+      index: realIndex,
+      messageId,
+      context,
+      parentPayload: parentSourcesPayload,
+    });
     if (!citation) return;
     setInspectorCitation(citation);
     setInspectorOpen(true);
   };
+
+
 
 
 
@@ -249,6 +313,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                 key={docId}
                 role="button"
                 tabIndex={0}
+                aria-label={t('citationInspector.inspectAria', { defaultValue: 'Inspect source: {{title}}', title: displayTitle }) as string}
                 onClick={() => openInspectorFor(primary)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -379,6 +444,7 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                       !hasSnippet && !selectMode && "pl-2 rounded-l-lg",
                       !hasSnippet && selectMode && "pl-2"
                     )}
+                    aria-label={t('citationInspector.inspectAria', { defaultValue: 'Inspect source: {{title}}', title: displayTitle }) as string}
                     onClick={() => {
                       if (selectMode && isExtractable) {
                         toggleSelect(url);
@@ -425,8 +491,8 @@ export function SourceAttribution({ sources, onSourceClick, onExtract, isExtract
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
                       className="shrink-0 inline-flex items-center px-1.5 py-1 rounded text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors"
-                      title="Open original"
-                      aria-label={`Open ${displayTitle}`}
+                      title={t('citationInspector.openOriginal', { defaultValue: 'Open original' }) as string}
+                      aria-label={t('citationInspector.openOriginalAria', { defaultValue: 'Open original source: {{title}}', title: displayTitle }) as string}
                     >
                       <ExternalLink className="h-3 w-3" />
                     </a>

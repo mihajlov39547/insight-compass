@@ -1703,6 +1703,8 @@
     "technical": "Technical",
     "loading": "Loading…",
     "openOriginal": "Open original",
+    "openOriginalAria": "Open original source: {{title}}",
+    "inspectAria": "Inspect source: {{title}}",
     "copyExcerpt": "Copy excerpt",
     "copiedExcerpt": "Excerpt copied",
     "copyFailed": "Copy failed",
