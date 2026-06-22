@@ -621,6 +621,7 @@
         "anyUrl": "Any URL",
         "youtube": "YouTube",
         "googleDrive": "Google Drive",
+        "googleDocs": "Google Docs",
         "dropbox": "Dropbox",
         "notion": "Notion",
         "internal": "Internal"
@@ -636,7 +637,20 @@
       "footnote": "Supported sources are available now. Others are marked Soon.",
       "cancel": "Cancel",
       "submit": "Add source",
-      "submitting": "Adding..."
+      "submitting": "Adding...",
+      "googleDocs": {
+        "title": "Google Docs",
+        "description": "Search and add documents from your connected Google Docs.",
+        "searchPlaceholder": "Search Google Docs",
+        "addSelected": "Add selected Google Doc",
+        "noResults": "No Google Docs found",
+        "notConnected": "Google Docs isn't connected",
+        "openOriginal": "Open in Google Docs",
+        "unsupported": "This document is not supported.",
+        "cannotExport": "Cannot be exported with current permissions",
+        "tooLarge": "This Google Doc is too large to export (10 MB limit).",
+        "alreadyAdded": "This Google Doc is already added here."
+      }
     },
     "drawer": {
       "tabs": {

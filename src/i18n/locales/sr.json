@@ -628,6 +628,7 @@
         "anyUrl": "Bilo koji URL",
         "youtube": "YouTube",
         "googleDrive": "Google Drive",
+        "googleDocs": "Google Docs",
         "dropbox": "Dropbox",
         "notion": "Notion",
         "internal": "Interni"
@@ -643,7 +644,20 @@
       "footnote": "Podržani izvori su trenutno dostupni. Ostali su označeni sa Uskoro.",
       "cancel": "Otkaži",
       "submit": "Dodaj izvor",
-      "submitting": "Dodavanje..."
+      "submitting": "Dodavanje...",
+      "googleDocs": {
+        "title": "Google Docs",
+        "description": "Pretražite i dodajte dokumente iz povezanog Google Docs naloga.",
+        "searchPlaceholder": "Pretraži Google Docs",
+        "addSelected": "Dodaj izabrani Google Doc",
+        "noResults": "Nema pronađenih Google dokumenata",
+        "notConnected": "Google Docs nije povezan",
+        "openOriginal": "Otvori u Google Docs",
+        "unsupported": "Ovaj dokument nije podržan.",
+        "cannotExport": "Ne može se izvesti sa trenutnim dozvolama",
+        "tooLarge": "Ovaj Google Doc je prevelik za izvoz (limit 10 MB).",
+        "alreadyAdded": "Ovaj Google Doc je već dodat ovde."
+      }
     },
     "drawer": {
       "tabs": {
