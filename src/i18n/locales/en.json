@@ -618,13 +618,12 @@
       "titlePlaceholder": "Readable resource title",
       "provider": "Provider",
       "providers": {
-        "anyUrl": "Any URL",
+        "anyUrl": "Website",
         "youtube": "YouTube",
         "googleDrive": "Google Drive",
         "googleDocs": "Google Docs",
-        "dropbox": "Dropbox",
         "notion": "Notion",
-        "internal": "Internal"
+        "internal": "Upload local file"
       },
       "location": "Location",
       "locations": {

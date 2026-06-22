@@ -625,13 +625,12 @@
       "titlePlaceholder": "Čitljiv naslov resursa",
       "provider": "Provajder",
       "providers": {
-        "anyUrl": "Bilo koji URL",
+        "anyUrl": "Veb sajt",
         "youtube": "YouTube",
         "googleDrive": "Google Drive",
         "googleDocs": "Google Docs",
-        "dropbox": "Dropbox",
         "notion": "Notion",
-        "internal": "Interni"
+        "internal": "Otpremi lokalni fajl"
       },
       "location": "Lokacija",
       "locations": {
