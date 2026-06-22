@@ -19,10 +19,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 import { ChatQuestionNavigator } from '@/components/chat/ChatQuestionNavigator';
-import { ChatSearchControl } from '@/components/chat/ChatSearchControl';
-import { PinnedMessagesPanel } from '@/components/chat/PinnedMessagesPanel';
+import { ChatFloatingTools } from '@/components/chat/ChatFloatingTools';
 import { MessagePinButton } from '@/components/chat/MessagePinButton';
-import type { PinContext } from '@/hooks/useMessagePins';
+import { usePinnedMessages, buildPinnedByMessageId, type PinContext } from '@/hooks/useMessagePins';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
