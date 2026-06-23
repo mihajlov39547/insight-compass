@@ -250,8 +250,11 @@ function getLimitsForDisplay(plan: string) {
         { label: 'Notebooks', value: '10' },
         { label: 'Chats per project', value: '5' },
         { label: 'Docs per project/notebook', value: '10' },
+        { label: 'Chat context', value: 'Last 5 turns' },
+        { label: 'Website crawl', value: '100 pages · advanced · 8 MB' },
         { label: 'Project sharing', value: 'Up to 3 members' },
         { label: 'Notebook sharing', value: 'Not included' },
+        { label: 'Premium AI models', value: 'Partial access' },
       ];
     case 'premium':
       return [
@@ -259,8 +262,11 @@ function getLimitsForDisplay(plan: string) {
         { label: 'Notebooks', value: 'Unlimited' },
         { label: 'Chats per project', value: 'Unlimited' },
         { label: 'Docs per project/notebook', value: '50' },
+        { label: 'Chat context', value: 'Last 10 turns' },
+        { label: 'Website crawl', value: '200 pages · advanced · 20 MB' },
         { label: 'Project sharing', value: 'Unlimited' },
         { label: 'Notebook sharing', value: 'Unlimited' },
+        { label: 'Premium AI models', value: 'All models' },
       ];
     case 'enterprise':
       return [
@@ -268,7 +274,10 @@ function getLimitsForDisplay(plan: string) {
         { label: 'Notebooks', value: 'Unlimited' },
         { label: 'Chats per project', value: 'Unlimited' },
         { label: 'Documents', value: 'Unlimited' },
+        { label: 'Chat context', value: 'Last 10 turns' },
+        { label: 'Website crawl', value: '200 pages · advanced · 20 MB' },
         { label: 'Sharing', value: 'Unlimited' },
+        { label: 'Premium AI models', value: 'All models' },
       ];
     default:
       return [
@@ -276,8 +285,11 @@ function getLimitsForDisplay(plan: string) {
         { label: 'Notebooks', value: '3' },
         { label: 'Chats per project', value: '1' },
         { label: 'Docs per project/notebook', value: '5' },
+        { label: 'Chat context', value: 'Last 2 turns' },
+        { label: 'Website crawl', value: '25 pages · basic · 2 MB' },
         { label: 'Project sharing', value: 'Not available' },
         { label: 'Notebook sharing', value: 'Not available' },
+        { label: 'Premium AI models', value: 'Not included' },
       ];
   }
 }

@@ -1150,7 +1150,7 @@
   },
   "pricingDialog": {
     "title": "Choose Your Plan",
-    "subtitle": "Select the perfect plan for your needs. Upgrade or downgrade anytime.",
+    "subtitle": "Select the plan that fits how much you research, crawl, save, and collaborate. Upgrade or downgrade anytime.",
     "mostPopular": "Most Popular",
     "currentPlan": "Current Plan",
     "periods": {
@@ -1172,41 +1172,53 @@
         "name": "Free",
         "description": "Perfect for getting started",
         "features": {
-          "0": "Up to 3 projects and up to 3 notebooks",
+          "0": "Up to 3 projects and 3 notebooks",
           "1": "1 chat per project",
-          "2": "5 document uploads per project or per notebook",
-          "3": "Basic retrieval",
-          "4": "No sharing — projects and notebooks are private",
-          "5": "Basic support",
-          "6": "Request features and improvements"
+          "2": "5 document uploads per project or notebook",
+          "3": "Chat context includes the last 2 turns",
+          "4": "Website crawls up to 25 pages with basic extraction",
+          "5": "2 MB crawl result size cap",
+          "6": "Basic retrieval",
+          "7": "No sharing — projects and notebooks stay private",
+          "8": "Premium AI models not included",
+          "9": "Basic support",
+          "10": "Request features and improvements"
         }
       },
       "basic": {
         "name": "Basic",
-        "description": "For individuals and small teams",
+        "description": "For regular individual research",
         "features": {
           "0": "Everything in Free",
-          "1": "Up to 10 projects and up to 10 notebooks",
+          "1": "Up to 10 projects and 10 notebooks",
           "2": "Up to 5 chats per project",
-          "3": "10 document uploads per project or per notebook",
-          "4": "Faster retrieval",
-          "5": "Project sharing — up to 3 members per project",
-          "6": "Notebook sharing not included — upgrade to Premium",
-          "7": "Email support"
+          "3": "10 document uploads per project or notebook",
+          "4": "Chat context includes the last 5 turns",
+          "5": "Website crawls up to 100 pages with advanced extraction",
+          "6": "8 MB crawl result size cap",
+          "7": "Faster retrieval",
+          "8": "Project sharing with up to 3 members",
+          "9": "Notebook sharing not included — upgrade to Premium",
+          "10": "Partial premium model access",
+          "11": "Email support"
         }
       },
       "premium": {
         "name": "Premium",
-        "description": "For growing teams",
+        "description": "For power users and growing teams",
         "features": {
           "0": "Everything in Basic",
           "1": "Unlimited projects and notebooks",
-          "2": "50 document uploads per project or per notebook",
-          "3": "Advanced retrieval",
-          "4": "Access to latest models",
-          "5": "Unlimited project sharing with unlimited members",
-          "6": "Unlimited notebook sharing with unlimited members",
-          "7": "Priority support — Teams coming soon"
+          "2": "Unlimited chats per project",
+          "3": "50 document uploads per project or notebook",
+          "4": "Chat context includes the last 10 turns",
+          "5": "Website crawls up to 200 pages with advanced extraction",
+          "6": "20 MB crawl result size cap",
+          "7": "Advanced retrieval",
+          "8": "Access to all AI models",
+          "9": "Unlimited project sharing with unlimited members",
+          "10": "Unlimited notebook sharing with unlimited members",
+          "11": "Priority support"
         }
       },
       "enterprise": {
@@ -1215,10 +1227,16 @@
         "features": {
           "0": "Everything in Premium",
           "1": "Unlimited documents",
-          "2": "Team management",
-          "3": "SSO & security features",
-          "4": "Custom integrations",
-          "5": "Dedicated support"
+          "2": "Unlimited projects, notebooks, and chats",
+          "3": "Chat context includes the last 10 turns",
+          "4": "Website crawls up to 200 pages with advanced extraction",
+          "5": "20 MB crawl result size cap",
+          "6": "Access to all AI models",
+          "7": "Unlimited project and notebook sharing",
+          "8": "Team management",
+          "9": "SSO and security features",
+          "10": "Custom integrations",
+          "11": "Dedicated support"
         }
       }
     }
