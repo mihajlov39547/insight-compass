@@ -1162,7 +1162,7 @@
   },
   "pricingDialog": {
     "title": "Izaberite svoj plan",
-    "subtitle": "Izaberite savršen plan za svoje potrebe. Nadogradite ili smanjite u bilo kom trenutku.",
+    "subtitle": "Izaberite plan koji odgovara koliko istražujete, indeksirate sajtove, čuvate i sarađujete. Nadogradite ili smanjite u bilo kom trenutku.",
     "mostPopular": "Najpopularnije",
     "currentPlan": "Trenutni plan",
     "periods": {
@@ -1184,41 +1184,53 @@
         "name": "Besplatan",
         "description": "Savršeno za početak",
         "features": {
-          "0": "Do 3 projekta i do 3 beleznice",
+          "0": "Do 3 projekta i 3 beležnice",
           "1": "1 ćaskanje po projektu",
-          "2": "5 otpremljenih dokumenata po projektu ili beleznici",
-          "3": "Osnovno pretraživanje",
-          "4": "Bez deljenja — projekti i beleznice su privatni",
-          "5": "Osnovna podrška",
-          "6": "Mogućnost predloga novih funkcija"
+          "2": "5 otpremljenih dokumenata po projektu ili beležnici",
+          "3": "Kontekst ćaskanja obuhvata poslednje 2 razmene",
+          "4": "Indeksiranje sajtova do 25 stranica sa osnovnom ekstrakcijom",
+          "5": "Ograničenje veličine rezultata indeksiranja: 2 MB",
+          "6": "Osnovno pretraživanje",
+          "7": "Bez deljenja — projekti i beležnice ostaju privatni",
+          "8": "Premium AI modeli nisu uključeni",
+          "9": "Osnovna podrška",
+          "10": "Mogućnost predloga novih funkcija"
         }
       },
       "basic": {
         "name": "Osnovni",
-        "description": "Za pojedince i male timove",
+        "description": "Za redovno individualno istraživanje",
         "features": {
           "0": "Sve iz Besplatnog plana",
-          "1": "Do 10 projekata i do 10 beleznica",
+          "1": "Do 10 projekata i 10 beležnica",
           "2": "Do 5 ćaskanja po projektu",
-          "3": "10 otpremljenih dokumenata po projektu ili beleznici",
-          "4": "Brže pretraživanje",
-          "5": "Deljenje projekta — do 3 člana po projektu",
-          "6": "Deljenje beleznica nije uključeno — pređite na Premium",
-          "7": "Podrška putem e-pošte"
+          "3": "10 otpremljenih dokumenata po projektu ili beležnici",
+          "4": "Kontekst ćaskanja obuhvata poslednjih 5 razmena",
+          "5": "Indeksiranje sajtova do 100 stranica sa naprednom ekstrakcijom",
+          "6": "Ograničenje veličine rezultata indeksiranja: 8 MB",
+          "7": "Brže pretraživanje",
+          "8": "Deljenje projekta sa do 3 člana",
+          "9": "Deljenje beležnica nije uključeno — pređite na Premium",
+          "10": "Delimičan pristup premium modelima",
+          "11": "Podrška putem e-pošte"
         }
       },
       "premium": {
         "name": "Premium",
-        "description": "Za timove koji rastu",
+        "description": "Za napredne korisnike i timove u rastu",
         "features": {
           "0": "Sve iz Osnovnog plana",
-          "1": "Neograničeno projekata i beleznica",
-          "2": "50 otpremljenih dokumenata po projektu ili beleznici",
-          "3": "Napredno pretraživanje",
-          "4": "Pristup najnovijim modelima",
-          "5": "Neograničeno deljenje projekata sa neograničenim brojem članova",
-          "6": "Neograničeno deljenje beleznica sa neograničenim brojem članova",
-          "7": "Prioritetna podrška — Timovi uskoro"
+          "1": "Neograničeno projekata i beležnica",
+          "2": "Neograničeno ćaskanja po projektu",
+          "3": "50 otpremljenih dokumenata po projektu ili beležnici",
+          "4": "Kontekst ćaskanja obuhvata poslednjih 10 razmena",
+          "5": "Indeksiranje sajtova do 200 stranica sa naprednom ekstrakcijom",
+          "6": "Ograničenje veličine rezultata indeksiranja: 20 MB",
+          "7": "Napredno pretraživanje",
+          "8": "Pristup svim AI modelima",
+          "9": "Neograničeno deljenje projekata sa neograničenim brojem članova",
+          "10": "Neograničeno deljenje beležnica sa neograničenim brojem članova",
+          "11": "Prioritetna podrška"
         }
       },
       "enterprise": {
@@ -1227,10 +1239,16 @@
         "features": {
           "0": "Sve iz Premium plana",
           "1": "Neograničeno dokumenata",
-          "2": "Upravljanje timom",
-          "3": "SSO i bezbednosne opcije",
-          "4": "Prilagođene integracije",
-          "5": "Posvećena podrška"
+          "2": "Neograničeno projekata, beležnica i ćaskanja",
+          "3": "Kontekst ćaskanja obuhvata poslednjih 10 razmena",
+          "4": "Indeksiranje sajtova do 200 stranica sa naprednom ekstrakcijom",
+          "5": "Ograničenje veličine rezultata indeksiranja: 20 MB",
+          "6": "Pristup svim AI modelima",
+          "7": "Neograničeno deljenje projekata i beležnica",
+          "8": "Upravljanje timom",
+          "9": "SSO i bezbednosne opcije",
+          "10": "Prilagođene integracije",
+          "11": "Posvećena podrška"
         }
       }
     }
