@@ -1209,7 +1209,7 @@
       },
       "premium": {
         "name": "Premium",
-        "description": "Za timove u rastu",
+        "description": "Za timove koji rastu",
         "features": {
           "0": "Sve iz Osnovnog plana",
           "1": "Neograničeno projekata i beleznica",
@@ -1606,7 +1606,7 @@
         },
         "premium": {
           "name": "Premium",
-          "description": "Za timove u rastu",
+          "description": "Za timove koji rastu",
           "price": "$49 / mesečno"
         },
         "enterprise": {
