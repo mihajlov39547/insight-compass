@@ -60,10 +60,10 @@ async function fetchPayPalPlans(): Promise<Record<string, { planId: string; plan
 const PLAN_ORDER: Plan[] = ['free', 'basic', 'premium', 'enterprise'];
 
 const PLAN_FEATURE_COUNTS: Record<Plan, number> = {
-  free: 7,
-  basic: 8,
-  premium: 8,
-  enterprise: 6,
+  free: 11,
+  basic: 12,
+  premium: 12,
+  enterprise: 12,
 };
 
 function getPlanFeatures(planId: Plan, t: (k: string) => string): string[] {
