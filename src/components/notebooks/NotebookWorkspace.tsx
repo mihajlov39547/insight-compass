@@ -1110,6 +1110,7 @@ export function NotebookWorkspace() {
                     open={showExport}
                     onOpenChange={setShowExport}
                     contextType="notebook"
+                    contextId={notebook?.id}
                     contextName={notebook?.name ?? 'notebook'}
                     exportedByLabel={user?.email ?? undefined}
                     messages={messages as any}
