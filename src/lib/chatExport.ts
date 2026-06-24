@@ -731,15 +731,38 @@ function getPdfBlob(pdfDoc: any): Promise<Blob> {
   });
 }
 
-export async function downloadChatPdf(args: BuildExportArgs): Promise<void> {
+export async function buildChatPdfBlob(args: BuildExportArgs): Promise<Blob> {
   const pdfMake = await loadPdfMake();
   const docDef = buildPdfDocDefinition(args);
+  return getPdfBlob(pdfMake.createPdf(docDef));
+}
+
+export function buildChatMarkdownBlob(args: BuildExportArgs): Blob {
+  const md = buildChatMarkdownExport(args);
+  return new Blob([md], { type: "text/markdown;charset=utf-8" });
+}
+
+export function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("Failed to read blob"));
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      const idx = result.indexOf(",");
+      resolve(idx >= 0 ? result.slice(idx + 1) : result);
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+export async function downloadChatPdf(args: BuildExportArgs): Promise<void> {
+  const blob = await buildChatPdfBlob(args);
   const filename = buildExportFilename({
     contextType: args.contextType,
     contextName: args.contextName,
     extension: "pdf",
   });
-  const blob = await getPdfBlob(pdfMake.createPdf(docDef));
   triggerBlobDownload(blob, filename);
 }
+
 

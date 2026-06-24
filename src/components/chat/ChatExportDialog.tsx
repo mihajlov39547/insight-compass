@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Download, FileDown, Loader2 } from 'lucide-react';
+import { Download, FileDown, Loader2, Cloud, ExternalLink } from 'lucide-react';
 import {
   buildChatMarkdownExport,
   buildExportFilename,
@@ -14,6 +14,8 @@ import {
 } from '@/lib/chatExport';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
+import { useSaveChatExportToDrive } from '@/hooks/useSaveChatExportToDrive';
+import { ToastAction } from '@/components/ui/toast';
 
 const APP_NAME = 'Researcher';
 
@@ -21,7 +23,9 @@ interface ChatExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contextType: 'project' | 'notebook';
+  contextId?: string;
   contextName: string;
+  chatId?: string | null;
   chatTitle?: string;
   exportedByLabel?: string;
   messages: ChatMessageLike[];
@@ -32,7 +36,9 @@ export function ChatExportDialog({
   open,
   onOpenChange,
   contextType,
+  contextId,
   contextName,
+  chatId,
   chatTitle,
   exportedByLabel,
   messages,
@@ -62,6 +68,9 @@ export function ChatExportDialog({
 
   const [pdfLoading, setPdfLoading] = useState(false);
   const { toast } = useToast();
+  const { save: saveToDrive, savingMd: driveSavingMd, savingPdf: driveSavingPdf } =
+    useSaveChatExportToDrive();
+  const driveAvailable = !!contextId;
 
   const handleMarkdown = () => {
     const md = buildChatMarkdownExport(baseArgs);
@@ -84,6 +93,41 @@ export function ChatExportDialog({
       });
     } finally {
       setPdfLoading(false);
+    }
+  };
+
+  const handleSaveDrive = async (format: 'markdown' | 'pdf') => {
+    if (!contextId) return;
+    try {
+      const res = await saveToDrive({
+        ...baseArgs,
+        format,
+        contextId,
+        chatId: chatId ?? null,
+      });
+      const action = res.webViewLink
+        ? (
+            <ToastAction
+              altText={t('chatExport.openInDrive', 'Open in Drive')}
+              onClick={() => window.open(res.webViewLink!, '_blank', 'noopener,noreferrer')}
+            >
+              <ExternalLink className="h-3.5 w-3.5 mr-1" />
+              {t('chatExport.openInDrive', 'Open in Drive')}
+            </ToastAction>
+          )
+        : undefined;
+      toast({
+        title: t('chatExport.driveSaved', 'Saved to Google Drive'),
+        description: res.name,
+        action,
+      });
+    } catch (err: any) {
+      console.error('Drive export failed', err);
+      toast({
+        title: t('chatExport.driveErrorTitle', 'Could not save to Google Drive'),
+        description: err?.message ?? t('chatExport.driveFailed', 'Could not save to Google Drive.'),
+        variant: 'destructive',
+      });
     }
   };
 
@@ -118,16 +162,57 @@ export function ChatExportDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={handleMarkdown} className="gap-1.5">
-            <Download className="h-4 w-4" />
-            {t('chatExport.exportMd', 'Export Markdown')}
-          </Button>
-          <Button onClick={handlePdf} disabled={pdfLoading} className="gap-1.5">
-            {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-            {pdfLoading ? t('chatExport.generatingPdf', 'Generating PDF…') : t('chatExport.exportPdf', 'Download PDF')}
-          </Button>
-        </DialogFooter>
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              {t('chatExport.localDownload', 'Local download')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={handleMarkdown} className="gap-1.5">
+                <Download className="h-4 w-4" />
+                {t('chatExport.exportMd', 'Export Markdown')}
+              </Button>
+              <Button onClick={handlePdf} disabled={pdfLoading} className="gap-1.5">
+                {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                {pdfLoading ? t('chatExport.generatingPdf', 'Generating PDF…') : t('chatExport.exportPdf', 'Download PDF')}
+              </Button>
+            </div>
+          </div>
+
+          {driveAvailable && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                {t('chatExport.googleDrive', 'Google Drive')}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={driveSavingMd}
+                  onClick={() => handleSaveDrive('markdown')}
+                >
+                  {driveSavingMd ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cloud className="h-4 w-4" />}
+                  {driveSavingMd
+                    ? t('chatExport.savingToDrive', 'Saving to Drive…')
+                    : t('chatExport.saveMdToDrive', 'Save Markdown to Drive')}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={driveSavingPdf}
+                  onClick={() => handleSaveDrive('pdf')}
+                >
+                  {driveSavingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cloud className="h-4 w-4" />}
+                  {driveSavingPdf
+                    ? t('chatExport.savingToDrive', 'Saving to Drive…')
+                    : t('chatExport.savePdfToDrive', 'Save PDF to Drive')}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter />
       </DialogContent>
     </Dialog>
   );

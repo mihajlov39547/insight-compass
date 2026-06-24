@@ -365,7 +365,9 @@ export function ChatWorkspace() {
           open={showExport}
           onOpenChange={setShowExport}
           contextType="project"
+          contextId={selectedProject?.id}
           contextName={selectedProject?.name ?? 'project'}
+          chatId={selectedChat?.id ?? null}
           chatTitle={selectedChat?.name}
           exportedByLabel={user?.email ?? undefined}
           messages={messages as any}

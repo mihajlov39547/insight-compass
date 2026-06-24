@@ -1731,7 +1731,22 @@
     "exportPdf": "Preuzmi PDF",
     "generatingPdf": "Generisanje PDF-a…",
     "pdfErrorTitle": "Nije moguće generisati PDF",
-    "pdfErrorDesc": "Pokušajte sa Markdown izvozom."
+    "pdfErrorDesc": "Pokušajte sa Markdown izvozom.",
+    "localDownload": "Lokalno preuzimanje",
+    "googleDrive": "Google Drive",
+    "saveMdToDrive": "Sačuvaj Markdown na Drive",
+    "savePdfToDrive": "Sačuvaj PDF na Drive",
+    "savingToDrive": "Čuvanje na Drive…",
+    "driveSaved": "Sačuvano na Google Drive",
+    "openInDrive": "Otvori u Drive-u",
+    "driveErrorTitle": "Nije moguće sačuvati na Google Drive",
+    "driveFailed": "Nije moguće sačuvati na Google Drive.",
+    "driveNotConnected": "Google Drive nije povezan za ovaj projekat.",
+    "driveWriteScopeMissing": "Google Drive nema dozvolu za pisanje. Povežite ponovo sa dozvolom za otpremanje.",
+    "driveForbidden": "Nemate pristup ovom razgovoru.",
+    "driveTooLarge": "Izvoz je prevelik za Drive. Probajte Markdown ili smanjite isečke izvora.",
+    "driveInvalid": "Neispravan zahtev za izvoz.",
+    "driveUnauthorized": "Morate biti prijavljeni za čuvanje na Drive."
   },
   "citationInspector": {
     "description": "Detalji izvora",
