@@ -108,15 +108,12 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
           ),
           img: ({ src, alt }) => {
             if (!canInlineImage(src)) {
+              // Render as span (not <a>) to avoid invalid <a> inside <a> when
+              // markdown nests an image inside a link: [![alt](img)](href).
               return (
-                <a
-                  href={src}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline underline-offset-2 hover:text-primary/80 break-all"
-                >
-                  {alt || 'Open image'}
-                </a>
+                <span className="text-muted-foreground break-all">
+                  {alt || src || 'image'}
+                </span>
               );
             }
             return (
