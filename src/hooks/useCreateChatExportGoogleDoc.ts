@@ -56,6 +56,11 @@ export function useCreateChatExportGoogleDoc() {
           'chatExport.docsWriteScopeMissing',
           'Google Docs write access is not connected. Reconnect with document create/edit scope.',
         );
+      case 'google_docs_rejected_update':
+        return t(
+          'chatExport.docsRejectedUpdate',
+          'Google Docs rejected the transcript insert. Try a shorter export or Markdown/PDF.',
+        );
       case 'forbidden':
         return t('chatExport.driveForbidden', 'You do not have access to this chat.');
       case 'file_too_large':
