@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Download, FileDown, Loader2, Cloud, ExternalLink } from 'lucide-react';
+import { Download, FileDown, Loader2, Cloud, ExternalLink, FileText } from 'lucide-react';
 import {
   buildChatMarkdownExport,
   buildExportFilename,
@@ -15,6 +15,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
 import { useSaveChatExportToDrive } from '@/hooks/useSaveChatExportToDrive';
+import { useCreateChatExportGoogleDoc } from '@/hooks/useCreateChatExportGoogleDoc';
 import { ToastAction } from '@/components/ui/toast';
 
 const APP_NAME = 'Researcher';
@@ -70,6 +71,7 @@ export function ChatExportDialog({
   const { toast } = useToast();
   const { save: saveToDrive, savingMd: driveSavingMd, savingPdf: driveSavingPdf } =
     useSaveChatExportToDrive();
+  const { create: createGoogleDoc, loading: creatingDoc } = useCreateChatExportGoogleDoc();
   const driveAvailable = !!contextId;
 
   const handleMarkdown = () => {
