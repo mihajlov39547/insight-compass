@@ -1730,7 +1730,16 @@
     "driveForbidden": "You do not have access to this chat.",
     "driveTooLarge": "This export is too large to save to Drive. Try Markdown or reduce included source snippets.",
     "driveInvalid": "Invalid export request.",
-    "driveUnauthorized": "You must be signed in to save to Drive."
+    "driveUnauthorized": "You must be signed in to save to Drive.",
+    "createDoc": "Create Google Doc",
+    "creatingDoc": "Creating Google Doc…",
+    "docCreated": "Google Doc created",
+    "openDoc": "Open Google Doc",
+    "docErrorTitle": "Could not create Google Doc",
+    "docsFailed": "Could not create Google Doc.",
+    "docsNotConnected": "Google Docs is not connected for this project.",
+    "docsWriteScopeMissing": "Google Docs write access is not connected. Reconnect with document create/edit scope.",
+    "docsTooLarge": "This chat is too large to create as a Google Doc."
   },
   "citationInspector": {
     "description": "Source details",
