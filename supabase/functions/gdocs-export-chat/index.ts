@@ -195,7 +195,7 @@ Deno.serve(async (req: Request) => {
     if (!createResp.ok) {
       const text = await createResp.text().catch(() => '');
       console.error('[gdocs-export-chat] create fail', createResp.status, text);
-      return mapUpstreamError(createResp.status, 'create');
+      return mapUpstreamError(createResp.status, 'create', text);
     }
     const created = await createResp.json();
     const documentId = created?.documentId as string | undefined;
@@ -203,20 +203,18 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'create_failed', message: 'Google Docs did not return a document id.' }, 502);
     }
 
-    // 2) Insert transcript in chunks. New empty doc: index 1, then append at end.
-    // Each subsequent insert: location = current_length + 1. We insert in order at
-    // a moving cursor; using endOfSegmentLocation simplifies append semantics.
+    // 2) Insert transcript using reverse-chunk-at-index-1 strategy.
+    // Each insertText at index 1 pushes existing content forward, so inserting
+    // chunks in reverse order yields the correct final order without needing
+    // to track cursor positions (which is fragile with Unicode / Docs indexing).
     const chunks: string[] = [];
     for (let i = 0; i < transcript.length; i += INSERT_CHUNK) {
       chunks.push(transcript.slice(i, i + INSERT_CHUNK));
     }
-
-    // First insert must use explicit index (endOfSegmentLocation is invalid for empty bodies on some configs).
-    // Strategy: insert sequentially with location index = running length + 1.
-    let cursor = 1;
-    for (const chunk of chunks) {
+    const reversed = [...chunks].reverse();
+    for (const chunk of reversed) {
       const requests = [
-        { insertText: { location: { index: cursor }, text: chunk } },
+        { insertText: { location: { index: 1 }, text: chunk } },
       ];
       const updResp = await gdocsFetch(
         `/documents/${encodeURIComponent(documentId)}:batchUpdate`,
@@ -231,10 +229,10 @@ Deno.serve(async (req: Request) => {
       if (!updResp.ok) {
         const text = await updResp.text().catch(() => '');
         console.error('[gdocs-export-chat] batchUpdate fail', updResp.status, text);
-        return mapUpstreamError(updResp.status, 'update');
+        return mapUpstreamError(updResp.status, 'update', text);
       }
-      cursor += chunk.length;
     }
+
 
     // 3) Build webViewLink. Prefer Drive metadata if available, otherwise construct.
     let webViewLink: string | null = `https://docs.google.com/document/d/${documentId}/edit`;
