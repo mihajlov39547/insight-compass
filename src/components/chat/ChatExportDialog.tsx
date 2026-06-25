@@ -133,6 +133,36 @@ export function ChatExportDialog({
     }
   };
 
+  const handleCreateDoc = async () => {
+    if (!contextId) return;
+    try {
+      const res = await createGoogleDoc({ ...baseArgs, contextId, chatId: chatId ?? null });
+      const action = res.webViewLink
+        ? (
+            <ToastAction
+              altText={t('chatExport.openDoc', 'Open Google Doc')}
+              onClick={() => window.open(res.webViewLink!, '_blank', 'noopener,noreferrer')}
+            >
+              <ExternalLink className="h-3.5 w-3.5 mr-1" />
+              {t('chatExport.openDoc', 'Open Google Doc')}
+            </ToastAction>
+          )
+        : undefined;
+      toast({
+        title: t('chatExport.docCreated', 'Google Doc created'),
+        description: res.title,
+        action,
+      });
+    } catch (err: any) {
+      console.error('Google Doc create failed', err);
+      toast({
+        title: t('chatExport.docErrorTitle', 'Could not create Google Doc'),
+        description: err?.message ?? t('chatExport.docsFailed', 'Could not create Google Doc.'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   const Toggle = ({ id, label, hint, value, set }: { id: string; label: string; hint?: string; value: boolean; set: (v: boolean) => void }) => (
     <div className="flex items-center justify-between gap-3 py-1.5">
       <div className="flex-1">
@@ -208,6 +238,19 @@ export function ChatExportDialog({
                   {driveSavingPdf
                     ? t('chatExport.savingToDrive', 'Saving to Drive…')
                     : t('chatExport.savePdfToDrive', 'Save PDF to Drive')}
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Button
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={creatingDoc}
+                  onClick={handleCreateDoc}
+                >
+                  {creatingDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  {creatingDoc
+                    ? t('chatExport.creatingDoc', 'Creating Google Doc…')
+                    : t('chatExport.createDoc', 'Create Google Doc')}
                 </Button>
               </div>
             </div>
