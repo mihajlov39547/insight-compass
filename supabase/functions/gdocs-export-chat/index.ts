@@ -48,10 +48,25 @@ async function gdocsFetch(
   });
 }
 
-function mapUpstreamError(status: number, scope: 'create' | 'update'): Response {
+function sanitizeUpstream(text?: string): string | undefined {
+  if (!text) return undefined;
+  const cleaned = text
+    .replace(/Bearer\s+[A-Za-z0-9._\-]+/gi, 'Bearer [redacted]')
+    .replace(/(api[_-]?key|authorization|x-connection-api-key)\s*[:=]\s*[^\s,"}]+/gi, '$1: [redacted]')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned.length > 800 ? cleaned.slice(0, 800) + '…' : cleaned;
+}
+
+function mapUpstreamError(
+  status: number,
+  scope: 'create' | 'update',
+  upstreamText?: string,
+): Response {
+  const detail = sanitizeUpstream(upstreamText);
   if (status === 401) {
     return json(
-      { error: 'google_docs_not_connected', message: 'Google Docs is not connected for this project.' },
+      { error: 'google_docs_not_connected', message: 'Google Docs is not connected for this project.', detail },
       400,
     );
   }
@@ -61,27 +76,39 @@ function mapUpstreamError(status: number, scope: 'create' | 'update'): Response 
         error: 'google_docs_write_scope_missing',
         message:
           'Google Docs write access is not connected. Reconnect Google Docs with document create/edit scope.',
+        detail,
       },
       403,
     );
   }
   if (status === 413) {
     return json(
-      { error: 'file_too_large', message: 'This chat is too large to create as a Google Doc.' },
+      { error: 'file_too_large', message: 'This chat is too large to create as a Google Doc.', detail },
       413,
     );
   }
   if (status === 400) {
+    if (scope === 'update') {
+      return json(
+        {
+          error: 'google_docs_rejected_update',
+          message: 'Google Docs rejected the update request.',
+          detail,
+        },
+        400,
+      );
+    }
     return json(
-      { error: 'invalid_input', message: `Google Docs rejected the ${scope} request.` },
+      { error: 'invalid_input', message: `Google Docs rejected the ${scope} request.`, detail },
       400,
     );
   }
   return json(
-    { error: 'create_failed', message: `Google Docs ${scope} failed (${status}).` },
+    { error: 'create_failed', message: `Google Docs ${scope} failed (${status}).`, detail },
     502,
   );
 }
+
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
