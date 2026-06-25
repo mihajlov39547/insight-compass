@@ -1739,7 +1739,8 @@
     "docsFailed": "Could not create Google Doc.",
     "docsNotConnected": "Google Docs is not connected for this project.",
     "docsWriteScopeMissing": "Google Docs write access is not connected. Reconnect with document create/edit scope.",
-    "docsTooLarge": "This chat is too large to create as a Google Doc."
+    "docsTooLarge": "This chat is too large to create as a Google Doc.",
+    "docsRejectedUpdate": "Google Docs rejected the transcript insert. Try a shorter export or Markdown/PDF."
   },
   "citationInspector": {
     "description": "Source details",

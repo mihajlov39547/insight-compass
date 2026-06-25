@@ -1755,7 +1755,8 @@
     "docsFailed": "Nije moguće kreirati Google Doc.",
     "docsNotConnected": "Google Docs nije povezan za ovaj projekat.",
     "docsWriteScopeMissing": "Google Docs nema dozvolu za pisanje. Povežite ponovo sa dozvolom za kreiranje/izmenu dokumenta.",
-    "docsTooLarge": "Ovaj razgovor je prevelik za kreiranje Google Doc-a."
+    "docsTooLarge": "Ovaj razgovor je prevelik za kreiranje Google Doc-a.",
+    "docsRejectedUpdate": "Google Docs je odbio umetanje transkripta. Probajte kraći izvoz ili Markdown/PDF."
   },
   "citationInspector": {
     "description": "Detalji izvora",
