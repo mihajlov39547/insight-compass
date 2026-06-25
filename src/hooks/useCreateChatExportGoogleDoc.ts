@@ -104,6 +104,9 @@ export function useCreateChatExportGoogleDoc() {
           if (ctx && typeof ctx.json === 'function') payload = await ctx.json();
         } catch { /* ignore */ }
         const code = payload?.error;
+        if (payload?.detail) {
+          console.warn('[gdocs-export-chat] upstream detail:', payload.detail);
+        }
         const msg = friendlyError(
           code,
           payload?.message ||
