@@ -1746,7 +1746,16 @@
     "driveForbidden": "Nemate pristup ovom razgovoru.",
     "driveTooLarge": "Izvoz je prevelik za Drive. Probajte Markdown ili smanjite isečke izvora.",
     "driveInvalid": "Neispravan zahtev za izvoz.",
-    "driveUnauthorized": "Morate biti prijavljeni za čuvanje na Drive."
+    "driveUnauthorized": "Morate biti prijavljeni za čuvanje na Drive.",
+    "createDoc": "Kreiraj Google Doc",
+    "creatingDoc": "Kreiranje Google Doc-a…",
+    "docCreated": "Google Doc je kreiran",
+    "openDoc": "Otvori Google Doc",
+    "docErrorTitle": "Nije moguće kreirati Google Doc",
+    "docsFailed": "Nije moguće kreirati Google Doc.",
+    "docsNotConnected": "Google Docs nije povezan za ovaj projekat.",
+    "docsWriteScopeMissing": "Google Docs nema dozvolu za pisanje. Povežite ponovo sa dozvolom za kreiranje/izmenu dokumenta.",
+    "docsTooLarge": "Ovaj razgovor je prevelik za kreiranje Google Doc-a."
   },
   "citationInspector": {
     "description": "Detalji izvora",
