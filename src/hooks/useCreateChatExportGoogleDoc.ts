@@ -83,6 +83,7 @@ export function useCreateChatExportGoogleDoc() {
     setLoading(true);
     try {
       const transcript = buildChatMarkdownExport(args);
+      const docModel = buildChatGoogleDocModel(args);
       const title = buildChatDocTitle({
         appName: args.appName,
         contextType: args.contextType,
@@ -95,7 +96,8 @@ export function useCreateChatExportGoogleDoc() {
           contextId: args.contextId,
           chatId: args.chatId ?? null,
           title,
-          transcript,
+          transcript, // fallback for backward compatibility
+          docModel,
         },
       });
 
