@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, FileText, Share2, Trash2, Pencil } from 'lucide-react';
+import { Settings, FileText, Share2, Trash2, Pencil, Download } from 'lucide-react';
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useTranslation } from 'react-i18next';
 import type { ItemPermissions } from '@/lib/permissions';
