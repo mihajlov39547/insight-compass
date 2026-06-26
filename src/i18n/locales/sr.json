@@ -1307,6 +1307,7 @@
     "deleteProject": "Obriši projekat",
     "deleteNotebook": "Obriši beleznicu",
     "renameChat": "Preimenuj ćaskanje",
+    "exportChat": "Izvezi razgovor",
     "deleteChat": "Obriši ćaskanje"
   },
   "workspaceSearch": {
