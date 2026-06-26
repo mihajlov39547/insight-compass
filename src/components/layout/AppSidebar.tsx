@@ -1054,6 +1054,8 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   const { data: myRole } = useItemRole(project.id, 'project');
   const permissions = getItemPermissions(myRole);
   const { setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
+  const { user: sidebarUser } = useAuth();
+  const [exportChat, setExportChat] = useState<DbChat | null>(null);
 
   const handleManageProjectDocs = () => { setSelectedProjectId(project.id); setSelectedChatId(null); setActiveView('project-documents'); };
   const handleManageChatDocs = (chat: DbChat) => { setSelectedProjectId(project.id); setSelectedChatId(chat.id); setActiveView('chat-documents'); };
