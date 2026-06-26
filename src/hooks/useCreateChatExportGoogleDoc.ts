@@ -5,6 +5,7 @@ import {
   buildChatMarkdownExport,
   type BuildExportArgs,
 } from '@/lib/chatExport';
+import { buildChatGoogleDocModel } from '@/lib/chatExportGoogleDoc';
 
 export interface CreateGoogleDocArgs extends BuildExportArgs {
   contextId: string;
@@ -15,6 +16,7 @@ export interface CreateGoogleDocResult {
   documentId: string;
   title: string;
   webViewLink: string | null;
+  warning?: 'formatting_partial';
 }
 
 function formatDate(d = new Date()): string {
