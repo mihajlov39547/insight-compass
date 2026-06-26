@@ -1130,12 +1130,30 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <ChatActionsMenuContent permissions={permissions} onRenameChat={() => onRenameChat(chat.id, chat.name)} onManageDocuments={() => handleManageChatDocs(chat)} onDeleteChat={() => onDeleteChat(chat)} />
+              <ChatActionsMenuContent
+                permissions={permissions}
+                onRenameChat={() => onRenameChat(chat.id, chat.name)}
+                onManageDocuments={() => handleManageChatDocs(chat)}
+                onExportChat={() => setExportChat(chat)}
+                onDeleteChat={() => onDeleteChat(chat)}
+              />
             </DropdownMenu>
           </div>
         ))}
         {chats.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.noChats')}</p>}
       </CollapsibleContent>
+      {exportChat && (
+        <ChatExportByIdDialog
+          open={!!exportChat}
+          onOpenChange={(open) => { if (!open) setExportChat(null); }}
+          contextType="project"
+          contextId={exportChat.project_id}
+          contextName={project.name}
+          chatId={exportChat.id}
+          chatTitle={exportChat.name}
+          exportedByLabel={sidebarUser?.email ?? undefined}
+        />
+      )}
     </Collapsible>
   );
 }
