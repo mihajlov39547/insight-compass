@@ -148,9 +148,17 @@ export function ChatExportDialog({
             </ToastAction>
           )
         : undefined;
+      const partial = res.warning === 'formatting_partial';
       toast({
-        title: t('chatExport.docCreated', 'Google Doc created'),
-        description: res.title,
+        title: partial
+          ? t('chatExport.docCreatedPartialTitle', 'Google Doc created')
+          : t('chatExport.docCreated', 'Google Doc created'),
+        description: partial
+          ? t(
+              'chatExport.docCreatedPartial',
+              'Google Doc created, but some formatting could not be applied.',
+            )
+          : res.title,
         action,
       });
     } catch (err: any) {
