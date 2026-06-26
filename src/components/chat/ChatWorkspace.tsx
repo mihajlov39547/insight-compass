@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles, ArrowUp, Share2 } from 'lucide-react';
+import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles, ArrowUp, Share2, FileStack } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
 import { ChatQuestionNavigator } from './ChatQuestionNavigator';
@@ -36,7 +36,7 @@ import { useAuth } from '@/contexts/useAuth';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
-  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare, setShowPricing } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedProjectId, setSelectedChatId, setActiveView, setShowShare, setShowPricing } = useApp();
   const { user } = useAuth();
   const [showExport, setShowExport] = useState(false);
   const { data: projects = [] } = useProjects();
@@ -84,7 +84,14 @@ export function ChatWorkspace() {
       { projectId: selectedProjectId, name: t('sidebar.newChatName'), language: normalizeLanguageCode(selectedProject.language) },
       { onSuccess: (chat) => setSelectedChatId(chat.id) }
     );
+
+  const handleManageProjectDocs = () => {
+    if (!selectedProjectId) return;
+    setSelectedProjectId(selectedProjectId);
+    setSelectedChatId(null);
+    setActiveView('project-documents');
   };
+
 
   const addedYouTubeUrls = useMemo(() => {
     const set = new Set<string>();
