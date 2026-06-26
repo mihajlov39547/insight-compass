@@ -205,13 +205,20 @@ export function ChatWorkspace() {
                 <FeatureCard icon={<Shield className="h-5 w-5" />} title={t('projectDashboard.features.secure.title')} description={t('projectDashboard.features.secure.description')} />
               </div>
               {permissions.canCreateChats && (
-                <Button
-                  className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-                  onClick={handleCreateNewChat}
-                  disabled={createChat.isPending}
-                >
-                  <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button
+                    className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+                    onClick={handleCreateNewChat}
+                    disabled={createChat.isPending}
+                  >
+                    <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
+                  </Button>
+                  {permissions.canUploadDocuments && (
+                    <Button variant="outline" className="gap-2" onClick={handleManageProjectDocs}>
+                      <FileStack className="h-4 w-4" /> {t('actionsMenu.manageDocuments')}
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
 
