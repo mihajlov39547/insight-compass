@@ -250,6 +250,19 @@ export function ProjectChatGrid({ chats, permissions, projectName, exportedByLab
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {exportChat && (
+        <ChatExportByIdDialog
+          open={!!exportChat}
+          onOpenChange={(open) => { if (!open) setExportChat(null); }}
+          contextType="project"
+          contextId={exportChat.project_id}
+          contextName={projectName ?? 'project'}
+          chatId={exportChat.id}
+          chatTitle={exportChat.name}
+          exportedByLabel={exportedByLabel}
+        />
+      )}
     </div>
   );
 }
