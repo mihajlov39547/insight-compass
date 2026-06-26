@@ -1734,6 +1734,8 @@
     "createDoc": "Create Google Doc",
     "creatingDoc": "Creating Google Doc…",
     "docCreated": "Google Doc created",
+    "docCreatedPartialTitle": "Google Doc created",
+    "docCreatedPartial": "Google Doc created, but some formatting could not be applied.",
     "openDoc": "Open Google Doc",
     "docErrorTitle": "Could not create Google Doc",
     "docsFailed": "Could not create Google Doc.",
