@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles, ArrowUp, Share2 } from 'lucide-react';
+import { MessageSquarePlus, FileText, Zap, Shield, AlertCircle, RefreshCw, Sparkles, ArrowUp, Share2, FileStack } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
 import { ChatQuestionNavigator } from './ChatQuestionNavigator';
@@ -36,7 +36,7 @@ import { useAuth } from '@/contexts/useAuth';
 
 export function ChatWorkspace() {
   const { t } = useTranslation();
-  const { selectedProjectId, selectedChatId, setSelectedChatId, setShowShare, setShowPricing } = useApp();
+  const { selectedProjectId, selectedChatId, setSelectedProjectId, setSelectedChatId, setActiveView, setShowShare, setShowPricing } = useApp();
   const { user } = useAuth();
   const [showExport, setShowExport] = useState(false);
   const { data: projects = [] } = useProjects();
@@ -85,6 +85,15 @@ export function ChatWorkspace() {
       { onSuccess: (chat) => setSelectedChatId(chat.id) }
     );
   };
+
+  const handleManageProjectDocs = () => {
+    if (!selectedProjectId) return;
+    setSelectedProjectId(selectedProjectId);
+    setSelectedChatId(null);
+    setActiveView('project-documents');
+  };
+
+
 
   const addedYouTubeUrls = useMemo(() => {
     const set = new Set<string>();
@@ -196,13 +205,20 @@ export function ChatWorkspace() {
                 <FeatureCard icon={<Shield className="h-5 w-5" />} title={t('projectDashboard.features.secure.title')} description={t('projectDashboard.features.secure.description')} />
               </div>
               {permissions.canCreateChats && (
-                <Button
-                  className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-                  onClick={handleCreateNewChat}
-                  disabled={createChat.isPending}
-                >
-                  <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button
+                    className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+                    onClick={handleCreateNewChat}
+                    disabled={createChat.isPending}
+                  >
+                    <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
+                  </Button>
+                  {permissions.canUploadDocuments && (
+                    <Button variant="outline" className="gap-2" onClick={handleManageProjectDocs}>
+                      <FileStack className="h-4 w-4" /> {t('actionsMenu.manageDocuments')}
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
 
@@ -227,13 +243,20 @@ export function ChatWorkspace() {
             <FeatureCard icon={<Shield className="h-5 w-5" />} title={t('projectDashboard.features.secure.title')} description={t('projectDashboard.features.secure.description')} />
           </div>
           {permissions.canCreateChats ? (
-            <Button
-              className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-              onClick={handleCreateNewChat}
-              disabled={createChat.isPending}
-            >
-              <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button
+                className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+                onClick={handleCreateNewChat}
+                disabled={createChat.isPending}
+              >
+                <MessageSquarePlus className="h-4 w-4" /> {createChat.isPending ? t('projectDashboard.creating') : t('projectDashboard.createNewChat')}
+              </Button>
+              {permissions.canUploadDocuments && (
+                <Button variant="outline" className="gap-2" onClick={handleManageProjectDocs}>
+                  <FileStack className="h-4 w-4" /> {t('actionsMenu.manageDocuments')}
+                </Button>
+              )}
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">{t('projectDashboard.noChatsYet')}</p>
           )}

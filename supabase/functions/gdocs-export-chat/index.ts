@@ -93,7 +93,7 @@ async function gdocsFetch(
 function sanitizeUpstream(text?: string): string | undefined {
   if (!text) return undefined;
   const cleaned = text
-    .replace(/Bearer\s+[A-Za-z0-9._\-]+/gi, 'Bearer [redacted]')
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [redacted]')
     .replace(/(api[_-]?key|authorization|x-connection-api-key)\s*[:=]\s*[^\s,"}]+/gi, '$1: [redacted]')
     .replace(/\s+/g, ' ')
     .trim();
