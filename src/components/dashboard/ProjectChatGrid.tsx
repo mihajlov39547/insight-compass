@@ -35,9 +35,11 @@ function formatActivity(dateStr: string, locale: string, t: (key: string) => str
 interface Props {
   chats: DbChat[];
   permissions?: ItemPermissions | null;
+  projectName?: string;
+  exportedByLabel?: string;
 }
 
-export function ProjectChatGrid({ chats, permissions }: Props) {
+export function ProjectChatGrid({ chats, permissions, projectName, exportedByLabel }: Props) {
   const { t, i18n } = useTranslation();
   const dateLocale = getDateLocale(i18n.resolvedLanguage || i18n.language);
   const { selectedChatId, setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
