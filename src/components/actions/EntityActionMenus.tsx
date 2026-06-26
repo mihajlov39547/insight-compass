@@ -64,6 +64,7 @@ export function ProjectActionsMenuContent({
 interface ChatActionsMenuContentProps {
   onRenameChat: () => void;
   onManageDocuments: () => void;
+  onExportChat?: () => void;
   onDeleteChat: () => void;
   permissions?: ItemPermissions | null;
 }
@@ -71,6 +72,7 @@ interface ChatActionsMenuContentProps {
 export function ChatActionsMenuContent({
   onRenameChat,
   onManageDocuments,
+  onExportChat,
   onDeleteChat,
   permissions,
 }: ChatActionsMenuContentProps) {
@@ -95,6 +97,11 @@ export function ChatActionsMenuContent({
       {canViewDocs && (
         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onManageDocuments(); }}>
           <FileText className="h-3.5 w-3.5 mr-2" /> {permissions?.canUploadDocuments ? t('actionsMenu.manageDocuments') : t('actionsMenu.viewDocuments')}
+        </DropdownMenuItem>
+      )}
+      {onExportChat && (
+        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExportChat(); }}>
+          <Download className="h-3.5 w-3.5 mr-2" /> {t('actionsMenu.exportChat', 'Export conversation')}
         </DropdownMenuItem>
       )}
       {canDelete && (
