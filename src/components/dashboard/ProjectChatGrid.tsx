@@ -136,8 +136,10 @@ export function ProjectChatGrid({ chats, permissions, projectName, exportedByLab
                         setRenameChatValue(chat.name);
                       }}
                       onManageDocuments={() => handleManageChatDocs(chat)}
+                      onExportChat={() => setExportChat(chat)}
                       onDeleteChat={() => handleDeleteChat(chat)}
                     />
+
                   </DropdownMenu>
                 </div>
               )}
