@@ -7,6 +7,7 @@ import { useChatPreviews } from '@/hooks/useChatPreviews';
 import { formatDistanceToNow } from 'date-fns';
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { ChatExportByIdDialog } from '@/components/chat/ChatExportByIdDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
@@ -35,9 +36,11 @@ function formatActivity(dateStr: string, locale: string, t: (key: string) => str
 interface Props {
   chats: DbChat[];
   permissions?: ItemPermissions | null;
+  projectName?: string;
+  exportedByLabel?: string;
 }
 
-export function ProjectChatGrid({ chats, permissions }: Props) {
+export function ProjectChatGrid({ chats, permissions, projectName, exportedByLabel }: Props) {
   const { t, i18n } = useTranslation();
   const dateLocale = getDateLocale(i18n.resolvedLanguage || i18n.language);
   const { selectedChatId, setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
@@ -45,6 +48,7 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
   const [pendingDeleteChat, setPendingDeleteChat] = useState<DbChat | null>(null);
+  const [exportChat, setExportChat] = useState<DbChat | null>(null);
 
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
@@ -132,8 +136,10 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
                         setRenameChatValue(chat.name);
                       }}
                       onManageDocuments={() => handleManageChatDocs(chat)}
+                      onExportChat={() => setExportChat(chat)}
                       onDeleteChat={() => handleDeleteChat(chat)}
                     />
+
                   </DropdownMenu>
                 </div>
               )}
@@ -244,6 +250,19 @@ export function ProjectChatGrid({ chats, permissions }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {exportChat && (
+        <ChatExportByIdDialog
+          open={!!exportChat}
+          onOpenChange={(open) => { if (!open) setExportChat(null); }}
+          contextType="project"
+          contextId={exportChat.project_id}
+          contextName={projectName ?? 'project'}
+          chatId={exportChat.id}
+          chatTitle={exportChat.name}
+          exportedByLabel={exportedByLabel}
+        />
+      )}
     </div>
   );
 }

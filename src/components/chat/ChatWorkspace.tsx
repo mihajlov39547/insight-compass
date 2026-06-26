@@ -206,7 +206,13 @@ export function ChatWorkspace() {
               )}
             </div>
 
-            <ProjectChatGrid chats={chats} permissions={permissions} />
+            <ProjectChatGrid
+              chats={chats}
+              permissions={permissions}
+              projectName={selectedProject?.name ?? 'project'}
+              exportedByLabel={user?.email ?? undefined}
+            />
+
           </div>
         </div>
       );

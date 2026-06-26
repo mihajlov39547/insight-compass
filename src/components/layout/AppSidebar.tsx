@@ -33,6 +33,7 @@ import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { ChatExportByIdDialog } from '@/components/chat/ChatExportByIdDialog';
 import { planIcons, planLabels } from '@/lib/planConfig';
 import { formatDistanceToNow } from 'date-fns';
 import { useRecentChats } from '@/hooks/useRecentChats';
@@ -1053,6 +1054,8 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
   const { data: myRole } = useItemRole(project.id, 'project');
   const permissions = getItemPermissions(myRole);
   const { setSelectedProjectId, setSelectedChatId, setActiveView } = useApp();
+  const { user: sidebarUser } = useAuth();
+  const [exportChat, setExportChat] = useState<DbChat | null>(null);
 
   const handleManageProjectDocs = () => { setSelectedProjectId(project.id); setSelectedChatId(null); setActiveView('project-documents'); };
   const handleManageChatDocs = (chat: DbChat) => { setSelectedProjectId(project.id); setSelectedChatId(chat.id); setActiveView('chat-documents'); };
@@ -1127,12 +1130,30 @@ function ProjectItem({ project, isExpanded, isSelected, selectedChatId, onToggle
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <ChatActionsMenuContent permissions={permissions} onRenameChat={() => onRenameChat(chat.id, chat.name)} onManageDocuments={() => handleManageChatDocs(chat)} onDeleteChat={() => onDeleteChat(chat)} />
+              <ChatActionsMenuContent
+                permissions={permissions}
+                onRenameChat={() => onRenameChat(chat.id, chat.name)}
+                onManageDocuments={() => handleManageChatDocs(chat)}
+                onExportChat={() => setExportChat(chat)}
+                onDeleteChat={() => onDeleteChat(chat)}
+              />
             </DropdownMenu>
           </div>
         ))}
         {chats.length === 0 && <p className="text-xs text-sidebar-muted px-2 py-1">{t('sidebar.noChats')}</p>}
       </CollapsibleContent>
+      {exportChat && (
+        <ChatExportByIdDialog
+          open={!!exportChat}
+          onOpenChange={(open) => { if (!open) setExportChat(null); }}
+          contextType="project"
+          contextId={exportChat.project_id}
+          contextName={project.name}
+          chatId={exportChat.id}
+          chatTitle={exportChat.name}
+          exportedByLabel={sidebarUser?.email ?? undefined}
+        />
+      )}
     </Collapsible>
   );
 }

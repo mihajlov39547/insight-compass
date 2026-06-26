@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Download, FileDown, Loader2, Cloud, ExternalLink, FileText } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Download, Loader2, ExternalLink } from 'lucide-react';
 import {
   buildChatMarkdownExport,
   buildExportFilename,
@@ -202,71 +203,166 @@ export function ChatExportDialog({
           )}
         </div>
 
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-              {t('chatExport.localDownload', 'Local download')}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={handleMarkdown} className="gap-1.5">
-                <Download className="h-4 w-4" />
-                {t('chatExport.exportMd', 'Export Markdown')}
-              </Button>
-              <Button onClick={handlePdf} disabled={pdfLoading} className="gap-1.5">
-                {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-                {pdfLoading ? t('chatExport.generatingPdf', 'Generating PDF…') : t('chatExport.exportPdf', 'Download PDF')}
-              </Button>
-            </div>
-          </div>
-
-          {driveAvailable && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                {t('chatExport.googleDrive', 'Google Drive')}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  className="gap-1.5"
-                  disabled={driveSavingMd}
-                  onClick={() => handleSaveDrive('markdown')}
-                >
-                  {driveSavingMd ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cloud className="h-4 w-4" />}
-                  {driveSavingMd
-                    ? t('chatExport.savingToDrive', 'Saving to Drive…')
-                    : t('chatExport.saveMdToDrive', 'Save Markdown to Drive')}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="gap-1.5"
-                  disabled={driveSavingPdf}
-                  onClick={() => handleSaveDrive('pdf')}
-                >
-                  {driveSavingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cloud className="h-4 w-4" />}
-                  {driveSavingPdf
-                    ? t('chatExport.savingToDrive', 'Saving to Drive…')
-                    : t('chatExport.savePdfToDrive', 'Save PDF to Drive')}
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                <Button
-                  variant="outline"
-                  className="gap-1.5"
-                  disabled={creatingDoc}
-                  onClick={handleCreateDoc}
-                >
-                  {creatingDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                  {creatingDoc
-                    ? t('chatExport.creatingDoc', 'Creating Google Doc…')
-                    : t('chatExport.createDoc', 'Create Google Doc')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        <ExportActionPicker
+          driveAvailable={driveAvailable}
+          pdfLoading={pdfLoading}
+          driveSavingMd={driveSavingMd}
+          driveSavingPdf={driveSavingPdf}
+          creatingDoc={creatingDoc}
+          onMarkdownDownload={handleMarkdown}
+          onPdfDownload={handlePdf}
+          onSaveMd={() => handleSaveDrive('markdown')}
+          onSavePdf={() => handleSaveDrive('pdf')}
+          onCreateDoc={handleCreateDoc}
+        />
 
         <DialogFooter />
       </DialogContent>
     </Dialog>
+  );
+}
+
+type ExportFormat = 'markdown' | 'pdf' | 'gdoc';
+type ExportDestination = 'download' | 'drive';
+
+function ExportActionPicker({
+  driveAvailable,
+  pdfLoading,
+  driveSavingMd,
+  driveSavingPdf,
+  creatingDoc,
+  onMarkdownDownload,
+  onPdfDownload,
+  onSaveMd,
+  onSavePdf,
+  onCreateDoc,
+}: {
+  driveAvailable: boolean;
+  pdfLoading: boolean;
+  driveSavingMd: boolean;
+  driveSavingPdf: boolean;
+  creatingDoc: boolean;
+  onMarkdownDownload: () => void;
+  onPdfDownload: () => void;
+  onSaveMd: () => void;
+  onSavePdf: () => void;
+  onCreateDoc: () => void;
+}) {
+  const { t } = useTranslation();
+  const [format, setFormat] = useState<ExportFormat>('markdown');
+  const [destination, setDestination] = useState<ExportDestination>('download');
+
+  // Enforce rules: gdoc requires drive; if drive unavailable, gdoc disabled and fallback to download
+  useEffect(() => {
+    if (format === 'gdoc') {
+      setDestination('drive');
+    } else if (!driveAvailable && destination === 'drive') {
+      setDestination('download');
+    }
+  }, [format, driveAvailable, destination]);
+
+  const downloadDisabled = format === 'gdoc';
+  const driveDisabled = !driveAvailable;
+
+  const { label, loading, onClick } = useMemo(() => {
+    if (format === 'gdoc') {
+      return {
+        label: creatingDoc
+          ? t('chatExport.creatingDoc', 'Creating Google Doc…')
+          : t('chatExport.createDoc', 'Create Google Doc'),
+        loading: creatingDoc,
+        onClick: onCreateDoc,
+      };
+    }
+    if (destination === 'drive') {
+      if (format === 'markdown') {
+        return {
+          label: driveSavingMd
+            ? t('chatExport.savingToDrive', 'Saving to Drive…')
+            : t('chatExport.saveMdToDrive', 'Save Markdown to Drive'),
+          loading: driveSavingMd,
+          onClick: onSaveMd,
+        };
+      }
+      return {
+        label: driveSavingPdf
+          ? t('chatExport.savingToDrive', 'Saving to Drive…')
+          : t('chatExport.savePdfToDrive', 'Save PDF to Drive'),
+        loading: driveSavingPdf,
+        onClick: onSavePdf,
+      };
+    }
+    if (format === 'markdown') {
+      return {
+        label: t('chatExport.exportMd', 'Export Markdown'),
+        loading: false,
+        onClick: onMarkdownDownload,
+      };
+    }
+    return {
+      label: pdfLoading
+        ? t('chatExport.generatingPdf', 'Generating PDF…')
+        : t('chatExport.exportPdf', 'Download PDF'),
+      loading: pdfLoading,
+      onClick: onPdfDownload,
+    };
+  }, [
+    format, destination, t,
+    pdfLoading, driveSavingMd, driveSavingPdf, creatingDoc,
+    onMarkdownDownload, onPdfDownload, onSaveMd, onSavePdf, onCreateDoc,
+  ]);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            {t('chatExport.formatLabel', 'Format')}
+          </Label>
+          <Select value={format} onValueChange={(v) => setFormat(v as ExportFormat)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="markdown">{t('chatExport.formatMarkdown', 'Markdown')}</SelectItem>
+              <SelectItem value="pdf">{t('chatExport.formatPdf', 'PDF')}</SelectItem>
+              <SelectItem value="gdoc" disabled={!driveAvailable}>
+                {t('chatExport.formatGoogleDoc', 'Google Doc')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            {t('chatExport.destinationLabel', 'Destination')}
+          </Label>
+          <Select
+            value={destination}
+            onValueChange={(v) => setDestination(v as ExportDestination)}
+            disabled={format === 'gdoc'}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="download" disabled={downloadDisabled}>
+                {t('chatExport.destDownload', 'Download')}
+              </SelectItem>
+              <SelectItem value="drive" disabled={driveDisabled}>
+                {t('chatExport.destDrive', 'Google Drive')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {format === 'gdoc' && (
+        <p className="text-xs text-muted-foreground">
+          {t('chatExport.docOnlyDriveHint', 'Google Doc can only be saved to Google Drive.')}
+        </p>
+      )}
+
+      <Button onClick={onClick} disabled={loading} className="w-full gap-1.5">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+        {label}
+      </Button>
+    </div>
   );
 }

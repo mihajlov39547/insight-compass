@@ -1307,6 +1307,7 @@
     "deleteProject": "Obriši projekat",
     "deleteNotebook": "Obriši beleznicu",
     "renameChat": "Preimenuj ćaskanje",
+    "exportChat": "Izvezi razgovor",
     "deleteChat": "Obriši ćaskanje"
   },
   "workspaceSearch": {
@@ -1734,6 +1735,14 @@
     "pdfErrorDesc": "Pokušajte sa Markdown izvozom.",
     "localDownload": "Lokalno preuzimanje",
     "googleDrive": "Google Drive",
+    "formatLabel": "Format",
+    "destinationLabel": "Odredište",
+    "formatMarkdown": "Markdown",
+    "formatPdf": "PDF",
+    "formatGoogleDoc": "Google dokument",
+    "destDownload": "Preuzimanje",
+    "destDrive": "Google Drive",
+    "docOnlyDriveHint": "Google dokument se može sačuvati samo na Google Drive.",
     "saveMdToDrive": "Sačuvaj Markdown na Drive",
     "savePdfToDrive": "Sačuvaj PDF na Drive",
     "savingToDrive": "Čuvanje na Drive…",
