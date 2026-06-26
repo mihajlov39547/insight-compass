@@ -1750,6 +1750,8 @@
     "createDoc": "Kreiraj Google Doc",
     "creatingDoc": "Kreiranje Google Doc-a…",
     "docCreated": "Google Doc je kreiran",
+    "docCreatedPartialTitle": "Google Doc je kreiran",
+    "docCreatedPartial": "Google Doc je kreiran, ali neka formatiranja nisu primenjena.",
     "openDoc": "Otvori Google Doc",
     "docErrorTitle": "Nije moguće kreirati Google Doc",
     "docsFailed": "Nije moguće kreirati Google Doc.",
