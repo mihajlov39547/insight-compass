@@ -7,6 +7,7 @@ import { useChatPreviews } from '@/hooks/useChatPreviews';
 import { formatDistanceToNow } from 'date-fns';
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChatActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { ChatExportByIdDialog } from '@/components/chat/ChatExportByIdDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
