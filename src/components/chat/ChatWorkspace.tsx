@@ -84,6 +84,7 @@ export function ChatWorkspace() {
       { projectId: selectedProjectId, name: t('sidebar.newChatName'), language: normalizeLanguageCode(selectedProject.language) },
       { onSuccess: (chat) => setSelectedChatId(chat.id) }
     );
+  };
 
   const handleManageProjectDocs = () => {
     if (!selectedProjectId) return;
@@ -91,6 +92,7 @@ export function ChatWorkspace() {
     setSelectedChatId(null);
     setActiveView('project-documents');
   };
+
 
 
   const addedYouTubeUrls = useMemo(() => {
