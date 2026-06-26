@@ -48,6 +48,7 @@ export function ProjectChatGrid({ chats, permissions, projectName, exportedByLab
   const [renameChatId, setRenameChatId] = useState<string | null>(null);
   const [renameChatValue, setRenameChatValue] = useState('');
   const [pendingDeleteChat, setPendingDeleteChat] = useState<DbChat | null>(null);
+  const [exportChat, setExportChat] = useState<DbChat | null>(null);
 
   const deleteChat = useDeleteChat();
   const updateChat = useUpdateChat();
