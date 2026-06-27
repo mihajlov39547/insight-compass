@@ -30,6 +30,6 @@ export const modelOptions: ModelOption[] = [
   { id: 'openai/gpt-5.4-pro', name: 'gpt-5.4-pro', description: 'Premium-only. Extended reasoning variant of GPT-5.4 for the hardest problems.', provider: 'Lovable', capabilities: ['Thinking'] },
   { id: 'openai/gpt-5.5', name: 'gpt-5.5', description: 'Premium-only. State-of-the-art reasoning, coding, and instruction following.', provider: 'Lovable', capabilities: ['Thinking'] },
   { id: 'openai/gpt-5.5-pro', name: 'gpt-5.5-pro', description: 'Premium-only. Premium GPT-5.5 with extended reasoning for the most demanding tasks.', provider: 'Lovable', capabilities: ['Thinking'] },
-  { id: 'gemma-4', name: 'gemma-4', description: 'Premium-only. Google Gemma 4 with adaptive thinking and search grounding.', provider: 'Google', capabilities: ['Thinking', 'Web search'] },
+  { id: 'gemma-4', name: 'gemma-4', description: 'Basic & Premium. Google Gemma 4 with adaptive thinking and search grounding.', provider: 'Google', capabilities: ['Thinking', 'Web search'] },
   { id: 'gemini-3.1', name: 'gemini-3.1', description: 'Basic & Premium. Smart routing across Gemini 3.1 Flash Lite / Flash Preview / Pro with web grounding.', provider: 'Google', capabilities: ['Smart routing', 'Web search'] },
 ];
