@@ -1,6 +1,6 @@
 // @ts-nocheck
 //
-// Gemini 3.1 logical-model provider — served via Google AI Studio (GEMINI_API_KEY).
+// Gemini 3.1 logical-model provider — served via Google AI Studio (GEMINI_API_KEY_FREE).
 //
 // The frontend exposes a single dropdown option "gemini-3.1". This provider
 // routes each request to one of three underlying Gemini models with a
@@ -166,12 +166,12 @@ export async function streamGemini31Response(
   input: StreamGemini31Input,
   writer: WritableStreamDefaultWriter<Uint8Array>,
 ) {
-  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-  if (!GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured");
+  const GEMINI_API_KEY_FREE = Deno.env.get("GEMINI_API_KEY_FREE");
+  if (!GEMINI_API_KEY_FREE) {
+    throw new Error("GEMINI_API_KEY_FREE is not configured");
   }
 
-  const geminiAi = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+  const geminiAi = new GoogleGenAI({ apiKey: GEMINI_API_KEY_FREE });
   const route = selectGemini31Route({
     prompt: input.promptForHeuristic,
     userId: input.userId,
