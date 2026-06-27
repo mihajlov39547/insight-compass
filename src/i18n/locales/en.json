@@ -42,14 +42,14 @@
     },
     "projects": {
       "section": "My Projects",
-      "all": "All projects",
+      "all": "Projects",
       "newTooltip": "New Project",
       "loading": "Loading projects...",
       "empty": "No projects yet"
     },
     "notebooks": {
       "section": "My Notebooks",
-      "all": "All notebooks",
+      "all": "Notebooks",
       "newTooltip": "New Notebook",
       "empty": "No notebooks yet",
       "collapse": "Collapse notebooks",
