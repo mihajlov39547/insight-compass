@@ -42,14 +42,14 @@
     },
     "projects": {
       "section": "Moji projekti",
-      "all": "Svi projekti",
+      "all": "Projekti",
       "newTooltip": "Novi projekat",
       "loading": "Učitavanje projekata...",
       "empty": "Još nema projekata"
     },
     "notebooks": {
       "section": "Moje beleznice",
-      "all": "Sve beleznice",
+      "all": "Beleznice",
       "newTooltip": "Nova beleznica",
       "empty": "Još nema beleznica",
       "collapse": "Skupi beleznice",
