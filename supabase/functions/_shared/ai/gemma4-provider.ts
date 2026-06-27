@@ -74,8 +74,8 @@ function shouldUseHighThinking(input: {
 // ---------------------------------------------------------------------------
 
 export function assertCanUseGemma4(userPlan: string) {
-  if (userPlan !== "premium" && userPlan !== "enterprise") {
-    const error = new Error("Gemma 4 is available on Premium plan only.");
+  if (userPlan !== "basic" && userPlan !== "premium" && userPlan !== "enterprise") {
+    const error = new Error("Gemma 4 is available on Basic, Premium, and Enterprise plans.");
     (error as any).statusCode = 403;
     throw error;
   }
