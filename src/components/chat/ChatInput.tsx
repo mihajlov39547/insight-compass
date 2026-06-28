@@ -81,15 +81,34 @@ interface ChatInputProps {
 
 export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage, variant = 'project', footerLeft, responseLanguage, syncedModelId }: ChatInputProps) {
   const { t } = useTranslation();
+  const { profile } = useAuth();
+  const userPlan = normalizePlan(profile?.plan);
+  const { data: userSettings } = useUserSettings();
+  const saveSettings = useSaveUserSettings();
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
+  const [selectedFamily, setSelectedFamily] = useState<ModelFamily>(userSettings?.preferred_model_family ?? 'auto');
+  const [selectedLevel, setSelectedLevel] = useState<ThinkingLevel>(userSettings?.preferred_thinking_level ?? 'medium');
 
-  // Sync model selection from parent (e.g. after a failover response).
+  // Adopt persisted defaults once loaded.
   useEffect(() => {
-    if (syncedModelId && syncedModelId !== selectedModel && modelOptions.some(m => m.id === syncedModelId)) {
-      setSelectedModel(syncedModelId);
-    }
+    if (userSettings?.preferred_model_family) setSelectedFamily(userSettings.preferred_model_family);
+    if (userSettings?.preferred_thinking_level) setSelectedLevel(userSettings.preferred_thinking_level);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userSettings?.preferred_model_family, userSettings?.preferred_thinking_level]);
+
+  // Compute the resolved concrete model id for this preference + plan.
+  const decision = useMemo(
+    () => resolveModelPreference({ family: selectedFamily, thinkingLevel: selectedLevel }, userPlan),
+    [selectedFamily, selectedLevel, userPlan],
+  );
+  const selectedModel = decision.resolvedModelId;
+
+  // Sync model selection from parent (e.g. after a failover response): infer family from resolved id.
+  useEffect(() => {
+    if (!syncedModelId) return;
+    const entry = getCatalogEntry(syncedModelId);
+    if (entry && entry.family !== selectedFamily) setSelectedFamily(entry.family);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedModelId]);
   const [isImproving, setIsImproving] = useState(false);
@@ -118,6 +137,28 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   );
 
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
+
+  const familyLabels: Record<ModelFamily, string> = {
+    auto: t('chatInput.modelFamily.auto', 'Auto'),
+    gemini: 'Gemini',
+    gpt: 'GPT',
+    gemma: 'Gemma',
+  };
+  const levelLabels: Record<ThinkingLevel, string> = {
+    low: t('chatInput.thinking.low', 'Instant'),
+    medium: t('chatInput.thinking.medium', 'Medium'),
+    high: t('chatInput.thinking.high', 'High'),
+  };
+
+  const persistFamily = (fam: ModelFamily) => {
+    setSelectedFamily(fam);
+    saveSettings.mutate({ preferred_model_family: fam });
+  };
+  const persistLevel = (lvl: ThinkingLevel) => {
+    setSelectedLevel(lvl);
+    saveSettings.mutate({ preferred_thinking_level: lvl });
+  };
+
 
   const getTextareaHeights = useCallback(() => {
     const el = textareaRef.current;
