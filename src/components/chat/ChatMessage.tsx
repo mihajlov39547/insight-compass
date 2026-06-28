@@ -44,6 +44,23 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
     ? modelOptions.find(m => m.id === message.modelId)?.name ?? message.modelId.split('/').pop()
     : null;
 
+  // Extract optional model metadata persisted alongside sources to surface
+  // when the chat engine fell back from the user-requested model.
+  const modelMeta: any = message.sources && typeof message.sources === 'object' && !Array.isArray(message.sources)
+    ? (message.sources as any).modelMeta ?? null
+    : null;
+  const fallbackFromName = modelMeta?.fallbackUsed && modelMeta?.fallbackFrom
+    ? (modelOptions.find(m => m.id === modelMeta.fallbackFrom)?.name ?? modelMeta.fallbackFrom)
+    : null;
+  const fallbackTooltip = modelMeta?.fallbackUsed
+    ? [
+        `Requested: ${modelMeta.fallbackFrom ?? modelMeta.requestedFamily ?? 'unknown'}`,
+        modelMeta.providerFailureReason ? `Reason: ${modelMeta.providerFailureReason}` : null,
+        `Served by: ${modelMeta.finalModelId ?? message.modelId}`,
+      ].filter(Boolean).join('\n')
+    : undefined;
+
+
   const handleSourceClick = (source: SourceItem) => {
     // Navigate to project documents view to show the document
     setActiveView('project-documents');
