@@ -234,10 +234,15 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       toast.error(t('chatInput.notebook.missingToast'));
       return;
     }
+    const optionsWithPref: ChatPromptOptions = {
+      ...promptOptions,
+      modelPreference: { family: selectedFamily, thinkingLevel: selectedLevel },
+    };
     onSend(
-      { text: message.trim(), options: promptOptions, images: attachedImages.length > 0 ? attachedImages : undefined },
+      { text: message.trim(), options: optionsWithPref, images: attachedImages.length > 0 ? attachedImages : undefined },
       selectedModel
     );
+
     setMessage('');
     setAttachedImages([]);
     setPromptOptions({ useWebSearch: false, augmentationMode: 'none', researchModel: 'auto' });
