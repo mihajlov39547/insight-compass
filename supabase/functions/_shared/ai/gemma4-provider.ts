@@ -113,7 +113,10 @@ export interface StreamGemma4Input {
   explicitReasoningMode?: boolean;
   contextDocumentCount?: number;
   hasCode?: boolean;
+  /** When provided, overrides the heuristic. "low"/"medium" → MINIMAL, "high" → HIGH. */
+  requestedThinkingLevel?: "low" | "medium" | "high";
 }
+
 
 /**
  * Streams a Gemma 4 response, writing SSE-formatted chunks to the provided
