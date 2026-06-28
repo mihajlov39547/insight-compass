@@ -20,8 +20,9 @@ import { Input } from '@/components/ui/input';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { modelOptions, DEFAULT_MODEL_ID } from '@/config/modelOptions';
-import { getCatalogEntry, isFamilyAvailableForPlan, type ModelFamily, type ThinkingLevel } from '@/config/modelCatalog';
-import { familySupportsLevel, resolveModelPreference } from '@/lib/modelPreferenceResolver';
+import { getCatalogEntry, type ModelFamily, type ThinkingLevel } from '@/config/modelCatalog';
+import { resolveModelPreference, getFamilyAvailability, getFamilyLevelAvailability } from '@/lib/modelPreferenceResolver';
+
 import { useUserSettings, useSaveUserSettings } from '@/hooks/useUserSettings';
 import { useApp } from '@/contexts/useApp';
 import { useNotebooks } from '@/hooks/useNotebooks';
