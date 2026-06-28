@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { DEFAULT_LANGUAGE } from '@/lib/languages';
+import type { ModelFamily, ThinkingLevel } from '@/config/modelCatalog';
+import { inferPreferenceFromLegacyModelId } from '@/config/modelCatalog';
 
 export interface GeneralSettings {
   response_length: string;
@@ -9,6 +11,8 @@ export interface GeneralSettings {
   cite_sources: boolean;
   auto_summarize: boolean;
   preferred_model: string;
+  preferred_model_family: ModelFamily;
+  preferred_thinking_level: ThinkingLevel;
   show_suggested_prompts: boolean;
   enable_answer_formatting: boolean;
   layout_preference: string;
@@ -27,6 +31,8 @@ const DEFAULTS: GeneralSettings = {
   cite_sources: true,
   auto_summarize: true,
   preferred_model: 'auto',
+  preferred_model_family: 'auto',
+  preferred_thinking_level: 'medium',
   show_suggested_prompts: true,
   enable_answer_formatting: true,
   layout_preference: 'comfortable',
@@ -38,6 +44,7 @@ const DEFAULTS: GeneralSettings = {
   generation_sound: 'never',
   agent_action_notifications: true,
 };
+
 
 export function useUserSettings() {
   const { user } = useAuth();
