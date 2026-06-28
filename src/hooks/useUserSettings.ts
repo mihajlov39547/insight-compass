@@ -103,11 +103,19 @@ export function useSaveUserSettings() {
   return useMutation({
     mutationFn: async (settings: Partial<GeneralSettings>) => {
       if (!user) throw new Error('Not authenticated');
+      const sanitized: Partial<GeneralSettings> = { ...settings };
+      if ('preferred_model_family' in sanitized) {
+        sanitized.preferred_model_family = normalizeFamily(sanitized.preferred_model_family);
+      }
+      if ('preferred_thinking_level' in sanitized) {
+        sanitized.preferred_thinking_level = normalizeLevel(sanitized.preferred_thinking_level);
+      }
       const { error } = await supabase
         .from('user_settings')
-        .upsert({ user_id: user.id, ...settings } as any, { onConflict: 'user_id' });
+        .upsert({ user_id: user.id, ...sanitized } as any, { onConflict: 'user_id' });
       if (error) throw error;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings'] });
     },
