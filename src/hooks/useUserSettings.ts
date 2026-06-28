@@ -5,6 +5,17 @@ import { DEFAULT_LANGUAGE } from '@/lib/languages';
 import type { ModelFamily, ThinkingLevel } from '@/config/modelCatalog';
 import { inferPreferenceFromLegacyModelId } from '@/config/modelCatalog';
 
+const VALID_FAMILIES: ModelFamily[] = ['auto', 'gemini', 'gpt', 'gemma'];
+const VALID_LEVELS: ThinkingLevel[] = ['low', 'medium', 'high'];
+
+function normalizeFamily(v: unknown): ModelFamily {
+  return VALID_FAMILIES.includes(v as ModelFamily) ? (v as ModelFamily) : 'auto';
+}
+function normalizeLevel(v: unknown): ThinkingLevel {
+  return VALID_LEVELS.includes(v as ThinkingLevel) ? (v as ThinkingLevel) : 'medium';
+}
+
+
 export interface GeneralSettings {
   response_length: string;
   retrieval_depth: string;
