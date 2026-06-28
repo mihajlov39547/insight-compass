@@ -45,7 +45,10 @@ interface MessageOptions {
   notebookId?: string;
   notebookName?: string;
   notebookLanguage?: string;
+  /** Structured model preference resolved server-side. */
+  modelPreference?: { family: 'auto' | 'gemini' | 'gpt' | 'gemma'; thinkingLevel: 'low' | 'medium' | 'high' };
 }
+
 
 interface UnifiedSource {
   id: string;
