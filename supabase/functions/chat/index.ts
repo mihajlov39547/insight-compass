@@ -399,9 +399,26 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       hasLengthInstruction,
     });
 
+    // Helper: build response headers including model preference metadata.
+    function buildSSEHeaders(resolvedModelHeader: string) {
+      const h: Record<string, string> = {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "x-resolved-model": resolvedModelHeader,
+      };
+      if (preferenceDecision) {
+        h["x-requested-family"] = preferenceDecision.requestedFamily;
+        h["x-requested-thinking"] = preferenceDecision.requestedThinkingLevel;
+        h["x-applied-thinking"] = preferenceDecision.appliedThinkingLevel ?? "";
+        h["x-plan-downgraded"] = preferenceDecision.planDowngraded ? "1" : "0";
+      }
+      return h;
+    }
+
     // Tracks whether we already exhausted the specialized Gemma path and
     // need to fall over to the gateway chain below.
     let gemmaFailedOver = false;
+
 
     // ---- Gemma 4 branch: route to Google GenAI directly ----
     if (requestedModel === "gemma-4") {
