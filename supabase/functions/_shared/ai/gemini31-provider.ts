@@ -184,6 +184,11 @@ export async function streamGemini31Response(
     hasCode: input.hasCode,
     webSearchEnabled: input.webSearchEnabled,
   });
+  if (input.requestedThinkingLevel) {
+    route.thinkingLevel = input.requestedThinkingLevel;
+    route.reason = `${route.reason}+user_${input.requestedThinkingLevel}`;
+  }
+
 
   console.log("[gemini31] route", {
     model: route.model,
