@@ -183,6 +183,18 @@ export async function streamGemma4Response(
     await writer.write(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
   }
 
+  let lastErrorMessage: string | null = null;
+
+  function sanitizeProviderError(err: any): string {
+    const raw = typeof err?.message === "string" ? err.message : String(err ?? "unknown");
+    let msg = raw.replace(/AIza[0-9A-Za-z_\-]{10,}/g, "<redacted_api_key>");
+    if (/API key not valid/i.test(msg)) return "google_api_key_invalid";
+    if (/quota|rate/i.test(msg)) return "google_rate_or_quota";
+    if (/permission|forbidden/i.test(msg)) return "google_permission_denied";
+    if (msg.length > 200) msg = msg.slice(0, 200) + "…";
+    return msg;
+  }
+
   async function attemptStream(modelId: string, cfg: any): Promise<boolean> {
     try {
       const response = await googleAi.models.generateContentStream({
@@ -199,6 +211,7 @@ export async function streamGemma4Response(
       return true;
     } catch (error: any) {
       console.error(`[gemma4] stream error model=${modelId}:`, error?.message ?? error);
+      lastErrorMessage = sanitizeProviderError(error);
       return false;
     }
   }
@@ -207,7 +220,6 @@ export async function streamGemma4Response(
   let success = await attemptStream(model, config);
 
   if (!success && useThinking) {
-    // Retry without thinkingConfig (in case the model rejects it)
     console.log("[gemma4] retrying without thinkingConfig");
     const fallbackConfig = { ...config };
     delete fallbackConfig.thinkingConfig;
@@ -215,7 +227,6 @@ export async function streamGemma4Response(
   }
 
   if (!success) {
-    // Try the other Gemma model as last resort
     const fallbackModel = GEMMA_4_MODELS.find((m) => m !== model) ?? model;
     console.log("[gemma4] falling back to", fallbackModel);
     const fallbackConfig = { ...config };
@@ -224,14 +235,11 @@ export async function streamGemma4Response(
   }
 
   if (!success) {
-    // Do NOT write an apology or close the writer here — the caller is
-    // responsible for triggering failover to another model. Returning false
-    // signals "this provider could not produce a response".
-    return { success: false };
+    return { success: false, reason: lastErrorMessage ?? "gemma_unavailable" };
   }
 
-  // Send SSE termination on success only.
   await writer.write(encoder.encode("data: [DONE]\n\n"));
   await writer.close();
   return { success: true };
 }
+
