@@ -21,8 +21,9 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Expose-Headers": "x-resolved-model, x-requested-family, x-requested-thinking, x-applied-thinking, x-plan-downgraded",
+  "Access-Control-Expose-Headers": "x-resolved-model, x-final-model, x-fallback-used, x-fallback-from, x-provider-failure-reason, x-decision-reason, x-requested-family, x-requested-thinking, x-applied-thinking, x-plan-downgraded",
 };
+
 
 
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL;
@@ -399,13 +400,22 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       hasLengthInstruction,
     });
 
+    // Tracks fallback metadata across branches so we can surface it to clients.
+    let fallbackFromModel: string | null = null;
+    let providerFailureReason: string | null = null;
+
     // Helper: build response headers including model preference metadata.
     function buildSSEHeaders(resolvedModelHeader: string) {
       const h: Record<string, string> = {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
-        "x-resolved-model": resolvedModelHeader,
+        "x-resolved-model": preferenceDecision?.resolvedModelId ?? resolvedModelHeader,
+        "x-final-model": resolvedModelHeader,
+        "x-fallback-used": fallbackFromModel ? "1" : "0",
+        "x-decision-reason": preferenceDecision?.reason ?? "legacy",
       };
+      if (fallbackFromModel) h["x-fallback-from"] = fallbackFromModel;
+      if (providerFailureReason) h["x-provider-failure-reason"] = providerFailureReason;
       if (preferenceDecision) {
         h["x-requested-family"] = preferenceDecision.requestedFamily;
         h["x-requested-thinking"] = preferenceDecision.requestedThinkingLevel;
@@ -414,6 +424,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       }
       return h;
     }
+
 
     // Tracks whether we already exhausted the specialized Gemma path and
     // need to fall over to the gateway chain below.
@@ -440,7 +451,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       const { readable, writable } = new TransformStream<Uint8Array>();
       const gemmaWriter = writable.getWriter();
 
-      let gemmaResult: { success: boolean } = { success: false };
+      let gemmaResult: { success: boolean; reason?: string } = { success: false };
       try {
         gemmaResult = await streamGemma4Response(
           {
@@ -454,9 +465,9 @@ Final answer-shaping instruction (baseline, not an absolute lock):
           },
           gemmaWriter,
         );
-      } catch (err) {
+      } catch (err: any) {
         console.error("[gemma4] fatal stream error:", err);
-        gemmaResult = { success: false };
+        gemmaResult = { success: false, reason: err?.message ? String(err.message).slice(0, 200) : "gemma_exception" };
       }
 
       if (gemmaResult.success) {
@@ -469,9 +480,12 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       // Gemma is unavailable — discard the half-built transform stream and
       // fall through to the gateway failover chain.
       try { await gemmaWriter.close(); } catch { /* noop */ }
-      console.warn("[chat:failover] gemma-4 unavailable, falling over to gateway chain");
+      fallbackFromModel = "gemma-4";
+      providerFailureReason = gemmaResult.reason ?? "gemma_unavailable";
+      console.warn("[chat:failover] gemma-4 unavailable, falling over to gateway chain", { reason: providerFailureReason });
       gemmaFailedOver = true;
     }
+
 
 
     // ---- Gemini 3.1 branch: route to Google GenAI directly (Basic + Premium) ----

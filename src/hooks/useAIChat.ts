@@ -479,10 +479,23 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
       if (!resp.body) throw new Error('No response stream');
 
       // Read which model actually responded (may differ from requested due to failover).
-      const respondedModel = resp.headers.get('x-resolved-model') || resolvedModel;
+      const respondedModel = resp.headers.get('x-final-model') || resp.headers.get('x-resolved-model') || resolvedModel;
+      const modelMeta = {
+        requestedFamily: resp.headers.get('x-requested-family') || null,
+        requestedThinkingLevel: resp.headers.get('x-requested-thinking') || null,
+        appliedThinkingLevel: resp.headers.get('x-applied-thinking') || null,
+        resolvedModelId: resp.headers.get('x-resolved-model') || null,
+        finalModelId: respondedModel,
+        fallbackUsed: resp.headers.get('x-fallback-used') === '1',
+        fallbackFrom: resp.headers.get('x-fallback-from') || null,
+        providerFailureReason: resp.headers.get('x-provider-failure-reason') || null,
+        decisionReason: resp.headers.get('x-decision-reason') || null,
+        planDowngraded: resp.headers.get('x-plan-downgraded') === '1',
+      };
       if (respondedModel && respondedModel !== resolvedModel) {
-        console.log('[chat:failover] frontend received fallback model', { requested: resolvedModel, responded: respondedModel });
+        console.log('[chat:failover] frontend received fallback model', { requested: resolvedModel, responded: respondedModel, modelMeta });
       }
+
 
       // 5. Stream the response
       const reader = resp.body.getReader();
@@ -545,6 +558,13 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
           notebookName: options?.notebookName,
         };
       }
+
+      // Always attach model metadata so the message footer can show fallback info.
+      persistedSourcesPayload = Array.isArray(persistedSourcesPayload)
+        ? { combinedSources: persistedSourcesPayload, modelMeta }
+        : { ...(persistedSourcesPayload || {}), modelMeta };
+
+
 
       await supabase.from('messages').insert({
         chat_id: chatId,
