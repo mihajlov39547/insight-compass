@@ -135,14 +135,15 @@ export async function streamGemma4Response(
   const googleAi = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
   const model = pickGemma4Model();
 
-  const thinkingMode: ThinkingMode = shouldUseHighThinking({
-    prompt: input.promptForHeuristic,
-    hasCode: input.hasCode,
-    contextDocumentCount: input.contextDocumentCount,
-    explicitReasoningMode: input.explicitReasoningMode,
-  })
-    ? "high"
-    : "minimal";
+  const thinkingMode: ThinkingMode = input.requestedThinkingLevel
+    ? (input.requestedThinkingLevel === "high" ? "high" : "minimal")
+    : (shouldUseHighThinking({
+        prompt: input.promptForHeuristic,
+        hasCode: input.hasCode,
+        contextDocumentCount: input.contextDocumentCount,
+        explicitReasoningMode: input.explicitReasoningMode,
+      }) ? "high" : "minimal");
+
 
   console.log("[gemma4] selected", {
     model,
