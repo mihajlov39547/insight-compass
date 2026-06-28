@@ -316,10 +316,15 @@ export function ChatMessage({ message, onRetry, onDeletePair, onExtract, isExtra
           )}
           {!isUser && (
             <>
-              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
+              <span
+                className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded"
+                title={fallbackTooltip}
+              >
                 <Bot className="h-2.5 w-2.5" />
                 AI-generated{modelName ? ` · ${modelName}` : ''}
+                {fallbackFromName ? ` · fallback from ${fallbackFromName}` : ''}
               </span>
+
               {responseLengthLabel && (
                 <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded">
                   {responseLengthLabel}
