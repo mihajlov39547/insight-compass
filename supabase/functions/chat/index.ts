@@ -213,6 +213,20 @@ serve(async (req) => {
       console.warn("[chat] could not load user plan, defaulting to free:", planErr);
     }
 
+    // ---- New: structured model preference (family + thinking level) ----
+    // If the client sent a `modelPreference` object, resolve it against the
+    // catalog + user's plan and override the legacy `model` field. Falls back
+    // safely to the previous resolved model if the preference is missing.
+    let preferenceDecision: PreferenceDecision | null = null;
+    if (modelPreference && typeof modelPreference === "object") {
+      const normalized = normalizeModelPreference(modelPreference);
+      preferenceDecision = resolveModelPreference(normalized, userPlan as any);
+      requestedModel = preferenceDecision.resolvedModelId;
+      resolvedModel = preferenceDecision.resolvedModelId;
+      console.log("[chat:preference] resolved", preferenceDecision);
+    }
+
+
 
     // Build document grounding section
     let documentGrounding = "";
