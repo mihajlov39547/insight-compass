@@ -5,6 +5,17 @@ import { DEFAULT_LANGUAGE } from '@/lib/languages';
 import type { ModelFamily, ThinkingLevel } from '@/config/modelCatalog';
 import { inferPreferenceFromLegacyModelId } from '@/config/modelCatalog';
 
+const VALID_FAMILIES: ModelFamily[] = ['auto', 'gemini', 'gpt', 'gemma'];
+const VALID_LEVELS: ThinkingLevel[] = ['low', 'medium', 'high'];
+
+function normalizeFamily(v: unknown): ModelFamily {
+  return VALID_FAMILIES.includes(v as ModelFamily) ? (v as ModelFamily) : 'auto';
+}
+function normalizeLevel(v: unknown): ThinkingLevel {
+  return VALID_LEVELS.includes(v as ThinkingLevel) ? (v as ThinkingLevel) : 'medium';
+}
+
+
 export interface GeneralSettings {
   response_length: string;
   retrieval_depth: string;
@@ -66,8 +77,9 @@ export function useUserSettings() {
         cite_sources: raw.cite_sources ?? DEFAULTS.cite_sources,
         auto_summarize: raw.auto_summarize ?? DEFAULTS.auto_summarize,
         preferred_model: raw.preferred_model ?? DEFAULTS.preferred_model,
-        preferred_model_family: (raw.preferred_model_family as ModelFamily) ?? legacy.family,
-        preferred_thinking_level: (raw.preferred_thinking_level as ThinkingLevel) ?? legacy.thinkingLevel,
+        preferred_model_family: normalizeFamily(raw.preferred_model_family ?? legacy.family),
+        preferred_thinking_level: normalizeLevel(raw.preferred_thinking_level ?? legacy.thinkingLevel),
+
         show_suggested_prompts: raw.show_suggested_prompts ?? DEFAULTS.show_suggested_prompts,
         enable_answer_formatting: raw.enable_answer_formatting ?? DEFAULTS.enable_answer_formatting,
         layout_preference: raw.layout_preference ?? DEFAULTS.layout_preference,
@@ -91,11 +103,19 @@ export function useSaveUserSettings() {
   return useMutation({
     mutationFn: async (settings: Partial<GeneralSettings>) => {
       if (!user) throw new Error('Not authenticated');
+      const sanitized: Partial<GeneralSettings> = { ...settings };
+      if ('preferred_model_family' in sanitized) {
+        sanitized.preferred_model_family = normalizeFamily(sanitized.preferred_model_family);
+      }
+      if ('preferred_thinking_level' in sanitized) {
+        sanitized.preferred_thinking_level = normalizeLevel(sanitized.preferred_thinking_level);
+      }
       const { error } = await supabase
         .from('user_settings')
-        .upsert({ user_id: user.id, ...settings } as any, { onConflict: 'user_id' });
+        .upsert({ user_id: user.id, ...sanitized } as any, { onConflict: 'user_id' });
       if (error) throw error;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings'] });
     },

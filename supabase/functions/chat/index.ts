@@ -11,6 +11,7 @@ import { assertCanUseGemma4, streamGemma4Response } from "../_shared/ai/gemma4-p
 import { assertCanUseGemini31, streamGemini31Response } from "../_shared/ai/gemini31-provider.ts";
 import { attemptGatewayStream, buildFailoverChain } from "../_shared/ai/failover.ts";
 import {
+  MODEL_CATALOG,
   normalizeModelPreference,
   resolveModelPreference,
   thinkingLevelToGeminiConfig,
@@ -28,7 +29,13 @@ const corsHeaders = {
 
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL;
 
-const VALID_MODELS = new Set(CHAT_MODEL_ALLOWLIST);
+// Accept any model in the legacy chat allowlist OR the shared catalog mirror
+// (single source of truth for the new Family + Intelligence selector).
+const VALID_MODELS = new Set<string>([
+  ...CHAT_MODEL_ALLOWLIST,
+  ...MODEL_CATALOG.map((m) => m.id),
+]);
+
 
 interface DocumentContext {
   id: string;

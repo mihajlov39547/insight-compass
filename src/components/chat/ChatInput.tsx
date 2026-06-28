@@ -20,8 +20,9 @@ import { Input } from '@/components/ui/input';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { modelOptions, DEFAULT_MODEL_ID } from '@/config/modelOptions';
-import { getCatalogEntry, isFamilyAvailableForPlan, type ModelFamily, type ThinkingLevel } from '@/config/modelCatalog';
-import { familySupportsLevel, resolveModelPreference } from '@/lib/modelPreferenceResolver';
+import { getCatalogEntry, type ModelFamily, type ThinkingLevel } from '@/config/modelCatalog';
+import { resolveModelPreference, getFamilyAvailability, getFamilyLevelAvailability } from '@/lib/modelPreferenceResolver';
+
 import { useUserSettings, useSaveUserSettings } from '@/hooks/useUserSettings';
 import { useApp } from '@/contexts/useApp';
 import { useNotebooks } from '@/hooks/useNotebooks';
@@ -656,25 +657,36 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                           <span>{t('chatInput.intelligence', 'Intelligence')}</span>
                           <span className="ml-auto text-xs text-muted-foreground">{levelLabels[selectedLevel]}</span>
                         </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="w-48">
+                        <DropdownMenuSubContent className="w-56">
                           {(['low', 'medium', 'high'] as ThinkingLevel[]).map((lvl) => {
-                            const supported = familySupportsLevel(selectedFamily, lvl);
+                            const avail = getFamilyLevelAvailability(selectedFamily, lvl, userPlan);
+                            const disabled = avail !== 'available';
                             return (
                               <DropdownMenuItem
                                 key={lvl}
                                 onClick={(e) => {
-                                  if (!supported) {
+                                  if (avail === 'unsupported') {
                                     e.preventDefault();
                                     toast.info(t('chatInput.singleLevelFamily', 'This family has one reasoning setting.'));
                                     return;
                                   }
+                                  if (avail === 'plan_locked') {
+                                    e.preventDefault();
+                                    toast.error(t('planLimits.levelRestricted', 'Higher reasoning requires an upgrade.'));
+                                    setShowPricing(true);
+                                    return;
+                                  }
                                   persistLevel(lvl);
                                 }}
-                                disabled={!supported}
-                                className={cn('text-sm flex items-center justify-between', selectedLevel === lvl && 'bg-accent/10 text-accent font-medium')}
+                                disabled={disabled}
+                                className={cn('text-sm flex items-center justify-between', selectedLevel === lvl && 'bg-accent/10 text-accent font-medium', disabled && 'opacity-60')}
                               >
                                 <span>{levelLabels[lvl]}</span>
-                                {selectedLevel === lvl && <Check className="h-3.5 w-3.5" />}
+                                <span className="flex items-center gap-1.5">
+                                  {avail === 'plan_locked' && <span className="text-[10px] text-muted-foreground">Plan</span>}
+                                  {avail === 'unsupported' && <span className="text-[10px] text-muted-foreground">N/A</span>}
+                                  {selectedLevel === lvl && <Check className="h-3.5 w-3.5" />}
+                                </span>
                               </DropdownMenuItem>
                             );
                           })}
@@ -687,14 +699,15 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                           <span>{t('chatInput.modelFamilyLabel', 'Model family')}</span>
                           <span className="ml-auto text-xs text-muted-foreground">{familyLabels[selectedFamily]}</span>
                         </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="w-52">
+                        <DropdownMenuSubContent className="w-56">
                           {(['auto', 'gemini', 'gpt', 'gemma'] as ModelFamily[]).map((fam) => {
-                            const available = fam === 'auto' ? true : isFamilyAvailableForPlan(fam, userPlan);
+                            const avail = getFamilyAvailability(fam, userPlan);
+                            const locked = avail === 'plan_locked';
                             return (
                               <DropdownMenuItem
                                 key={fam}
                                 onClick={(e) => {
-                                  if (!available) {
+                                  if (locked) {
                                     e.preventDefault();
                                     toast.error(t('planLimits.familyRestricted', { family: familyLabels[fam] }));
                                     setShowPricing(true);
@@ -702,16 +715,20 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                                   }
                                   persistFamily(fam);
                                 }}
-                                disabled={!available}
-                                className={cn('text-sm flex items-center justify-between', selectedFamily === fam && 'bg-accent/10 text-accent font-medium', !available && 'opacity-50')}
+                                disabled={locked}
+                                className={cn('text-sm flex items-center justify-between', selectedFamily === fam && 'bg-accent/10 text-accent font-medium', locked && 'opacity-60')}
                               >
-                                <span>{familyLabels[fam]}{!available ? ' 🔒' : ''}</span>
-                                {selectedFamily === fam && <Check className="h-3.5 w-3.5" />}
+                                <span>{familyLabels[fam]}</span>
+                                <span className="flex items-center gap-1.5">
+                                  {locked && <span className="text-[10px] text-muted-foreground">Plan</span>}
+                                  {selectedFamily === fam && <Check className="h-3.5 w-3.5" />}
+                                </span>
                               </DropdownMenuItem>
                             );
                           })}
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>
+
 
                       <DropdownMenuSeparator />
                       <div className="px-2 py-1.5 text-[11px] text-muted-foreground">
