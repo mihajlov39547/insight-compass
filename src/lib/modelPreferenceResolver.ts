@@ -149,3 +149,39 @@ export function familySupportsLevel(
   const ids = FAMILY_TIER_PREFERENCE[family][level];
   return MODEL_CATALOG.some((m) => ids.includes(m.id));
 }
+
+export type Availability = 'available' | 'plan_locked' | 'unsupported';
+
+/**
+ * Plan-aware UI hint for a (family, level) pair.
+ * - 'available'    → user may select and request will succeed
+ * - 'plan_locked'  → family/level exists but user's plan can't access any model
+ * - 'unsupported'  → family does not have this level at all (e.g. Gemma low/high)
+ */
+export function getFamilyLevelAvailability(
+  family: ModelFamily,
+  level: ThinkingLevel,
+  plan: PlanTier,
+): Availability {
+  if (!familySupportsLevel(family, level)) return 'unsupported';
+  if (family === 'auto') return 'available';
+  const ids = FAMILY_TIER_PREFERENCE[family][level];
+  const anyAllowed = ids.some((id) => {
+    const e = MODEL_CATALOG.find((m) => m.id === id);
+    return !!e && e.planTiers.includes(plan);
+  });
+  return anyAllowed ? 'available' : 'plan_locked';
+}
+
+/** Same shape but for the family as a whole (any level). */
+export function getFamilyAvailability(
+  family: ModelFamily,
+  plan: PlanTier,
+): Availability {
+  if (family === 'auto') return 'available';
+  const anyAllowed = MODEL_CATALOG.some(
+    (m) => m.family === family && m.planTiers.includes(plan),
+  );
+  return anyAllowed ? 'available' : 'plan_locked';
+}
+
