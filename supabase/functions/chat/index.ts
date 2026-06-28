@@ -10,13 +10,20 @@ import { requireUser } from "../_shared/auth/require-user.ts";
 import { assertCanUseGemma4, streamGemma4Response } from "../_shared/ai/gemma4-provider.ts";
 import { assertCanUseGemini31, streamGemini31Response } from "../_shared/ai/gemini31-provider.ts";
 import { attemptGatewayStream, buildFailoverChain } from "../_shared/ai/failover.ts";
+import {
+  normalizeModelPreference,
+  resolveModelPreference,
+  thinkingLevelToGeminiConfig,
+  type ResolvedModelDecision as PreferenceDecision,
+} from "../_shared/ai/modelPreferenceResolver.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Expose-Headers": "x-resolved-model",
+  "Access-Control-Expose-Headers": "x-resolved-model, x-requested-family, x-requested-thinking, x-applied-thinking, x-plan-downgraded",
 };
+
 
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL;
 
