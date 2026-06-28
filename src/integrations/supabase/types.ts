@@ -1598,6 +1598,8 @@ export type Database = {
           language_preference: string
           layout_preference: string
           preferred_model: string
+          preferred_model_family: string | null
+          preferred_thinking_level: string | null
           response_length: string
           retrieval_chunk_weight: number
           retrieval_depth: string
@@ -1620,6 +1622,8 @@ export type Database = {
           language_preference?: string
           layout_preference?: string
           preferred_model?: string
+          preferred_model_family?: string | null
+          preferred_thinking_level?: string | null
           response_length?: string
           retrieval_chunk_weight?: number
           retrieval_depth?: string
@@ -1642,6 +1646,8 @@ export type Database = {
           language_preference?: string
           layout_preference?: string
           preferred_model?: string
+          preferred_model_family?: string | null
+          preferred_thinking_level?: string | null
           response_length?: string
           retrieval_chunk_weight?: number
           retrieval_depth?: string
