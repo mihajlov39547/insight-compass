@@ -418,10 +418,23 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
       }
       if (!resp.body) throw new Error('No response stream');
 
-      const respondedModel = resp.headers.get('x-resolved-model') || resolvedModel;
+      const respondedModel = resp.headers.get('x-final-model') || resp.headers.get('x-resolved-model') || resolvedModel;
+      const modelMeta = {
+        requestedFamily: resp.headers.get('x-requested-family') || null,
+        requestedThinkingLevel: resp.headers.get('x-requested-thinking') || null,
+        appliedThinkingLevel: resp.headers.get('x-applied-thinking') || null,
+        resolvedModelId: resp.headers.get('x-resolved-model') || null,
+        finalModelId: respondedModel,
+        fallbackUsed: resp.headers.get('x-fallback-used') === '1',
+        fallbackFrom: resp.headers.get('x-fallback-from') || null,
+        providerFailureReason: resp.headers.get('x-provider-failure-reason') || null,
+        decisionReason: resp.headers.get('x-decision-reason') || null,
+        planDowngraded: resp.headers.get('x-plan-downgraded') === '1',
+      };
       if (respondedModel && respondedModel !== resolvedModel) {
-        console.log('[chat:failover] notebook frontend received fallback model', { requested: resolvedModel, responded: respondedModel });
+        console.log('[chat:failover] notebook frontend received fallback model', { requested: resolvedModel, responded: respondedModel, modelMeta });
       }
+
 
       // 5. Stream response
       const reader = resp.body.getReader();
@@ -481,6 +494,8 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         persistedSourcesPayload.searchDepth = 'basic';
         persistedSourcesPayload.webSearchTrace = finalWebSearchTrace;
       }
+      persistedSourcesPayload.modelMeta = modelMeta;
+
 
       // 6. Persist assistant message
       await (supabase.from('notebook_messages' as any) as any).insert({
