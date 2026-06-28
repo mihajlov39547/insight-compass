@@ -450,6 +450,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
             enableGoogleSearch: false,
             contextDocumentCount: docs.length,
             hasCode,
+            requestedThinkingLevel: preferenceDecision?.appliedThinkingLevel ?? undefined,
           },
           gemmaWriter,
         );
@@ -460,9 +461,10 @@ Final answer-shaping instruction (baseline, not an absolute lock):
 
       if (gemmaResult.success) {
         return new Response(readable, {
-          headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": "gemma-4" },
+          headers: buildSSEHeaders("gemma-4"),
         });
       }
+
 
       // Gemma is unavailable — discard the half-built transform stream and
       // fall through to the gateway failover chain.
