@@ -400,13 +400,22 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       hasLengthInstruction,
     });
 
+    // Tracks fallback metadata across branches so we can surface it to clients.
+    let fallbackFromModel: string | null = null;
+    let providerFailureReason: string | null = null;
+
     // Helper: build response headers including model preference metadata.
     function buildSSEHeaders(resolvedModelHeader: string) {
       const h: Record<string, string> = {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
-        "x-resolved-model": resolvedModelHeader,
+        "x-resolved-model": preferenceDecision?.resolvedModelId ?? resolvedModelHeader,
+        "x-final-model": resolvedModelHeader,
+        "x-fallback-used": fallbackFromModel ? "1" : "0",
+        "x-decision-reason": preferenceDecision?.reason ?? "legacy",
       };
+      if (fallbackFromModel) h["x-fallback-from"] = fallbackFromModel;
+      if (providerFailureReason) h["x-provider-failure-reason"] = providerFailureReason;
       if (preferenceDecision) {
         h["x-requested-family"] = preferenceDecision.requestedFamily;
         h["x-requested-thinking"] = preferenceDecision.requestedThinkingLevel;
@@ -415,6 +424,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       }
       return h;
     }
+
 
     // Tracks whether we already exhausted the specialized Gemma path and
     // need to fall over to the gateway chain below.
