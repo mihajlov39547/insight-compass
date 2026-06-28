@@ -559,6 +559,13 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
         };
       }
 
+      // Always attach model metadata so the message footer can show fallback info.
+      persistedSourcesPayload = Array.isArray(persistedSourcesPayload)
+        ? { combinedSources: persistedSourcesPayload, modelMeta }
+        : { ...(persistedSourcesPayload || {}), modelMeta };
+
+
+
       await supabase.from('messages').insert({
         chat_id: chatId,
         user_id: user.id,
