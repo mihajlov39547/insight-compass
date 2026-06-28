@@ -505,6 +505,9 @@ Final answer-shaping instruction (baseline, not an absolute lock):
           contextDocumentCount: docs.length,
           hasCode,
           webSearchEnabled,
+          requestedThinkingLevel: preferenceDecision?.appliedThinkingLevel
+            ? thinkingLevelToGeminiConfig(preferenceDecision.appliedThinkingLevel)
+            : undefined,
         },
         writer,
       ).catch((err) => {
@@ -516,9 +519,10 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       });
 
       return new Response(readable, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": "gemini-3.1" },
+        headers: buildSSEHeaders("gemini-3.1"),
       });
     }
+
 
     // ---- Gateway path with automatic failover ----
     // Build the failover chain. If we got here via gemma-4 unavailability,
