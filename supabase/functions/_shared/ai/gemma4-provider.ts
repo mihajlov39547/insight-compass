@@ -127,12 +127,12 @@ export async function streamGemma4Response(
   input: StreamGemma4Input,
   writer: WritableStreamDefaultWriter<Uint8Array>,
 ) {
-  const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-  if (!GOOGLE_API_KEY) {
-    throw new Error("GOOGLE_API_KEY is not configured");
+  const GOOGLE_API_KEY_FREE = Deno.env.get("GOOGLE_API_KEY_FREE");
+  if (!GOOGLE_API_KEY_FREE) {
+    throw new Error("GOOGLE_API_KEY_FREE is not configured");
   }
 
-  const googleAi = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
+  const googleAi = new GoogleGenAI({ apiKey: GOOGLE_API_KEY_FREE });
   const model = pickGemma4Model();
 
   const thinkingMode: ThinkingMode = input.requestedThinkingLevel

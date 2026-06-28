@@ -12,7 +12,7 @@ export interface ModelOption {
 export const DEFAULT_MODEL_ID = 'auto';
 
 // `provider` reflects the HOST of the model (where the request is served), not the maker.
-// - Models called directly against Google AI Studio (Gemini/Gemma via GOOGLE_API_KEY) => 'Google'
+// - Models called directly against Google AI Studio (Gemini/Gemma via GOOGLE_API_KEY_FREE) => 'Google'
 // - Models served via the Lovable AI Gateway (OpenAI GPT-5.x family) => 'Lovable'
 // - Auto routing is handled inside Lovable => 'Lovable'
 export const modelOptions: ModelOption[] = [
