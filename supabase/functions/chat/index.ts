@@ -451,7 +451,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       const { readable, writable } = new TransformStream<Uint8Array>();
       const gemmaWriter = writable.getWriter();
 
-      let gemmaResult: { success: boolean } = { success: false };
+      let gemmaResult: { success: boolean; reason?: string } = { success: false };
       try {
         gemmaResult = await streamGemma4Response(
           {
@@ -465,9 +465,9 @@ Final answer-shaping instruction (baseline, not an absolute lock):
           },
           gemmaWriter,
         );
-      } catch (err) {
+      } catch (err: any) {
         console.error("[gemma4] fatal stream error:", err);
-        gemmaResult = { success: false };
+        gemmaResult = { success: false, reason: err?.message ? String(err.message).slice(0, 200) : "gemma_exception" };
       }
 
       if (gemmaResult.success) {
@@ -480,9 +480,12 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       // Gemma is unavailable — discard the half-built transform stream and
       // fall through to the gateway failover chain.
       try { await gemmaWriter.close(); } catch { /* noop */ }
-      console.warn("[chat:failover] gemma-4 unavailable, falling over to gateway chain");
+      fallbackFromModel = "gemma-4";
+      providerFailureReason = gemmaResult.reason ?? "gemma_unavailable";
+      console.warn("[chat:failover] gemma-4 unavailable, falling over to gateway chain", { reason: providerFailureReason });
       gemmaFailedOver = true;
     }
+
 
 
     // ---- Gemini 3.1 branch: route to Google GenAI directly (Basic + Premium) ----
