@@ -689,7 +689,7 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="w-52">
                           {(['auto', 'gemini', 'gpt', 'gemma'] as ModelFamily[]).map((fam) => {
-                            const available = isFamilyAvailableForPlan(fam, userPlan);
+                            const available = fam === 'auto' ? true : isFamilyAvailableForPlan(fam, userPlan);
                             return (
                               <DropdownMenuItem
                                 key={fam}
