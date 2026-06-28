@@ -494,6 +494,8 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
         persistedSourcesPayload.searchDepth = 'basic';
         persistedSourcesPayload.webSearchTrace = finalWebSearchTrace;
       }
+      persistedSourcesPayload.modelMeta = modelMeta;
+
 
       // 6. Persist assistant message
       await (supabase.from('notebook_messages' as any) as any).insert({
