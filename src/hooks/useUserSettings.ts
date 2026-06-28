@@ -77,8 +77,9 @@ export function useUserSettings() {
         cite_sources: raw.cite_sources ?? DEFAULTS.cite_sources,
         auto_summarize: raw.auto_summarize ?? DEFAULTS.auto_summarize,
         preferred_model: raw.preferred_model ?? DEFAULTS.preferred_model,
-        preferred_model_family: (raw.preferred_model_family as ModelFamily) ?? legacy.family,
-        preferred_thinking_level: (raw.preferred_thinking_level as ThinkingLevel) ?? legacy.thinkingLevel,
+        preferred_model_family: normalizeFamily(raw.preferred_model_family ?? legacy.family),
+        preferred_thinking_level: normalizeLevel(raw.preferred_thinking_level ?? legacy.thinkingLevel),
+
         show_suggested_prompts: raw.show_suggested_prompts ?? DEFAULTS.show_suggested_prompts,
         enable_answer_formatting: raw.enable_answer_formatting ?? DEFAULTS.enable_answer_formatting,
         layout_preference: raw.layout_preference ?? DEFAULTS.layout_preference,
