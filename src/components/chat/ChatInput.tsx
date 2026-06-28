@@ -27,7 +27,7 @@ import { useApp } from '@/contexts/useApp';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useAuth } from '@/contexts/useAuth';
-import { normalizePlan } from '@/lib/planLimits';
+import { normalizePlan } from '@/types/app';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
