@@ -21,8 +21,9 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Expose-Headers": "x-resolved-model, x-requested-family, x-requested-thinking, x-applied-thinking, x-plan-downgraded",
+  "Access-Control-Expose-Headers": "x-resolved-model, x-final-model, x-fallback-used, x-fallback-from, x-provider-failure-reason, x-decision-reason, x-requested-family, x-requested-thinking, x-applied-thinking, x-plan-downgraded",
 };
+
 
 
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL;
