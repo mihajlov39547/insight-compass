@@ -400,6 +400,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           messages: contextMessages,
           projectDescription: projectDesc,
           model: resolvedModel,
+          modelPreference: options?.modelPreference,
           documentContext: contextForAI,
           webContext,
           notebookScope: !options?.useWebSearch,
@@ -409,6 +410,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           notebookSourceInventory,
         }),
       });
+
 
       if (!resp.ok) {
         const errBody = await resp.json().catch(() => ({ error: 'AI request failed' }));
