@@ -10,13 +10,20 @@ import { requireUser } from "../_shared/auth/require-user.ts";
 import { assertCanUseGemma4, streamGemma4Response } from "../_shared/ai/gemma4-provider.ts";
 import { assertCanUseGemini31, streamGemini31Response } from "../_shared/ai/gemini31-provider.ts";
 import { attemptGatewayStream, buildFailoverChain } from "../_shared/ai/failover.ts";
+import {
+  normalizeModelPreference,
+  resolveModelPreference,
+  thinkingLevelToGeminiConfig,
+  type ResolvedModelDecision as PreferenceDecision,
+} from "../_shared/ai/modelPreferenceResolver.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Expose-Headers": "x-resolved-model",
+  "Access-Control-Expose-Headers": "x-resolved-model, x-requested-family, x-requested-thinking, x-applied-thinking, x-plan-downgraded",
 };
+
 
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL;
 
@@ -128,7 +135,7 @@ serve(async (req) => {
   if ("response" in auth) return auth.response;
 
   try {
-    const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength, responseLanguage, notebookSourceInventory, chatId, messageId, messageOptions } = await req.json();
+    const { messages, projectDescription, model, modelPreference, documentContext, notebookScope, webContext, responseLength, responseLanguage, notebookSourceInventory, chatId, messageId, messageOptions } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -153,7 +160,7 @@ serve(async (req) => {
       ? "chat_grounded"
       : "chat_default";
 
-    const requestedModel = typeof model === "string" ? model.trim() : "";
+    let requestedModel = typeof model === "string" ? model.trim() : "";
     const autoDecision = resolveModelDecision(autoTask, {
       promptLength,
       contextLength,
@@ -164,9 +171,10 @@ serve(async (req) => {
       latencySensitive: normalizeResponseLength(responseLength) === "concise",
       costSensitive: normalizeResponseLength(responseLength) === "standard",
     });
-    const resolvedModel = !requestedModel || requestedModel === "auto"
+    let resolvedModel = !requestedModel || requestedModel === "auto"
       ? resolveModelForTask(autoTask, autoDecision.normalizedContext)
       : (VALID_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL);
+
     const responseLengthConfig = getResponseLengthConfig(responseLength);
     const responseLanguageInstruction = getResponseLanguageInstruction(responseLanguage);
     console.log("[chat:length] resolved", {
@@ -204,6 +212,20 @@ serve(async (req) => {
     } catch (planErr) {
       console.warn("[chat] could not load user plan, defaulting to free:", planErr);
     }
+
+    // ---- New: structured model preference (family + thinking level) ----
+    // If the client sent a `modelPreference` object, resolve it against the
+    // catalog + user's plan and override the legacy `model` field. Falls back
+    // safely to the previous resolved model if the preference is missing.
+    let preferenceDecision: PreferenceDecision | null = null;
+    if (modelPreference && typeof modelPreference === "object") {
+      const normalized = normalizeModelPreference(modelPreference);
+      preferenceDecision = resolveModelPreference(normalized, userPlan as any);
+      requestedModel = preferenceDecision.resolvedModelId;
+      resolvedModel = preferenceDecision.resolvedModelId;
+      console.log("[chat:preference] resolved", preferenceDecision);
+    }
+
 
 
     // Build document grounding section
@@ -377,9 +399,26 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       hasLengthInstruction,
     });
 
+    // Helper: build response headers including model preference metadata.
+    function buildSSEHeaders(resolvedModelHeader: string) {
+      const h: Record<string, string> = {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "x-resolved-model": resolvedModelHeader,
+      };
+      if (preferenceDecision) {
+        h["x-requested-family"] = preferenceDecision.requestedFamily;
+        h["x-requested-thinking"] = preferenceDecision.requestedThinkingLevel;
+        h["x-applied-thinking"] = preferenceDecision.appliedThinkingLevel ?? "";
+        h["x-plan-downgraded"] = preferenceDecision.planDowngraded ? "1" : "0";
+      }
+      return h;
+    }
+
     // Tracks whether we already exhausted the specialized Gemma path and
     // need to fall over to the gateway chain below.
     let gemmaFailedOver = false;
+
 
     // ---- Gemma 4 branch: route to Google GenAI directly ----
     if (requestedModel === "gemma-4") {
@@ -411,6 +450,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
             enableGoogleSearch: false,
             contextDocumentCount: docs.length,
             hasCode,
+            requestedThinkingLevel: preferenceDecision?.appliedThinkingLevel ?? undefined,
           },
           gemmaWriter,
         );
@@ -421,9 +461,10 @@ Final answer-shaping instruction (baseline, not an absolute lock):
 
       if (gemmaResult.success) {
         return new Response(readable, {
-          headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": "gemma-4" },
+          headers: buildSSEHeaders("gemma-4"),
         });
       }
+
 
       // Gemma is unavailable — discard the half-built transform stream and
       // fall through to the gateway failover chain.
@@ -464,6 +505,9 @@ Final answer-shaping instruction (baseline, not an absolute lock):
           contextDocumentCount: docs.length,
           hasCode,
           webSearchEnabled,
+          requestedThinkingLevel: preferenceDecision?.appliedThinkingLevel
+            ? thinkingLevelToGeminiConfig(preferenceDecision.appliedThinkingLevel)
+            : undefined,
         },
         writer,
       ).catch((err) => {
@@ -475,9 +519,10 @@ Final answer-shaping instruction (baseline, not an absolute lock):
       });
 
       return new Response(readable, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": "gemini-3.1" },
+        headers: buildSSEHeaders("gemini-3.1"),
       });
     }
+
 
     // ---- Gateway path with automatic failover ----
     // Build the failover chain. If we got here via gemma-4 unavailability,
@@ -513,8 +558,9 @@ Final answer-shaping instruction (baseline, not an absolute lock):
           priorFailures: failureLog,
         });
         return new Response(attempt.stream, {
-          headers: { ...corsHeaders, "Content-Type": "text/event-stream", "x-resolved-model": candidate },
+          headers: buildSSEHeaders(candidate),
         });
+
       }
 
       console.warn("[chat:failover] candidate failed", {

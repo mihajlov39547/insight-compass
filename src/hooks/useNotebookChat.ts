@@ -71,7 +71,10 @@ interface MessageOptions {
   notebookId?: string;
   notebookName?: string;
   notebookLanguage?: string;
+  /** Structured model preference resolved server-side. */
+  modelPreference?: { family: 'auto' | 'gemini' | 'gpt' | 'gemma'; thinkingLevel: 'low' | 'medium' | 'high' };
 }
+
 
 interface NotebookSourceMetadata {
   items: any[];
@@ -397,6 +400,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           messages: contextMessages,
           projectDescription: projectDesc,
           model: resolvedModel,
+          modelPreference: options?.modelPreference,
           documentContext: contextForAI,
           webContext,
           notebookScope: !options?.useWebSearch,
@@ -406,6 +410,7 @@ export function useNotebookAIChat({ notebookId, notebookName, notebookDescriptio
           notebookSourceInventory,
         }),
       });
+
 
       if (!resp.ok) {
         const errBody = await resp.json().catch(() => ({ error: 'AI request failed' }));

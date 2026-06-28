@@ -45,7 +45,10 @@ interface MessageOptions {
   notebookId?: string;
   notebookName?: string;
   notebookLanguage?: string;
+  /** Structured model preference resolved server-side. */
+  modelPreference?: { family: 'auto' | 'gemini' | 'gpt' | 'gemma'; thinkingLevel: 'low' | 'medium' | 'high' };
 }
+
 
 interface UnifiedSource {
   id: string;
@@ -457,6 +460,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
           messages: contextMessages,
           projectDescription: notebookProjectDescription,
           model: resolvedModel,
+          modelPreference: options?.modelPreference,
           documentContext,
           webContext,
           notebookScope: isNotebookMode,
@@ -465,6 +469,7 @@ export function useAIChat({ chatId, chatName, projectId, projectDescription, res
           messageOptions: options ?? { useWebSearch: false },
         }),
       });
+
 
       if (!resp.ok) {
         const errBody = await resp.json().catch(() => ({ error: 'AI request failed' }));

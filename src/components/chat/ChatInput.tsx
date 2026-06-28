@@ -1,21 +1,37 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon, Telescope, Youtube, BookOpen, Search, Check } from 'lucide-react';
+import { Paperclip, Send, ChevronDown, Sparkles, Loader2, Plus, Globe, X, ImageIcon, Telescope, Youtube, BookOpen, Search, Check, Brain, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { modelOptions, DEFAULT_MODEL_ID } from '@/config/modelOptions';
+import { getCatalogEntry, isFamilyAvailableForPlan, type ModelFamily, type ThinkingLevel } from '@/config/modelCatalog';
+import { familySupportsLevel, resolveModelPreference } from '@/lib/modelPreferenceResolver';
+import { useUserSettings, useSaveUserSettings } from '@/hooks/useUserSettings';
 import { useApp } from '@/contexts/useApp';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useAuth } from '@/contexts/useAuth';
+import { normalizePlan } from '@/types/app';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+
 
 export type PromptAugmentationMode = 'none' | 'web_search' | 'research' | 'youtube_search' | 'notebook';
 
@@ -31,7 +47,10 @@ export interface ChatPromptOptions {
   notebookName?: string;
   /** Language for selected notebook, used to keep responses in notebook language. */
   notebookLanguage?: string;
+  /** Structured model preference. Backend resolves to a concrete model + thinking config. */
+  modelPreference?: { family: ModelFamily; thinkingLevel: ThinkingLevel };
 }
+
 
 export interface PastedImage {
   file: File;
@@ -65,15 +84,34 @@ interface ChatInputProps {
 
 export function ChatInput({ onSend, isGenerating, previousUserMessage, previousAssistantMessage, variant = 'project', footerLeft, responseLanguage, syncedModelId }: ChatInputProps) {
   const { t } = useTranslation();
+  const { profile } = useAuth();
+  const userPlan = normalizePlan(profile?.plan);
+  const { data: userSettings } = useUserSettings();
+  const saveSettings = useSaveUserSettings();
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
+  const [selectedFamily, setSelectedFamily] = useState<ModelFamily>(userSettings?.preferred_model_family ?? 'auto');
+  const [selectedLevel, setSelectedLevel] = useState<ThinkingLevel>(userSettings?.preferred_thinking_level ?? 'medium');
 
-  // Sync model selection from parent (e.g. after a failover response).
+  // Adopt persisted defaults once loaded.
   useEffect(() => {
-    if (syncedModelId && syncedModelId !== selectedModel && modelOptions.some(m => m.id === syncedModelId)) {
-      setSelectedModel(syncedModelId);
-    }
+    if (userSettings?.preferred_model_family) setSelectedFamily(userSettings.preferred_model_family);
+    if (userSettings?.preferred_thinking_level) setSelectedLevel(userSettings.preferred_thinking_level);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userSettings?.preferred_model_family, userSettings?.preferred_thinking_level]);
+
+  // Compute the resolved concrete model id for this preference + plan.
+  const decision = useMemo(
+    () => resolveModelPreference({ family: selectedFamily, thinkingLevel: selectedLevel }, userPlan),
+    [selectedFamily, selectedLevel, userPlan],
+  );
+  const selectedModel = decision.resolvedModelId;
+
+  // Sync model selection from parent (e.g. after a failover response): infer family from resolved id.
+  useEffect(() => {
+    if (!syncedModelId) return;
+    const entry = getCatalogEntry(syncedModelId);
+    if (entry && entry.family !== selectedFamily) setSelectedFamily(entry.family);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedModelId]);
   const [isImproving, setIsImproving] = useState(false);
@@ -102,6 +140,28 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   );
 
   const currentModel = modelOptions.find(m => m.id === selectedModel) ?? modelOptions[0];
+
+  const familyLabels: Record<ModelFamily, string> = {
+    auto: t('chatInput.modelFamily.auto', 'Auto'),
+    gemini: 'Gemini',
+    gpt: 'GPT',
+    gemma: 'Gemma',
+  };
+  const levelLabels: Record<ThinkingLevel, string> = {
+    low: t('chatInput.thinking.low', 'Instant'),
+    medium: t('chatInput.thinking.medium', 'Medium'),
+    high: t('chatInput.thinking.high', 'High'),
+  };
+
+  const persistFamily = (fam: ModelFamily) => {
+    setSelectedFamily(fam);
+    saveSettings.mutate({ preferred_model_family: fam });
+  };
+  const persistLevel = (lvl: ThinkingLevel) => {
+    setSelectedLevel(lvl);
+    saveSettings.mutate({ preferred_thinking_level: lvl });
+  };
+
 
   const getTextareaHeights = useCallback(() => {
     const el = textareaRef.current;
@@ -177,10 +237,15 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
       toast.error(t('chatInput.notebook.missingToast'));
       return;
     }
+    const optionsWithPref: ChatPromptOptions = {
+      ...promptOptions,
+      modelPreference: { family: selectedFamily, thinkingLevel: selectedLevel },
+    };
     onSend(
-      { text: message.trim(), options: promptOptions, images: attachedImages.length > 0 ? attachedImages : undefined },
+      { text: message.trim(), options: optionsWithPref, images: attachedImages.length > 0 ? attachedImages : undefined },
       selectedModel
     );
+
     setMessage('');
     setAttachedImages([]);
     setPromptOptions({ useWebSearch: false, augmentationMode: 'none', researchModel: 'auto' });
@@ -564,70 +629,97 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                       <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
                           <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1">
-                            <span className="max-w-[100px] truncate">{currentModel.name}</span>
+                            <Brain className="h-3 w-3" />
+                            <span className="max-w-[160px] truncate">
+                              {levelLabels[selectedLevel]} · {familyLabels[selectedFamily]}
+                            </span>
                             <ChevronDown className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[220px]">
-                        <p className="font-medium">{currentModel.name}</p>
-                        <p className="text-xs text-muted-foreground">{currentModel.description}</p>
+                      <TooltipContent side="top" className="max-w-[260px]">
+                        <p className="font-medium">{levelLabels[selectedLevel]} · {familyLabels[selectedFamily]}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t('chatInput.resolvedModel', 'Resolved model')}: {currentModel.name}
+                          {decision.planDowngraded ? ` · ${t('chatInput.planDowngraded', 'plan-adjusted')}` : ''}
+                        </p>
                       </TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent align="end" className="w-72">
-                      {modelOptions.map((model) => {
-                        const restricted = isModelRestricted(model.id);
-                        const providerClass =
-                          model.provider === 'Google'
-                            ? 'border-blue-500/40 text-blue-500'
-                            : model.provider === 'OpenAI'
-                              ? 'border-emerald-500/40 text-emerald-500'
-                              : 'border-accent/40 text-accent';
-                        return (
-                          <Tooltip key={model.id}>
-                            <TooltipTrigger asChild>
+                    <DropdownMenuContent align="end" className="w-64">
+                      <DropdownMenuLabel className="text-xs text-muted-foreground">
+                        {t('chatInput.selectorTitle', 'Researcher model')}
+                      </DropdownMenuLabel>
+
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="text-sm gap-2">
+                          <Brain className="h-3.5 w-3.5" />
+                          <span>{t('chatInput.intelligence', 'Intelligence')}</span>
+                          <span className="ml-auto text-xs text-muted-foreground">{levelLabels[selectedLevel]}</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-48">
+                          {(['low', 'medium', 'high'] as ThinkingLevel[]).map((lvl) => {
+                            const supported = familySupportsLevel(selectedFamily, lvl);
+                            return (
                               <DropdownMenuItem
+                                key={lvl}
                                 onClick={(e) => {
-                                  if (restricted) {
+                                  if (!supported) {
                                     e.preventDefault();
-                                    toast.error(t('planLimits.modelRestricted', { model: model.name }));
+                                    toast.info(t('chatInput.singleLevelFamily', 'This family has one reasoning setting.'));
+                                    return;
+                                  }
+                                  persistLevel(lvl);
+                                }}
+                                disabled={!supported}
+                                className={cn('text-sm flex items-center justify-between', selectedLevel === lvl && 'bg-accent/10 text-accent font-medium')}
+                              >
+                                <span>{levelLabels[lvl]}</span>
+                                {selectedLevel === lvl && <Check className="h-3.5 w-3.5" />}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="text-sm gap-2">
+                          <Cpu className="h-3.5 w-3.5" />
+                          <span>{t('chatInput.modelFamilyLabel', 'Model family')}</span>
+                          <span className="ml-auto text-xs text-muted-foreground">{familyLabels[selectedFamily]}</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-52">
+                          {(['auto', 'gemini', 'gpt', 'gemma'] as ModelFamily[]).map((fam) => {
+                            const available = fam === 'auto' ? true : isFamilyAvailableForPlan(fam, userPlan);
+                            return (
+                              <DropdownMenuItem
+                                key={fam}
+                                onClick={(e) => {
+                                  if (!available) {
+                                    e.preventDefault();
+                                    toast.error(t('planLimits.familyRestricted', { family: familyLabels[fam] }));
                                     setShowPricing(true);
                                     return;
                                   }
-                                  setSelectedModel(model.id);
+                                  persistFamily(fam);
                                 }}
-                                disabled={restricted}
-                                className={cn(
-                                  "text-sm flex items-center justify-between gap-2",
-                                  selectedModel === model.id && "bg-accent/10 text-accent font-medium",
-                                  restricted && "opacity-50"
-                                )}
+                                disabled={!available}
+                                className={cn('text-sm flex items-center justify-between', selectedFamily === fam && 'bg-accent/10 text-accent font-medium', !available && 'opacity-50')}
                               >
-                                <span className="truncate">{model.name}{restricted ? ' 🔒' : ''}</span>
-                                <span className="flex items-center gap-1 shrink-0">
-                                  <span className={cn("text-[10px] px-1.5 py-0.5 rounded border", providerClass)}>
-                                    {model.provider}
-                                  </span>
-                                  {model.capabilities.map((cap) => (
-                                    <span
-                                      key={cap}
-                                      className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground"
-                                    >
-                                      {cap}
-                                    </span>
-                                  ))}
-                                </span>
+                                <span>{familyLabels[fam]}{!available ? ' 🔒' : ''}</span>
+                                {selectedFamily === fam && <Check className="h-3.5 w-3.5" />}
                               </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-[240px]">
-                              <p className="font-medium">{model.name}</p>
-                              <p className="text-xs text-muted-foreground">{model.description}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        );
-                      })}
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+
+                      <DropdownMenuSeparator />
+                      <div className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                        {t('chatInput.resolvedModel', 'Resolved model')}: <span className="text-foreground font-medium">{currentModel.name}</span>
+                      </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
+
 
                   {variant === 'project' && (
                     <>

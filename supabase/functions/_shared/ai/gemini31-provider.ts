@@ -160,7 +160,10 @@ export interface StreamGemini31Input {
   contextDocumentCount?: number;
   hasCode?: boolean;
   webSearchEnabled?: boolean;
+  /** When provided, overrides the routing heuristic thinking level. */
+  requestedThinkingLevel?: "LOW" | "MEDIUM" | "HIGH";
 }
+
 
 export async function streamGemini31Response(
   input: StreamGemini31Input,
@@ -181,6 +184,11 @@ export async function streamGemini31Response(
     hasCode: input.hasCode,
     webSearchEnabled: input.webSearchEnabled,
   });
+  if (input.requestedThinkingLevel) {
+    route.thinkingLevel = input.requestedThinkingLevel;
+    route.reason = `${route.reason}+user_${input.requestedThinkingLevel}`;
+  }
+
 
   console.log("[gemini31] route", {
     model: route.model,

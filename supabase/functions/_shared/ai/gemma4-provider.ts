@@ -113,7 +113,10 @@ export interface StreamGemma4Input {
   explicitReasoningMode?: boolean;
   contextDocumentCount?: number;
   hasCode?: boolean;
+  /** When provided, overrides the heuristic. "low"/"medium" → MINIMAL, "high" → HIGH. */
+  requestedThinkingLevel?: "low" | "medium" | "high";
 }
+
 
 /**
  * Streams a Gemma 4 response, writing SSE-formatted chunks to the provided
@@ -132,14 +135,15 @@ export async function streamGemma4Response(
   const googleAi = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
   const model = pickGemma4Model();
 
-  const thinkingMode: ThinkingMode = shouldUseHighThinking({
-    prompt: input.promptForHeuristic,
-    hasCode: input.hasCode,
-    contextDocumentCount: input.contextDocumentCount,
-    explicitReasoningMode: input.explicitReasoningMode,
-  })
-    ? "high"
-    : "minimal";
+  const thinkingMode: ThinkingMode = input.requestedThinkingLevel
+    ? (input.requestedThinkingLevel === "high" ? "high" : "minimal")
+    : (shouldUseHighThinking({
+        prompt: input.promptForHeuristic,
+        hasCode: input.hasCode,
+        contextDocumentCount: input.contextDocumentCount,
+        explicitReasoningMode: input.explicitReasoningMode,
+      }) ? "high" : "minimal");
+
 
   console.log("[gemma4] selected", {
     model,
