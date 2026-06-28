@@ -629,70 +629,97 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
                       <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
                           <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1">
-                            <span className="max-w-[100px] truncate">{currentModel.name}</span>
+                            <Brain className="h-3 w-3" />
+                            <span className="max-w-[160px] truncate">
+                              {levelLabels[selectedLevel]} · {familyLabels[selectedFamily]}
+                            </span>
                             <ChevronDown className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[220px]">
-                        <p className="font-medium">{currentModel.name}</p>
-                        <p className="text-xs text-muted-foreground">{currentModel.description}</p>
+                      <TooltipContent side="top" className="max-w-[260px]">
+                        <p className="font-medium">{levelLabels[selectedLevel]} · {familyLabels[selectedFamily]}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t('chatInput.resolvedModel', 'Resolved model')}: {currentModel.name}
+                          {decision.planDowngraded ? ` · ${t('chatInput.planDowngraded', 'plan-adjusted')}` : ''}
+                        </p>
                       </TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent align="end" className="w-72">
-                      {modelOptions.map((model) => {
-                        const restricted = isModelRestricted(model.id);
-                        const providerClass =
-                          model.provider === 'Google'
-                            ? 'border-blue-500/40 text-blue-500'
-                            : model.provider === 'OpenAI'
-                              ? 'border-emerald-500/40 text-emerald-500'
-                              : 'border-accent/40 text-accent';
-                        return (
-                          <Tooltip key={model.id}>
-                            <TooltipTrigger asChild>
+                    <DropdownMenuContent align="end" className="w-64">
+                      <DropdownMenuLabel className="text-xs text-muted-foreground">
+                        {t('chatInput.selectorTitle', 'Researcher model')}
+                      </DropdownMenuLabel>
+
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="text-sm gap-2">
+                          <Brain className="h-3.5 w-3.5" />
+                          <span>{t('chatInput.intelligence', 'Intelligence')}</span>
+                          <span className="ml-auto text-xs text-muted-foreground">{levelLabels[selectedLevel]}</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-48">
+                          {(['low', 'medium', 'high'] as ThinkingLevel[]).map((lvl) => {
+                            const supported = familySupportsLevel(selectedFamily, lvl);
+                            return (
                               <DropdownMenuItem
+                                key={lvl}
                                 onClick={(e) => {
-                                  if (restricted) {
+                                  if (!supported) {
                                     e.preventDefault();
-                                    toast.error(t('planLimits.modelRestricted', { model: model.name }));
+                                    toast.info(t('chatInput.singleLevelFamily', 'This family has one reasoning setting.'));
+                                    return;
+                                  }
+                                  persistLevel(lvl);
+                                }}
+                                disabled={!supported}
+                                className={cn('text-sm flex items-center justify-between', selectedLevel === lvl && 'bg-accent/10 text-accent font-medium')}
+                              >
+                                <span>{levelLabels[lvl]}</span>
+                                {selectedLevel === lvl && <Check className="h-3.5 w-3.5" />}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="text-sm gap-2">
+                          <Cpu className="h-3.5 w-3.5" />
+                          <span>{t('chatInput.modelFamilyLabel', 'Model family')}</span>
+                          <span className="ml-auto text-xs text-muted-foreground">{familyLabels[selectedFamily]}</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-52">
+                          {(['auto', 'gemini', 'gpt', 'gemma'] as ModelFamily[]).map((fam) => {
+                            const available = isFamilyAvailableForPlan(fam, userPlan);
+                            return (
+                              <DropdownMenuItem
+                                key={fam}
+                                onClick={(e) => {
+                                  if (!available) {
+                                    e.preventDefault();
+                                    toast.error(t('planLimits.familyRestricted', { family: familyLabels[fam] }));
                                     setShowPricing(true);
                                     return;
                                   }
-                                  setSelectedModel(model.id);
+                                  persistFamily(fam);
                                 }}
-                                disabled={restricted}
-                                className={cn(
-                                  "text-sm flex items-center justify-between gap-2",
-                                  selectedModel === model.id && "bg-accent/10 text-accent font-medium",
-                                  restricted && "opacity-50"
-                                )}
+                                disabled={!available}
+                                className={cn('text-sm flex items-center justify-between', selectedFamily === fam && 'bg-accent/10 text-accent font-medium', !available && 'opacity-50')}
                               >
-                                <span className="truncate">{model.name}{restricted ? ' 🔒' : ''}</span>
-                                <span className="flex items-center gap-1 shrink-0">
-                                  <span className={cn("text-[10px] px-1.5 py-0.5 rounded border", providerClass)}>
-                                    {model.provider}
-                                  </span>
-                                  {model.capabilities.map((cap) => (
-                                    <span
-                                      key={cap}
-                                      className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground"
-                                    >
-                                      {cap}
-                                    </span>
-                                  ))}
-                                </span>
+                                <span>{familyLabels[fam]}{!available ? ' 🔒' : ''}</span>
+                                {selectedFamily === fam && <Check className="h-3.5 w-3.5" />}
                               </DropdownMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-[240px]">
-                              <p className="font-medium">{model.name}</p>
-                              <p className="text-xs text-muted-foreground">{model.description}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        );
-                      })}
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+
+                      <DropdownMenuSeparator />
+                      <div className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                        {t('chatInput.resolvedModel', 'Resolved model')}: <span className="text-foreground font-medium">{currentModel.name}</span>
+                      </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
+
 
                   {variant === 'project' && (
                     <>
