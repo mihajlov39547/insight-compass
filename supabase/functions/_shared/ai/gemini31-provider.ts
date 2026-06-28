@@ -160,7 +160,10 @@ export interface StreamGemini31Input {
   contextDocumentCount?: number;
   hasCode?: boolean;
   webSearchEnabled?: boolean;
+  /** When provided, overrides the routing heuristic thinking level. */
+  requestedThinkingLevel?: "LOW" | "MEDIUM" | "HIGH";
 }
+
 
 export async function streamGemini31Response(
   input: StreamGemini31Input,
