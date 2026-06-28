@@ -160,7 +160,7 @@ serve(async (req) => {
       ? "chat_grounded"
       : "chat_default";
 
-    const requestedModel = typeof model === "string" ? model.trim() : "";
+    let requestedModel = typeof model === "string" ? model.trim() : "";
     const autoDecision = resolveModelDecision(autoTask, {
       promptLength,
       contextLength,
@@ -171,9 +171,10 @@ serve(async (req) => {
       latencySensitive: normalizeResponseLength(responseLength) === "concise",
       costSensitive: normalizeResponseLength(responseLength) === "standard",
     });
-    const resolvedModel = !requestedModel || requestedModel === "auto"
+    let resolvedModel = !requestedModel || requestedModel === "auto"
       ? resolveModelForTask(autoTask, autoDecision.normalizedContext)
       : (VALID_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL);
+
     const responseLengthConfig = getResponseLengthConfig(responseLength);
     const responseLanguageInstruction = getResponseLanguageInstruction(responseLanguage);
     console.log("[chat:length] resolved", {
