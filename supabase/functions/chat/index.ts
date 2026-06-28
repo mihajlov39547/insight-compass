@@ -128,7 +128,7 @@ serve(async (req) => {
   if ("response" in auth) return auth.response;
 
   try {
-    const { messages, projectDescription, model, documentContext, notebookScope, webContext, responseLength, responseLanguage, notebookSourceInventory, chatId, messageId, messageOptions } = await req.json();
+    const { messages, projectDescription, model, modelPreference, documentContext, notebookScope, webContext, responseLength, responseLanguage, notebookSourceInventory, chatId, messageId, messageOptions } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
