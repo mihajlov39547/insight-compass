@@ -47,7 +47,10 @@ export interface ChatPromptOptions {
   notebookName?: string;
   /** Language for selected notebook, used to keep responses in notebook language. */
   notebookLanguage?: string;
+  /** Structured model preference. Backend resolves to a concrete model + thinking config. */
+  modelPreference?: { family: ModelFamily; thinkingLevel: ThinkingLevel };
 }
+
 
 export interface PastedImage {
   file: File;
