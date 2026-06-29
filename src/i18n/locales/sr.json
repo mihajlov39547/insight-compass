@@ -38,7 +38,81 @@
       "resources": "Resursi",
       "starred": "Označeno zvezdicom",
       "sharedWithMe": "Deljeno sa mnom",
-      "recents": "Nedavno"
+      "recents": "Nedavno",
+      "plantAdvisor": "Savetnik za biljke"
+    },
+    "plantAdvisor": {
+      "title": "Savetnik za biljke",
+      "subtitle": "Prepoznajte biljke, pratite zdravlje i pripremite plan tretmana.",
+      "newScan": "Novo skeniranje biljke",
+      "recentCases": "Nedavni slučajevi biljaka",
+      "empty": "Još nema slučajeva biljaka",
+      "emptyHint": "Pokrenite novo skeniranje i dodajte beleške i fotografije.",
+      "askAbout": "Pitaj o ovom slučaju",
+      "uploadImages": "Otpremi fotografije biljke",
+      "addImages": "Dodaj fotografije",
+      "noImagesYet": "Još nema otpremljenih fotografija.",
+      "saveFirstToUpload": "Prvo sačuvajte slučaj da biste otpremili fotografije.",
+      "editCase": "Izmeni slučaj biljke",
+      "formSubtitle": "Unesite kratak naslov i kontekst. Faza 1 čuva slučaj, fotografije i beleške — prepoznavanje i dijagnostika stižu uskoro.",
+      "saveCase": "Sačuvaj slučaj",
+      "savedToast": "Slučaj sačuvan",
+      "deletedToast": "Slučaj obrisan",
+      "confirmDelete": "Obrisati slučaj i sve fotografije?",
+      "fields": {
+        "title": "Naslov",
+        "titlePh": "npr. Žute listove paradajza",
+        "goal": "Cilj",
+        "goalPh": "Šta želite da uradite?",
+        "location": "Lokacija",
+        "locationPh": "npr. Beograd, balkon",
+        "crop": "Kultura / kontekst biljke",
+        "cropPh": "npr. Heirloom paradajz, druga godina",
+        "notes": "Beleške",
+        "notesPh": "Simptomi, uslovi gajenja, promene…"
+      },
+      "goals": {
+        "identify": "Prepoznaj biljku",
+        "diagnose": "Dijagnostikuj bolest",
+        "improve_growth": "Poboljšaj rast",
+        "increase_income": "Povećaj prihod"
+      },
+      "goalDescriptions": {
+        "identify": "Saznajte koja je ovo biljka.",
+        "diagnose": "Istražite simptome i moguće uzroke.",
+        "improve_growth": "Saveti za negu i uslove.",
+        "increase_income": "Planirajte prinos i tržišnu vrednost."
+      },
+      "statuses": {
+        "draft": "Skica",
+        "ready_for_identification": "Spreman za prepoznavanje",
+        "identified": "Prepoznat",
+        "diagnosed": "Dijagnostikovan",
+        "treated": "Tretiran",
+        "archived": "Arhiviran"
+      },
+      "roles": {
+        "auto": "Auto",
+        "whole_plant": "Cela biljka",
+        "leaf": "List",
+        "flower": "Cvet",
+        "fruit": "Plod",
+        "bark": "Kora",
+        "stem": "Stablo",
+        "root": "Koren",
+        "other": "Ostalo"
+      },
+      "errors": {
+        "tooLarge": "fotografija je veća od 10 MB.",
+        "badType": "nepodržan format. Koristite JPEG, PNG ili WebP.",
+        "titleRequired": "Naslov je obavezan."
+      },
+      "chat": {
+        "title": "Razgovor o slučaju biljke",
+        "contextHeader": "Kontekst slučaja",
+        "imagesAttached": "Priloženih fotografija: {{count}}",
+        "inputPh": "Pitajte o ovom slučaju…"
+      }
     },
     "projects": {
       "section": "Moji projekti",
