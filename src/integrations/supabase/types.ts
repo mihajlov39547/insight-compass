@@ -1191,6 +1191,110 @@ export type Database = {
         }
         Relationships: []
       }
+      plant_case_images: {
+        Row: {
+          case_id: string
+          created_at: string
+          id: string
+          image_role: string
+          mime_type: string | null
+          original_filename: string | null
+          size_bytes: number | null
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          id?: string
+          image_role?: string
+          mime_type?: string | null
+          original_filename?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          id?: string
+          image_role?: string
+          mime_type?: string | null
+          original_filename?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_case_images_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plant_cases: {
+        Row: {
+          created_at: string
+          crop_context: string | null
+          id: string
+          location_text: string | null
+          notebook_id: string | null
+          notes: string | null
+          project_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_goal: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          crop_context?: string | null
+          id?: string
+          location_text?: string | null
+          notebook_id?: string | null
+          notes?: string | null
+          project_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_goal?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          crop_context?: string | null
+          id?: string
+          location_text?: string | null
+          notebook_id?: string | null
+          notes?: string | null
+          project_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_goal?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_cases_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plant_cases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

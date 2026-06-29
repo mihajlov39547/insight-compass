@@ -25,6 +25,7 @@ import { StarredLanding } from '@/components/views/StarredLanding';
 import { RecentsLanding } from '@/components/views/RecentsLanding';
 import { SharedLanding } from '@/components/views/SharedLanding';
 import { SearchDashboard } from '@/components/views/SearchDashboard';
+import { PlantAdvisorView } from '@/components/plant-advisor/PlantAdvisorView';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useApp } from '@/contexts/useApp';
 
@@ -55,6 +56,7 @@ function renderActiveView(activeView: string) {
   if (activeView === 'recents') return <RecentsLanding />;
   if (activeView === 'shared') return <SharedLanding />;
   if (activeView === 'search') return <SearchDashboard />;
+  if (activeView === 'plant-advisor') return <PlantAdvisorView />;
 
   return (
     <div className="flex h-full min-h-0 flex-col">

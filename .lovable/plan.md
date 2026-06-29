@@ -1,119 +1,88 @@
-# Model Family + Thinking Level
+## Plant Advisor — Phase 1
 
-Replace the flat model picker with a structured **Model family + Intelligence (thinking level)** preference, backed by a single shared catalog and a resolver that the frontend and backend both consume.
+A new top-level section in the app for managing plant cases (identification, diagnosis, growth, income goals). Phase 1 is scaffolding only — no external plant APIs, no AI image analysis.
 
-## 1. Shared catalog — `src/config/modelCatalog.ts`
+### 1. Database (single migration)
 
-Single source of truth. Re-export from `modelOptions.ts` for back-compat so nothing else breaks.
+Create two private tables with RLS scoped to `auth.uid() = user_id`.
 
-```ts
-type PlanTier = "free" | "basic" | "premium" | "enterprise";
-type ModelFamily = "auto" | "gemini" | "gpt" | "gemma";
-type ThinkingLevel = "low" | "medium" | "high";
+```sql
+-- plant_cases
+CREATE TABLE public.plant_cases (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  project_id uuid REFERENCES public.projects(id) ON DELETE SET NULL,
+  notebook_id uuid REFERENCES public.notebooks(id) ON DELETE SET NULL,
+  title text NOT NULL,
+  status text NOT NULL DEFAULT 'draft'
+    CHECK (status IN ('draft','ready_for_identification','identified','diagnosed','treated','archived')),
+  user_goal text
+    CHECK (user_goal IS NULL OR user_goal IN ('identify','diagnose','improve_growth','increase_income')),
+  location_text text,
+  crop_context text,
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 
-interface ModelCatalogEntry {
-  id: string;                       // raw provider id, e.g. "openai/gpt-5.5"
-  provider: "lovable_gateway" | "google_direct";
-  family: Exclude<ModelFamily, "auto">;
-  label: string;
-  planTiers: PlanTier[];
-  supportedThinkingLevels: ThinkingLevel[];
-  defaultThinkingLevel: ThinkingLevel;
-  nativeThinking: boolean;
-  costTier: "low" | "medium" | "high" | "premium";
-  fallbackIds: string[];
-}
+-- plant_case_images
+CREATE TABLE public.plant_case_images (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  case_id uuid NOT NULL REFERENCES public.plant_cases(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  storage_path text NOT NULL,
+  image_role text NOT NULL DEFAULT 'auto'
+    CHECK (image_role IN ('auto','whole_plant','leaf','flower','fruit','bark','stem','root','other')),
+  original_filename text,
+  mime_type text,
+  size_bytes bigint,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 ```
 
-Includes every currently exposed model (gemini 2.5 family + 3.5-flash, all gpt-5.x, gemma-4, gemini-3.1). Plan availability mirrors current `planLimits.ts` so nothing widens or narrows by accident.
+GRANTs to `authenticated`/`service_role`, RLS enabled, owner-only policies on both, plus `updated_at` trigger on `plant_cases`.
 
-Per-family tier mapping used by the resolver:
+### 2. Storage
 
-| Family | low | medium | high |
-|---|---|---|---|
-| gemini | `google/gemini-2.5-flash-lite` | `google/gemini-2.5-flash` | `google/gemini-2.5-pro` |
-| gpt | `openai/gpt-5-mini` | `openai/gpt-5.4-mini` (or `gpt-5-mini` for non-premium) | `openai/gpt-5.5-pro` (downgrades to `gpt-5.5` / `gpt-5` based on plan) |
-| gemma | `gemma-4` (only) | `gemma-4` | `gemma-4` — selector disabled |
-| auto | existing fast route | existing balanced router | existing pro route |
+Private bucket `plant-case-images` via `supabase--storage_create_bucket`. Path format `plant-cases/{userId}/{caseId}/{imageId}-{safeFilename}`. Storage RLS policies restrict object access to owner (path prefix matches `auth.uid()`). UI uses signed URLs for previews.
 
-## 2. Resolver — `src/lib/modelPreferenceResolver.ts`
+### 3. Navigation & routing
 
-Pure function shared by client and edge function (mirrored into `supabase/functions/_shared/ai/modelPreferenceResolver.ts` since edge can't import from `src/`).
+- Add `plant-advisor` to `ActiveView` union in `src/contexts/AppContext.tsx`.
+- Add sidebar entry in `AppSidebar.tsx` with `Sprout` icon, after Notebooks.
+- Add `i18n` keys `sidebar.plantAdvisor`.
+- Render `<PlantAdvisorView />` in `src/pages/Index.tsx` when view is `plant-advisor`.
 
-Inputs: `{ family, thinkingLevel }`, `plan`, optional routing context (prompt/context size — only used when `family === "auto"`).
-Outputs: `{ resolvedModelId, resolvedProvider, appliedThinkingLevel, nativeThinking, fallbackIds, reason }`.
+### 4. New components (`src/components/plant-advisor/`)
 
-Rules:
-- `family === "auto"` → defer to existing `resolveModelDecision` in `task-model-config.ts`, with thinking level biasing the tier (low→flash-lite, medium→flash, high→pro).
-- Explicit family → pick the tier model. If gated by plan, downgrade within family; if no in-family option, fall back to auto (`reason: "plan_downgraded"`).
-- Gemma → always medium, `appliedThinkingLevel: "medium"`, `nativeThinking: false`.
+- `PlantAdvisorView.tsx` — view router (dashboard | new case | case detail).
+- `PlantAdvisorDashboard.tsx` — header, "New Plant Scan" CTA, 4 goal cards, recent cases grid, empty state.
+- `PlantCaseForm.tsx` — title, goal select, optional location/crop/notes, embedded `PlantImageUploader`.
+- `PlantImageUploader.tsx` — multi-file picker, previews, per-image role select, delete, 10 MB limit, mime check.
+- `PlantCaseCard.tsx` — card for recent list, thumbnail + meta.
+- `PlantCaseDetail.tsx` — case data, images grid with role editor, delete, "Ask about this plant case" button.
+- `PlantCaseChatPanel.tsx` — reuses existing chat UI shell; injects a system note that image identification is not yet available and only notes/context can be discussed.
 
-## 3. User settings
+### 5. Hooks (`src/hooks/`)
 
-Add columns via migration to `user_settings`:
-- `preferred_model_family text default 'auto'`
-- `preferred_thinking_level text default 'medium'`
+- `usePlantCases.ts` — list/create/update/delete via supabase client + react-query.
+- `usePlantCaseImages.ts` — list/upload/delete; computes signed URLs for previews.
 
-Keep `preferred_model` for back-compat. On first read, if new fields are null but `preferred_model` is set, infer family from the id prefix and infer level from the catalog entry; persist on next save. `useUserSettings.ts` exposes new fields and the migration helper.
+### 6. Chat integration
 
-## 4. Frontend picker
+Reuse existing chat shell. Phase 1: a lightweight in-component chat using the existing `ChatInput` / `ChatMessage` components, persisted in local state for the session (no DB chat row required this phase). The first assistant message clearly states the limitation. Plant case metadata + image roles are appended as a context block to outbound prompts so the backend can use them, but no plant-specific prompt engineering yet.
 
-Refactor the model menu in `src/components/chat/ChatInput.tsx` (currently a flat `Select`) into a `DropdownMenu` with two submenus:
+### 7. i18n
 
-- **Intelligence** → Instant / Medium / High (radio).
-- **Model family** → Auto / Gemini / GPT / Gemma (radio).
+Add keys in `en.json` and `sr.json`:
+- `plantAdvisor.title`, `.subtitle`, `.newScan`, `.recentCases`, `.empty`, `.askAbout`, `.uploadImages`
+- `plantAdvisor.goals.{identify,diagnose,improveGrowth,increaseIncome}`
+- `plantAdvisor.roles.{auto,whole_plant,leaf,flower,fruit,bark,stem,root,other}`
 
-Trigger label shows `<Level> · <Resolved model name>`, e.g. `Medium · GPT-5.4-mini`. A muted line under the trigger shows `Resolved model: …` via the resolver.
+### 8. Out of scope (Phase 1)
 
-Plan-gated options remain visible but `disabled` with a "Premium" / "Basic+" badge. When Gemma is selected, the Intelligence submenu items are disabled (medium pre-selected) with hint text.
+No Pl@ntNet/Perenual/Trefle/Kindwise calls. No image AI. No treatment generation. No vector ingestion of plant images.
 
-Both Project Chat and Notebook Chat use the same `ChatInput`, so this is one change.
+### Acceptance
 
-## 5. Request payload
-
-`useAIChat.ts` and `useNotebookChat.ts` send:
-
-```ts
-modelPreference: { family, thinkingLevel }
-model: resolvedModelId   // kept for back-compat; backend prefers modelPreference
-```
-
-## 6. Backend
-
-In `supabase/functions/chat/index.ts` (and `notebook-scope-check` if it routes models):
-
-- Accept optional `modelPreference`. When present, run the shared resolver server-side (re-enforces plan from `profiles.plan`). Ignore client-sent `model` when `modelPreference` is provided.
-- Existing fallback chain (`failover.ts`) is untouched — `resolvedModelId` is the new entry point.
-- Gemini direct (`gemini31-provider.ts`) and Gemma (`gemma4-provider.ts`): map `appliedThinkingLevel` to their thinking-budget config (low=small, medium=default, high=large). Lovable Gateway GPT calls: pass `reasoning_effort` when the model supports it; otherwise rely on tier choice.
-- Persist into message `metadata`: `requestedFamily, requestedThinkingLevel, resolvedModelId, finalModelId, fallbackUsed, appliedThinkingLevel, nativeThinking, decisionReason`.
-
-The existing `CHAT_MODEL_ALLOWLIST` is replaced with "id must exist in shared catalog AND be allowed for plan."
-
-## 7. i18n
-
-Add keys under `chat.modelPicker.*`: intelligence/instant/medium/high, family/auto/gemini/gpt/gemma, resolvedModel, gemmaSingleLevelHint, premiumOnly, basicOrAbove. EN + SR.
-
-## 8. Tests
-
-`src/test/modelPreferenceResolver.test.ts`:
-- Each family × level resolves to expected id on Premium.
-- Free plan + GPT/high → downgrades within plan or auto, reason `plan_downgraded`.
-- Basic plan + GPT-5.4 → downgrades to `gpt-5-mini`.
-- Gemma always medium.
-- Auto + level still calls existing router and respects level bias.
-- Legacy `preferred_model` migration helper produces correct family/level.
-
-## 9. Deploy & QA
-
-Deploy `chat` edge function. Manual QA matrix from the spec (Free/Basic/Premium × Auto/Gemini/GPT/Gemma × Instant/Medium/High), verify message metadata, verify fallback by forcing one provider error.
-
-## Out of scope
-
-- No new "advanced raw model" picker (per recommendation).
-- No thought-summary UI.
-- Image/audio model selection unchanged.
-
-## Files touched
-
-- New: `src/config/modelCatalog.ts`, `src/lib/modelPreferenceResolver.ts`, `supabase/functions/_shared/ai/modelPreferenceResolver.ts`, `src/test/modelPreferenceResolver.test.ts`, migration for `user_settings`.
-- Edit: `src/config/modelOptions.ts` (re-export), `src/lib/planLimits.ts` (read from catalog), `src/hooks/useUserSettings.ts`, `src/components/chat/ChatInput.tsx`, `src/hooks/useAIChat.ts`, `src/hooks/useNotebookChat.ts`, `supabase/functions/chat/index.ts`, `supabase/functions/_shared/ai/task-model-config.ts`, `supabase/functions/_shared/ai/gemini31-provider.ts`, `supabase/functions/_shared/ai/gemma4-provider.ts`, `src/i18n/locales/{en,sr}.json`.
+Create case → upload images → assign roles → save → reopen → delete → open chat (with disclaimer). RLS verified. Build/lint/typecheck pass.
