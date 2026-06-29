@@ -10,7 +10,7 @@ import { AppContext } from '@/contexts/app-context';
 import { useInboxUnreadCount } from '@/hooks/useInboxMessages';
 import { usePersistedState } from '@/hooks/usePersistedState';
 
-export type ActiveView = 'default' | 'home' | 'projects' | 'project-documents' | 'chat-documents' | 'notebooks' | 'notebook-documents' | 'notebook-workspace' | 'resources' | 'starred' | 'recents' | 'shared' | 'search';
+export type ActiveView = 'default' | 'home' | 'projects' | 'project-documents' | 'chat-documents' | 'notebooks' | 'notebook-documents' | 'notebook-workspace' | 'resources' | 'starred' | 'recents' | 'shared' | 'search' | 'plant-advisor';
 
 export interface AppContextType {
   // User
