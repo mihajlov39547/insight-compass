@@ -38,7 +38,81 @@
       "resources": "Resources",
       "starred": "Starred",
       "sharedWithMe": "Shared with me",
-      "recents": "Recents"
+      "recents": "Recents",
+      "plantAdvisor": "Plant Advisor"
+    },
+    "plantAdvisor": {
+      "title": "Plant Advisor",
+      "subtitle": "Identify plants, track plant health, and prepare treatment plans.",
+      "newScan": "New Plant Scan",
+      "recentCases": "Recent plant cases",
+      "empty": "No plant cases yet",
+      "emptyHint": "Start a new scan to add notes and plant photos.",
+      "askAbout": "Ask about this plant case",
+      "uploadImages": "Upload plant images",
+      "addImages": "Add images",
+      "noImagesYet": "No images uploaded yet.",
+      "saveFirstToUpload": "Save the case first to upload images.",
+      "editCase": "Edit plant case",
+      "formSubtitle": "Provide a short title and any context. Phase 1 stores your case, photos, and notes — image identification and disease diagnosis are coming next.",
+      "saveCase": "Save plant case",
+      "savedToast": "Plant case saved",
+      "deletedToast": "Plant case deleted",
+      "confirmDelete": "Delete this plant case and all its images?",
+      "fields": {
+        "title": "Title",
+        "titlePh": "e.g. Tomato leaves yellowing",
+        "goal": "Goal",
+        "goalPh": "What do you want to do?",
+        "location": "Location",
+        "locationPh": "e.g. Belgrade, balcony",
+        "crop": "Crop / plant context",
+        "cropPh": "e.g. Heirloom tomato, 2nd year",
+        "notes": "Notes",
+        "notesPh": "Symptoms, growing conditions, recent changes…"
+      },
+      "goals": {
+        "identify": "Identify plant",
+        "diagnose": "Diagnose disease",
+        "improve_growth": "Improve growth",
+        "increase_income": "Increase income"
+      },
+      "goalDescriptions": {
+        "identify": "Figure out what plant this is.",
+        "diagnose": "Investigate symptoms and possible issues.",
+        "improve_growth": "Get tips on care and conditions.",
+        "increase_income": "Plan yield and market value."
+      },
+      "statuses": {
+        "draft": "Draft",
+        "ready_for_identification": "Ready for identification",
+        "identified": "Identified",
+        "diagnosed": "Diagnosed",
+        "treated": "Treated",
+        "archived": "Archived"
+      },
+      "roles": {
+        "auto": "Auto",
+        "whole_plant": "Whole plant",
+        "leaf": "Leaf",
+        "flower": "Flower",
+        "fruit": "Fruit",
+        "bark": "Bark",
+        "stem": "Stem",
+        "root": "Root",
+        "other": "Other"
+      },
+      "errors": {
+        "tooLarge": "image is larger than 10 MB.",
+        "badType": "unsupported file type. Use JPEG, PNG, or WebP.",
+        "titleRequired": "Title is required."
+      },
+      "chat": {
+        "title": "Plant case chat",
+        "contextHeader": "Case context",
+        "imagesAttached": "Images attached: {{count}}",
+        "inputPh": "Ask about this plant case…"
+      }
     },
     "projects": {
       "section": "My Projects",
