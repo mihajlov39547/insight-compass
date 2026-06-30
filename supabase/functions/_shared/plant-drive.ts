@@ -1,0 +1,122 @@
+// Shared helpers for Google Drive uploads of plant-case images.
+
+export const DRIVE_GATEWAY_UPLOAD =
+  'https://connector-gateway.lovable.dev/google_drive/upload/drive/v3/files';
+export const DRIVE_GATEWAY_FILES =
+  'https://connector-gateway.lovable.dev/google_drive/drive/v3/files';
+
+export interface DriveEnv {
+  lovableKey: string;
+  driveKey: string;
+  folderId: string;
+}
+
+export function readDriveEnv(): { env: DriveEnv | null; error: string | null } {
+  const lovableKey = Deno.env.get('LOVABLE_API_KEY');
+  const driveKey = Deno.env.get('GOOGLE_DRIVE_API_KEY');
+  const folderId = Deno.env.get('PLANT_IMAGES_DRIVE_FOLDER_ID');
+  if (!lovableKey || !driveKey) {
+    return { env: null, error: 'google_drive_not_connected' };
+  }
+  if (!folderId) {
+    return { env: null, error: 'drive_folder_not_configured' };
+  }
+  return { env: { lovableKey, driveKey, folderId }, error: null };
+}
+
+export function sanitizeDriveName(s: string): string {
+  return (s || 'image')
+    .replace(/[\\/\r\n\t]+/g, '_')
+    .replace(/[^\w.\- ()]+/g, '_')
+    .slice(0, 180) || 'image';
+}
+
+export function extFromMime(mime: string): string {
+  if (mime === 'image/jpeg') return 'jpg';
+  if (mime === 'image/png') return 'png';
+  if (mime === 'image/webp') return 'webp';
+  return 'bin';
+}
+
+export async function uploadBytesToDrive(opts: {
+  env: DriveEnv;
+  bytes: Uint8Array;
+  filename: string;
+  mimeType: string;
+  appProperties?: Record<string, string>;
+}): Promise<{ id: string; webViewLink: string | null; mimeType: string | null }> {
+  const { env, bytes, filename, mimeType, appProperties } = opts;
+  const metadata: Record<string, unknown> = {
+    name: filename,
+    mimeType,
+    parents: [env.folderId],
+    description: 'Researcher plant-advisor image',
+    appProperties: { source: 'researcher', kind: 'plant-image', ...(appProperties || {}) },
+  };
+  const boundary = '----researcher-' + crypto.randomUUID().replace(/-/g, '');
+  const enc = new TextEncoder();
+  const head = enc.encode(
+    `--${boundary}\r\n` +
+      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+      JSON.stringify(metadata) +
+      `\r\n--${boundary}\r\n` +
+      `Content-Type: ${mimeType}\r\n` +
+      'Content-Transfer-Encoding: binary\r\n\r\n',
+  );
+  const tail = enc.encode(`\r\n--${boundary}--\r\n`);
+  const body = new Uint8Array(head.byteLength + bytes.byteLength + tail.byteLength);
+  body.set(head, 0);
+  body.set(bytes, head.byteLength);
+  body.set(tail, head.byteLength + bytes.byteLength);
+
+  const url = new URL(DRIVE_GATEWAY_UPLOAD);
+  url.searchParams.set('uploadType', 'multipart');
+  url.searchParams.set('fields', 'id,name,mimeType,webViewLink');
+
+  const resp = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.lovableKey}`,
+      'X-Connection-Api-Key': env.driveKey,
+      'Content-Type': `multipart/related; boundary=${boundary}`,
+    },
+    body,
+  });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => '');
+    const err = new Error(`drive_upload_failed_${resp.status}: ${text.slice(0, 300)}`);
+    (err as any).status = resp.status;
+    throw err;
+  }
+  const file = await resp.json();
+  return {
+    id: String(file.id),
+    webViewLink: file.webViewLink ?? null,
+    mimeType: file.mimeType ?? mimeType,
+  };
+}
+
+export async function deleteDriveFile(env: DriveEnv, fileId: string): Promise<boolean> {
+  const url = `${DRIVE_GATEWAY_FILES}/${encodeURIComponent(fileId)}`;
+  const resp = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${env.lovableKey}`,
+      'X-Connection-Api-Key': env.driveKey,
+    },
+  });
+  return resp.ok || resp.status === 404;
+}
+
+export const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+export function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+  });
+}
