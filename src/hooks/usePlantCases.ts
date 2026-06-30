@@ -135,16 +135,19 @@ export function useDeletePlantCase() {
   return useMutation({
     mutationFn: async (id: string) => {
       // Best-effort: remove storage objects too (RLS allows owner).
+      // Collect storage paths first, then delete the case row (CASCADE removes image rows),
+      // then best-effort remove storage objects. This avoids leaving DB rows pointing at
+      // missing objects if storage delete partially fails.
       const { data: images } = await (supabase as any)
         .from('plant_case_images')
         .select('storage_path')
         .eq('case_id', id);
       const paths: string[] = ((images as Array<{ storage_path: string }>) ?? []).map((i) => i.storage_path);
+      const { error } = await (supabase as any).from(TABLE).delete().eq('id', id);
+      if (error) throw error;
       if (paths.length > 0) {
         await supabase.storage.from('plant-case-images').remove(paths);
       }
-      const { error } = await (supabase as any).from(TABLE).delete().eq('id', id);
-      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['plant_cases'] }),
   });
