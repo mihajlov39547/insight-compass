@@ -134,9 +134,12 @@ export function useDeletePlantImage() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (img: PlantCaseImage) => {
-      await supabase.storage.from('plant-case-images').remove([img.storage_path]);
+      // Delete DB row first; if it fails, storage object remains and stays accessible.
+      // If storage delete fails after DB delete, the orphaned object is unreachable via app
+      // (no row references it) and can be swept later.
       const { error } = await (supabase as any).from(TABLE).delete().eq('id', img.id);
       if (error) throw error;
+      await supabase.storage.from('plant-case-images').remove([img.storage_path]);
       return img;
     },
     onSuccess: (img) => {
