@@ -1889,6 +1889,32 @@
       "contextHeader": "Kontekst slučaja",
       "imagesAttached": "Priloženih fotografija: {{count}}",
       "inputPh": "Pitajte o ovom slučaju…"
+    },
+    "limits": {
+      "caseReached": "Dostignut je limit plana — nadogradite plan da biste dodali još slučajeva.",
+      "imagePerCaseReached": "Dostignut je limit slika po slučaju za vaš plan.",
+      "totalImageReached": "Dostignut je ukupan limit slika za vaš plan.",
+      "fileTooLarge": "Fajl je prevelik za vaš plan (najviše {{mb}}).",
+      "badMime": "Nepodržan tip slike. Koristite JPEG, PNG ili WebP.",
+      "imageHint": "Do {{n}} slika po slučaju · {{mb}} po slici",
+      "upgradeHint": "Nadogradite plan da povećate limite."
+    },
+    "usage": {
+      "cases": "Biljni slučajevi",
+      "images": "Slike biljaka",
+      "storageProvider": "Skladište",
+      "planLabel": "Plan: {{plan}}"
+    },
+    "storage": {
+      "googleDrive": "Google Drive",
+      "supabaseFallback": "Lokalno (rezerva)",
+      "notConfigured": "Google Drive nije konfigurisan",
+      "checking": "Provera…",
+      "staged": "Pripremljeno",
+      "uploadingToDrive": "Otpremanje na Drive…",
+      "driveFailed": "Otpremanje na Drive nije uspelo",
+      "retryUpload": "Pokušaj ponovo",
+      "openInDrive": "Otvori u Drive"
     }
   }
 }

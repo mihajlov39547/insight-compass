@@ -1873,6 +1873,32 @@
       "contextHeader": "Case context",
       "imagesAttached": "Images attached: {{count}}",
       "inputPh": "Ask about this plant case…"
+    },
+    "limits": {
+      "caseReached": "Plan limit reached — upgrade to add more plant cases.",
+      "imagePerCaseReached": "Image limit per case reached for your plan.",
+      "totalImageReached": "Total plant image limit reached for your plan.",
+      "fileTooLarge": "File is too large for your plan ({{mb}} max).",
+      "badMime": "Unsupported image type. Use JPEG, PNG, or WebP.",
+      "imageHint": "Up to {{n}} images per case · {{mb}} per image",
+      "upgradeHint": "Upgrade your plan to increase limits."
+    },
+    "usage": {
+      "cases": "Plant cases",
+      "images": "Plant images",
+      "storageProvider": "Storage provider",
+      "planLabel": "Plan: {{plan}}"
+    },
+    "storage": {
+      "googleDrive": "Google Drive",
+      "supabaseFallback": "Local fallback",
+      "notConfigured": "Google Drive not configured",
+      "checking": "Checking…",
+      "staged": "Staged",
+      "uploadingToDrive": "Uploading to Drive…",
+      "driveFailed": "Drive upload failed",
+      "retryUpload": "Retry upload",
+      "openInDrive": "Open in Drive"
     }
   }
 }

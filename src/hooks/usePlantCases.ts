@@ -106,7 +106,10 @@ export function useCreatePlantCase() {
       if (error) throw error;
       return data as PlantCase;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['plant_cases'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plant_cases'] });
+      qc.invalidateQueries({ queryKey: ['plant_cases_count'] });
+    },
   });
 }
 
@@ -134,21 +137,42 @@ export function useDeletePlantCase() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      // Best-effort: remove storage objects too (RLS allows owner).
-      // Collect storage paths first, then delete the case row (CASCADE removes image rows),
-      // then best-effort remove storage objects. This avoids leaving DB rows pointing at
-      // missing objects if storage delete partially fails.
+      // Collect storage paths AND Drive file IDs first, then delete the case row
+      // (CASCADE removes image rows), then best-effort cleanup external storage.
+      // TODO(orphan-cleanup): add a scheduled sweep for Supabase/Drive remnants.
       const { data: images } = await (supabase as any)
         .from('plant_case_images')
-        .select('storage_path')
+        .select('storage_path, staging_storage_path, drive_file_id')
         .eq('case_id', id);
-      const paths: string[] = ((images as Array<{ storage_path: string }>) ?? []).map((i) => i.storage_path);
+      const rows = (images as Array<{
+        storage_path: string | null;
+        staging_storage_path: string | null;
+        drive_file_id: string | null;
+      }>) ?? [];
+
+      const paths = Array.from(
+        new Set(
+          rows.flatMap((r) => [r.storage_path, r.staging_storage_path]).filter((p): p is string => !!p),
+        ),
+      );
+      const driveIds = rows.map((r) => r.drive_file_id).filter((d): d is string => !!d);
+
       const { error } = await (supabase as any).from(TABLE).delete().eq('id', id);
       if (error) throw error;
+
       if (paths.length > 0) {
-        await supabase.storage.from('plant-case-images').remove(paths);
+        await supabase.storage.from('plant-case-images').remove(paths).catch(() => {});
+      }
+      if (driveIds.length > 0) {
+        await supabase.functions
+          .invoke('plant-image-drive-delete', { body: { driveFileIds: driveIds } })
+          .catch((e) => console.warn('[plant-case] Drive cleanup failed', e));
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['plant_cases'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plant_cases'] });
+      qc.invalidateQueries({ queryKey: ['plant_cases_count'] });
+      qc.invalidateQueries({ queryKey: ['plant_images_count'] });
+    },
   });
 }
