@@ -1195,34 +1195,64 @@ export type Database = {
         Row: {
           case_id: string
           created_at: string
+          drive_file_id: string | null
+          drive_folder_id: string | null
+          drive_mime_type: string | null
+          drive_uploaded_at: string | null
+          drive_web_view_link: string | null
           id: string
           image_role: string
           mime_type: string | null
           original_filename: string | null
           size_bytes: number | null
+          staging_storage_path: string | null
+          storage_mode: string
           storage_path: string
+          upload_error_code: string | null
+          upload_error_message: string | null
+          upload_status: string
           user_id: string
         }
         Insert: {
           case_id: string
           created_at?: string
+          drive_file_id?: string | null
+          drive_folder_id?: string | null
+          drive_mime_type?: string | null
+          drive_uploaded_at?: string | null
+          drive_web_view_link?: string | null
           id?: string
           image_role?: string
           mime_type?: string | null
           original_filename?: string | null
           size_bytes?: number | null
+          staging_storage_path?: string | null
+          storage_mode?: string
           storage_path: string
+          upload_error_code?: string | null
+          upload_error_message?: string | null
+          upload_status?: string
           user_id: string
         }
         Update: {
           case_id?: string
           created_at?: string
+          drive_file_id?: string | null
+          drive_folder_id?: string | null
+          drive_mime_type?: string | null
+          drive_uploaded_at?: string | null
+          drive_web_view_link?: string | null
           id?: string
           image_role?: string
           mime_type?: string | null
           original_filename?: string | null
           size_bytes?: number | null
+          staging_storage_path?: string | null
+          storage_mode?: string
           storage_path?: string
+          upload_error_code?: string | null
+          upload_error_message?: string | null
+          upload_status?: string
           user_id?: string
         }
         Relationships: [
