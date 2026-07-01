@@ -48,10 +48,17 @@ export interface PlantCaseImage {
   drive_folder_id: string | null;
   drive_mime_type: string | null;
   drive_uploaded_at: string | null;
+  drive_thumbnail_link: string | null;
+  drive_thumbnail_version: string | null;
+  drive_has_thumbnail: boolean | null;
+  drive_image_width: number | null;
+  drive_image_height: number | null;
+  drive_web_content_link: string | null;
   staging_storage_path: string | null;
   upload_error_code: string | null;
   upload_error_message: string | null;
 }
+
 
 const BUCKET = 'plant-case-images';
 const TABLE = 'plant_case_images';
