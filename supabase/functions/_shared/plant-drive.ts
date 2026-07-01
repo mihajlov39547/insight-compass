@@ -38,13 +38,29 @@ export function extFromMime(mime: string): string {
   return 'bin';
 }
 
+export interface DriveUploadResult {
+  id: string;
+  webViewLink: string | null;
+  webContentLink: string | null;
+  mimeType: string | null;
+  thumbnailLink: string | null;
+  thumbnailVersion: string | null;
+  hasThumbnail: boolean | null;
+  imageWidth: number | null;
+  imageHeight: number | null;
+}
+
+export const DRIVE_FILE_FIELDS =
+  'id,name,mimeType,webViewLink,webContentLink,thumbnailLink,hasThumbnail,thumbnailVersion,imageMediaMetadata(width,height)';
+
 export async function uploadBytesToDrive(opts: {
   env: DriveEnv;
   bytes: Uint8Array;
   filename: string;
   mimeType: string;
   appProperties?: Record<string, string>;
-}): Promise<{ id: string; webViewLink: string | null; mimeType: string | null }> {
+}): Promise<DriveUploadResult> {
+
   const { env, bytes, filename, mimeType, appProperties } = opts;
   const metadata: Record<string, unknown> = {
     name: filename,
