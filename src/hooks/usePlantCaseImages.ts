@@ -95,6 +95,28 @@ export async function getPlantImageSignedUrl(path: string, expiresIn = 3600): Pr
   return data?.signedUrl ?? null;
 }
 
+/**
+ * Fetch a plant image preview from the backend proxy (Drive or Supabase fallback)
+ * and return an object URL suitable for an <img src>. Caller must revokeObjectURL.
+ */
+export async function fetchPlantImagePreviewObjectUrl(
+  imageId: string,
+): Promise<string | null> {
+  try {
+    const { fetchEdgeFunction } = await import('@/lib/edge/invokeWithAuth');
+    const resp = await fetchEdgeFunction(
+      `/functions/v1/plant-image-drive-preview?plantCaseImageId=${encodeURIComponent(imageId)}`,
+      { method: 'GET' },
+    );
+    if (!resp.ok) return null;
+    const blob = await resp.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return null;
+  }
+}
+
+
 export function useUploadPlantImage() {
   const qc = useQueryClient();
   const { user, profile } = useAuth();
