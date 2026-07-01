@@ -48,10 +48,17 @@ export interface PlantCaseImage {
   drive_folder_id: string | null;
   drive_mime_type: string | null;
   drive_uploaded_at: string | null;
+  drive_thumbnail_link: string | null;
+  drive_thumbnail_version: string | null;
+  drive_has_thumbnail: boolean | null;
+  drive_image_width: number | null;
+  drive_image_height: number | null;
+  drive_web_content_link: string | null;
   staging_storage_path: string | null;
   upload_error_code: string | null;
   upload_error_message: string | null;
 }
+
 
 const BUCKET = 'plant-case-images';
 const TABLE = 'plant_case_images';
@@ -87,6 +94,28 @@ export async function getPlantImageSignedUrl(path: string, expiresIn = 3600): Pr
   if (error) return null;
   return data?.signedUrl ?? null;
 }
+
+/**
+ * Fetch a plant image preview from the backend proxy (Drive or Supabase fallback)
+ * and return an object URL suitable for an <img src>. Caller must revokeObjectURL.
+ */
+export async function fetchPlantImagePreviewObjectUrl(
+  imageId: string,
+): Promise<string | null> {
+  try {
+    const { fetchEdgeFunction } = await import('@/lib/edge/invokeWithAuth');
+    const resp = await fetchEdgeFunction(
+      `/functions/v1/plant-image-drive-preview?plantCaseImageId=${encodeURIComponent(imageId)}`,
+      { method: 'GET' },
+    );
+    if (!resp.ok) return null;
+    const blob = await resp.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return null;
+  }
+}
+
 
 export function useUploadPlantImage() {
   const qc = useQueryClient();

@@ -93,12 +93,19 @@ Deno.serve(async (req: Request) => {
         upload_status: 'ready',
         drive_file_id: drive.id,
         drive_web_view_link: drive.webViewLink,
+        drive_web_content_link: drive.webContentLink,
         drive_folder_id: env.folderId,
         drive_mime_type: drive.mimeType,
         drive_uploaded_at: new Date().toISOString(),
+        drive_thumbnail_link: drive.thumbnailLink,
+        drive_thumbnail_version: drive.thumbnailVersion,
+        drive_has_thumbnail: drive.hasThumbnail,
+        drive_image_width: drive.imageWidth,
+        drive_image_height: drive.imageHeight,
         upload_error_code: null,
         upload_error_message: null,
       };
+
       if (!keepStaging) update.staging_storage_path = null;
 
       const { data: updated } = await admin

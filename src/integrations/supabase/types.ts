@@ -1197,8 +1197,14 @@ export type Database = {
           created_at: string
           drive_file_id: string | null
           drive_folder_id: string | null
+          drive_has_thumbnail: boolean | null
+          drive_image_height: number | null
+          drive_image_width: number | null
           drive_mime_type: string | null
+          drive_thumbnail_link: string | null
+          drive_thumbnail_version: string | null
           drive_uploaded_at: string | null
+          drive_web_content_link: string | null
           drive_web_view_link: string | null
           id: string
           image_role: string
@@ -1218,8 +1224,14 @@ export type Database = {
           created_at?: string
           drive_file_id?: string | null
           drive_folder_id?: string | null
+          drive_has_thumbnail?: boolean | null
+          drive_image_height?: number | null
+          drive_image_width?: number | null
           drive_mime_type?: string | null
+          drive_thumbnail_link?: string | null
+          drive_thumbnail_version?: string | null
           drive_uploaded_at?: string | null
+          drive_web_content_link?: string | null
           drive_web_view_link?: string | null
           id?: string
           image_role?: string
@@ -1239,8 +1251,14 @@ export type Database = {
           created_at?: string
           drive_file_id?: string | null
           drive_folder_id?: string | null
+          drive_has_thumbnail?: boolean | null
+          drive_image_height?: number | null
+          drive_image_width?: number | null
           drive_mime_type?: string | null
+          drive_thumbnail_link?: string | null
+          drive_thumbnail_version?: string | null
           drive_uploaded_at?: string | null
+          drive_web_content_link?: string | null
           drive_web_view_link?: string | null
           id?: string
           image_role?: string
@@ -2479,6 +2497,7 @@ export type Database = {
         Args: { p_condition_expr: Json; p_context: Json }
         Returns: boolean
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
