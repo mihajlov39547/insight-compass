@@ -2479,6 +2479,7 @@ export type Database = {
         Args: { p_condition_expr: Json; p_context: Json }
         Returns: boolean
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
