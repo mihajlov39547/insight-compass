@@ -97,20 +97,66 @@ function ImageThumb({
 }) {
   const { t } = useTranslation();
   const [url, setUrl] = useState<string | null>(null);
+  const [previewFailed, setPreviewFailed] = useState(false);
   useEffect(() => {
     let active = true;
-    if (image.storage_path) {
-      getPlantImageSignedUrl(image.storage_path).then((u) => active && setUrl(u));
-    }
-    return () => { active = false; };
-  }, [image.storage_path]);
+    let objectUrl: string | null = null;
+    setPreviewFailed(false);
+    setUrl(null);
+
+    const load = async () => {
+      const useDrive =
+        image.storage_mode === 'google_drive' &&
+        !!image.drive_file_id &&
+        image.upload_status === 'ready';
+      if (useDrive) {
+        const u = await fetchPlantImagePreviewObjectUrl(image.id);
+        if (!active) return;
+        if (u) {
+          objectUrl = u;
+          setUrl(u);
+        } else {
+          setPreviewFailed(true);
+        }
+        return;
+      }
+      if (image.storage_path) {
+        const u = await getPlantImageSignedUrl(image.storage_path);
+        if (!active) return;
+        if (u) setUrl(u);
+        else setPreviewFailed(true);
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [
+    image.id,
+    image.storage_mode,
+    image.drive_file_id,
+    image.upload_status,
+    image.storage_path,
+    image.drive_thumbnail_version,
+  ]);
+
+  const isPending =
+    image.upload_status === 'uploading' || image.upload_status === 'staged';
 
   return (
     <div className="relative rounded-lg border border-border bg-card overflow-hidden flex flex-col">
       <div className="aspect-square bg-muted flex items-center justify-center">
         {url ? (
-          <img src={url} alt={image.original_filename ?? ''} className="w-full h-full object-cover" />
-        ) : image.drive_web_view_link ? (
+          <img
+            src={url}
+            alt={image.original_filename ?? ''}
+            className="w-full h-full object-cover"
+            onError={() => setPreviewFailed(true)}
+          />
+        ) : isPending ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        ) : previewFailed && image.drive_web_view_link ? (
           <a
             href={image.drive_web_view_link}
             target="_blank"
@@ -124,6 +170,7 @@ function ImageThumb({
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         )}
       </div>
+
       <div className="p-2 space-y-1.5">
         <div className="flex items-center gap-1">
           <Select
