@@ -87,7 +87,7 @@ export async function uploadBytesToDrive(opts: {
 
   const url = new URL(DRIVE_GATEWAY_UPLOAD);
   url.searchParams.set('uploadType', 'multipart');
-  url.searchParams.set('fields', 'id,name,mimeType,webViewLink');
+  url.searchParams.set('fields', DRIVE_FILE_FIELDS);
 
   const resp = await fetch(url.toString(), {
     method: 'POST',
@@ -105,11 +105,59 @@ export async function uploadBytesToDrive(opts: {
     throw err;
   }
   const file = await resp.json();
+  const meta = file.imageMediaMetadata || {};
   return {
     id: String(file.id),
     webViewLink: file.webViewLink ?? null,
+    webContentLink: file.webContentLink ?? null,
     mimeType: file.mimeType ?? mimeType,
+    thumbnailLink: file.thumbnailLink ?? null,
+    thumbnailVersion: file.thumbnailVersion ?? null,
+    hasThumbnail: typeof file.hasThumbnail === 'boolean' ? file.hasThumbnail : null,
+    imageWidth: typeof meta.width === 'number' ? meta.width : null,
+    imageHeight: typeof meta.height === 'number' ? meta.height : null,
   };
+}
+
+export async function getDriveFileMetadata(
+  env: DriveEnv,
+  fileId: string,
+): Promise<Record<string, unknown> | null> {
+  const url = new URL(`${DRIVE_GATEWAY_FILES}/${encodeURIComponent(fileId)}`);
+  url.searchParams.set('fields', DRIVE_FILE_FIELDS);
+  const resp = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${env.lovableKey}`,
+      'X-Connection-Api-Key': env.driveKey,
+    },
+  });
+  if (!resp.ok) return null;
+  return await resp.json().catch(() => null);
+}
+
+export async function fetchDriveFileMedia(
+  env: DriveEnv,
+  fileId: string,
+): Promise<Response> {
+  const url = new URL(`${DRIVE_GATEWAY_FILES}/${encodeURIComponent(fileId)}`);
+  url.searchParams.set('alt', 'media');
+  return await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${env.lovableKey}`,
+      'X-Connection-Api-Key': env.driveKey,
+    },
+  });
+}
+
+export async function fetchDriveThumbnail(
+  env: DriveEnv,
+  thumbnailLink: string,
+): Promise<Response> {
+  // Some Drive thumbnailLink URLs work anonymously; others require a Bearer token
+  // when the target file is private. Send the OAuth token as a best-effort.
+  return await fetch(thumbnailLink, {
+    headers: { Authorization: `Bearer ${env.lovableKey}` },
+  });
 }
 
 export async function deleteDriveFile(env: DriveEnv, fileId: string): Promise<boolean> {
@@ -123,6 +171,7 @@ export async function deleteDriveFile(env: DriveEnv, fileId: string): Promise<bo
   });
   return resp.ok || resp.status === 404;
 }
+
 
 export const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
