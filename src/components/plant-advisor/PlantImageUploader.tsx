@@ -27,10 +27,12 @@ import {
   useUpdatePlantImageRole,
   useRetryPlantImageDriveUpload,
   getPlantImageSignedUrl,
+  fetchPlantImagePreviewObjectUrl,
   PLANT_IMAGE_ROLES,
   type PlantCaseImage,
   type PlantImageRole,
 } from '@/hooks/usePlantCaseImages';
+
 import { usePlantAdvisorUsage } from '@/hooks/usePlantAdvisorLimits';
 import {
   canUploadPlantImage,
