@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
+import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 interface Props {
@@ -17,6 +18,10 @@ interface Msg { role: 'user' | 'assistant'; content: string }
 export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const { t } = useTranslation();
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
+  const { data: idents = [] } = usePlantIdentifications(plantCase.id);
+  const top = idents[0];
+  const alts = idents.slice(1, 5);
+  const bucket = confidenceBucket(top?.score ?? null);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Msg[]>(() => ([
     {
@@ -65,6 +70,26 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           {plantCase.location_text && <div>{t('plantAdvisor.fields.location')}: {plantCase.location_text}</div>}
           {plantCase.crop_context && <div>{t('plantAdvisor.fields.crop')}: {plantCase.crop_context}</div>}
           <div>{t('plantAdvisor.chat.imagesAttached', { count: images.length })}</div>
+          {top && (
+            <div className="mt-2 pt-2 border-t border-border/50">
+              <div className="font-medium text-foreground">
+                {t('plantAdvisor.identify.likelyPlant')}: {top.common_name || top.scientific_name_without_author || top.scientific_name}
+              </div>
+              {top.scientific_name_without_author && top.common_name && (
+                <div className="italic">{top.scientific_name_without_author}</div>
+              )}
+              <div>
+                {t('plantAdvisor.identify.fields.confidence')}: {top.score != null ? `${Math.round(top.score * 100)}%` : '—'}
+                {bucket && ` (${t(`plantAdvisor.identify.confidence.${bucket}`)})`}
+                {' · '}{t('plantAdvisor.identify.providerBadge')}
+              </div>
+              {alts.length > 0 && (
+                <div className="mt-1">
+                  {t('plantAdvisor.identify.alternatives')}: {alts.map((a) => a.common_name || a.scientific_name_without_author).filter(Boolean).join(', ')}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         {messages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>

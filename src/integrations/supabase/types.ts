@@ -1288,6 +1288,11 @@ export type Database = {
           created_at: string
           crop_context: string | null
           id: string
+          identification_confidence: number | null
+          identification_provider: string | null
+          identified_at: string | null
+          identified_common_name: string | null
+          identified_scientific_name: string | null
           location_text: string | null
           notebook_id: string | null
           notes: string | null
@@ -1302,6 +1307,11 @@ export type Database = {
           created_at?: string
           crop_context?: string | null
           id?: string
+          identification_confidence?: number | null
+          identification_provider?: string | null
+          identified_at?: string | null
+          identified_common_name?: string | null
+          identified_scientific_name?: string | null
           location_text?: string | null
           notebook_id?: string | null
           notes?: string | null
@@ -1316,6 +1326,11 @@ export type Database = {
           created_at?: string
           crop_context?: string | null
           id?: string
+          identification_confidence?: number | null
+          identification_provider?: string | null
+          identified_at?: string | null
+          identified_common_name?: string | null
+          identified_scientific_name?: string | null
           location_text?: string | null
           notebook_id?: string | null
           notes?: string | null
@@ -1339,6 +1354,83 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plant_identifications: {
+        Row: {
+          case_id: string
+          common_name: string | null
+          created_at: string
+          engine_version: string | null
+          family: string | null
+          gbif_id: string | null
+          genus: string | null
+          id: string
+          powo_id: string | null
+          project: string
+          provider: string
+          rank: number
+          raw_response: Json | null
+          raw_result: Json
+          remaining_identification_requests: number | null
+          scientific_name: string | null
+          scientific_name_authorship: string | null
+          scientific_name_without_author: string | null
+          score: number | null
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          common_name?: string | null
+          created_at?: string
+          engine_version?: string | null
+          family?: string | null
+          gbif_id?: string | null
+          genus?: string | null
+          id?: string
+          powo_id?: string | null
+          project?: string
+          provider?: string
+          rank?: number
+          raw_response?: Json | null
+          raw_result?: Json
+          remaining_identification_requests?: number | null
+          scientific_name?: string | null
+          scientific_name_authorship?: string | null
+          scientific_name_without_author?: string | null
+          score?: number | null
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          common_name?: string | null
+          created_at?: string
+          engine_version?: string | null
+          family?: string | null
+          gbif_id?: string | null
+          genus?: string | null
+          id?: string
+          powo_id?: string | null
+          project?: string
+          provider?: string
+          rank?: number
+          raw_response?: Json | null
+          raw_result?: Json
+          remaining_identification_requests?: number | null
+          scientific_name?: string | null
+          scientific_name_authorship?: string | null
+          scientific_name_without_author?: string | null
+          score?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_identifications_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
             referencedColumns: ["id"]
           },
         ]

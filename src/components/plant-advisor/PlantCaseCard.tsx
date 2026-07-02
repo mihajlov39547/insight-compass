@@ -31,6 +31,11 @@ export function PlantCaseCard({ plantCase, onOpen, onDelete }: Props) {
           <p className="text-xs text-muted-foreground mt-0.5">
             {formatDistanceToNow(new Date(plantCase.created_at), { addSuffix: true })}
           </p>
+          {(plantCase.identified_common_name || plantCase.identified_scientific_name) && (
+            <p className="text-xs text-primary mt-1 truncate italic">
+              {plantCase.identified_common_name || plantCase.identified_scientific_name}
+            </p>
+          )}
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             <Badge variant="secondary" className="text-[10px]">{t(`plantAdvisor.statuses.${plantCase.status}`)}</Badge>
             {plantCase.user_goal && (

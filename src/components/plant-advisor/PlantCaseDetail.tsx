@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useDeletePlantCase, type PlantCase } from '@/hooks/usePlantCases';
 import { PlantImageUploader } from './PlantImageUploader';
+import { PlantIdentificationSection } from './PlantIdentificationSection';
+import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { toast } from 'sonner';
 
 interface Props {
@@ -19,6 +21,7 @@ interface Props {
 export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDeleted }: Props) {
   const { t } = useTranslation();
   const del = useDeletePlantCase();
+  const { data: images = [] } = usePlantCaseImages(plantCase.id);
 
   const handleDelete = async () => {
     if (!confirm(t('plantAdvisor.confirmDelete'))) return;
@@ -67,6 +70,8 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
       </div>
 
       <PlantImageUploader caseId={plantCase.id} />
+
+      <PlantIdentificationSection caseId={plantCase.id} images={images} />
 
       <div className="pt-4 border-t border-border">
         <Button onClick={onOpenChat}>
