@@ -1899,6 +1899,44 @@
       "driveFailed": "Drive upload failed",
       "retryUpload": "Retry upload",
       "openInDrive": "Open in Drive"
+    },
+    "identify": {
+      "sectionTitle": "Plant identification",
+      "identify": "Identify plant",
+      "running": "Identifying…",
+      "runAgain": "Run again",
+      "loading": "Loading identification…",
+      "likelyPlant": "Likely plant",
+      "providerBadge": "Pl@ntNet",
+      "remaining": "{{n}} requests remaining",
+      "alternatives": "Alternatives",
+      "uncertain": "Identification is uncertain. Add clearer photos of leaves, flowers, fruit, or bark and try again.",
+      "noCompatibleWarning": "Pl@ntNet currently supports JPEG and PNG images only.",
+      "usingBestFive": "Using the best 5 images for identification.",
+      "doneToast": "Identification complete",
+      "fields": {
+        "scientific": "Scientific name",
+        "common": "Common name",
+        "family": "Family",
+        "genus": "Genus",
+        "confidence": "Confidence"
+      },
+      "confidence": {
+        "high": "High confidence",
+        "medium": "Medium confidence",
+        "low": "Low confidence",
+        "unknown": "Unknown"
+      },
+      "errors": {
+        "apiKeyMissing": "Plant identification is not configured (API key missing).",
+        "noCompatible": "No compatible JPEG or PNG images available.",
+        "downloadFailed": "Could not download images for identification.",
+        "quotaExhausted": "Pl@ntNet quota is exhausted. Try again later.",
+        "authFailed": "Pl@ntNet authentication failed.",
+        "badRequest": "Pl@ntNet rejected the request.",
+        "empty": "No results returned. Try clearer photos.",
+        "generic": "Identification failed. Please try again."
+      }
     }
   }
 }
