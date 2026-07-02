@@ -18,6 +18,10 @@ interface Msg { role: 'user' | 'assistant'; content: string }
 export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const { t } = useTranslation();
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
+  const { data: idents = [] } = usePlantIdentifications(plantCase.id);
+  const top = idents[0];
+  const alts = idents.slice(1, 5);
+  const bucket = confidenceBucket(top?.score ?? null);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Msg[]>(() => ([
     {
