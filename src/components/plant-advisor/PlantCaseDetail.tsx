@@ -71,6 +71,8 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
 
       <PlantImageUploader caseId={plantCase.id} />
 
+      <PlantIdentificationSection caseId={plantCase.id} images={images} />
+
       <div className="pt-4 border-t border-border">
         <Button onClick={onOpenChat}>
           <MessageSquare className="h-4 w-4 mr-1.5" />
