@@ -70,6 +70,26 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           {plantCase.location_text && <div>{t('plantAdvisor.fields.location')}: {plantCase.location_text}</div>}
           {plantCase.crop_context && <div>{t('plantAdvisor.fields.crop')}: {plantCase.crop_context}</div>}
           <div>{t('plantAdvisor.chat.imagesAttached', { count: images.length })}</div>
+          {top && (
+            <div className="mt-2 pt-2 border-t border-border/50">
+              <div className="font-medium text-foreground">
+                {t('plantAdvisor.identify.likelyPlant')}: {top.common_name || top.scientific_name_without_author || top.scientific_name}
+              </div>
+              {top.scientific_name_without_author && top.common_name && (
+                <div className="italic">{top.scientific_name_without_author}</div>
+              )}
+              <div>
+                {t('plantAdvisor.identify.fields.confidence')}: {top.score != null ? `${Math.round(top.score * 100)}%` : '—'}
+                {bucket && ` (${t(`plantAdvisor.identify.confidence.${bucket}`)})`}
+                {' · '}{t('plantAdvisor.identify.providerBadge')}
+              </div>
+              {alts.length > 0 && (
+                <div className="mt-1">
+                  {t('plantAdvisor.identify.alternatives')}: {alts.map((a) => a.common_name || a.scientific_name_without_author).filter(Boolean).join(', ')}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         {messages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
