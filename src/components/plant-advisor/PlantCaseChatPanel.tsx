@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
+import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 interface Props {
