@@ -21,6 +21,7 @@ interface Props {
 export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDeleted }: Props) {
   const { t } = useTranslation();
   const del = useDeletePlantCase();
+  const { data: images = [] } = usePlantCaseImages(plantCase.id);
 
   const handleDelete = async () => {
     if (!confirm(t('plantAdvisor.confirmDelete'))) return;
