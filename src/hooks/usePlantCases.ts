@@ -33,6 +33,11 @@ export interface PlantCase {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  identified_scientific_name?: string | null;
+  identified_common_name?: string | null;
+  identification_confidence?: number | null;
+  identified_at?: string | null;
+  identification_provider?: string | null;
 }
 
 export type NewPlantCase = {
