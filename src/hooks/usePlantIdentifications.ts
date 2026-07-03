@@ -90,6 +90,36 @@ export function useIdentifyPlant() {
   });
 }
 
+export function useConfirmPlantIdentification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { plantCaseId: string; identificationId: string }) => {
+      const { data, error } = await supabase.functions.invoke('plant-identification-confirm', {
+        body: args,
+      });
+      if (error) {
+        const ctx: any = (error as any).context;
+        let code: string | undefined;
+        try {
+          const body = ctx && typeof ctx.json === 'function' ? await ctx.json() : null;
+          code = body?.error;
+        } catch {
+          code = undefined;
+        }
+        const err = new Error(code || error.message || 'confirmation_failed');
+        (err as any).code = code;
+        throw err;
+      }
+      return data as { ok: boolean; identification: PlantIdentification };
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['plant_identifications', vars.plantCaseId] });
+      qc.invalidateQueries({ queryKey: ['plant_case', vars.plantCaseId] });
+      qc.invalidateQueries({ queryKey: ['plant_cases'] });
+    },
+  });
+}
+
 export function confidenceBucket(score: number | null | undefined): 'high' | 'medium' | 'low' | null {
   if (score == null) return null;
   if (score >= 0.75) return 'high';
