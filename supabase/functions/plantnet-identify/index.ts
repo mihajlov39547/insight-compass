@@ -54,7 +54,9 @@ interface ImgRow {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { status: 200, headers: corsHeaders });
+  }
 
   try {
     const supaUrl = Deno.env.get('SUPABASE_URL')!;
