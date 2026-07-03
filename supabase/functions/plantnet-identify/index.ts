@@ -1,12 +1,20 @@
 // Pl@ntNet species identification for a plant case.
 // Never expose the API key to the browser. Never log the key.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
-import {
-  CORS_HEADERS,
-  fetchDriveFileMedia,
-  jsonResponse,
-  readDriveEnv,
-} from '../_shared/plant-drive.ts';
+import { fetchDriveFileMedia, readDriveEnv } from '../_shared/plant-drive.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
 const BUCKET = 'plant-case-images';
 const MAX_IMAGES = 5;
@@ -46,7 +54,9 @@ interface ImgRow {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { status: 200, headers: corsHeaders });
+  }
 
   try {
     const supaUrl = Deno.env.get('SUPABASE_URL')!;
