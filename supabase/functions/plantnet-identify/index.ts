@@ -200,8 +200,12 @@ Deno.serve(async (req: Request) => {
         : null;
     const engineVersion = typeof raw?.version === 'string' ? raw.version : null;
 
-    // Wipe prior identifications for a fresh view.
-    await admin.from('plant_identifications').delete().eq('case_id', plantCaseId);
+    // Wipe prior identifications for a fresh view, but preserve any confirmed row.
+    await admin
+      .from('plant_identifications')
+      .delete()
+      .eq('case_id', plantCaseId)
+      .eq('is_confirmed', false);
 
     const normalized = results.slice(0, 5).map((r: any, idx: number) => {
       const species = r?.species || {};

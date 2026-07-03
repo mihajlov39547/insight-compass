@@ -1930,6 +1930,14 @@
       "noCompatibleWarning": "Pl@ntNet trenutno podržava samo JPEG i PNG slike.",
       "usingBestFive": "Koristi se najboljih 5 slika za prepoznavanje.",
       "doneToast": "Prepoznavanje završeno",
+      "confirmThis": "Potvrdi ovo prepoznavanje",
+      "confirmed": "Potvrđeno",
+      "useThisInstead": "Koristi ovo umesto toga",
+      "confirmedPlant": "Potvrđena biljka",
+      "suggestedPlant": "Predložena biljka, nije potvrđena",
+      "notConfirmed": "Nije potvrđeno",
+      "confirmedNote": "Potvrđena biljka ostaje nepromenjena dok ne potvrdite novi rezultat.",
+      "confirmedToast": "Prepoznavanje potvrđeno",
       "fields": {
         "scientific": "Naučni naziv",
         "common": "Uobičajeni naziv",
@@ -1951,7 +1959,8 @@
         "authFailed": "Pl@ntNet autentifikacija nije uspela.",
         "badRequest": "Pl@ntNet je odbio zahtev.",
         "empty": "Nema rezultata. Pokušajte sa jasnijim fotografijama.",
-        "generic": "Prepoznavanje nije uspelo. Pokušajte ponovo."
+        "generic": "Prepoznavanje nije uspelo. Pokušajte ponovo.",
+        "confirmFailed": "Potvrda nije uspela. Pokušajte ponovo."
       }
     }
   }
