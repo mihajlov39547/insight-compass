@@ -21,6 +21,8 @@ export interface PlantIdentification {
   remaining_identification_requests: number | null;
   engine_version: string | null;
   created_at: string;
+  is_confirmed?: boolean;
+  confirmed_at?: string | null;
 }
 
 export function usePlantIdentifications(caseId: string | null | undefined) {

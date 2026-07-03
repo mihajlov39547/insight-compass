@@ -38,6 +38,10 @@ export interface PlantCase {
   identification_confidence?: number | null;
   identified_at?: string | null;
   identification_provider?: string | null;
+  confirmed_identification_id?: string | null;
+  confirmed_scientific_name?: string | null;
+  confirmed_common_name?: string | null;
+  confirmed_at?: string | null;
 }
 
 export type NewPlantCase = {
