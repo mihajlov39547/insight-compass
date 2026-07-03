@@ -1285,6 +1285,10 @@ export type Database = {
       }
       plant_cases: {
         Row: {
+          confirmed_at: string | null
+          confirmed_common_name: string | null
+          confirmed_identification_id: string | null
+          confirmed_scientific_name: string | null
           created_at: string
           crop_context: string | null
           id: string
@@ -1304,6 +1308,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          confirmed_at?: string | null
+          confirmed_common_name?: string | null
+          confirmed_identification_id?: string | null
+          confirmed_scientific_name?: string | null
           created_at?: string
           crop_context?: string | null
           id?: string
@@ -1323,6 +1331,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          confirmed_at?: string | null
+          confirmed_common_name?: string | null
+          confirmed_identification_id?: string | null
+          confirmed_scientific_name?: string | null
           created_at?: string
           crop_context?: string | null
           id?: string
@@ -1343,6 +1355,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "plant_cases_confirmed_identification_id_fkey"
+            columns: ["confirmed_identification_id"]
+            isOneToOne: false
+            referencedRelation: "plant_identifications"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "plant_cases_notebook_id_fkey"
             columns: ["notebook_id"]
             isOneToOne: false
@@ -1362,12 +1381,14 @@ export type Database = {
         Row: {
           case_id: string
           common_name: string | null
+          confirmed_at: string | null
           created_at: string
           engine_version: string | null
           family: string | null
           gbif_id: string | null
           genus: string | null
           id: string
+          is_confirmed: boolean
           powo_id: string | null
           project: string
           provider: string
@@ -1384,12 +1405,14 @@ export type Database = {
         Insert: {
           case_id: string
           common_name?: string | null
+          confirmed_at?: string | null
           created_at?: string
           engine_version?: string | null
           family?: string | null
           gbif_id?: string | null
           genus?: string | null
           id?: string
+          is_confirmed?: boolean
           powo_id?: string | null
           project?: string
           provider?: string
@@ -1406,12 +1429,14 @@ export type Database = {
         Update: {
           case_id?: string
           common_name?: string | null
+          confirmed_at?: string | null
           created_at?: string
           engine_version?: string | null
           family?: string | null
           gbif_id?: string | null
           genus?: string | null
           id?: string
+          is_confirmed?: boolean
           powo_id?: string | null
           project?: string
           provider?: string
