@@ -31,9 +31,12 @@ export function PlantCaseCard({ plantCase, onOpen, onDelete }: Props) {
           <p className="text-xs text-muted-foreground mt-0.5">
             {formatDistanceToNow(new Date(plantCase.created_at), { addSuffix: true })}
           </p>
-          {(plantCase.identified_common_name || plantCase.identified_scientific_name) && (
+          {(plantCase.confirmed_common_name || plantCase.confirmed_scientific_name || plantCase.identified_common_name || plantCase.identified_scientific_name) && (
             <p className="text-xs text-primary mt-1 truncate italic">
-              {plantCase.identified_common_name || plantCase.identified_scientific_name}
+              {plantCase.confirmed_common_name
+                || plantCase.confirmed_scientific_name
+                || plantCase.identified_common_name
+                || plantCase.identified_scientific_name}
             </p>
           )}
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">

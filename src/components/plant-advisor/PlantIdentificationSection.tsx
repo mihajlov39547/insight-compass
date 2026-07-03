@@ -1,11 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Leaf, RefreshCw, Sparkles } from 'lucide-react';
+import { Check, Leaf, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   confidenceBucket,
+  useConfirmPlantIdentification,
   useIdentifyPlant,
   usePlantIdentifications,
   type PlantIdentification,
@@ -49,6 +50,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
   const { t } = useTranslation();
   const { data: identifications = [], isLoading } = usePlantIdentifications(caseId);
   const identify = useIdentifyPlant();
+  const confirm = useConfirmPlantIdentification();
 
   const compatible = images.filter((i) =>
     COMPATIBLE_MIMES.has((i.mime_type || '').toLowerCase()),
@@ -70,9 +72,19 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
     }
   };
 
+  const doConfirm = async (identificationId: string) => {
+    try {
+      await confirm.mutateAsync({ plantCaseId: caseId, identificationId });
+      toast.success(t('plantAdvisor.identify.confirmedToast'));
+    } catch {
+      toast.error(t('plantAdvisor.identify.errors.confirmFailed'));
+    }
+  };
+
   const top = identifications[0];
   const alts = identifications.slice(1, 5);
   const bucket = confidenceBucket(top?.score ?? null);
+  const hasConfirmed = identifications.some((i) => i.is_confirmed);
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -125,6 +137,11 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
           {t('plantAdvisor.identify.usingBestFive')}
         </div>
       )}
+      {hasConfirmed && (
+        <div className="text-xs text-muted-foreground">
+          {t('plantAdvisor.identify.confirmedNote')}
+        </div>
+      )}
 
       {isLoading && (
         <div className="text-xs text-muted-foreground">{t('plantAdvisor.identify.loading')}</div>
@@ -136,13 +153,21 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
             <div className="font-medium">
               {top.common_name || top.scientific_name_without_author || top.scientific_name || '—'}
             </div>
-            <Badge
-              variant={bucket === 'high' ? 'default' : bucket === 'medium' ? 'secondary' : 'outline'}
-              className="text-[10px]"
-            >
-              {bucket ? t(`plantAdvisor.identify.confidence.${bucket}`) : t('plantAdvisor.identify.confidence.unknown')}
-              {' · '}{formatConfidence(top.score)}
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              {top.is_confirmed && (
+                <Badge variant="default" className="text-[10px]">
+                  <Check className="h-3 w-3 mr-1" />
+                  {t('plantAdvisor.identify.confirmed')}
+                </Badge>
+              )}
+              <Badge
+                variant={bucket === 'high' ? 'default' : bucket === 'medium' ? 'secondary' : 'outline'}
+                className="text-[10px]"
+              >
+                {bucket ? t(`plantAdvisor.identify.confidence.${bucket}`) : t('plantAdvisor.identify.confidence.unknown')}
+                {' · '}{formatConfidence(top.score)}
+              </Badge>
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
             <Field label={t('plantAdvisor.identify.fields.scientific')} value={top.scientific_name_without_author || top.scientific_name} />
@@ -153,6 +178,19 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
           {bucket === 'low' && (
             <div className="text-xs text-amber-600 dark:text-amber-400">
               {t('plantAdvisor.identify.uncertain')}
+            </div>
+          )}
+          {!top.is_confirmed && (
+            <div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => doConfirm(top.id)}
+                disabled={confirm.isPending}
+              >
+                <Check className="h-3.5 w-3.5 mr-1.5" />
+                {t('plantAdvisor.identify.confirmThis')}
+              </Button>
             </div>
           )}
         </div>
@@ -167,9 +205,9 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
             {alts.map((a: PlantIdentification) => (
               <li
                 key={a.id}
-                className="flex items-center justify-between text-xs rounded-md border border-border/60 px-2 py-1.5"
+                className="flex items-center justify-between gap-2 text-xs rounded-md border border-border/60 px-2 py-1.5"
               >
-                <span className="truncate">
+                <span className="truncate min-w-0 flex-1">
                   <span className="font-medium">
                     {a.common_name || a.scientific_name_without_author || a.scientific_name || '—'}
                   </span>
@@ -179,7 +217,23 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
                     </span>
                   )}
                 </span>
-                <span className="text-muted-foreground ml-2 flex-shrink-0">{formatConfidence(a.score)}</span>
+                <span className="text-muted-foreground flex-shrink-0">{formatConfidence(a.score)}</span>
+                {a.is_confirmed ? (
+                  <Badge variant="default" className="text-[10px] flex-shrink-0">
+                    <Check className="h-3 w-3 mr-1" />
+                    {t('plantAdvisor.identify.confirmed')}
+                  </Badge>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-[11px] flex-shrink-0"
+                    onClick={() => doConfirm(a.id)}
+                    disabled={confirm.isPending}
+                  >
+                    {t('plantAdvisor.identify.useThisInstead')}
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
