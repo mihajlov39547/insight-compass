@@ -19,8 +19,10 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const { t } = useTranslation();
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
   const { data: idents = [] } = usePlantIdentifications(plantCase.id);
-  const top = idents[0];
-  const alts = idents.slice(1, 5);
+  const confirmed = idents.find((i) => i.is_confirmed) || null;
+  const top = confirmed || idents[0];
+  const isConfirmed = !!confirmed;
+  const alts = idents.filter((i) => i.id !== top?.id).slice(0, 4);
   const bucket = confidenceBucket(top?.score ?? null);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Msg[]>(() => ([
@@ -73,7 +75,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           {top && (
             <div className="mt-2 pt-2 border-t border-border/50">
               <div className="font-medium text-foreground">
-                {t('plantAdvisor.identify.likelyPlant')}: {top.common_name || top.scientific_name_without_author || top.scientific_name}
+                {isConfirmed ? t('plantAdvisor.identify.confirmedPlant') : t('plantAdvisor.identify.suggestedPlant')}: {top.common_name || top.scientific_name_without_author || top.scientific_name}
               </div>
               {top.scientific_name_without_author && top.common_name && (
                 <div className="italic">{top.scientific_name_without_author}</div>

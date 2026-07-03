@@ -1914,6 +1914,14 @@
       "noCompatibleWarning": "Pl@ntNet currently supports JPEG and PNG images only.",
       "usingBestFive": "Using the best 5 images for identification.",
       "doneToast": "Identification complete",
+      "confirmThis": "Confirm this identification",
+      "confirmed": "Confirmed",
+      "useThisInstead": "Use this instead",
+      "confirmedPlant": "Confirmed plant",
+      "suggestedPlant": "Suggested plant, not confirmed",
+      "notConfirmed": "Not confirmed",
+      "confirmedNote": "Confirmed plant will remain unchanged unless you confirm a new result.",
+      "confirmedToast": "Identification confirmed",
       "fields": {
         "scientific": "Scientific name",
         "common": "Common name",
@@ -1935,7 +1943,8 @@
         "authFailed": "Pl@ntNet authentication failed.",
         "badRequest": "Pl@ntNet rejected the request.",
         "empty": "No results returned. Try clearer photos.",
-        "generic": "Identification failed. Please try again."
+        "generic": "Identification failed. Please try again.",
+        "confirmFailed": "Confirmation failed. Please try again."
       }
     }
   }
