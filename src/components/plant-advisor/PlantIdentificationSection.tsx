@@ -81,10 +81,11 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
     }
   };
 
-  const top = identifications[0];
-  const alts = identifications.slice(1, 5);
+  const confirmed = identifications.find((i) => i.is_confirmed) || null;
+  const top = confirmed || identifications[0];
+  const alts = identifications.filter((i) => i.id !== top?.id).slice(0, 4);
   const bucket = confidenceBucket(top?.score ?? null);
-  const hasConfirmed = identifications.some((i) => i.is_confirmed);
+  const hasConfirmed = !!confirmed;
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
