@@ -50,14 +50,12 @@ export const FAMILY_TIER_PREFERENCE: Record<Exclude<ModelFamily, 'auto'>, Record
     medium: ['openai/gpt-5.4-mini', 'openai/gpt-5', 'openai/gpt-5-mini'],
     high: ['openai/gpt-5.5-pro', 'openai/gpt-5.5', 'openai/gpt-5.4-pro', 'openai/gpt-5.4', 'openai/gpt-5.2', 'openai/gpt-5'],
   },
-  // Gemma 4 is medium-only. The resolver always pins appliedThinkingLevel to
-  // medium for the gemma family. The low/high arrays still resolve to
-  // 'gemma-4' so the resolver never returns empty if a Gemma-medium pick
-  // happens to be plan-locked at a different level; the UI marks low/high as
-  // unsupported via familySupportsLevel().
+  // Gemma 4 supports only Instant (low) and High. Medium is intentionally
+  // absent — resolveModelPreference() normalizes gemma+medium → low before
+  // picking, and the gemma provider defensively normalizes again server-side.
   gemma: {
     low: ['gemma-4'],
-    medium: ['gemma-4'],
+    medium: [],
     high: ['gemma-4'],
   },
 
