@@ -296,22 +296,25 @@ export async function streamGemma4Response(
     }
   }
 
-  // 1. Primary: selected model + thinkingConfig (+ tools if requested)
+  // Fallback chain — always use GEMMA_PRIMARY_MODEL (gemma-4-31b-it).
+  // 26B is behind GEMMA_ENABLE_26B and intentionally not used here.
+  //
+  // Gemma + High:  HIGH  → MINIMAL → no thinkingConfig → safe error
+  // Gemma + Low:   MINIMAL         → no thinkingConfig → safe error
   let success = await attemptStream(model, config, "primary");
 
-  // 2. Same model, no thinkingConfig
-  if (!success && useThinking) {
-    const fallbackConfig = { ...config };
-    delete fallbackConfig.thinkingConfig;
-    success = await attemptStream(model, fallbackConfig, "retry-no-thinking");
+  if (!success && resolvedThinkingLevel === "HIGH") {
+    const minimalConfig = {
+      ...config,
+      thinkingConfig: { thinkingLevel: "MINIMAL" },
+    };
+    success = await attemptStream(model, minimalConfig, "retry-minimal");
   }
 
-  // 3. Alternate model, no thinkingConfig
   if (!success) {
-    const fallbackModel = GEMMA_4_MODELS.find((m) => m !== model) ?? model;
-    const fallbackConfig = { ...config };
-    delete fallbackConfig.thinkingConfig;
-    success = await attemptStream(fallbackModel, fallbackConfig, "alt-model");
+    const noThinkingConfig = { ...config };
+    delete noThinkingConfig.thinkingConfig;
+    success = await attemptStream(model, noThinkingConfig, "retry-no-thinking");
   }
 
   if (!success) {
