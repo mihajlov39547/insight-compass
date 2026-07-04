@@ -27,7 +27,7 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: 'google/gemini-3.5-flash', provider: 'lovable_gateway', family: 'gemini', planTiers: BASIC_PLUS, defaultThinkingLevel: 'medium', nativeThinking: false, fallbackIds: ['google/gemini-2.5-flash'] },
   { id: 'google/gemini-2.5-pro', provider: 'lovable_gateway', family: 'gemini', planTiers: ALL, defaultThinkingLevel: 'high', nativeThinking: false, fallbackIds: ['google/gemini-2.5-flash'] },
   { id: 'gemini-3.1', provider: 'google_direct', family: 'gemini', planTiers: BASIC_PLUS, defaultThinkingLevel: 'high', nativeThinking: true, fallbackIds: ['google/gemini-2.5-flash'] },
-  { id: 'gemma-4', provider: 'google_direct', family: 'gemma', planTiers: BASIC_PLUS, defaultThinkingLevel: 'medium', nativeThinking: true, fallbackIds: ['google/gemini-2.5-flash'] },
+  { id: 'gemma-4', provider: 'google_direct', family: 'gemma', planTiers: BASIC_PLUS, defaultThinkingLevel: 'low', nativeThinking: true, fallbackIds: ['google/gemini-2.5-flash'] },
   { id: 'openai/gpt-5-mini', provider: 'lovable_gateway', family: 'gpt', planTiers: ALL, defaultThinkingLevel: 'low', nativeThinking: false, fallbackIds: ['google/gemini-2.5-flash'] },
   { id: 'openai/gpt-5', provider: 'lovable_gateway', family: 'gpt', planTiers: PREMIUM_PLUS, defaultThinkingLevel: 'medium', nativeThinking: false, fallbackIds: ['openai/gpt-5-mini'] },
   { id: 'openai/gpt-5.2', provider: 'lovable_gateway', family: 'gpt', planTiers: PREMIUM_PLUS, defaultThinkingLevel: 'high', nativeThinking: false, fallbackIds: ['openai/gpt-5'] },
