@@ -129,6 +129,38 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'no_compatible_images' }, 400);
     }
 
+    // Plan-aware monthly limit check.
+    const monthKey = currentMonthKey();
+    const { data: profileRow } = await admin
+      .from('profiles')
+      .select('plan')
+      .eq('user_id', userId)
+      .maybeSingle();
+    const plan = normalizePlan((profileRow as any)?.plan);
+    const monthlyLimit = monthlyLimitForPlan(plan);
+    const { data: usageRow } = await admin
+      .from('plant_identification_usage')
+      .select('request_count')
+      .eq('user_id', userId)
+      .eq('provider', 'plantnet')
+      .eq('month_key', monthKey)
+      .maybeSingle();
+    const usedSoFar = (usageRow as any)?.request_count ?? 0;
+    if (usedSoFar >= monthlyLimit) {
+      return jsonResponse(
+        {
+          error: 'identification_limit_reached',
+          usage: {
+            used: usedSoFar,
+            limit: monthlyLimit,
+            remaining: 0,
+            monthKey,
+          },
+        },
+        429,
+      );
+    }
+
     // Rank by role preference; take up to 5.
     const ranked = [...allImages].sort((a, b) => {
       const ai = ROLE_PREFERENCE.indexOf((a.image_role as any) || 'auto');
