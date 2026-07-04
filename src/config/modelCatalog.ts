@@ -99,8 +99,10 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
     family: 'gemma',
     label: 'Gemma 4',
     planTiers: BASIC_PLUS,
-    supportedThinkingLevels: ['medium'],
-    defaultThinkingLevel: 'medium',
+    // Gemma 4 supports only Instant (MINIMAL) and High thinking levels.
+    // Medium is intentionally excluded — see gemma4-provider.ts.
+    supportedThinkingLevels: ['low', 'high'],
+    defaultThinkingLevel: 'low',
     nativeThinking: true,
     costTier: 'low',
     fallbackIds: ['google/gemini-2.5-flash'],
@@ -242,8 +244,10 @@ export const FAMILY_TIER_PREFERENCE: Record<
     high: ['openai/gpt-5.5-pro', 'openai/gpt-5.5', 'openai/gpt-5.4-pro', 'openai/gpt-5.4', 'openai/gpt-5.2', 'openai/gpt-5'],
   },
   gemma: {
+    // Gemma 4 does not use Medium — see gemma4-provider.ts. Medium requests
+    // are normalized to 'low' (MINIMAL) by the resolver/backend.
     low: ['gemma-4'],
-    medium: ['gemma-4'],
+    medium: [],
     high: ['gemma-4'],
   },
 };

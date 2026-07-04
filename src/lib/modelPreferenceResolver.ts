@@ -74,7 +74,12 @@ export function resolveModelPreference(
   }
 
   // ---- explicit family --------------------------------------------------
-  const tierCandidates = FAMILY_TIER_PREFERENCE[requestedFamily][requestedThinkingLevel];
+  // Gemma has no Medium tier — normalize Medium → Instant (low) before picking.
+  const effectiveLevel: ThinkingLevel =
+    requestedFamily === 'gemma' && requestedThinkingLevel === 'medium'
+      ? 'low'
+      : requestedThinkingLevel;
+  const tierCandidates = FAMILY_TIER_PREFERENCE[requestedFamily][effectiveLevel];
   let chosen = pickFirstAllowed(tierCandidates, plan);
   let planDowngraded = false;
   let reason = 'family_tier_pick';
@@ -83,7 +88,7 @@ export function resolveModelPreference(
     // Try other levels within the same family.
     const fallbackOrder: ThinkingLevel[] = ['medium', 'low', 'high'];
     for (const lvl of fallbackOrder) {
-      if (lvl === requestedThinkingLevel) continue;
+      if (lvl === effectiveLevel) continue;
       const id = pickFirstAllowed(FAMILY_TIER_PREFERENCE[requestedFamily][lvl], plan);
       if (id) {
         chosen = id;
@@ -113,8 +118,10 @@ export function resolveModelPreference(
   }
 
   const entry = getCatalogEntry(chosen)!;
-  // Gemma has a single effective thinking level — normalize to medium.
-  const applied: ThinkingLevel = requestedFamily === 'gemma' ? 'medium' : requestedThinkingLevel;
+  // Gemma 4 supports only Instant (low) and High. Medium requests are
+  // normalized to 'low' — never send Medium to the Gemma provider.
+  let applied: ThinkingLevel = requestedThinkingLevel;
+  if (requestedFamily === 'gemma' && applied === 'medium') applied = 'low';
   return {
     requestedFamily,
     requestedThinkingLevel,
@@ -145,7 +152,7 @@ export function familySupportsLevel(
   level: ThinkingLevel,
 ): boolean {
   if (family === 'auto') return true;
-  if (family === 'gemma') return level === 'medium';
+  if (family === 'gemma') return level === 'low' || level === 'high';
   const ids = FAMILY_TIER_PREFERENCE[family][level];
   return MODEL_CATALOG.some((m) => ids.includes(m.id));
 }
