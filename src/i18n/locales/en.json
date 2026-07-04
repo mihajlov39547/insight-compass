@@ -1947,7 +1947,8 @@
         "badRequest": "Pl@ntNet rejected the request.",
         "empty": "No results returned. Try clearer photos.",
         "generic": "Identification failed. Please try again.",
-        "confirmFailed": "Confirmation failed. Please try again."
+        "confirmFailed": "Confirmation failed. Please try again.",
+        "limitReached": "Monthly identification limit reached. Upgrade to identify more plants."
       }
     }
   }
