@@ -124,13 +124,18 @@ export function resolveModelPreference(pref: ModelPreference, plan: PlanTier): R
     };
   }
 
-  let chosen = pickFirstAllowed(FAMILY_TIER_PREFERENCE[requestedFamily][requestedThinkingLevel], plan);
+  // Gemma has no Medium tier — normalize gemma+medium → low before picking.
+  const effectiveLevel: ThinkingLevel =
+    requestedFamily === 'gemma' && requestedThinkingLevel === 'medium'
+      ? 'low'
+      : requestedThinkingLevel;
+  let chosen = pickFirstAllowed(FAMILY_TIER_PREFERENCE[requestedFamily][effectiveLevel], plan);
   let planDowngraded = false;
   let reason = 'family_tier_pick';
 
   if (!chosen) {
     for (const lvl of ['medium', 'low', 'high'] as ThinkingLevel[]) {
-      if (lvl === requestedThinkingLevel) continue;
+      if (lvl === effectiveLevel) continue;
       const id = pickFirstAllowed(FAMILY_TIER_PREFERENCE[requestedFamily][lvl], plan);
       if (id) { chosen = id; planDowngraded = true; reason = 'plan_downgraded_within_family'; break; }
     }
