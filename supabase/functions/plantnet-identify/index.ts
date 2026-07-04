@@ -225,17 +225,36 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'provider_unreachable' }, 502);
     }
 
+    // Request reached the provider — count it against the user's monthly usage.
+    let newUsedCount = usedSoFar + 1;
+    try {
+      const { data: incData, error: incErr } = await admin.rpc(
+        'increment_plant_identification_usage',
+        { p_user_id: userId, p_provider: 'plantnet', p_month_key: monthKey },
+      );
+      if (!incErr && typeof incData === 'number') newUsedCount = incData;
+      else if (incErr) console.warn('[plantnet-identify] usage increment failed', incErr.message);
+    } catch (e) {
+      console.warn('[plantnet-identify] usage increment threw', (e as Error).message);
+    }
+    const usage = {
+      used: newUsedCount,
+      limit: monthlyLimit,
+      remaining: Math.max(0, monthlyLimit - newUsedCount),
+      monthKey,
+    };
+
     if (!pnResp.ok) {
       const status = pnResp.status;
       // Don't leak upstream body verbatim; capture short reason for logs only.
       const shortText = (await pnResp.text().catch(() => '')).slice(0, 200);
       console.warn('[plantnet-identify] upstream error', status, shortText);
-      if (status === 400) return jsonResponse({ error: 'bad_request' }, 400);
-      if (status === 401 || status === 403) return jsonResponse({ error: 'auth_failed' }, 502);
-      if (status === 404) return jsonResponse({ error: 'not_found_upstream' }, 502);
-      if (status === 413) return jsonResponse({ error: 'payload_too_large' }, 413);
-      if (status === 429) return jsonResponse({ error: 'quota_exhausted' }, 429);
-      return jsonResponse({ error: 'provider_error' }, 502);
+      if (status === 400) return jsonResponse({ error: 'bad_request', usage }, 400);
+      if (status === 401 || status === 403) return jsonResponse({ error: 'auth_failed', usage }, 502);
+      if (status === 404) return jsonResponse({ error: 'not_found_upstream', usage }, 502);
+      if (status === 413) return jsonResponse({ error: 'payload_too_large', usage }, 413);
+      if (status === 429) return jsonResponse({ error: 'quota_exhausted', usage }, 429);
+      return jsonResponse({ error: 'provider_error', usage }, 502);
     }
 
     const raw = await pnResp.json().catch(() => null);
