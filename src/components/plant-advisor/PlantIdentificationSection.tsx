@@ -140,6 +140,11 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
         </Button>
       </div>
 
+      {usage.isLimitReached && (
+        <div className="text-xs rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-1.5">
+          {t('plantAdvisor.identify.limitReachedWarning')}
+        </div>
+      )}
       {hasImages && !hasCompatible && (
         <div className="text-xs text-amber-600 dark:text-amber-400">
           {t('plantAdvisor.identify.noCompatibleWarning')}
