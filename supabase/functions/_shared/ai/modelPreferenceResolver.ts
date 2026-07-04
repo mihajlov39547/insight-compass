@@ -158,7 +158,11 @@ export function resolveModelPreference(pref: ModelPreference, plan: PlanTier): R
   }
 
   const entry = getCatalogEntry(chosen)!;
-  const applied: ThinkingLevel = requestedFamily === 'gemma' ? 'medium' : requestedThinkingLevel;
+  // Never surface 'medium' as appliedThinkingLevel for gemma — see gemma4-provider.
+  const applied: ThinkingLevel =
+    requestedFamily === 'gemma'
+      ? (effectiveLevel === 'high' ? 'high' : 'low')
+      : requestedThinkingLevel;
   return {
     requestedFamily,
     requestedThinkingLevel,
