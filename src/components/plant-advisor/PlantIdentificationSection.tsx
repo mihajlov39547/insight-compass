@@ -11,6 +11,7 @@ import {
   usePlantIdentifications,
   type PlantIdentification,
 } from '@/hooks/usePlantIdentifications';
+import { usePlantIdentificationUsage } from '@/hooks/usePlantIdentificationUsage';
 import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
 
 interface Props {
