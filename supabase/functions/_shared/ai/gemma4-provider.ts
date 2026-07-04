@@ -153,8 +153,8 @@ export async function streamGemma4Response(
         explicitReasoningMode: input.explicitReasoningMode,
       }) ? "high" : "minimal");
 
-  const resolvedThinkingLevel =
-    thinkingMode === "high" ? ThinkingLevel.HIGH : ThinkingLevel.MINIMAL;
+  const resolvedThinkingLevel: "MINIMAL" | "HIGH" =
+    thinkingMode === "high" ? "HIGH" : "MINIMAL";
 
   console.log("[gemma4] selected", {
     model,
