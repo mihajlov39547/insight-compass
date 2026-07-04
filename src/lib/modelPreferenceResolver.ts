@@ -74,7 +74,12 @@ export function resolveModelPreference(
   }
 
   // ---- explicit family --------------------------------------------------
-  const tierCandidates = FAMILY_TIER_PREFERENCE[requestedFamily][requestedThinkingLevel];
+  // Gemma has no Medium tier — normalize Medium → Instant (low) before picking.
+  const effectiveLevel: ThinkingLevel =
+    requestedFamily === 'gemma' && requestedThinkingLevel === 'medium'
+      ? 'low'
+      : requestedThinkingLevel;
+  const tierCandidates = FAMILY_TIER_PREFERENCE[requestedFamily][effectiveLevel];
   let chosen = pickFirstAllowed(tierCandidates, plan);
   let planDowngraded = false;
   let reason = 'family_tier_pick';
