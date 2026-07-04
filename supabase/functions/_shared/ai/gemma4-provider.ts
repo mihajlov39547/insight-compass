@@ -296,8 +296,10 @@ export async function streamGemma4Response(
     }
   }
 
-  // Fallback chain — always use GEMMA_PRIMARY_MODEL (gemma-4-31b-it).
-  // 26B is behind GEMMA_ENABLE_26B and intentionally not used here.
+  // Fallback chain — retries are ALWAYS pinned to GEMMA_PRIMARY_MODEL
+  // (gemma-4-31b-it), even if round-robin is later enabled and the primary
+  // attempt used 26B. This guarantees no fallback traffic hits 26B unless
+  // GEMMA_ENABLE_26B is explicitly true AND round-robin picks it on attempt 1.
   //
   // Gemma + High:  HIGH  → MINIMAL → no thinkingConfig → safe error
   // Gemma + Low:   MINIMAL         → no thinkingConfig → safe error
@@ -308,13 +310,13 @@ export async function streamGemma4Response(
       ...config,
       thinkingConfig: { thinkingLevel: "MINIMAL" },
     };
-    success = await attemptStream(model, minimalConfig, "retry-minimal");
+    success = await attemptStream(GEMMA_PRIMARY_MODEL, minimalConfig, "retry-minimal");
   }
 
   if (!success) {
     const noThinkingConfig = { ...config };
     delete noThinkingConfig.thinkingConfig;
-    success = await attemptStream(model, noThinkingConfig, "retry-no-thinking");
+    success = await attemptStream(GEMMA_PRIMARY_MODEL, noThinkingConfig, "retry-no-thinking");
   }
 
   if (!success) {
