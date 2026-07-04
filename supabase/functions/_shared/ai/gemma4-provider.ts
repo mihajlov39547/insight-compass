@@ -11,7 +11,7 @@
 // Gemma models are currently served from this project.
 // Future Gemini models should also be added from the same project.
 
-import { GoogleGenAI, ThinkingLevel } from "https://esm.sh/@google/genai@0.14.1";
+import { GoogleGenAI } from "https://esm.sh/@google/genai@0.14.1";
 
 // ---------------------------------------------------------------------------
 // Round-robin model selection
