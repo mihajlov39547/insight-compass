@@ -1377,6 +1377,36 @@ export type Database = {
           },
         ]
       }
+      plant_identification_usage: {
+        Row: {
+          created_at: string
+          id: string
+          month_key: string
+          provider: string
+          request_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month_key: string
+          provider?: string
+          request_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month_key?: string
+          provider?: string
+          request_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plant_identifications: {
         Row: {
           case_id: string
@@ -2801,6 +2831,10 @@ export type Database = {
         }[]
       }
       get_workflow_dag: { Args: { p_workflow_run_id: string }; Returns: Json }
+      increment_plant_identification_usage: {
+        Args: { p_month_key: string; p_provider: string; p_user_id: string }
+        Returns: number
+      }
       is_activity_runnable: {
         Args: { p_activity_id: string; p_workflow_run_id: string }
         Returns: boolean

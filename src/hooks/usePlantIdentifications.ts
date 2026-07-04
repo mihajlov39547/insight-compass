@@ -49,6 +49,12 @@ export interface IdentifyPlantResponse {
   usedImageCount?: number;
   totalImageCount?: number;
   error?: string;
+  usage?: {
+    used: number;
+    limit: number;
+    remaining: number;
+    monthKey: string;
+  };
 }
 
 export function useIdentifyPlant() {
@@ -86,6 +92,10 @@ export function useIdentifyPlant() {
       qc.invalidateQueries({ queryKey: ['plant_identifications', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_case', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_cases'] });
+      qc.invalidateQueries({ queryKey: ['plant_identification_usage'] });
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['plant_identification_usage'] });
     },
   });
 }

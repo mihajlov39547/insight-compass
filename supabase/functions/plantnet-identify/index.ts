@@ -35,6 +35,24 @@ const ROLE_PREFERENCE = [
 
 const ALLOWED_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
 
+type PlanId = 'free' | 'basic' | 'premium' | 'enterprise';
+
+function monthlyLimitForPlan(plan: PlanId): number {
+  if (plan === 'basic') return 50;
+  if (plan === 'premium' || plan === 'enterprise') return 100;
+  return 5;
+}
+
+function currentMonthKey(): string {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function normalizePlan(v: unknown): PlanId {
+  if (v === 'basic' || v === 'premium' || v === 'enterprise' || v === 'free') return v;
+  return 'free';
+}
+
 function mapRoleToOrgan(role: string | null | undefined): string {
   const r = (role || 'auto').toLowerCase();
   if (r === 'leaf' || r === 'flower' || r === 'fruit' || r === 'bark' || r === 'auto') return r;
@@ -111,6 +129,38 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'no_compatible_images' }, 400);
     }
 
+    // Plan-aware monthly limit check.
+    const monthKey = currentMonthKey();
+    const { data: profileRow } = await admin
+      .from('profiles')
+      .select('plan')
+      .eq('user_id', userId)
+      .maybeSingle();
+    const plan = normalizePlan((profileRow as any)?.plan);
+    const monthlyLimit = monthlyLimitForPlan(plan);
+    const { data: usageRow } = await admin
+      .from('plant_identification_usage')
+      .select('request_count')
+      .eq('user_id', userId)
+      .eq('provider', 'plantnet')
+      .eq('month_key', monthKey)
+      .maybeSingle();
+    const usedSoFar = (usageRow as any)?.request_count ?? 0;
+    if (usedSoFar >= monthlyLimit) {
+      return jsonResponse(
+        {
+          error: 'identification_limit_reached',
+          usage: {
+            used: usedSoFar,
+            limit: monthlyLimit,
+            remaining: 0,
+            monthKey,
+          },
+        },
+        429,
+      );
+    }
+
     // Rank by role preference; take up to 5.
     const ranked = [...allImages].sort((a, b) => {
       const ai = ROLE_PREFERENCE.indexOf((a.image_role as any) || 'auto');
@@ -175,23 +225,42 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'provider_unreachable' }, 502);
     }
 
+    // Request reached the provider — count it against the user's monthly usage.
+    let newUsedCount = usedSoFar + 1;
+    try {
+      const { data: incData, error: incErr } = await admin.rpc(
+        'increment_plant_identification_usage',
+        { p_user_id: userId, p_provider: 'plantnet', p_month_key: monthKey },
+      );
+      if (!incErr && typeof incData === 'number') newUsedCount = incData;
+      else if (incErr) console.warn('[plantnet-identify] usage increment failed', incErr.message);
+    } catch (e) {
+      console.warn('[plantnet-identify] usage increment threw', (e as Error).message);
+    }
+    const usage = {
+      used: newUsedCount,
+      limit: monthlyLimit,
+      remaining: Math.max(0, monthlyLimit - newUsedCount),
+      monthKey,
+    };
+
     if (!pnResp.ok) {
       const status = pnResp.status;
       // Don't leak upstream body verbatim; capture short reason for logs only.
       const shortText = (await pnResp.text().catch(() => '')).slice(0, 200);
       console.warn('[plantnet-identify] upstream error', status, shortText);
-      if (status === 400) return jsonResponse({ error: 'bad_request' }, 400);
-      if (status === 401 || status === 403) return jsonResponse({ error: 'auth_failed' }, 502);
-      if (status === 404) return jsonResponse({ error: 'not_found_upstream' }, 502);
-      if (status === 413) return jsonResponse({ error: 'payload_too_large' }, 413);
-      if (status === 429) return jsonResponse({ error: 'quota_exhausted' }, 429);
-      return jsonResponse({ error: 'provider_error' }, 502);
+      if (status === 400) return jsonResponse({ error: 'bad_request', usage }, 400);
+      if (status === 401 || status === 403) return jsonResponse({ error: 'auth_failed', usage }, 502);
+      if (status === 404) return jsonResponse({ error: 'not_found_upstream', usage }, 502);
+      if (status === 413) return jsonResponse({ error: 'payload_too_large', usage }, 413);
+      if (status === 429) return jsonResponse({ error: 'quota_exhausted', usage }, 429);
+      return jsonResponse({ error: 'provider_error', usage }, 502);
     }
 
     const raw = await pnResp.json().catch(() => null);
     const results = Array.isArray(raw?.results) ? raw.results : [];
     if (results.length === 0) {
-      return jsonResponse({ error: 'empty_results', raw }, 200);
+      return jsonResponse({ error: 'empty_results', raw, usage }, 200);
     }
 
     const remaining =
@@ -260,6 +329,7 @@ Deno.serve(async (req: Request) => {
       remainingIdentificationRequests: remaining,
       usedImageCount: parts.length,
       totalImageCount: allImages.length,
+      usage,
     });
   } catch (e) {
     console.error('[plantnet-identify] fatal', (e as Error).message);

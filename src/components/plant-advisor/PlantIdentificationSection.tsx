@@ -11,6 +11,7 @@ import {
   usePlantIdentifications,
   type PlantIdentification,
 } from '@/hooks/usePlantIdentifications';
+import { usePlantIdentificationUsage } from '@/hooks/usePlantIdentificationUsage';
 import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
 
 interface Props {
@@ -41,6 +42,8 @@ function errorKey(code: string | undefined): string {
       return 'plantAdvisor.identify.errors.badRequest';
     case 'empty_results':
       return 'plantAdvisor.identify.errors.empty';
+    case 'identification_limit_reached':
+      return 'plantAdvisor.identify.errors.limitReached';
     default:
       return 'plantAdvisor.identify.errors.generic';
   }
@@ -51,6 +54,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
   const { data: identifications = [], isLoading } = usePlantIdentifications(caseId);
   const identify = useIdentifyPlant();
   const confirm = useConfirmPlantIdentification();
+  const usage = usePlantIdentificationUsage();
 
   const compatible = images.filter((i) =>
     COMPATIBLE_MIMES.has((i.mime_type || '').toLowerCase()),
@@ -95,11 +99,19 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-medium text-sm">{t('plantAdvisor.identify.sectionTitle')}</div>
-          <div className="text-xs text-muted-foreground">
-            <Badge variant="outline" className="text-[10px] mr-1">{t('plantAdvisor.identify.providerBadge')}</Badge>
+          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <Badge variant="outline" className="text-[10px]">{t('plantAdvisor.identify.providerBadge')}</Badge>
+            {!usage.loading && (
+              <span>
+                {t('plantAdvisor.identify.usedThisMonth', {
+                  used: usage.used,
+                  limit: usage.limit,
+                })}
+              </span>
+            )}
             {top?.remaining_identification_requests != null && (
               <span>
-                {t('plantAdvisor.identify.remaining', { n: top.remaining_identification_requests })}
+                · {t('plantAdvisor.identify.remaining', { n: top.remaining_identification_requests })}
               </span>
             )}
           </div>
@@ -107,7 +119,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
         <Button
           size="sm"
           onClick={run}
-          disabled={!hasImages || !hasCompatible || identify.isPending}
+          disabled={!hasImages || !hasCompatible || identify.isPending || usage.isLimitReached}
         >
           {identify.isPending ? (
             <>
@@ -128,6 +140,11 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
         </Button>
       </div>
 
+      {usage.isLimitReached && (
+        <div className="text-xs rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-1.5">
+          {t('plantAdvisor.identify.limitReachedWarning')}
+        </div>
+      )}
       {hasImages && !hasCompatible && (
         <div className="text-xs text-amber-600 dark:text-amber-400">
           {t('plantAdvisor.identify.noCompatibleWarning')}
