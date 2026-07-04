@@ -14,23 +14,38 @@
 import { GoogleGenAI } from "https://esm.sh/@google/genai@0.14.1";
 
 // ---------------------------------------------------------------------------
-// Round-robin model selection
+// Model selection (feature-flagged)
 // ---------------------------------------------------------------------------
+//
+// Standalone matrix tests showed gemma-4-26b-a4b-it returning provider 500s
+// across tested modes, while gemma-4-31b-it is currently the only reliable
+// Gemma route. Keep 26B disabled behind feature flag until provider behavior
+// stabilizes.
 
-/**
- * Two Gemma 4 variants:
- *  1. gemma-4-26b-a4b-it — Mixture-of-Experts, activates 4B params per inference.
- *  2. gemma-4-31b-it     — Dense flagship model, 256K context window.
- */
-const GEMMA_4_MODELS = [
-  "gemma-4-26b-a4b-it",
-  "gemma-4-31b-it",
-] as const;
+const GEMMA_PRIMARY_MODEL = "gemma-4-31b-it";
+// Kept in code as future fallback — do NOT route production traffic here
+// unless GEMMA_ENABLE_26B is explicitly "true".
+const GEMMA_26B_MODEL = "gemma-4-26b-a4b-it";
 
-// Seed with current time so cold starts don't always pick model[0].
+function envFlag(name: string): boolean {
+  const v = Deno.env.get(name);
+  return typeof v === "string" && v.toLowerCase() === "true";
+}
+
+const GEMMA_ENABLE_26B = envFlag("GEMMA_ENABLE_26B");
+const GEMMA_ENABLE_ROUND_ROBIN = envFlag("GEMMA_ENABLE_ROUND_ROBIN");
+
+const GEMMA_4_MODELS: readonly string[] = GEMMA_ENABLE_26B
+  ? [GEMMA_PRIMARY_MODEL, GEMMA_26B_MODEL]
+  : [GEMMA_PRIMARY_MODEL];
+
+// Retained for future re-enablement via GEMMA_ENABLE_ROUND_ROBIN.
 let gemmaRoundRobinIndex = Math.floor(Date.now() / 1000) % GEMMA_4_MODELS.length;
 
 function pickGemma4Model(): string {
+  if (!GEMMA_ENABLE_ROUND_ROBIN || GEMMA_4_MODELS.length < 2) {
+    return GEMMA_PRIMARY_MODEL;
+  }
   const selected = GEMMA_4_MODELS[gemmaRoundRobinIndex % GEMMA_4_MODELS.length];
   gemmaRoundRobinIndex = (gemmaRoundRobinIndex + 1) % GEMMA_4_MODELS.length;
   return selected;
