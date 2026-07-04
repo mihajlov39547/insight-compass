@@ -113,8 +113,10 @@ export function resolveModelPreference(
   }
 
   const entry = getCatalogEntry(chosen)!;
-  // Gemma has a single effective thinking level — normalize to medium.
-  const applied: ThinkingLevel = requestedFamily === 'gemma' ? 'medium' : requestedThinkingLevel;
+  // Gemma 4 supports only Instant (low) and High. Medium requests are
+  // normalized to 'low' — never send Medium to the Gemma provider.
+  let applied: ThinkingLevel = requestedThinkingLevel;
+  if (requestedFamily === 'gemma' && applied === 'medium') applied = 'low';
   return {
     requestedFamily,
     requestedThinkingLevel,
