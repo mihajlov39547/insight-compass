@@ -152,7 +152,7 @@ export function familySupportsLevel(
   level: ThinkingLevel,
 ): boolean {
   if (family === 'auto') return true;
-  if (family === 'gemma') return level === 'medium';
+  if (family === 'gemma') return level === 'low' || level === 'high';
   const ids = FAMILY_TIER_PREFERENCE[family][level];
   return MODEL_CATALOG.some((m) => ids.includes(m.id));
 }
