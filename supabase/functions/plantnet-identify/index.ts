@@ -329,6 +329,7 @@ Deno.serve(async (req: Request) => {
       remainingIdentificationRequests: remaining,
       usedImageCount: parts.length,
       totalImageCount: allImages.length,
+      usage,
     });
   } catch (e) {
     console.error('[plantnet-identify] fatal', (e as Error).message);
