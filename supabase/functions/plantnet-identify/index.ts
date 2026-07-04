@@ -35,6 +35,24 @@ const ROLE_PREFERENCE = [
 
 const ALLOWED_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
 
+type PlanId = 'free' | 'basic' | 'premium' | 'enterprise';
+
+function monthlyLimitForPlan(plan: PlanId): number {
+  if (plan === 'basic') return 50;
+  if (plan === 'premium' || plan === 'enterprise') return 100;
+  return 5;
+}
+
+function currentMonthKey(): string {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function normalizePlan(v: unknown): PlanId {
+  if (v === 'basic' || v === 'premium' || v === 'enterprise' || v === 'free') return v;
+  return 'free';
+}
+
 function mapRoleToOrgan(role: string | null | undefined): string {
   const r = (role || 'auto').toLowerCase();
   if (r === 'leaf' || r === 'flower' || r === 'fruit' || r === 'bark' || r === 'auto') return r;
