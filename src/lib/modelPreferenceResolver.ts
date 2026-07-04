@@ -88,7 +88,7 @@ export function resolveModelPreference(
     // Try other levels within the same family.
     const fallbackOrder: ThinkingLevel[] = ['medium', 'low', 'high'];
     for (const lvl of fallbackOrder) {
-      if (lvl === requestedThinkingLevel) continue;
+      if (lvl === effectiveLevel) continue;
       const id = pickFirstAllowed(FAMILY_TIER_PREFERENCE[requestedFamily][lvl], plan);
       if (id) {
         chosen = id;
