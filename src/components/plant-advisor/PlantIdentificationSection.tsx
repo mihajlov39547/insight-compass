@@ -54,6 +54,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
   const { data: identifications = [], isLoading } = usePlantIdentifications(caseId);
   const identify = useIdentifyPlant();
   const confirm = useConfirmPlantIdentification();
+  const usage = usePlantIdentificationUsage();
 
   const compatible = images.filter((i) =>
     COMPATIBLE_MIMES.has((i.mime_type || '').toLowerCase()),
