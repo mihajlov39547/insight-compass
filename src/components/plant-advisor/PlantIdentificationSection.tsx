@@ -42,6 +42,8 @@ function errorKey(code: string | undefined): string {
       return 'plantAdvisor.identify.errors.badRequest';
     case 'empty_results':
       return 'plantAdvisor.identify.errors.empty';
+    case 'identification_limit_reached':
+      return 'plantAdvisor.identify.errors.limitReached';
     default:
       return 'plantAdvisor.identify.errors.generic';
   }
