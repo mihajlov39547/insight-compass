@@ -99,11 +99,19 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-medium text-sm">{t('plantAdvisor.identify.sectionTitle')}</div>
-          <div className="text-xs text-muted-foreground">
-            <Badge variant="outline" className="text-[10px] mr-1">{t('plantAdvisor.identify.providerBadge')}</Badge>
+          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <Badge variant="outline" className="text-[10px]">{t('plantAdvisor.identify.providerBadge')}</Badge>
+            {!usage.loading && (
+              <span>
+                {t('plantAdvisor.identify.usedThisMonth', {
+                  used: usage.used,
+                  limit: usage.limit,
+                })}
+              </span>
+            )}
             {top?.remaining_identification_requests != null && (
               <span>
-                {t('plantAdvisor.identify.remaining', { n: top.remaining_identification_requests })}
+                · {t('plantAdvisor.identify.remaining', { n: top.remaining_identification_requests })}
               </span>
             )}
           </div>
@@ -111,7 +119,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
         <Button
           size="sm"
           onClick={run}
-          disabled={!hasImages || !hasCompatible || identify.isPending}
+          disabled={!hasImages || !hasCompatible || identify.isPending || usage.isLimitReached}
         >
           {identify.isPending ? (
             <>
