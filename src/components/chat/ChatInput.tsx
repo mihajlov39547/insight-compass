@@ -157,6 +157,11 @@ export function ChatInput({ onSend, isGenerating, previousUserMessage, previousA
   const persistFamily = (fam: ModelFamily) => {
     setSelectedFamily(fam);
     saveSettings.mutate({ preferred_model_family: fam });
+    // Gemma doesn't support Medium — auto-switch to Instant (low).
+    if (fam === 'gemma' && selectedLevel === 'medium') {
+      setSelectedLevel('low');
+      saveSettings.mutate({ preferred_thinking_level: 'low' });
+    }
   };
   const persistLevel = (lvl: ThinkingLevel) => {
     setSelectedLevel(lvl);
