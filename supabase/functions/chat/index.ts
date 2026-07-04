@@ -412,21 +412,33 @@ Final answer-shaping instruction (baseline, not an absolute lock):
     let providerFailureReason: string | null = null;
 
     // Helper: build response headers including model preference metadata.
+    function sanitizeHeaderValue(v: unknown): string {
+      // HTTP header values must be ByteString (0x00-0xFF) with no control chars.
+      // Strip anything outside printable ASCII/Latin-1 and collapse whitespace.
+      const s = String(v ?? "");
+      let out = "";
+      for (let i = 0; i < s.length; i++) {
+        const code = s.charCodeAt(i);
+        if (code >= 0x20 && code <= 0x7e) out += s[i];
+        else out += " ";
+      }
+      return out.replace(/\s+/g, " ").trim().slice(0, 300);
+    }
     function buildSSEHeaders(resolvedModelHeader: string) {
       const h: Record<string, string> = {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
-        "x-resolved-model": preferenceDecision?.resolvedModelId ?? resolvedModelHeader,
-        "x-final-model": resolvedModelHeader,
+        "x-resolved-model": sanitizeHeaderValue(preferenceDecision?.resolvedModelId ?? resolvedModelHeader),
+        "x-final-model": sanitizeHeaderValue(resolvedModelHeader),
         "x-fallback-used": fallbackFromModel ? "1" : "0",
-        "x-decision-reason": preferenceDecision?.reason ?? "legacy",
+        "x-decision-reason": sanitizeHeaderValue(preferenceDecision?.reason ?? "legacy"),
       };
-      if (fallbackFromModel) h["x-fallback-from"] = fallbackFromModel;
-      if (providerFailureReason) h["x-provider-failure-reason"] = providerFailureReason;
+      if (fallbackFromModel) h["x-fallback-from"] = sanitizeHeaderValue(fallbackFromModel);
+      if (providerFailureReason) h["x-provider-failure-reason"] = sanitizeHeaderValue(providerFailureReason);
       if (preferenceDecision) {
-        h["x-requested-family"] = preferenceDecision.requestedFamily;
-        h["x-requested-thinking"] = preferenceDecision.requestedThinkingLevel;
-        h["x-applied-thinking"] = preferenceDecision.appliedThinkingLevel ?? "";
+        h["x-requested-family"] = sanitizeHeaderValue(preferenceDecision.requestedFamily);
+        h["x-requested-thinking"] = sanitizeHeaderValue(preferenceDecision.requestedThinkingLevel);
+        h["x-applied-thinking"] = sanitizeHeaderValue(preferenceDecision.appliedThinkingLevel ?? "");
         h["x-plan-downgraded"] = preferenceDecision.planDowngraded ? "1" : "0";
       }
       return h;
