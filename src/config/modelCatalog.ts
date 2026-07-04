@@ -99,8 +99,10 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
     family: 'gemma',
     label: 'Gemma 4',
     planTiers: BASIC_PLUS,
-    supportedThinkingLevels: ['medium'],
-    defaultThinkingLevel: 'medium',
+    // Gemma 4 supports only Instant (MINIMAL) and High thinking levels.
+    // Medium is intentionally excluded — see gemma4-provider.ts.
+    supportedThinkingLevels: ['low', 'high'],
+    defaultThinkingLevel: 'low',
     nativeThinking: true,
     costTier: 'low',
     fallbackIds: ['google/gemini-2.5-flash'],
