@@ -135,8 +135,17 @@ export async function streamGemma4Response(
   const googleAi = new GoogleGenAI({ apiKey: GOOGLE_API_KEY_FREE });
   const model = pickGemma4Model();
 
-  const thinkingMode: ThinkingMode = input.requestedThinkingLevel
-    ? (input.requestedThinkingLevel === "high" ? "high" : "minimal")
+  // Defensive server-side normalization: Gemma 4 only supports Instant
+  // (MINIMAL) and High. Never send MEDIUM to Gemma even if the frontend
+  // resolver missed it — normalize to Instant and log a warning.
+  let requested = input.requestedThinkingLevel ?? null;
+  if (requested === "medium") {
+    console.warn("[gemma4] received unsupported thinkingLevel=medium; normalizing to 'low' (MINIMAL)");
+    requested = "low";
+  }
+
+  const thinkingMode: ThinkingMode = requested
+    ? (requested === "high" ? "high" : "minimal")
     : (shouldUseHighThinking({
         prompt: input.promptForHeuristic,
         hasCode: input.hasCode,
@@ -144,10 +153,14 @@ export async function streamGemma4Response(
         explicitReasoningMode: input.explicitReasoningMode,
       }) ? "high" : "minimal");
 
+  const resolvedThinkingLevel =
+    thinkingMode === "high" ? ThinkingLevel.HIGH : ThinkingLevel.MINIMAL;
 
   console.log("[gemma4] selected", {
     model,
+    requestedThinkingLevel: input.requestedThinkingLevel ?? null,
     thinkingMode,
+    thinkingLevelSent: thinkingMode === "high" ? "HIGH" : "MINIMAL",
     enableGoogleSearch: !!input.enableGoogleSearch,
     contextDocs: input.contextDocumentCount ?? 0,
   });
@@ -166,7 +179,7 @@ export async function streamGemma4Response(
   // Thinking config — will be retried without if the API rejects it
   let useThinking = true;
   config.thinkingConfig = {
-    thinkingLevel: thinkingMode === "high" ? "HIGH" : "MINIMAL",
+    thinkingLevel: resolvedThinkingLevel,
   };
 
   // Google Search grounding (prepared for future toggle integration)
