@@ -1963,7 +1963,8 @@
         "badRequest": "Pl@ntNet je odbio zahtev.",
         "empty": "Nema rezultata. Pokušajte sa jasnijim fotografijama.",
         "generic": "Prepoznavanje nije uspelo. Pokušajte ponovo.",
-        "confirmFailed": "Potvrda nije uspela. Pokušajte ponovo."
+        "confirmFailed": "Potvrda nije uspela. Pokušajte ponovo.",
+        "limitReached": "Mesečni limit prepoznavanja je dostignut. Nadogradite plan da prepoznate više biljaka."
       }
     }
   }
