@@ -208,46 +208,110 @@ export async function streamGemma4Response(
     return msg;
   }
 
-  async function attemptStream(modelId: string, cfg: any): Promise<boolean> {
-    try {
-      const response = await googleAi.models.generateContentStream({
-        model: modelId,
-        config: cfg,
-        contents,
-      });
+  // Send an initial SSE comment so the client sees the stream open immediately
+  // and Supabase doesn't consider the response idle while we wait for Google.
+  try {
+    await writer.write(encoder.encode(`: gemma-stream-open ${Date.now()}\n\n`));
+  } catch (_e) { /* ignore */ }
 
-      for await (const chunk of response) {
-        if (chunk.text) {
-          await writeSSE(chunk.text);
+  const PROVIDER_TIMEOUT_MS = 40000; // fail fast well before Supabase's 150s idle limit
+
+  async function attemptStream(
+    modelId: string,
+    cfg: any,
+    label: string,
+  ): Promise<boolean> {
+    const t0 = Date.now();
+    console.log(`[gemma4] ${label} start model=${modelId} hasThinking=${!!cfg.thinkingConfig} hasTools=${!!cfg.tools} t=${t0}`);
+    let timeoutHit = false;
+    let timeoutHandle: number | undefined;
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(() => {
+        timeoutHit = true;
+        reject(new Error(`gemma_provider_timeout_${PROVIDER_TIMEOUT_MS}ms`));
+      }, PROVIDER_TIMEOUT_MS) as unknown as number;
+    });
+
+    try {
+      const response: any = await Promise.race([
+        googleAi.models.generateContentStream({
+          model: modelId,
+          config: cfg,
+          contents,
+        }),
+        timeoutPromise,
+      ]);
+      console.log(`[gemma4] ${label} iterable ready model=${modelId} +${Date.now() - t0}ms`);
+
+      let gotFirstChunk = false;
+      // Race each chunk read against the remaining timeout budget so a stuck
+      // stream (iterable returned but no data) can't hang until 150s.
+      const iterator = response[Symbol.asyncIterator]();
+      while (true) {
+        const next = await Promise.race([iterator.next(), timeoutPromise]);
+        if (next.done) break;
+        const chunk = next.value;
+        if (!gotFirstChunk) {
+          gotFirstChunk = true;
+          console.log(`[gemma4] ${label} first chunk model=${modelId} +${Date.now() - t0}ms`);
         }
+        if (chunk?.text) await writeSSE(chunk.text);
       }
+
+      if (!gotFirstChunk) {
+        console.warn(`[gemma4] ${label} stream ended with 0 chunks model=${modelId}`);
+        lastErrorMessage = "gemma_empty_stream";
+        return false;
+      }
+      console.log(`[gemma4] ${label} complete model=${modelId} +${Date.now() - t0}ms`);
       return true;
     } catch (error: any) {
-      console.error(`[gemma4] stream error model=${modelId}:`, error?.message ?? error);
-      lastErrorMessage = sanitizeProviderError(error);
+      const msg = error?.message ?? String(error);
+      if (timeoutHit) {
+        console.error(`[gemma4] ${label} TIMEOUT model=${modelId} after ${PROVIDER_TIMEOUT_MS}ms`);
+        lastErrorMessage = "gemma_provider_timeout";
+      } else {
+        console.error(`[gemma4] ${label} stream error model=${modelId}:`, msg);
+        lastErrorMessage = sanitizeProviderError(error);
+      }
       return false;
+    } finally {
+      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
     }
   }
 
-  // Primary attempt
-  let success = await attemptStream(model, config);
+  // 1. Primary: selected model + thinkingConfig (+ tools if requested)
+  let success = await attemptStream(model, config, "primary");
 
+  // 2. Same model, no thinkingConfig
   if (!success && useThinking) {
-    console.log("[gemma4] retrying without thinkingConfig");
     const fallbackConfig = { ...config };
     delete fallbackConfig.thinkingConfig;
-    success = await attemptStream(model, fallbackConfig);
+    success = await attemptStream(model, fallbackConfig, "retry-no-thinking");
   }
 
+  // 3. Alternate model, no thinkingConfig
   if (!success) {
     const fallbackModel = GEMMA_4_MODELS.find((m) => m !== model) ?? model;
-    console.log("[gemma4] falling back to", fallbackModel);
     const fallbackConfig = { ...config };
     delete fallbackConfig.thinkingConfig;
-    success = await attemptStream(fallbackModel, fallbackConfig);
+    success = await attemptStream(fallbackModel, fallbackConfig, "alt-model");
   }
 
   if (!success) {
+    // Emit a visible SSE error frame so the client doesn't spin forever.
+    try {
+      const errFrame = {
+        choices: [{
+          delta: { content: `\n\n⚠️ Gemma provider unavailable (${lastErrorMessage ?? "unknown"}). Please try again or switch model.` },
+          index: 0,
+        }],
+      };
+      await writer.write(encoder.encode(`data: ${JSON.stringify(errFrame)}\n\n`));
+      await writer.write(encoder.encode("data: [DONE]\n\n"));
+      await writer.close();
+    } catch (_e) { /* ignore */ }
     return { success: false, reason: lastErrorMessage ?? "gemma_unavailable" };
   }
 
