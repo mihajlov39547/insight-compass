@@ -35,7 +35,8 @@ const ROLE_PREFERENCE = [
   'other',
 ] as const;
 
-const ALLOWED_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
+const ALLOWED_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+const PLANTNET_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
 
 type PlanId = 'free' | 'basic' | 'premium' | 'enterprise';
 
