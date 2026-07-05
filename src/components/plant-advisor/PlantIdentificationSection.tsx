@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Leaf, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   confidenceBucket,
+  prepareWebpTempImages,
   useConfirmPlantIdentification,
   useIdentifyPlant,
   usePlantIdentifications,
@@ -13,6 +14,8 @@ import {
 } from '@/hooks/usePlantIdentifications';
 import { usePlantIdentificationUsage } from '@/hooks/usePlantIdentificationUsage';
 import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
+import { useAuth } from '@/contexts/useAuth';
+import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
 
 interface Props {
   caseId: string;
