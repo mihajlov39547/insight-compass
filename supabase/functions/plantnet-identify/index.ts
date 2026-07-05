@@ -407,6 +407,10 @@ Deno.serve(async (req: Request) => {
       totalImageCount: allImages.length,
       usage,
     });
+    } finally {
+      // Best-effort cleanup: never fails identification.
+      await cleanupTemp();
+    }
   } catch (e) {
     console.error('[plantnet-identify] fatal', (e as Error).message);
     return jsonResponse({ error: 'internal_error' }, 500);
