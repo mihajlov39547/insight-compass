@@ -1,5 +1,71 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  convertImageBlobToJpeg,
+  isWebpMime,
+} from '@/lib/plantImageConversion';
+import { fetchPlantImagePreviewObjectUrl } from '@/hooks/usePlantCaseImages';
+import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
+
+const TEMP_BUCKET = 'plant-identification-temp';
+
+export interface PlantIdentifyTempImage {
+  sourceImageId: string;
+  storagePath: string;
+  mimeType: 'image/jpeg';
+  originalRole?: string;
+}
+
+/**
+ * For each WebP image in the input list, fetch its bytes, convert to JPEG
+ * client-side, and upload to the temporary identification bucket. Returns
+ * the list of temp descriptors to pass to the plantnet-identify function.
+ * Non-WebP images are ignored (handled by the backend directly).
+ */
+export async function prepareWebpTempImages(args: {
+  userId: string;
+  caseId: string;
+  images: PlantCaseImage[];
+}): Promise<PlantIdentifyTempImage[]> {
+  const { userId, caseId, images } = args;
+  const webps = images.filter((i) => isWebpMime(i.mime_type));
+  if (webps.length === 0) return [];
+
+  const results: PlantIdentifyTempImage[] = [];
+  for (const img of webps) {
+    // 1) Get original bytes via the preview proxy (works for Drive + Supabase modes).
+    const objectUrl = await fetchPlantImagePreviewObjectUrl(img.id);
+    if (!objectUrl) throw new Error('webp_fetch_failed');
+    let blob: Blob;
+    try {
+      const resp = await fetch(objectUrl);
+      blob = await resp.blob();
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+
+    // 2) Convert to JPEG via canvas.
+    const jpeg = await convertImageBlobToJpeg(blob);
+
+    // 3) Upload to the private temp bucket. Path prefix must be userId (RLS).
+    const storagePath = `${userId}/${caseId}/${img.id}.jpg`;
+    const { error: upErr } = await supabase.storage
+      .from(TEMP_BUCKET)
+      .upload(storagePath, jpeg, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+    if (upErr) throw upErr;
+
+    results.push({
+      sourceImageId: img.id,
+      storagePath,
+      mimeType: 'image/jpeg',
+      originalRole: img.image_role ?? undefined,
+    });
+  }
+  return results;
+}
 
 export interface PlantIdentification {
   id: string;
@@ -63,11 +129,13 @@ export function useIdentifyPlant() {
     mutationFn: async (args: {
       plantCaseId: string;
       imageIds?: string[];
+      tempImages?: PlantIdentifyTempImage[];
     }): Promise<IdentifyPlantResponse> => {
       const { data, error } = await supabase.functions.invoke('plantnet-identify', {
         body: {
           plantCaseId: args.plantCaseId,
           imageIds: args.imageIds,
+          tempImages: args.tempImages,
           project: 'all',
           lang: 'en',
         },
