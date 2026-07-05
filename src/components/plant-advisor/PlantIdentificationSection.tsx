@@ -146,9 +146,20 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
         <Button
           size="sm"
           onClick={run}
-          disabled={!hasImages || !hasCompatible || identify.isPending || usage.isLimitReached}
+          disabled={
+            !hasImages ||
+            !hasIdentifiable ||
+            identify.isPending ||
+            preparing ||
+            usage.isLimitReached
+          }
         >
-          {identify.isPending ? (
+          {preparing ? (
+            <>
+              <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
+              {t('plantAdvisor.identify.preparing')}
+            </>
+          ) : identify.isPending ? (
             <>
               <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
               {t('plantAdvisor.identify.running')}
@@ -172,9 +183,14 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
           {t('plantAdvisor.identify.limitReachedWarning')}
         </div>
       )}
-      {hasImages && !hasCompatible && (
+      {hasImages && !hasIdentifiable && (
         <div className="text-xs text-amber-600 dark:text-amber-400">
           {t('plantAdvisor.identify.noCompatibleWarning')}
+        </div>
+      )}
+      {hasWebp && (
+        <div className="text-xs text-muted-foreground">
+          {t('plantAdvisor.identify.webpNote')}
         </div>
       )}
       {overFive && (
