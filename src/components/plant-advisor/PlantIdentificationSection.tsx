@@ -22,7 +22,7 @@ interface Props {
   images: PlantCaseImage[];
 }
 
-const COMPATIBLE_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
+
 
 function formatConfidence(score: number | null | undefined): string {
   if (score == null) return '—';
