@@ -153,6 +153,16 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'no_compatible_images' }, 400);
     }
 
+    // Map temp JPEGs by source image id, but only for temps whose sourceImageId
+    // is actually part of THIS case. Anything else is dropped silently.
+    const caseImageIdSet = new Set(allImages.map((i) => i.id));
+    const tempById = new Map<string, { storagePath: string }>();
+    for (const t of tempImagesInput) {
+      if (caseImageIdSet.has(t.sourceImageId)) {
+        tempById.set(t.sourceImageId, { storagePath: t.storagePath });
+      }
+    }
+
     // Plan-aware monthly limit check.
     const monthKey = currentMonthKey();
     const { data: profileRow } = await admin
