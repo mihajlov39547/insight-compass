@@ -54,21 +54,45 @@ function errorKey(code: string | undefined): string {
 
 export function PlantIdentificationSection({ caseId, images }: Props) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { data: identifications = [], isLoading } = usePlantIdentifications(caseId);
   const identify = useIdentifyPlant();
   const confirm = useConfirmPlantIdentification();
   const usage = usePlantIdentificationUsage();
+  const [preparing, setPreparing] = useState(false);
 
-  const compatible = images.filter((i) =>
-    COMPATIBLE_MIMES.has((i.mime_type || '').toLowerCase()),
-  );
+  // Anything identifiable: JPEG/PNG go straight through; WebP is converted client-side.
+  const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
+  const webps = images.filter((i) => isWebpMime(i.mime_type));
   const hasImages = images.length > 0;
-  const hasCompatible = compatible.length > 0;
-  const overFive = compatible.length > 5;
+  const hasIdentifiable = identifiable.length > 0;
+  const hasWebp = webps.length > 0;
+  const overFive = identifiable.length > 5;
 
   const run = async () => {
     try {
-      const res = await identify.mutateAsync({ plantCaseId: caseId });
+      let tempImages: Awaited<ReturnType<typeof prepareWebpTempImages>> = [];
+      if (hasWebp && user?.id) {
+        setPreparing(true);
+        try {
+          tempImages = await prepareWebpTempImages({
+            userId: user.id,
+            caseId,
+            images: webps,
+          });
+        } catch (err) {
+          console.warn('[plant-identify] webp conversion failed', err);
+          toast.error(t('plantAdvisor.identify.errors.webpConvertFailed'));
+          return;
+        } finally {
+          setPreparing(false);
+        }
+      }
+
+      const res = await identify.mutateAsync({
+        plantCaseId: caseId,
+        tempImages: tempImages.length > 0 ? tempImages : undefined,
+      });
       if (res.error) {
         toast.error(t(errorKey(res.error)));
       } else {
