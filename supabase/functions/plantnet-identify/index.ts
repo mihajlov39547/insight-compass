@@ -17,7 +17,9 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 const BUCKET = 'plant-case-images';
+const TEMP_BUCKET = 'plant-identification-temp';
 const MAX_IMAGES = 5;
+const MAX_TOTAL_BYTES = 50 * 1024 * 1024; // Pl@ntNet payload cap
 const PLANTNET_BASE = 'https://my-api.plantnet.org/v2/identify';
 
 // Order of preference when auto-selecting images from a case.
