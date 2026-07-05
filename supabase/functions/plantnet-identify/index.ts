@@ -279,6 +279,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'image_download_failed' }, 502);
     }
 
+    try {
     // Build multipart/form-data. Preserve organ/image order.
     const form = new FormData();
     for (const p of parts) {
