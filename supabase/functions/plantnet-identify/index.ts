@@ -195,46 +195,87 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Rank by role preference; take up to 5.
-    const ranked = [...allImages].sort((a, b) => {
+    // Rank by role preference; WebP without a temp JPEG is not sendable, so drop it.
+    const sendable = allImages.filter((i) => {
+      const mime = (i.mime_type || '').toLowerCase();
+      if (PLANTNET_MIMES.has(mime)) return true;
+      if (mime === 'image/webp') return tempById.has(i.id);
+      return false;
+    });
+    if (sendable.length === 0) {
+      return jsonResponse({ error: 'no_compatible_images' }, 400);
+    }
+    const ranked = [...sendable].sort((a, b) => {
       const ai = ROLE_PREFERENCE.indexOf((a.image_role as any) || 'auto');
       const bi = ROLE_PREFERENCE.indexOf((b.image_role as any) || 'auto');
       return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
     });
     const picked = ranked.slice(0, MAX_IMAGES);
 
-    // Download bytes for each picked image (Drive preferred, Supabase fallback).
+    // Download bytes for each picked image.
+    // - WebP → use client-uploaded temp JPEG from TEMP_BUCKET.
+    // - JPEG/PNG → Drive-preferred, Supabase fallback (unchanged).
     const { env: driveEnv } = readDriveEnv();
     const parts: Array<{ organ: string; bytes: Uint8Array; mime: string; filename: string }> = [];
+    const tempPathsToCleanup: string[] = [];
+    let totalBytes = 0;
 
     for (const img of picked) {
-      const mime = (img.mime_type || 'image/jpeg').toLowerCase();
+      const rawMime = (img.mime_type || 'image/jpeg').toLowerCase();
+      const temp = tempById.get(img.id);
       let bytes: Uint8Array | null = null;
-      if (img.storage_mode === 'google_drive' && img.drive_file_id && driveEnv) {
-        try {
-          const resp = await fetchDriveFileMedia(driveEnv, img.drive_file_id);
-          if (resp.ok) bytes = new Uint8Array(await resp.arrayBuffer());
-        } catch {
-          bytes = null;
+      let outMime = rawMime;
+
+      if (temp) {
+        // Client-converted JPEG lives in the temp bucket.
+        const { data: blob } = await admin.storage.from(TEMP_BUCKET).download(temp.storagePath);
+        if (blob) bytes = new Uint8Array(await blob.arrayBuffer());
+        outMime = 'image/jpeg';
+        tempPathsToCleanup.push(temp.storagePath);
+      } else {
+        // Only JPEG/PNG originals reach this branch (WebP without temp filtered above).
+        if (img.storage_mode === 'google_drive' && img.drive_file_id && driveEnv) {
+          try {
+            const resp = await fetchDriveFileMedia(driveEnv, img.drive_file_id);
+            if (resp.ok) bytes = new Uint8Array(await resp.arrayBuffer());
+          } catch {
+            bytes = null;
+          }
         }
-      }
-      if (!bytes) {
-        const path = img.staging_storage_path || img.storage_path;
-        if (path) {
-          const { data: blob } = await admin.storage.from(BUCKET).download(path);
-          if (blob) bytes = new Uint8Array(await blob.arrayBuffer());
+        if (!bytes) {
+          const path = img.staging_storage_path || img.storage_path;
+          if (path) {
+            const { data: blob } = await admin.storage.from(BUCKET).download(path);
+            if (blob) bytes = new Uint8Array(await blob.arrayBuffer());
+          }
         }
       }
       if (!bytes) continue;
+      if (!PLANTNET_MIMES.has(outMime)) continue; // safety: never send WebP upstream
+      if (totalBytes + bytes.byteLength > MAX_TOTAL_BYTES) {
+        console.warn('[plantnet-identify] payload cap reached, dropping remaining images');
+        break;
+      }
+      totalBytes += bytes.byteLength;
       parts.push({
         organ: mapRoleToOrgan(img.image_role),
         bytes,
-        mime,
-        filename: img.original_filename || `${img.id}.${mime === 'image/png' ? 'png' : 'jpg'}`,
+        mime: outMime,
+        filename: img.original_filename || `${img.id}.${outMime === 'image/png' ? 'png' : 'jpg'}`,
       });
     }
 
+    const cleanupTemp = async () => {
+      if (tempPathsToCleanup.length === 0) return;
+      try {
+        await admin.storage.from(TEMP_BUCKET).remove(tempPathsToCleanup);
+      } catch (e) {
+        console.warn('[plantnet-identify] temp cleanup failed', (e as Error).message);
+      }
+    };
+
     if (parts.length === 0) {
+      await cleanupTemp();
       return jsonResponse({ error: 'image_download_failed' }, 502);
     }
 
