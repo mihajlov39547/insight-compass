@@ -1914,7 +1914,7 @@
       "limitReachedWarning": "Monthly identification limit reached. Upgrade to identify more plants.",
       "alternatives": "Alternatives",
       "uncertain": "Identification is uncertain. Add clearer photos of leaves, flowers, fruit, or bark and try again.",
-      "noCompatibleWarning": "Pl@ntNet currently supports JPEG and PNG images only.",
+      "noCompatibleWarning": "Pl@ntNet supports JPEG, PNG, and (auto-converted) WebP images.",
       "usingBestFive": "Using the best 5 images for identification.",
       "doneToast": "Identification complete",
       "confirmThis": "Confirm this identification",
@@ -1948,8 +1948,11 @@
         "empty": "No results returned. Try clearer photos.",
         "generic": "Identification failed. Please try again.",
         "confirmFailed": "Confirmation failed. Please try again.",
-        "limitReached": "Monthly identification limit reached. Upgrade to identify more plants."
-      }
+        "limitReached": "Monthly identification limit reached. Upgrade to identify more plants.",
+        "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG."
+      },
+      "preparing": "Preparing images…",
+      "webpNote": "WebP images will be converted to JPEG for identification."
     }
   }
 }

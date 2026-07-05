@@ -1930,7 +1930,7 @@
       "limitReachedWarning": "Mesečni limit prepoznavanja je dostignut. Nadogradite plan da prepoznate više biljaka.",
       "alternatives": "Alternative",
       "uncertain": "Prepoznavanje je neizvesno. Dodajte jasnije fotografije listova, cvetova, plodova ili kore i pokušajte ponovo.",
-      "noCompatibleWarning": "Pl@ntNet trenutno podržava samo JPEG i PNG slike.",
+      "noCompatibleWarning": "Pl@ntNet podržava JPEG, PNG i (automatski konvertovane) WebP slike.",
       "usingBestFive": "Koristi se najboljih 5 slika za prepoznavanje.",
       "doneToast": "Prepoznavanje završeno",
       "confirmThis": "Potvrdi ovo prepoznavanje",
@@ -1964,8 +1964,11 @@
         "empty": "Nema rezultata. Pokušajte sa jasnijim fotografijama.",
         "generic": "Prepoznavanje nije uspelo. Pokušajte ponovo.",
         "confirmFailed": "Potvrda nije uspela. Pokušajte ponovo.",
-        "limitReached": "Mesečni limit prepoznavanja je dostignut. Nadogradite plan da prepoznate više biljaka."
-      }
+        "limitReached": "Mesečni limit prepoznavanja je dostignut. Nadogradite plan da prepoznate više biljaka.",
+        "webpConvertFailed": "Konverzija WebP slike nije uspela. Pokušajte JPEG ili PNG."
+      },
+      "preparing": "Priprema slika…",
+      "webpNote": "WebP slike će biti konvertovane u JPEG za identifikaciju."
     }
   }
 }
