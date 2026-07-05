@@ -129,11 +129,13 @@ export function useIdentifyPlant() {
     mutationFn: async (args: {
       plantCaseId: string;
       imageIds?: string[];
+      tempImages?: PlantIdentifyTempImage[];
     }): Promise<IdentifyPlantResponse> => {
       const { data, error } = await supabase.functions.invoke('plantnet-identify', {
         body: {
           plantCaseId: args.plantCaseId,
           imageIds: args.imageIds,
+          tempImages: args.tempImages,
           project: 'all',
           lang: 'en',
         },
