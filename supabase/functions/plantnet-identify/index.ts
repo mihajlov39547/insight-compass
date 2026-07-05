@@ -103,6 +103,27 @@ Deno.serve(async (req: Request) => {
     const lang = String(body?.lang || 'en').replace(/[^a-zA-Z-]/g, '').slice(0, 8) || 'en';
     if (!plantCaseId) return jsonResponse({ error: 'invalid_input' }, 400);
 
+    // Client-provided temp JPEGs for WebP images. Each entry MUST live under
+    // plant-identification-temp/<userId>/<caseId>/ and reference an image
+    // that belongs to this case (validated below).
+    const tempPrefix = `${userId}/${plantCaseId}/`;
+    const tempImagesInput: Array<{ sourceImageId: string; storagePath: string; originalRole?: string }> =
+      Array.isArray(body?.tempImages)
+        ? body.tempImages
+            .map((t: any) => ({
+              sourceImageId: typeof t?.sourceImageId === 'string' ? t.sourceImageId : '',
+              storagePath: typeof t?.storagePath === 'string' ? t.storagePath : '',
+              originalRole: typeof t?.originalRole === 'string' ? t.originalRole : undefined,
+            }))
+            .filter((t: any) =>
+              t.sourceImageId &&
+              t.storagePath &&
+              t.storagePath.startsWith(tempPrefix) &&
+              // Reject traversal and stray path components.
+              !t.storagePath.includes('..'),
+            )
+        : [];
+
     const admin = createClient(supaUrl, serviceKey, { auth: { persistSession: false } });
 
     // Verify case ownership.
