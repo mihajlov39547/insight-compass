@@ -1896,6 +1896,8 @@ export type Database = {
           id: string
           language_preference: string
           layout_preference: string
+          plant_identification_language: string
+          plant_identification_project: string
           preferred_model: string
           preferred_model_family: string | null
           preferred_thinking_level: string | null
@@ -1920,6 +1922,8 @@ export type Database = {
           id?: string
           language_preference?: string
           layout_preference?: string
+          plant_identification_language?: string
+          plant_identification_project?: string
           preferred_model?: string
           preferred_model_family?: string | null
           preferred_thinking_level?: string | null
@@ -1944,6 +1948,8 @@ export type Database = {
           id?: string
           language_preference?: string
           layout_preference?: string
+          plant_identification_language?: string
+          plant_identification_project?: string
           preferred_model?: string
           preferred_model_family?: string | null
           preferred_thinking_level?: string | null
