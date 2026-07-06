@@ -99,8 +99,12 @@ Deno.serve(async (req: Request) => {
     const imageIds: string[] = Array.isArray(body?.imageIds)
       ? body.imageIds.filter((x: unknown) => typeof x === 'string')
       : [];
-    const project = String(body?.project || 'all').replace(/[^a-zA-Z0-9_-]/g, '') || 'all';
-    const lang = String(body?.lang || 'en').replace(/[^a-zA-Z-]/g, '').slice(0, 8) || 'en';
+    const ALLOWED_PROJECTS = new Set(['k-southeastern-europe', 'k-world-flora', 'all']);
+    const ALLOWED_LANGS = new Set(['en', 'hr']);
+    const rawProject = String(body?.project || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    const project = ALLOWED_PROJECTS.has(rawProject) ? rawProject : 'k-southeastern-europe';
+    const rawLang = String(body?.lang || '').replace(/[^a-zA-Z-]/g, '').slice(0, 8).toLowerCase();
+    const lang = ALLOWED_LANGS.has(rawLang) ? rawLang : 'en';
     if (!plantCaseId) return jsonResponse({ error: 'invalid_input' }, 400);
 
     // Client-provided temp JPEGs for WebP images. Each entry MUST live under
