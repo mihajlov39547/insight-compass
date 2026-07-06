@@ -243,18 +243,19 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
           <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
             <span>
               {t('plantAdvisor.identify.projectUsed')}:{' '}
-              {t(`plantAdvisor.settings.project.${
-                settings.identificationProject === 'k-southeastern-europe'
-                  ? 'southeasternEurope'
-                  : settings.identificationProject === 'k-world-flora'
-                  ? 'worldFlora'
-                  : 'all'
-              }`)}
+              {settings.identificationProject === 'k-southeastern-europe'
+                ? t('plantAdvisor.settings.project.southeasternEurope')
+                : settings.identificationProject === 'k-world-flora'
+                ? t('plantAdvisor.settings.project.worldFlora')
+                : t('plantAdvisor.settings.project.all')}
             </span>
             <span>
               {t('plantAdvisor.identify.languageUsed')}:{' '}
-              {t(`plantAdvisor.settings.lang.${settings.identificationLanguage}`)}
+              {settings.identificationLanguage === 'sr'
+                ? t('plantAdvisor.settings.lang.sr')
+                : t('plantAdvisor.settings.lang.en')}
             </span>
+          </div>
           {bucket === 'low' && (
             <div className="text-xs text-amber-600 dark:text-amber-400">
               {t('plantAdvisor.identify.uncertain')}
