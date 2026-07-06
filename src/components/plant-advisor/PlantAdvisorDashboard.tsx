@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Sprout,
@@ -11,12 +11,21 @@ import {
   Cloud,
   HardDrive,
   AlertCircle,
+  MoreHorizontal,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { usePlantCases, useDeletePlantCase, type PlantCase } from '@/hooks/usePlantCases';
 import { usePlantAdvisorUsage } from '@/hooks/usePlantAdvisorLimits';
 import { PlantCaseCard } from './PlantCaseCard';
+import { PlantAdvisorSettingsDialog } from './PlantAdvisorSettingsDialog';
 import { toast } from 'sonner';
 
 interface Props {
