@@ -130,14 +130,16 @@ export function useIdentifyPlant() {
       plantCaseId: string;
       imageIds?: string[];
       tempImages?: PlantIdentifyTempImage[];
+      project?: string;
+      lang?: string;
     }): Promise<IdentifyPlantResponse> => {
       const { data, error } = await supabase.functions.invoke('plantnet-identify', {
         body: {
           plantCaseId: args.plantCaseId,
           imageIds: args.imageIds,
           tempImages: args.tempImages,
-          project: 'all',
-          lang: 'en',
+          project: args.project ?? 'all',
+          lang: args.lang ?? 'en',
         },
       });
       if (error) {
