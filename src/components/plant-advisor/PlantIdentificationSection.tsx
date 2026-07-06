@@ -94,6 +94,8 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
       const res = await identify.mutateAsync({
         plantCaseId: caseId,
         tempImages: tempImages.length > 0 ? tempImages : undefined,
+        project: settings.identificationProject || 'k-southeastern-europe',
+        lang: toPlantnetApiLang(settings.identificationLanguage),
       });
       if (res.error) {
         toast.error(t(errorKey(res.error)));
