@@ -101,10 +101,10 @@ export function PlantAdvisorSettingsDialog({ open, onOpenChange }: Props) {
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={s.isSaving}>
-            {t('common.cancel')}
+            {t('plantAdvisor.settings.cancel')}
           </Button>
           <Button onClick={save} disabled={s.isSaving}>
-            {t('common.save')}
+            {t('plantAdvisor.settings.save')}
           </Button>
         </DialogFooter>
       </DialogContent>
