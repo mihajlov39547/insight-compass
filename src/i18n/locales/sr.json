@@ -1968,7 +1968,30 @@
         "webpConvertFailed": "Konverzija WebP slike nije uspela. Pokušajte JPEG ili PNG."
       },
       "preparing": "Priprema slika…",
-      "webpNote": "WebP slike će biti konvertovane u JPEG za identifikaciju."
+      "webpNote": "WebP slike će biti konvertovane u JPEG za identifikaciju.",
+      "projectUsed": "Korišćeni projekat",
+      "languageUsed": "Korišćeni jezik"
+    },
+    "settings": {
+      "title": "Podešavanja Plant Advisor-a",
+      "description": "Ova podešavanja se primenjuju na sva prepoznavanja biljaka.",
+      "menuItem": "Podešavanja Plant Advisor-a",
+      "menuAria": "Plant Advisor meni",
+      "identificationLanguage": "Jezik prepoznavanja",
+      "defaultProject": "Podrazumevana flora / projekat",
+      "saved": "Podešavanja su sačuvana",
+      "saveFailed": "Podešavanja nije moguće sačuvati. Pokušajte ponovo.",
+      "cancel": "Otkaži",
+      "save": "Sačuvaj",
+      "lang": {
+        "en": "Engleski",
+        "sr": "Srpski"
+      },
+      "project": {
+        "southeasternEurope": "Jugoistočna Evropa",
+        "worldFlora": "Svetska flora",
+        "all": "Sve / automatski"
+      }
     }
   }
 }
