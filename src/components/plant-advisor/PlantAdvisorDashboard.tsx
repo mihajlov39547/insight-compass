@@ -76,16 +76,32 @@ export function PlantAdvisorDashboard({ onNewScan, onOpenCase }: Props) {
               <p className="text-muted-foreground text-sm mt-1 max-w-xl">{t('plantAdvisor.subtitle')}</p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <Button onClick={onNewScan} disabled={atCaseLimit}>
-              <ScanSearch className="h-4 w-4 mr-1.5" />
-              {t('plantAdvisor.newScan')}
-            </Button>
-            {atCaseLimit && (
-              <span className="text-[11px] text-amber-600">{t('plantAdvisor.limits.caseReached')}</span>
-            )}
+          <div className="flex items-start gap-2">
+            <div className="flex flex-col items-end gap-1">
+              <Button onClick={onNewScan} disabled={atCaseLimit}>
+                <ScanSearch className="h-4 w-4 mr-1.5" />
+                {t('plantAdvisor.newScan')}
+              </Button>
+              {atCaseLimit && (
+                <span className="text-[11px] text-amber-600">{t('plantAdvisor.limits.caseReached')}</span>
+              )}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label={t('plantAdvisor.settings.menuAria')}>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  {t('plantAdvisor.settings.menuItem')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
+        <PlantAdvisorSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 
         {/* Usage card */}
         <div className="rounded-lg border border-border bg-card p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
