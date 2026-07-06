@@ -45,6 +45,7 @@ export function PlantAdvisorDashboard({ onNewScan, onOpenCase }: Props) {
   const { data: cases = [], isLoading } = usePlantCases();
   const del = useDeletePlantCase();
   const usage = usePlantAdvisorUsage();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const goalCards = (Object.keys(GOAL_ICONS) as Array<keyof typeof GOAL_ICONS>).map((g) => ({
     key: g,
