@@ -1952,7 +1952,30 @@
         "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG."
       },
       "preparing": "Preparing images…",
-      "webpNote": "WebP images will be converted to JPEG for identification."
+      "webpNote": "WebP images will be converted to JPEG for identification.",
+      "projectUsed": "Project used",
+      "languageUsed": "Language used"
+    },
+    "settings": {
+      "title": "Plant Advisor settings",
+      "description": "These preferences apply to all plant identifications.",
+      "menuItem": "Plant Advisor settings",
+      "menuAria": "Plant Advisor menu",
+      "identificationLanguage": "Identification language",
+      "defaultProject": "Default flora / project",
+      "saved": "Settings saved",
+      "saveFailed": "Could not save settings. Please try again.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "lang": {
+        "en": "English",
+        "sr": "Serbian"
+      },
+      "project": {
+        "southeasternEurope": "Southeastern Europe",
+        "worldFlora": "World flora",
+        "all": "All / automatic"
+      }
     }
   }
 }

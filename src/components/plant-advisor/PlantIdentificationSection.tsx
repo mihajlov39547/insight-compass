@@ -16,6 +16,7 @@ import { usePlantIdentificationUsage } from '@/hooks/usePlantIdentificationUsage
 import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
 import { useAuth } from '@/contexts/useAuth';
 import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
+import { usePlantAdvisorSettings, toPlantnetApiLang } from '@/hooks/usePlantAdvisorSettings';
 
 interface Props {
   caseId: string;
@@ -59,6 +60,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
   const identify = useIdentifyPlant();
   const confirm = useConfirmPlantIdentification();
   const usage = usePlantIdentificationUsage();
+  const settings = usePlantAdvisorSettings();
   const [preparing, setPreparing] = useState(false);
 
   // Anything identifiable: JPEG/PNG go straight through; WebP is converted client-side.
@@ -92,6 +94,8 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
       const res = await identify.mutateAsync({
         plantCaseId: caseId,
         tempImages: tempImages.length > 0 ? tempImages : undefined,
+        project: settings.identificationProject || 'k-southeastern-europe',
+        lang: toPlantnetApiLang(settings.identificationLanguage),
       });
       if (res.error) {
         toast.error(t(errorKey(res.error)));
@@ -235,6 +239,22 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
             <Field label={t('plantAdvisor.identify.fields.common')} value={top.common_name} />
             <Field label={t('plantAdvisor.identify.fields.family')} value={top.family} />
             <Field label={t('plantAdvisor.identify.fields.genus')} value={top.genus} />
+          </div>
+          <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
+            <span>
+              {t('plantAdvisor.identify.projectUsed')}:{' '}
+              {settings.identificationProject === 'k-southeastern-europe'
+                ? t('plantAdvisor.settings.project.southeasternEurope')
+                : settings.identificationProject === 'k-world-flora'
+                ? t('plantAdvisor.settings.project.worldFlora')
+                : t('plantAdvisor.settings.project.all')}
+            </span>
+            <span>
+              {t('plantAdvisor.identify.languageUsed')}:{' '}
+              {settings.identificationLanguage === 'sr'
+                ? t('plantAdvisor.settings.lang.sr')
+                : t('plantAdvisor.settings.lang.en')}
+            </span>
           </div>
           {bucket === 'low' && (
             <div className="text-xs text-amber-600 dark:text-amber-400">
