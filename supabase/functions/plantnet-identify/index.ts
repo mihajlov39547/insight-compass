@@ -404,9 +404,75 @@ Deno.serve(async (req: Request) => {
     }
     await admin.from('plant_cases').update(caseUpdate).eq('id', plantCaseId);
 
+    // Build ephemeral review payload with related images. Never persisted.
+    const pickImages = (arr: any): Array<Record<string, unknown>> => {
+      if (!Array.isArray(arr)) return [];
+      return arr.slice(0, 4).map((im: any) => {
+        const u = im?.url || {};
+        return {
+          urlSmall: u?.s ?? null,
+          urlMedium: u?.m ?? null,
+          urlOriginal: u?.o ?? null,
+          organ: im?.organ ?? null,
+          author: im?.author ?? null,
+          license: im?.license ?? null,
+          citation: im?.citation ?? null,
+          date: im?.date?.string ?? im?.date ?? null,
+          project: im?.project ?? null,
+        };
+      });
+    };
+    const reviewSpecies = results.slice(0, 10).map((r: any, idx: number) => {
+      const sp = r?.species || {};
+      const commonNames: string[] = Array.isArray(sp.commonNames) ? sp.commonNames : [];
+      return {
+        rank: idx + 1,
+        score: typeof r?.score === 'number' ? r.score : null,
+        scientificName: sp?.scientificName ?? null,
+        scientificNameWithoutAuthor: sp?.scientificNameWithoutAuthor ?? null,
+        commonName: commonNames[0] ?? null,
+        commonNames,
+        family: sp?.family?.scientificNameWithoutAuthor ?? null,
+        genus: sp?.genus?.scientificNameWithoutAuthor ?? null,
+        gbifId: r?.gbif?.id != null ? String(r.gbif.id) : null,
+        powoId: r?.powo?.id != null ? String(r.powo.id) : null,
+        iucnCategory: r?.iucn?.category ?? null,
+        relatedImages: pickImages(r?.images),
+      };
+    });
+    const other = raw?.otherResults || raw?.results?.otherResults || {};
+    const rawGenus = Array.isArray(raw?.genus) ? raw.genus : Array.isArray(other?.genus) ? other.genus : [];
+    const rawFamily = Array.isArray(raw?.family) ? raw.family : Array.isArray(other?.family) ? other.family : [];
+    const reviewGenus = rawGenus.slice(0, 5).map((g: any, idx: number) => ({
+      rank: idx + 1,
+      score: typeof g?.score === 'number' ? g.score : null,
+      scientificName: g?.genus?.scientificNameWithoutAuthor ?? g?.scientificNameWithoutAuthor ?? null,
+      family: g?.genus?.family?.scientificNameWithoutAuthor ?? g?.family ?? null,
+      commonNames: Array.isArray(g?.genus?.commonNames) ? g.genus.commonNames : Array.isArray(g?.commonNames) ? g.commonNames : [],
+      relatedImages: pickImages(g?.images),
+    }));
+    const reviewFamily = rawFamily.slice(0, 5).map((f: any, idx: number) => ({
+      rank: idx + 1,
+      score: typeof f?.score === 'number' ? f.score : null,
+      scientificName: f?.family?.scientificNameWithoutAuthor ?? f?.scientificNameWithoutAuthor ?? null,
+      commonNames: Array.isArray(f?.family?.commonNames) ? f.family.commonNames : Array.isArray(f?.commonNames) ? f.commonNames : [],
+      relatedImages: pickImages(f?.images),
+    }));
+    const review = {
+      species: reviewSpecies,
+      genus: reviewGenus,
+      family: reviewFamily,
+      predictedOrgans: Array.isArray(raw?.predictedOrgans) ? raw.predictedOrgans : [],
+      language: lang,
+      project,
+      engineVersion,
+      preferredReferential: typeof raw?.preferedReferential === 'string' ? raw.preferedReferential : null,
+    };
+
     return jsonResponse({
       ok: true,
       results: inserted,
+      review,
       remainingIdentificationRequests: remaining,
       usedImageCount: parts.length,
       totalImageCount: allImages.length,
