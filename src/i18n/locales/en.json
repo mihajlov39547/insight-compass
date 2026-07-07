@@ -1954,7 +1954,27 @@
       "preparing": "Preparing images…",
       "webpNote": "WebP images will be converted to JPEG for identification.",
       "projectUsed": "Project used",
-      "languageUsed": "Language used"
+      "languageUsed": "Language used",
+      "referenceImages": "Reference images",
+      "runAgainForReferences": "Run identification again to see reference images and genus/family suggestions.",
+      "mostLikelySpecies": "Most likely species",
+      "mostLikelyGenus": "Most likely genus",
+      "mostLikelyFamily": "Most likely family",
+      "tabs": {
+        "species": "Species",
+        "genus": "Genus",
+        "family": "Family"
+      },
+      "detailedSuggestions": "Detailed suggestions",
+      "detailedGenusFamilyMissing": "Detailed genus/family suggestions were not returned.",
+      "noReferenceImages": "No reference images returned.",
+      "imageAttribution": "Image attribution",
+      "organ": "Organ",
+      "license": "License",
+      "author": "Author",
+      "openImage": "Open image",
+      "fromSpeciesResult": "from species result",
+      "referenceImagesEphemeralNote": "Reference images are shown only for this run and are not stored."
     },
     "settings": {
       "title": "Plant Advisor settings",
