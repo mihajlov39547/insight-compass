@@ -541,7 +541,7 @@ export function AppSidebar() {
 
         <div className="relative mb-1 group">
           <Tooltip><TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'plant-advisor' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('plant-advisor')}>
+            <Button variant="ghost" size="icon" className={cn(activeView === 'plant-advisor' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('plant-advisor')}>
               <Sprout className="h-4 w-4" />
             </Button>
           </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.plantAdvisor')}</TooltipContent></Tooltip>
@@ -556,7 +556,7 @@ export function AppSidebar() {
                   activeView === 'plant-advisor' ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                 )}
                 onClick={(e) => e.stopPropagation()}
-                aria-label={t('plantAdvisor.settings.sidebarMenuAria', t('plantAdvisor.settings.menuAria'))}
+                aria-label={t('plantAdvisor.settings.sidebarMenuAria')}
               >
                 <MoreHorizontal className="h-3 w-3" />
               </Button>
