@@ -506,6 +506,7 @@ export function AppSidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PlantAdvisorSettingsDialog open={plantSettingsOpen} onOpenChange={setPlantSettingsOpen} />
     </>
   );
 
