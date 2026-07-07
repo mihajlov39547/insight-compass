@@ -103,6 +103,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
       if (res.error) {
         toast.error(t(errorKey(res.error)));
       } else {
+        setLatestReview(res.review ?? null);
         toast.success(t('plantAdvisor.identify.doneToast'));
       }
     } catch (e: any) {
