@@ -11,12 +11,14 @@ import {
   useIdentifyPlant,
   usePlantIdentifications,
   type PlantIdentification,
+  type PlantIdentificationReview,
 } from '@/hooks/usePlantIdentifications';
 import { usePlantIdentificationUsage } from '@/hooks/usePlantIdentificationUsage';
 import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
 import { useAuth } from '@/contexts/useAuth';
 import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
 import { usePlantAdvisorSettings, toPlantnetApiLang } from '@/hooks/usePlantAdvisorSettings';
+import { PlantIdentificationReviewPanel } from './PlantIdentificationReviewPanel';
 
 interface Props {
   caseId: string;
