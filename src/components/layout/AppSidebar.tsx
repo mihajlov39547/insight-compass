@@ -705,12 +705,12 @@ export function AppSidebar() {
                   activeView === 'plant-advisor' ? "text-primary hover:bg-primary/10" : "text-sidebar-foreground hover:bg-sidebar-accent"
                 )}
                 onClick={(e) => e.stopPropagation()}
-                aria-label={t('plantAdvisor.settings.sidebarMenuAria', t('plantAdvisor.settings.menuAria'))}
+                aria-label={t('plantAdvisor.settings.sidebarMenuAria')}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="bottom">
+            <DropdownMenuContent align="start" side="right">
               <DropdownMenuItem onClick={() => setPlantSettingsOpen(true)}>
                 {t('plantAdvisor.settings.menuItem')}
               </DropdownMenuItem>
