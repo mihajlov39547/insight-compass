@@ -1961,6 +1961,7 @@
       "description": "These preferences apply to all plant identifications.",
       "menuItem": "Plant Advisor settings",
       "menuAria": "Plant Advisor menu",
+      "sidebarMenuAria": "Plant Advisor sidebar menu",
       "identificationLanguage": "Identification language",
       "defaultProject": "Default flora / project",
       "saved": "Settings saved",

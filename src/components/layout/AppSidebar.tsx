@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,6 +33,7 @@ import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { PlantAdvisorSettingsDialog } from '@/components/plant-advisor/PlantAdvisorSettingsDialog';
 import { ChatExportByIdDialog } from '@/components/chat/ChatExportByIdDialog';
 import { planIcons, planLabels } from '@/lib/planConfig';
 import { formatDistanceToNow } from 'date-fns';
@@ -78,6 +79,7 @@ export function AppSidebar() {
   const [createNbName, setCreateNbName] = useState('');
   const [createNbDescription, setCreateNbDescription] = useState('');
   const [createNbLanguage, setCreateNbLanguage] = useState<AvailableLanguageCode>(currentLanguage);
+  const [plantSettingsOpen, setPlantSettingsOpen] = useState(false);
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
@@ -504,6 +506,7 @@ export function AppSidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PlantAdvisorSettingsDialog open={plantSettingsOpen} onOpenChange={setPlantSettingsOpen} />
     </>
   );
 
@@ -536,11 +539,35 @@ export function AppSidebar() {
           </Button>
         </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.resources')}</TooltipContent></Tooltip>
 
-        <Tooltip><TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'plant-advisor' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('plant-advisor')}>
-            <Sprout className="h-4 w-4" />
-          </Button>
-        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.plantAdvisor')}</TooltipContent></Tooltip>
+        <div className="relative mb-1 group">
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className={cn(activeView === 'plant-advisor' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('plant-advisor')}>
+              <Sprout className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.plantAdvisor')}</TooltipContent></Tooltip>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "absolute -bottom-0.5 -right-0.5 h-4 w-4 p-0 rounded-full bg-sidebar hover:bg-sidebar-accent transition-opacity focus:opacity-100",
+                  activeView === 'plant-advisor' ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={t('plantAdvisor.settings.sidebarMenuAria')}
+              >
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="right">
+              <DropdownMenuItem onClick={() => setPlantSettingsOpen(true)}>
+                {t('plantAdvisor.settings.menuItem')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         <div className="w-6 border-t border-sidebar-border my-2" />
 
@@ -655,16 +682,41 @@ export function AppSidebar() {
           <span>{t('sidebar.nav.resources')}</span>
         </button>
 
-        <button
-          className={cn(
-            "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
-            activeView === 'plant-advisor' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
-          )}
-          onClick={() => navigateTo('plant-advisor')}
-        >
-          <Sprout className="h-4 w-4 flex-shrink-0" />
-          <span>{t('sidebar.nav.plantAdvisor')}</span>
-        </button>
+        <div className="group relative flex items-center">
+          <button
+            className={cn(
+              "flex-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+              activeView === 'plant-advisor' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
+            )}
+            onClick={() => navigateTo('plant-advisor')}
+          >
+            <Sprout className="h-4 w-4 flex-shrink-0" />
+            <span>{t('sidebar.nav.plantAdvisor')}</span>
+          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "absolute right-1 h-7 w-7 transition-opacity focus:opacity-100",
+                  activeView === 'plant-advisor' ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                  activeView === 'plant-advisor' ? "text-primary hover:bg-primary/10" : "text-sidebar-foreground hover:bg-sidebar-accent"
+                )}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={t('plantAdvisor.settings.sidebarMenuAria')}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="right">
+              <DropdownMenuItem onClick={() => setPlantSettingsOpen(true)}>
+                {t('plantAdvisor.settings.menuItem')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Scrollable Collections */}

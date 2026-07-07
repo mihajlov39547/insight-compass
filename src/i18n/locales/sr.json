@@ -1977,6 +1977,7 @@
       "description": "Ova podešavanja se primenjuju na sva prepoznavanja biljaka.",
       "menuItem": "Podešavanja Plant Advisor-a",
       "menuAria": "Plant Advisor meni",
+      "sidebarMenuAria": "Plant Advisor bočni meni",
       "identificationLanguage": "Jezik prepoznavanja",
       "defaultProject": "Podrazumevana flora / projekat",
       "saved": "Podešavanja su sačuvana",
