@@ -682,16 +682,41 @@ export function AppSidebar() {
           <span>{t('sidebar.nav.resources')}</span>
         </button>
 
-        <button
-          className={cn(
-            "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
-            activeView === 'plant-advisor' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
-          )}
-          onClick={() => navigateTo('plant-advisor')}
-        >
-          <Sprout className="h-4 w-4 flex-shrink-0" />
-          <span>{t('sidebar.nav.plantAdvisor')}</span>
-        </button>
+        <div className="group relative flex items-center">
+          <button
+            className={cn(
+              "flex-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+              activeView === 'plant-advisor' ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"
+            )}
+            onClick={() => navigateTo('plant-advisor')}
+          >
+            <Sprout className="h-4 w-4 flex-shrink-0" />
+            <span>{t('sidebar.nav.plantAdvisor')}</span>
+          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "absolute right-1 h-7 w-7 transition-opacity focus:opacity-100",
+                  activeView === 'plant-advisor' ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                  activeView === 'plant-advisor' ? "text-primary hover:bg-primary/10" : "text-sidebar-foreground hover:bg-sidebar-accent"
+                )}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={t('plantAdvisor.settings.sidebarMenuAria', t('plantAdvisor.settings.menuAria'))}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="bottom">
+              <DropdownMenuItem onClick={() => setPlantSettingsOpen(true)}>
+                {t('plantAdvisor.settings.menuItem')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Scrollable Collections */}
