@@ -293,8 +293,9 @@ Deno.serve(async (req: Request) => {
 
     const url = new URL(`${PLANTNET_BASE}/${encodeURIComponent(project)}`);
     url.searchParams.set('api-key', plantnetKey);
-    url.searchParams.set('nb-results', '5');
-    url.searchParams.set('include-related-images', 'false');
+    url.searchParams.set('nb-results', '10');
+    url.searchParams.set('include-related-images', 'true');
+    url.searchParams.set('detailed', 'true');
     url.searchParams.set('lang', lang);
 
     let pnResp: Response;
