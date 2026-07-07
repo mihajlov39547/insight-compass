@@ -33,6 +33,7 @@ import { authedFetchHeaders } from '@/lib/edge/invokeWithAuth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectActionsMenuContent, ChatActionsMenuContent, NotebookActionsMenuContent } from '@/components/actions/EntityActionMenus';
+import { PlantAdvisorSettingsDialog } from '@/components/plant-advisor/PlantAdvisorSettingsDialog';
 import { ChatExportByIdDialog } from '@/components/chat/ChatExportByIdDialog';
 import { planIcons, planLabels } from '@/lib/planConfig';
 import { formatDistanceToNow } from 'date-fns';
