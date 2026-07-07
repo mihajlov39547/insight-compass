@@ -108,9 +108,65 @@ export function usePlantIdentifications(caseId: string | null | undefined) {
   });
 }
 
+export interface PlantnetRelatedImage {
+  urlSmall: string | null;
+  urlMedium: string | null;
+  urlOriginal: string | null;
+  organ: string | null;
+  author: string | null;
+  license: string | null;
+  citation: string | null;
+  date: string | null;
+  project: string | null;
+}
+
+export interface PlantIdentificationReviewSpecies {
+  rank: number;
+  score: number | null;
+  scientificName: string | null;
+  scientificNameWithoutAuthor: string | null;
+  commonName: string | null;
+  commonNames: string[];
+  family: string | null;
+  genus: string | null;
+  gbifId: string | null;
+  powoId: string | null;
+  iucnCategory: string | null;
+  relatedImages: PlantnetRelatedImage[];
+}
+
+export interface PlantIdentificationReviewGenus {
+  rank: number;
+  score: number | null;
+  scientificName: string | null;
+  family: string | null;
+  commonNames: string[];
+  relatedImages: PlantnetRelatedImage[];
+}
+
+export interface PlantIdentificationReviewFamily {
+  rank: number;
+  score: number | null;
+  scientificName: string | null;
+  commonNames: string[];
+  relatedImages: PlantnetRelatedImage[];
+}
+
+export interface PlantIdentificationReview {
+  species: PlantIdentificationReviewSpecies[];
+  genus: PlantIdentificationReviewGenus[];
+  family: PlantIdentificationReviewFamily[];
+  predictedOrgans: string[];
+  language: string;
+  project: string;
+  engineVersion: string | null;
+  preferredReferential: string | null;
+}
+
 export interface IdentifyPlantResponse {
   ok?: boolean;
   results?: PlantIdentification[];
+  review?: PlantIdentificationReview;
   remainingIdentificationRequests?: number | null;
   usedImageCount?: number;
   totalImageCount?: number;
