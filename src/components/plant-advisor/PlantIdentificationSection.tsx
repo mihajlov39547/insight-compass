@@ -324,6 +324,21 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
           </ul>
         </div>
       )}
+
+      {latestReview ? (
+        <PlantIdentificationReviewPanel
+          review={latestReview}
+          persistedIdentifications={identifications}
+          onConfirmSpecies={doConfirm}
+          isConfirmPending={confirm.isPending}
+        />
+      ) : (
+        identifications.length > 0 && (
+          <div className="text-[11px] text-muted-foreground rounded-md border border-dashed border-border/60 px-2 py-1.5">
+            {t('plantAdvisor.identify.runAgainForReferences')}
+          </div>
+        )
+      )}
     </div>
   );
 }
