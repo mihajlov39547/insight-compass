@@ -79,6 +79,7 @@ export function AppSidebar() {
   const [createNbName, setCreateNbName] = useState('');
   const [createNbDescription, setCreateNbDescription] = useState('');
   const [createNbLanguage, setCreateNbLanguage] = useState<AvailableLanguageCode>(currentLanguage);
+  const [plantSettingsOpen, setPlantSettingsOpen] = useState(false);
 
   const displayName = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email || '';
   const displayEmail = profile?.email || authUser?.email || '';
