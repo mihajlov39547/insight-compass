@@ -539,11 +539,35 @@ export function AppSidebar() {
           </Button>
         </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.resources')}</TooltipContent></Tooltip>
 
-        <Tooltip><TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'plant-advisor' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('plant-advisor')}>
-            <Sprout className="h-4 w-4" />
-          </Button>
-        </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.plantAdvisor')}</TooltipContent></Tooltip>
+        <div className="relative mb-1 group">
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className={cn("mb-1", activeView === 'plant-advisor' ? "text-primary bg-primary/10" : "text-sidebar-foreground/70 hover:bg-sidebar-accent")} onClick={() => navigateTo('plant-advisor')}>
+              <Sprout className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger><TooltipContent side="right">{t('sidebar.nav.plantAdvisor')}</TooltipContent></Tooltip>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "absolute -bottom-0.5 -right-0.5 h-4 w-4 p-0 rounded-full bg-sidebar hover:bg-sidebar-accent transition-opacity focus:opacity-100",
+                  activeView === 'plant-advisor' ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={t('plantAdvisor.settings.sidebarMenuAria', t('plantAdvisor.settings.menuAria'))}
+              >
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="right">
+              <DropdownMenuItem onClick={() => setPlantSettingsOpen(true)}>
+                {t('plantAdvisor.settings.menuItem')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         <div className="w-6 border-t border-sidebar-border my-2" />
 
