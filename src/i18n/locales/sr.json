@@ -1970,7 +1970,27 @@
       "preparing": "Priprema slika…",
       "webpNote": "WebP slike će biti konvertovane u JPEG za identifikaciju.",
       "projectUsed": "Korišćeni projekat",
-      "languageUsed": "Korišćeni jezik"
+      "languageUsed": "Korišćeni jezik",
+      "referenceImages": "Referentne slike",
+      "runAgainForReferences": "Pokrenite prepoznavanje ponovo da vidite referentne slike i predloge roda/familije.",
+      "mostLikelySpecies": "Najverovatnija vrsta",
+      "mostLikelyGenus": "Najverovatniji rod",
+      "mostLikelyFamily": "Najverovatnija familija",
+      "tabs": {
+        "species": "Vrsta",
+        "genus": "Rod",
+        "family": "Familija"
+      },
+      "detailedSuggestions": "Detaljni predlozi",
+      "detailedGenusFamilyMissing": "Detaljni predlozi roda/familije nisu vraćeni.",
+      "noReferenceImages": "Nema vraćenih referentnih slika.",
+      "imageAttribution": "Atribucija slike",
+      "organ": "Organ",
+      "license": "Licenca",
+      "author": "Autor",
+      "openImage": "Otvori sliku",
+      "fromSpeciesResult": "iz rezultata vrste",
+      "referenceImagesEphemeralNote": "Referentne slike se prikazuju samo za ovo pokretanje i ne čuvaju se."
     },
     "settings": {
       "title": "Podešavanja Plant Advisor-a",

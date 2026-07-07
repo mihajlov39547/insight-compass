@@ -11,12 +11,14 @@ import {
   useIdentifyPlant,
   usePlantIdentifications,
   type PlantIdentification,
+  type PlantIdentificationReview,
 } from '@/hooks/usePlantIdentifications';
 import { usePlantIdentificationUsage } from '@/hooks/usePlantIdentificationUsage';
 import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
 import { useAuth } from '@/contexts/useAuth';
 import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
 import { usePlantAdvisorSettings, toPlantnetApiLang } from '@/hooks/usePlantAdvisorSettings';
+import { PlantIdentificationReviewPanel } from './PlantIdentificationReviewPanel';
 
 interface Props {
   caseId: string;
@@ -62,6 +64,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
   const usage = usePlantIdentificationUsage();
   const settings = usePlantAdvisorSettings();
   const [preparing, setPreparing] = useState(false);
+  const [latestReview, setLatestReview] = useState<PlantIdentificationReview | null>(null);
 
   // Anything identifiable: JPEG/PNG go straight through; WebP is converted client-side.
   const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
@@ -100,6 +103,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
       if (res.error) {
         toast.error(t(errorKey(res.error)));
       } else {
+        setLatestReview(res.review ?? null);
         toast.success(t('plantAdvisor.identify.doneToast'));
       }
     } catch (e: any) {
@@ -319,6 +323,21 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
             ))}
           </ul>
         </div>
+      )}
+
+      {latestReview ? (
+        <PlantIdentificationReviewPanel
+          review={latestReview}
+          persistedIdentifications={identifications}
+          onConfirmSpecies={doConfirm}
+          isConfirmPending={confirm.isPending}
+        />
+      ) : (
+        identifications.length > 0 && (
+          <div className="text-[11px] text-muted-foreground rounded-md border border-dashed border-border/60 px-2 py-1.5">
+            {t('plantAdvisor.identify.runAgainForReferences')}
+          </div>
+        )
       )}
     </div>
   );
