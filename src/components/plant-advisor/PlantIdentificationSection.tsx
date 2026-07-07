@@ -64,6 +64,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
   const usage = usePlantIdentificationUsage();
   const settings = usePlantAdvisorSettings();
   const [preparing, setPreparing] = useState(false);
+  const [latestReview, setLatestReview] = useState<PlantIdentificationReview | null>(null);
 
   // Anything identifiable: JPEG/PNG go straight through; WebP is converted client-side.
   const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
