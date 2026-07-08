@@ -74,6 +74,15 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
 
       <PlantIdentificationSection caseId={plantCase.id} images={images} />
 
+      {(plantCase.user_goal === 'diagnose' || !!plantCase.confirmed_identification_id) && (
+        <PlantDiseaseDiagnosisSection
+          caseId={plantCase.id}
+          images={images}
+          hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+        />
+      )}
+
+
       <div className="pt-4 border-t border-border">
         <Button onClick={onOpenChat}>
           <MessageSquare className="h-4 w-4 mr-1.5" />
