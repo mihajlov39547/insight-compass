@@ -462,7 +462,14 @@ Deno.serve(async (req: Request) => {
       species: reviewSpecies,
       genus: reviewGenus,
       family: reviewFamily,
-      predictedOrgans: Array.isArray(raw?.predictedOrgans) ? raw.predictedOrgans : [],
+      predictedOrgans: Array.isArray(raw?.predictedOrgans)
+        ? raw.predictedOrgans.map((p: any) => ({
+            image: p?.image ?? null,
+            filename: p?.filename ?? null,
+            organ: p?.organ ?? null,
+            score: typeof p?.score === 'number' ? p.score : null,
+          }))
+        : [],
       language: lang,
       project,
       engineVersion,

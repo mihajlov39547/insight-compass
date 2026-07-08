@@ -79,19 +79,19 @@ function ImageStrip({
   );
 }
 
-function matchPersistedId(
+function matchPersisted(
   sp: PlantIdentificationReviewSpecies,
   persisted: PlantIdentification[],
-): string | null {
+): PlantIdentification | null {
   const byName = persisted.find(
     (p) =>
       (sp.scientificNameWithoutAuthor &&
         p.scientific_name_without_author === sp.scientificNameWithoutAuthor) ||
       (sp.scientificName && p.scientific_name === sp.scientificName),
   );
-  if (byName) return byName.id;
+  if (byName) return byName;
   const byRank = persisted.find((p) => p.rank === sp.rank);
-  return byRank?.id ?? null;
+  return byRank ?? null;
 }
 
 export function PlantIdentificationReviewPanel({
@@ -155,8 +155,10 @@ export function PlantIdentificationReviewPanel({
             </div>
           )}
           {review.species.map((sp, idx) => {
-            const persistedId = matchPersistedId(sp, persistedIdentifications);
+            const persisted = matchPersisted(sp, persistedIdentifications);
+            const persistedId = persisted?.id ?? null;
             const isTop = idx === 0;
+            const isConfirmed = !!persisted?.is_confirmed;
             return (
               <div
                 key={`${sp.scientificName}-${idx}`}
@@ -193,7 +195,26 @@ export function PlantIdentificationReviewPanel({
                     {t('plantAdvisor.identify.noReferenceImages')}
                   </div>
                 )}
-                {persistedId && !isTop && (
+                {persistedId && isTop && (
+                  <div>
+                    {isConfirmed ? (
+                      <Badge variant="secondary" className="text-[10px]">
+                        {t('plantAdvisor.identify.confirmed')}
+                      </Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() => onConfirmSpecies(persistedId)}
+                        disabled={isConfirmPending}
+                      >
+                        {t('plantAdvisor.identify.confirmThis')}
+                      </Button>
+                    )}
+                  </div>
+                )}
+                {persistedId && !isTop && !isConfirmed && (
                   <div>
                     <Button
                       size="sm"
