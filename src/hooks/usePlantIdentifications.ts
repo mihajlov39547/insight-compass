@@ -156,7 +156,7 @@ export interface PlantIdentificationReview {
   species: PlantIdentificationReviewSpecies[];
   genus: PlantIdentificationReviewGenus[];
   family: PlantIdentificationReviewFamily[];
-  predictedOrgans: string[];
+  predictedOrgans: PlantnetPredictedOrgan[];
   language: string;
   project: string;
   engineVersion: string | null;
