@@ -1,0 +1,347 @@
+// Pl@ntNet disease diagnosis for a plant case.
+// Reuses the WebP→JPEG temp flow from plantnet-identify.
+// Does NOT send project/flora — disease endpoint is language-only.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+import { fetchDriveFileMedia, readDriveEnv } from '../_shared/plant-drive.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+const BUCKET = 'plant-case-images';
+const TEMP_BUCKET = 'plant-identification-temp';
+const MAX_IMAGES = 5;
+const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+const PLANTNET_DISEASE_URL = 'https://my-api.plantnet.org/v2/diseases/identify';
+
+// Preferred organs for disease diagnosis.
+const ROLE_PREFERENCE = ['leaf', 'fruit', 'flower', 'stem', 'whole_plant', 'bark', 'root', 'other', 'auto'] as const;
+
+const ALLOWED_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+const PLANTNET_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
+
+// Map app image roles to Pl@ntNet disease organ vocabulary.
+function mapRoleToDiseaseOrgan(role: string | null | undefined): string {
+  const r = (role || 'auto').toLowerCase();
+  if (r === 'leaf') return 'leaf';
+  if (r === 'flower') return 'flower';
+  if (r === 'fruit') return 'fruit';
+  if (r === 'bark') return 'bark';
+  if (r === 'stem') return 'branch';
+  if (r === 'whole_plant') return 'habit';
+  if (r === 'root') return 'other';
+  return 'auto';
+}
+
+interface ImgRow {
+  id: string;
+  storage_mode: string;
+  drive_file_id: string | null;
+  staging_storage_path: string | null;
+  storage_path: string | null;
+  mime_type: string | null;
+  image_role: string | null;
+  original_filename: string | null;
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { status: 200, headers: corsHeaders });
+  }
+
+  try {
+    const supaUrl = Deno.env.get('SUPABASE_URL')!;
+    const supaAnon = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const plantnetKey = Deno.env.get('PLANTNET_API_KEY');
+    if (!plantnetKey) return jsonResponse({ error: 'api_key_missing' }, 503);
+
+    const authHeader = req.headers.get('Authorization') || '';
+    const userClient = createClient(supaUrl, supaAnon, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) return jsonResponse({ error: 'unauthorized' }, 401);
+    const userId = userData.user.id;
+
+    const body = await req.json().catch(() => ({}));
+    const plantCaseId = String(body?.plantCaseId || '');
+    const imageIds: string[] = Array.isArray(body?.imageIds)
+      ? body.imageIds.filter((x: unknown) => typeof x === 'string')
+      : [];
+    const ALLOWED_LANGS = new Set(['en', 'hr']);
+    const rawLang = String(body?.lang || '').replace(/[^a-zA-Z-]/g, '').slice(0, 8).toLowerCase();
+    const lang = ALLOWED_LANGS.has(rawLang) ? rawLang : 'en';
+    if (!plantCaseId) return jsonResponse({ error: 'invalid_input' }, 400);
+
+    const tempPrefix = `${userId}/${plantCaseId}/`;
+    const tempImagesInput: Array<{ sourceImageId: string; storagePath: string; originalRole?: string }> =
+      Array.isArray(body?.tempImages)
+        ? body.tempImages
+            .map((t: any) => ({
+              sourceImageId: typeof t?.sourceImageId === 'string' ? t.sourceImageId : '',
+              storagePath: typeof t?.storagePath === 'string' ? t.storagePath : '',
+              originalRole: typeof t?.originalRole === 'string' ? t.originalRole : undefined,
+            }))
+            .filter((t: any) =>
+              t.sourceImageId &&
+              t.storagePath &&
+              t.storagePath.startsWith(tempPrefix) &&
+              !t.storagePath.includes('..'),
+            )
+        : [];
+
+    const admin = createClient(supaUrl, serviceKey, { auth: { persistSession: false } });
+
+    const { data: pcase } = await admin
+      .from('plant_cases')
+      .select('id,user_id,confirmed_scientific_name,confirmed_common_name,confirmed_identification_id')
+      .eq('id', plantCaseId)
+      .maybeSingle();
+    if (!pcase) return jsonResponse({ error: 'not_found' }, 404);
+    if ((pcase as any).user_id !== userId) return jsonResponse({ error: 'forbidden' }, 403);
+
+    let q = admin
+      .from('plant_case_images')
+      .select(
+        'id,storage_mode,drive_file_id,staging_storage_path,storage_path,mime_type,image_role,original_filename',
+      )
+      .eq('case_id', plantCaseId)
+      .neq('upload_status', 'deleted');
+    if (imageIds.length > 0) q = q.in('id', imageIds);
+    const { data: imagesRaw, error: imgErr } = await q;
+    if (imgErr) return jsonResponse({ error: 'db_error' }, 500);
+    const allImages = ((imagesRaw as ImgRow[]) ?? []).filter((i) =>
+      ALLOWED_MIMES.has((i.mime_type || '').toLowerCase()),
+    );
+    if (allImages.length === 0) return jsonResponse({ error: 'no_compatible_images' }, 400);
+
+    const caseImageIdSet = new Set(allImages.map((i) => i.id));
+    const tempById = new Map<string, { storagePath: string }>();
+    for (const t of tempImagesInput) {
+      if (caseImageIdSet.has(t.sourceImageId)) {
+        tempById.set(t.sourceImageId, { storagePath: t.storagePath });
+      }
+    }
+
+    const sendable = allImages.filter((i) => {
+      const mime = (i.mime_type || '').toLowerCase();
+      if (PLANTNET_MIMES.has(mime)) return true;
+      if (mime === 'image/webp') return tempById.has(i.id);
+      return false;
+    });
+    if (sendable.length === 0) return jsonResponse({ error: 'no_compatible_images' }, 400);
+
+    const ranked = [...sendable].sort((a, b) => {
+      const ai = ROLE_PREFERENCE.indexOf((a.image_role as any) || 'auto');
+      const bi = ROLE_PREFERENCE.indexOf((b.image_role as any) || 'auto');
+      return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+    });
+    const picked = ranked.slice(0, MAX_IMAGES);
+
+    const { env: driveEnv } = readDriveEnv();
+    const parts: Array<{ organ: string; bytes: Uint8Array; mime: string; filename: string }> = [];
+    const tempPathsToCleanup: string[] = [];
+    let totalBytes = 0;
+
+    for (const img of picked) {
+      const rawMime = (img.mime_type || 'image/jpeg').toLowerCase();
+      const temp = tempById.get(img.id);
+      let bytes: Uint8Array | null = null;
+      let outMime = rawMime;
+
+      if (temp) {
+        const { data: blob } = await admin.storage.from(TEMP_BUCKET).download(temp.storagePath);
+        if (blob) bytes = new Uint8Array(await blob.arrayBuffer());
+        outMime = 'image/jpeg';
+        tempPathsToCleanup.push(temp.storagePath);
+      } else {
+        if (img.storage_mode === 'google_drive' && img.drive_file_id && driveEnv) {
+          try {
+            const resp = await fetchDriveFileMedia(driveEnv, img.drive_file_id);
+            if (resp.ok) bytes = new Uint8Array(await resp.arrayBuffer());
+          } catch {
+            bytes = null;
+          }
+        }
+        if (!bytes) {
+          const path = img.staging_storage_path || img.storage_path;
+          if (path) {
+            const { data: blob } = await admin.storage.from(BUCKET).download(path);
+            if (blob) bytes = new Uint8Array(await blob.arrayBuffer());
+          }
+        }
+      }
+      if (!bytes) continue;
+      if (!PLANTNET_MIMES.has(outMime)) continue;
+      if (totalBytes + bytes.byteLength > MAX_TOTAL_BYTES) {
+        console.warn('[plant-disease-identify] payload cap reached, dropping remaining images');
+        break;
+      }
+      totalBytes += bytes.byteLength;
+      parts.push({
+        organ: mapRoleToDiseaseOrgan(img.image_role),
+        bytes,
+        mime: outMime,
+        filename: img.original_filename || `${img.id}.${outMime === 'image/png' ? 'png' : 'jpg'}`,
+      });
+    }
+
+    const cleanupTemp = async () => {
+      if (tempPathsToCleanup.length === 0) return;
+      try {
+        await admin.storage.from(TEMP_BUCKET).remove(tempPathsToCleanup);
+      } catch (e) {
+        console.warn('[plant-disease-identify] temp cleanup failed', (e as Error).message);
+      }
+    };
+
+    if (parts.length === 0) {
+      await cleanupTemp();
+      return jsonResponse({ error: 'image_download_failed' }, 502);
+    }
+
+    try {
+      const form = new FormData();
+      for (const p of parts) {
+        form.append('organs', p.organ);
+        form.append('images', new Blob([p.bytes], { type: p.mime }), p.filename);
+      }
+
+      const url = new URL(PLANTNET_DISEASE_URL);
+      url.searchParams.set('api-key', plantnetKey);
+      url.searchParams.set('nb-results', '10');
+      url.searchParams.set('include-related-images', 'true');
+      url.searchParams.set('lang', lang);
+
+      let pnResp: Response;
+      try {
+        pnResp = await fetch(url.toString(), { method: 'POST', body: form });
+      } catch (e) {
+        console.error('[plant-disease-identify] network error', (e as Error).message);
+        return jsonResponse({ error: 'provider_unreachable' }, 502);
+      }
+
+      if (!pnResp.ok) {
+        const status = pnResp.status;
+        const shortText = (await pnResp.text().catch(() => '')).slice(0, 200);
+        console.warn('[plant-disease-identify] upstream error', status, shortText);
+        if (status === 400) return jsonResponse({ error: 'bad_request' }, 400);
+        if (status === 401 || status === 403) return jsonResponse({ error: 'auth_failed' }, 502);
+        if (status === 404) return jsonResponse({ error: 'not_found_upstream' }, 502);
+        if (status === 413) return jsonResponse({ error: 'payload_too_large' }, 413);
+        if (status === 429) return jsonResponse({ error: 'quota_exhausted' }, 429);
+        return jsonResponse({ error: 'provider_error' }, 502);
+      }
+
+      const raw = await pnResp.json().catch(() => null);
+      const results = Array.isArray(raw?.results) ? raw.results : [];
+      if (results.length === 0) {
+        return jsonResponse({ error: 'empty_results', raw }, 200);
+      }
+
+      const pickImages = (arr: any): Array<Record<string, unknown>> => {
+        if (!Array.isArray(arr)) return [];
+        return arr.slice(0, 4).map((im: any) => {
+          const u = im?.url || {};
+          return {
+            urlSmall: u?.s ?? null,
+            urlMedium: u?.m ?? null,
+            urlOriginal: u?.o ?? null,
+            organ: im?.organ ?? null,
+            author: im?.author ?? null,
+            license: im?.license ?? null,
+            citation: im?.citation ?? null,
+            date: im?.date?.string ?? im?.date ?? null,
+          };
+        });
+      };
+
+      const pc: any = pcase as any;
+      const plantContextSource = pc?.confirmed_identification_id ? 'confirmed_identification' : 'unknown';
+
+      // Delete previous unconfirmed diagnoses; keep confirmed row intact.
+      await admin
+        .from('plant_diagnoses')
+        .delete()
+        .eq('case_id', plantCaseId)
+        .eq('is_confirmed', false);
+
+      const normalizedForInsert = results.slice(0, 10).map((r: any, idx: number) => {
+        const disease = r?.disease || r?.species || {};
+        const name: string | null = disease?.name ?? disease?.scientificName ?? r?.name ?? null;
+        const description: string | null = disease?.description?.content ?? disease?.description ?? r?.description ?? null;
+        const affectedOrgans: string[] = Array.isArray(disease?.organs)
+          ? disease.organs.filter((s: any) => typeof s === 'string')
+          : Array.isArray(r?.organs)
+          ? r.organs.filter((s: any) => typeof s === 'string')
+          : [];
+        return {
+          case_id: plantCaseId,
+          user_id: userId,
+          provider: 'plantnet_disease',
+          rank: idx + 1,
+          score: typeof r?.score === 'number' ? r.score : null,
+          problem_type: 'disease',
+          name,
+          description,
+          affected_organs: affectedOrgans.length > 0 ? affectedOrgans : null,
+          raw_result: r,
+          raw_response: idx === 0 ? raw : null,
+          language: lang,
+          plant_context_source: plantContextSource,
+          plant_scientific_name: pc?.confirmed_scientific_name ?? null,
+          plant_common_name: pc?.confirmed_common_name ?? null,
+        };
+      });
+
+      const { data: inserted, error: insErr } = await admin
+        .from('plant_diagnoses')
+        .insert(normalizedForInsert)
+        .select('*');
+      if (insErr) {
+        console.error('[plant-disease-identify] insert failed', insErr.message);
+        return jsonResponse({ error: 'db_error' }, 500);
+      }
+
+      const review = {
+        diseases: results.slice(0, 10).map((r: any, idx: number) => {
+          const disease = r?.disease || r?.species || {};
+          return {
+            rank: idx + 1,
+            score: typeof r?.score === 'number' ? r.score : null,
+            name: disease?.name ?? disease?.scientificName ?? r?.name ?? null,
+            description: disease?.description?.content ?? disease?.description ?? r?.description ?? null,
+            affectedOrgans: Array.isArray(disease?.organs)
+              ? disease.organs.filter((s: any) => typeof s === 'string')
+              : [],
+            relatedImages: pickImages(r?.images),
+          };
+        }),
+        language: lang,
+      };
+
+      return jsonResponse({
+        ok: true,
+        results: inserted,
+        review,
+        usedImageCount: parts.length,
+        totalImageCount: allImages.length,
+      });
+    } finally {
+      await cleanupTemp();
+    }
+  } catch (e) {
+    console.error('[plant-disease-identify] fatal', (e as Error).message);
+    return jsonResponse({ error: 'internal_error' }, 500);
+  }
+});

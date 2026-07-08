@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { useDeletePlantCase, type PlantCase } from '@/hooks/usePlantCases';
 import { PlantImageUploader } from './PlantImageUploader';
 import { PlantIdentificationSection } from './PlantIdentificationSection';
+import { PlantDiseaseDiagnosisSection } from './PlantDiseaseDiagnosisSection';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { toast } from 'sonner';
 
@@ -72,6 +73,15 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
       <PlantImageUploader caseId={plantCase.id} />
 
       <PlantIdentificationSection caseId={plantCase.id} images={images} />
+
+      {(plantCase.user_goal === 'diagnose' || !!plantCase.confirmed_identification_id) && (
+        <PlantDiseaseDiagnosisSection
+          caseId={plantCase.id}
+          images={images}
+          hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+        />
+      )}
+
 
       <div className="pt-4 border-t border-border">
         <Button onClick={onOpenChat}>
