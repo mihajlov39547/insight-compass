@@ -1287,10 +1287,15 @@ export type Database = {
         Row: {
           confirmed_at: string | null
           confirmed_common_name: string | null
+          confirmed_diagnosis_id: string | null
           confirmed_identification_id: string | null
+          confirmed_problem_name: string | null
+          confirmed_problem_type: string | null
           confirmed_scientific_name: string | null
           created_at: string
           crop_context: string | null
+          diagnosed_at: string | null
+          diagnosis_provider: string | null
           id: string
           identification_confidence: number | null
           identification_provider: string | null
@@ -1310,10 +1315,15 @@ export type Database = {
         Insert: {
           confirmed_at?: string | null
           confirmed_common_name?: string | null
+          confirmed_diagnosis_id?: string | null
           confirmed_identification_id?: string | null
+          confirmed_problem_name?: string | null
+          confirmed_problem_type?: string | null
           confirmed_scientific_name?: string | null
           created_at?: string
           crop_context?: string | null
+          diagnosed_at?: string | null
+          diagnosis_provider?: string | null
           id?: string
           identification_confidence?: number | null
           identification_provider?: string | null
@@ -1333,10 +1343,15 @@ export type Database = {
         Update: {
           confirmed_at?: string | null
           confirmed_common_name?: string | null
+          confirmed_diagnosis_id?: string | null
           confirmed_identification_id?: string | null
+          confirmed_problem_name?: string | null
+          confirmed_problem_type?: string | null
           confirmed_scientific_name?: string | null
           created_at?: string
           crop_context?: string | null
+          diagnosed_at?: string | null
+          diagnosis_provider?: string | null
           id?: string
           identification_confidence?: number | null
           identification_provider?: string | null
@@ -1354,6 +1369,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "plant_cases_confirmed_diagnosis_id_fkey"
+            columns: ["confirmed_diagnosis_id"]
+            isOneToOne: false
+            referencedRelation: "plant_diagnoses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "plant_cases_confirmed_identification_id_fkey"
             columns: ["confirmed_identification_id"]
@@ -1373,6 +1395,80 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plant_diagnoses: {
+        Row: {
+          affected_organs: string[] | null
+          case_id: string
+          confirmed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_confirmed: boolean
+          language: string | null
+          name: string | null
+          plant_common_name: string | null
+          plant_context_source: string | null
+          plant_scientific_name: string | null
+          problem_type: string
+          provider: string
+          rank: number
+          raw_response: Json | null
+          raw_result: Json | null
+          score: number | null
+          user_id: string
+        }
+        Insert: {
+          affected_organs?: string[] | null
+          case_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_confirmed?: boolean
+          language?: string | null
+          name?: string | null
+          plant_common_name?: string | null
+          plant_context_source?: string | null
+          plant_scientific_name?: string | null
+          problem_type?: string
+          provider?: string
+          rank: number
+          raw_response?: Json | null
+          raw_result?: Json | null
+          score?: number | null
+          user_id: string
+        }
+        Update: {
+          affected_organs?: string[] | null
+          case_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_confirmed?: boolean
+          language?: string | null
+          name?: string | null
+          plant_common_name?: string | null
+          plant_context_source?: string | null
+          plant_scientific_name?: string | null
+          problem_type?: string
+          provider?: string
+          rank?: number
+          raw_response?: Json | null
+          raw_result?: Json | null
+          score?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_diagnoses_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
             referencedColumns: ["id"]
           },
         ]
