@@ -120,6 +120,13 @@ export interface PlantnetRelatedImage {
   project: string | null;
 }
 
+export interface PlantnetPredictedOrgan {
+  image: number | null;
+  filename: string | null;
+  organ: string | null;
+  score: number | null;
+}
+
 export interface PlantIdentificationReviewSpecies {
   rank: number;
   score: number | null;
