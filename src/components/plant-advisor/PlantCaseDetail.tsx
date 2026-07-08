@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { useDeletePlantCase, type PlantCase } from '@/hooks/usePlantCases';
 import { PlantImageUploader } from './PlantImageUploader';
 import { PlantIdentificationSection } from './PlantIdentificationSection';
+import { PlantDiseaseDiagnosisSection } from './PlantDiseaseDiagnosisSection';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { toast } from 'sonner';
 
