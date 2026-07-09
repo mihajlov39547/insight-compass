@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://mdrxzwudhtmkyqcxwvcy.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "researcher-mcp",
+      "version": "0.1.0",
+      "title": "Researcher"
+    },
+    "tools": [
+      {
+        "name": "whoami",
+        "title": "Who am I",
+        "description": "Return the signed-in user's id, email, display name, and plan for the connected Researcher account.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_projects",
+        "title": "List projects",
+        "description": "List projects the signed-in user owns or has been shared with, ordered by most recently updated.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 50,
+              "description": "Maximum number of projects to return (default 20, max 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_notebooks",
+        "title": "List notebooks",
+        "description": "List notebooks the signed-in user owns or has been shared with, ordered by most recently updated.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 50,
+              "description": "Maximum number of notebooks to return (default 20, max 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_plant_cases",
+        "title": "List plant cases",
+        "description": "List the signed-in user's Plant Advisor cases with title, status, goal, and confirmed identification if any. Ordered by most recently updated.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 50,
+              "description": "Maximum number of cases to return (default 20, max 50)."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "ready_for_identification",
+                "identified",
+                "diagnosed",
+                "treated",
+                "archived"
+              ],
+              "description": "Filter by plant case status."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_plant_case",
+        "title": "Get plant case",
+        "description": "Return a single Plant Advisor case for the signed-in user, including its confirmed identification and confirmed disease diagnosis if present.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "caseId": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Plant case id."
+            }
+          },
+          "required": [
+            "caseId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
