@@ -109,6 +109,9 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (!pcase) return jsonResponse({ error: 'not_found' }, 404);
     if ((pcase as any).user_id !== userId) return jsonResponse({ error: 'forbidden' }, 403);
+    if (!(pcase as any).confirmed_identification_id) {
+      return jsonResponse({ error: 'plant_not_confirmed' }, 400);
+    }
 
     let q = admin
       .from('plant_case_images')

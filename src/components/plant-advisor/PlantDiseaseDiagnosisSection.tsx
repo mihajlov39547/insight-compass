@@ -47,6 +47,8 @@ function errorKey(code: string | undefined): string {
       return 'plantAdvisor.diagnose.errors.badRequest';
     case 'empty_results':
       return 'plantAdvisor.diagnose.errors.empty';
+    case 'plant_not_confirmed':
+      return 'plantAdvisor.diagnose.errors.plantNotConfirmed';
     default:
       return 'plantAdvisor.diagnose.errors.generic';
   }
@@ -205,7 +207,7 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         <Button
           size="sm"
           onClick={run}
-          disabled={!hasImages || !hasIdentifiable || diagnose.isPending || preparing}
+          disabled={!hasImages || !hasIdentifiable || !hasConfirmedIdentification || diagnose.isPending || preparing}
         >
           {preparing ? (
             <>
@@ -237,7 +239,12 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
       {hasImages && !hasConfirmedIdentification && (
         <div className="text-xs rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-1.5 flex items-start gap-1.5">
           <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-          <span>{t('plantAdvisor.diagnose.plantNotConfirmedHint')}</span>
+          <span>{t('plantAdvisor.diagnose.confirmPlantFirst')}</span>
+        </div>
+      )}
+      {hasImages && hasConfirmedIdentification && (
+        <div className="text-xs text-muted-foreground">
+          {t('plantAdvisor.diagnose.usesConfirmedPlant')}
         </div>
       )}
 

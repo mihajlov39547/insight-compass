@@ -1984,7 +1984,10 @@
       "runAgain": "Run again",
       "loading": "Loading diagnoses…",
       "uploadFirst": "Upload plant images first.",
-      "plantNotConfirmedHint": "You can diagnose directly, but confirming the plant first can improve interpretation.",
+      "plantNotConfirmedHint": "Confirm the plant first for more relevant disease diagnosis.",
+      "confirmPlantFirst": "Confirm the plant first to diagnose disease.",
+      "usesConfirmedPlant": "Disease diagnosis uses the confirmed plant to improve relevance.",
+      "plantConfirmedAvailable": "Plant confirmed, diagnosis available.",
       "plantNotConfirmed": "Plant not confirmed",
       "disease": "Disease",
       "confidence": "Confidence",
@@ -2027,8 +2030,16 @@
         "empty": "No diagnosis returned. Try clearer photos.",
         "generic": "Diagnosis failed. Please try again.",
         "confirmFailed": "Confirmation failed. Please try again.",
-        "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG."
+        "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG.",
+        "plantNotConfirmed": "Confirm the plant first to diagnose disease."
       }
+    },
+    "diagnoseFlow": {
+      "step1": "Step 1: Identify plant",
+      "step2": "Step 2: Diagnose disease",
+      "identifyFirst": "Identify and confirm the plant before diagnosing disease.",
+      "diagnoseDisease": "Diagnose disease on the confirmed plant.",
+      "step2Locked": "Confirm the plant first to diagnose disease."
     },
     "settings": {
       "title": "Plant Advisor settings",

@@ -2000,7 +2000,10 @@
       "runAgain": "Pokreni ponovo",
       "loading": "Učitavanje dijagnoza…",
       "uploadFirst": "Prvo otpremite slike biljke.",
-      "plantNotConfirmedHint": "Možete dijagnostikovati direktno, ali potvrda biljke može poboljšati interpretaciju.",
+      "plantNotConfirmedHint": "Prvo potvrdite biljku za relevantniju dijagnozu bolesti.",
+      "confirmPlantFirst": "Prvo potvrdite biljku da biste dijagnostikovali bolest.",
+      "usesConfirmedPlant": "Dijagnoza bolesti koristi potvrđenu biljku radi veće relevantnosti.",
+      "plantConfirmedAvailable": "Biljka potvrđena, dijagnoza dostupna.",
       "plantNotConfirmed": "Biljka nije potvrđena",
       "disease": "Bolest",
       "confidence": "Pouzdanost",
@@ -2043,8 +2046,16 @@
         "empty": "Nema rezultata dijagnoze. Pokušajte sa jasnijim fotografijama.",
         "generic": "Dijagnoza nije uspela. Pokušajte ponovo.",
         "confirmFailed": "Potvrda nije uspela. Pokušajte ponovo.",
-        "webpConvertFailed": "Konverzija WebP slike nije uspela. Pokušajte JPEG ili PNG."
+        "webpConvertFailed": "Konverzija WebP slike nije uspela. Pokušajte JPEG ili PNG.",
+        "plantNotConfirmed": "Prvo potvrdite biljku da biste dijagnostikovali bolest."
       }
+    },
+    "diagnoseFlow": {
+      "step1": "Korak 1: Prepoznaj biljku",
+      "step2": "Korak 2: Dijagnostikuj bolest",
+      "identifyFirst": "Prepoznajte i potvrdite biljku pre dijagnostike bolesti.",
+      "diagnoseDisease": "Dijagnostikuj bolest na potvrđenoj biljci.",
+      "step2Locked": "Prvo potvrdite biljku da biste dijagnostikovali bolest."
     },
     "settings": {
       "title": "Podešavanja Plant Advisor-a",
