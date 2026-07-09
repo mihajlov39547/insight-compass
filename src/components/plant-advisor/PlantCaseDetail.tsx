@@ -72,14 +72,34 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
 
       <PlantImageUploader caseId={plantCase.id} />
 
-      <PlantIdentificationSection caseId={plantCase.id} images={images} />
+      {plantCase.user_goal === 'diagnose' ? (
+        <>
+          <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">{t('plantAdvisor.diagnoseFlow.step1')}</span>
+            {' — '}
+            {t('plantAdvisor.diagnoseFlow.identifyFirst')}
+          </div>
+          <PlantIdentificationSection caseId={plantCase.id} images={images} />
 
-      {(plantCase.user_goal === 'diagnose' || !!plantCase.confirmed_identification_id) && (
-        <PlantDiseaseDiagnosisSection
-          caseId={plantCase.id}
-          images={images}
-          hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-        />
+          <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">{t('plantAdvisor.diagnoseFlow.step2')}</span>
+            {' — '}
+            {t('plantAdvisor.diagnoseFlow.diagnoseDisease')}
+          </div>
+          {plantCase.confirmed_identification_id ? (
+            <PlantDiseaseDiagnosisSection
+              caseId={plantCase.id}
+              images={images}
+              hasConfirmedIdentification={true}
+            />
+          ) : (
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+              {t('plantAdvisor.diagnoseFlow.step2Locked')}
+            </div>
+          )}
+        </>
+      ) : (
+        <PlantIdentificationSection caseId={plantCase.id} images={images} />
       )}
 
 
