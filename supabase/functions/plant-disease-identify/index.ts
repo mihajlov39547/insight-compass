@@ -269,6 +269,83 @@ Deno.serve(async (req: Request) => {
       const pc: any = pcase as any;
       const plantContextSource = pc?.confirmed_identification_id ? 'confirmed_identification' : 'unknown';
 
+      // --- Heuristics: readable name, problem type, confidence bucket ---
+      const PEST_PATTERNS = [
+        'aphid', 'beetle', 'mite', 'caterpillar', 'larva', 'insect', 'fly', 'bug',
+        'scale', 'weevil', 'moth', 'thrips', 'nematode', 'wasp', 'ant', 'grasshopper',
+        'whitefly', 'mealybug', 'leafhopper', 'borer', 'sawfly',
+        // hr / sr
+        'lisna uš', 'lisne uši', 'buba', 'grinj', 'gusenic', 'ličink', 'insekt',
+        'muha', 'muva', 'štitast', 'pipa', 'leptir', 'trip', 'nematod', 'osa',
+        'mrav', 'skakavac', 'bela mušica', 'crv',
+      ];
+      const DISEASE_PATTERNS = [
+        'rust', 'mildew', 'blight', 'rot', 'spot', 'fungus', 'fungal', 'bacteria',
+        'bacterial', 'phytoplasma', 'virus', 'mosaic', 'canker', 'wilt', 'scab',
+        'anthracnose', 'smut',
+        // hr / sr
+        'rđa', 'plamenjača', 'pepelnic', 'trulež', 'pjeg', 'pega', 'gljiv',
+        'bakterij', 'fitoplazm', 'mozaik', 'rak ', 'venjenje', 'krastav',
+      ];
+
+      function classifyProblem(text: string): 'pest' | 'disease' | 'unknown' {
+        const t = text.toLowerCase();
+        for (const p of PEST_PATTERNS) if (p && t.includes(p)) return 'pest';
+        for (const p of DISEASE_PATTERNS) if (p && t.includes(p)) return 'disease';
+        return 'unknown';
+      }
+
+      function confidenceBucket(s: number | null): 'high' | 'medium' | 'low' {
+        if (typeof s !== 'number') return 'low';
+        if (s >= 0.7) return 'high';
+        if (s >= 0.4) return 'medium';
+        return 'low';
+      }
+
+      const enriched = results.slice(0, 10).map((r: any, idx: number) => {
+        const disease = r?.disease || r?.species || {};
+        const providerCode: string | null =
+          (typeof r?.name === 'string' && r.name.trim()) ? r.name.trim() :
+          (typeof disease?.code === 'string' && disease.code.trim()) ? disease.code.trim() :
+          null;
+        const rawDescription: string | null =
+          (typeof disease?.description === 'string' && disease.description) ||
+          (typeof disease?.description?.content === 'string' && disease.description.content) ||
+          (typeof r?.description === 'string' && r.description) ||
+          null;
+        const diseaseName: string | null =
+          (typeof disease?.name === 'string' && disease.name.trim()) ? disease.name.trim() :
+          (typeof disease?.scientificName === 'string' && disease.scientificName.trim()) ? disease.scientificName.trim() :
+          null;
+        // Prefer readable description over opaque provider code.
+        const readableName: string | null =
+          diseaseName ||
+          (rawDescription && rawDescription.trim().length > 0 && rawDescription.trim() !== providerCode
+            ? rawDescription.trim()
+            : providerCode);
+        const affectedOrgans: string[] = Array.isArray(disease?.organs)
+          ? disease.organs.filter((s: any) => typeof s === 'string')
+          : Array.isArray(r?.organs)
+          ? r.organs.filter((s: any) => typeof s === 'string')
+          : [];
+        const classificationText = [readableName ?? '', rawDescription ?? '', providerCode ?? ''].join(' ');
+        const problemType = classifyProblem(classificationText);
+        const score = typeof r?.score === 'number' ? r.score : null;
+        const images = pickImages(r?.images);
+        return {
+          rank: idx + 1,
+          score,
+          providerCode,
+          name: readableName,
+          description: rawDescription,
+          affectedOrgans,
+          problemType,
+          confidenceBucket: confidenceBucket(score),
+          relatedImages: images,
+          raw: r,
+        };
+      });
+
       // Delete previous unconfirmed diagnoses; keep confirmed row intact.
       await admin
         .from('plant_diagnoses')
@@ -276,33 +353,23 @@ Deno.serve(async (req: Request) => {
         .eq('case_id', plantCaseId)
         .eq('is_confirmed', false);
 
-      const normalizedForInsert = results.slice(0, 10).map((r: any, idx: number) => {
-        const disease = r?.disease || r?.species || {};
-        const name: string | null = disease?.name ?? disease?.scientificName ?? r?.name ?? null;
-        const description: string | null = disease?.description?.content ?? disease?.description ?? r?.description ?? null;
-        const affectedOrgans: string[] = Array.isArray(disease?.organs)
-          ? disease.organs.filter((s: any) => typeof s === 'string')
-          : Array.isArray(r?.organs)
-          ? r.organs.filter((s: any) => typeof s === 'string')
-          : [];
-        return {
-          case_id: plantCaseId,
-          user_id: userId,
-          provider: 'plantnet_disease',
-          rank: idx + 1,
-          score: typeof r?.score === 'number' ? r.score : null,
-          problem_type: 'disease',
-          name,
-          description,
-          affected_organs: affectedOrgans.length > 0 ? affectedOrgans : null,
-          raw_result: r,
-          raw_response: idx === 0 ? raw : null,
-          language: lang,
-          plant_context_source: plantContextSource,
-          plant_scientific_name: pc?.confirmed_scientific_name ?? null,
-          plant_common_name: pc?.confirmed_common_name ?? null,
-        };
-      });
+      const normalizedForInsert = enriched.map((e, idx) => ({
+        case_id: plantCaseId,
+        user_id: userId,
+        provider: 'plantnet_disease',
+        rank: e.rank,
+        score: e.score,
+        problem_type: e.problemType,
+        name: e.name,
+        description: e.description,
+        affected_organs: e.affectedOrgans.length > 0 ? e.affectedOrgans : null,
+        raw_result: { ...e.raw, _providerCode: e.providerCode, _confidenceBucket: e.confidenceBucket },
+        raw_response: idx === 0 ? raw : null,
+        language: lang,
+        plant_context_source: plantContextSource,
+        plant_scientific_name: pc?.confirmed_scientific_name ?? null,
+        plant_common_name: pc?.confirmed_common_name ?? null,
+      }));
 
       const { data: inserted, error: insErr } = await admin
         .from('plant_diagnoses')
@@ -313,20 +380,21 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ error: 'db_error' }, 500);
       }
 
+      const hasAnyRelatedImages = enriched.some((e) => e.relatedImages.length > 0);
+
       const review = {
-        diseases: results.slice(0, 10).map((r: any, idx: number) => {
-          const disease = r?.disease || r?.species || {};
-          return {
-            rank: idx + 1,
-            score: typeof r?.score === 'number' ? r.score : null,
-            name: disease?.name ?? disease?.scientificName ?? r?.name ?? null,
-            description: disease?.description?.content ?? disease?.description ?? r?.description ?? null,
-            affectedOrgans: Array.isArray(disease?.organs)
-              ? disease.organs.filter((s: any) => typeof s === 'string')
-              : [],
-            relatedImages: pickImages(r?.images),
-          };
-        }),
+        diseases: enriched.map((e) => ({
+          rank: e.rank,
+          score: e.score,
+          name: e.name,
+          providerCode: e.providerCode,
+          description: e.description,
+          affectedOrgans: e.affectedOrgans,
+          problemType: e.problemType,
+          confidenceBucket: e.confidenceBucket,
+          relatedImages: e.relatedImages,
+        })),
+        hasAnyRelatedImages,
         language: lang,
       };
 
