@@ -161,11 +161,34 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
   const top: PlantDiagnosis | undefined = confirmed || diagnoses[0];
   const alts = diagnoses.filter((d) => d.id !== top?.id).slice(0, 5);
 
-  // Match persisted rows by rank to review items for related images.
   const reviewByRank = new Map<number, PlantDiseaseReviewItem>();
   if (review) {
     for (const d of review.diseases) reviewByRank.set(d.rank, d);
   }
+
+  const problemTypeLabel = (pt: string | null | undefined): string => {
+    if (pt === 'pest') return t('plantAdvisor.diagnose.problemType.pest');
+    if (pt === 'disease') return t('plantAdvisor.diagnose.problemType.disease');
+    return t('plantAdvisor.diagnose.problemType.unknown');
+  };
+  const confidenceLabel = (bucket: string): string => {
+    if (bucket === 'high') return t('plantAdvisor.diagnose.confidenceBucket.high');
+    if (bucket === 'medium') return t('plantAdvisor.diagnose.confidenceBucket.medium');
+    return t('plantAdvisor.diagnose.confidenceBucket.low');
+  };
+  const bucketOf = (s: number | null): 'high' | 'medium' | 'low' => {
+    if (typeof s !== 'number') return 'low';
+    if (s >= 0.7) return 'high';
+    if (s >= 0.4) return 'medium';
+    return 'low';
+  };
+  const problemTypeOf = (d: PlantDiagnosis): string =>
+    reviewByRank.get(d.rank)?.problemType ?? d.problem_type ?? 'unknown';
+  const providerCodeOf = (d: PlantDiagnosis): string | null =>
+    reviewByRank.get(d.rank)?.providerCode ?? null;
+
+  const topBucket = top ? bucketOf(top.score) : 'low';
+  const showLowConfidenceWarning = !!top && top.score !== null && top.score < 0.4;
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -222,23 +245,43 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         <div className="text-xs text-muted-foreground">{t('plantAdvisor.diagnose.loading')}</div>
       )}
 
+      {showLowConfidenceWarning && (
+        <div className="text-xs rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-1.5 flex items-start gap-1.5">
+          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+          <span>{t('plantAdvisor.diagnose.lowConfidenceWarning')}</span>
+        </div>
+      )}
+
       {top && (
         <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="font-medium">{top.name || '—'}</div>
-            <div className="flex items-center gap-1.5">
+            <div className="min-w-0">
+              <div className="font-medium truncate">{top.name || '—'}</div>
+              {providerCodeOf(top) && providerCodeOf(top) !== top.name && (
+                <div className="text-[10px] text-muted-foreground">
+                  {t('plantAdvisor.diagnose.providerCode')}: {providerCodeOf(top)}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
               {top.is_confirmed && (
                 <Badge variant="default" className="text-[10px]">
                   <Check className="h-3 w-3 mr-1" />
                   {t('plantAdvisor.diagnose.confirmedDiagnosis')}
                 </Badge>
               )}
-              <Badge variant="secondary" className="text-[10px]">
-                {t('plantAdvisor.diagnose.confidence')}: {fmtPct(top.score)}
+              <Badge variant="outline" className="text-[10px]">
+                {problemTypeLabel(problemTypeOf(top))}
+              </Badge>
+              <Badge
+                variant={topBucket === 'low' ? 'destructive' : 'secondary'}
+                className="text-[10px]"
+              >
+                {confidenceLabel(topBucket)} · {fmtPct(top.score)}
               </Badge>
             </div>
           </div>
-          {top.description && (
+          {top.description && top.description !== top.name && (
             <div className="text-xs text-muted-foreground whitespace-pre-wrap">{top.description}</div>
           )}
           <div className="grid grid-cols-2 gap-2 text-[11px]">
@@ -286,12 +329,29 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
           <ul className="space-y-2">
             {alts.map((a) => {
               const relImgs = reviewByRank.get(a.rank)?.relatedImages ?? [];
+              const aCode = providerCodeOf(a);
+              const aBucket = bucketOf(a.score);
               return (
                 <li key={a.id} className="rounded-md border border-border/60 px-2 py-2 space-y-1.5">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="font-medium text-xs">{a.name || '—'}</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-muted-foreground">{fmtPct(a.score)}</span>
+                    <div className="min-w-0">
+                      <div className="font-medium text-xs truncate">{a.name || '—'}</div>
+                      {aCode && aCode !== a.name && (
+                        <div className="text-[10px] text-muted-foreground">
+                          {t('plantAdvisor.diagnose.providerCode')}: {aCode}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">
+                        {problemTypeLabel(problemTypeOf(a))}
+                      </Badge>
+                      <Badge
+                        variant={aBucket === 'low' ? 'destructive' : 'secondary'}
+                        className="text-[10px]"
+                      >
+                        {fmtPct(a.score)}
+                      </Badge>
                       {a.is_confirmed ? (
                         <Badge variant="default" className="text-[10px]">
                           <Check className="h-3 w-3 mr-1" />
@@ -310,7 +370,7 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
                       )}
                     </div>
                   </div>
-                  {a.description && (
+                  {a.description && a.description !== a.name && (
                     <div className="text-[11px] text-muted-foreground line-clamp-3">{a.description}</div>
                   )}
                   {relImgs.length > 0 && <ImageStrip images={relImgs} onOpen={setOpenImg} />}
@@ -345,10 +405,16 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         </DialogContent>
       </Dialog>
 
-      {review && (
+      {review && review.hasAnyRelatedImages && (
         <div className="text-[10px] text-muted-foreground flex items-center gap-1">
           <Info className="h-3 w-3" />
           {t('plantAdvisor.identify.referenceImagesEphemeralNote')}
+        </div>
+      )}
+      {review && !review.hasAnyRelatedImages && diagnoses.length > 0 && (
+        <div className="text-[11px] text-muted-foreground flex items-start gap-1">
+          <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+          <span>{t('plantAdvisor.diagnose.noReferenceImagesReturned')}</span>
         </div>
       )}
     </div>

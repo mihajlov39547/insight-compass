@@ -2004,6 +2004,19 @@
       "openImage": "Open image",
       "doneToast": "Diagnosis complete",
       "confirmedToast": "Diagnosis confirmed",
+      "providerCode": "Provider code",
+      "lowConfidenceWarning": "Diagnosis is uncertain. Use clearer close-up images and confirm the issue before requesting treatment.",
+      "noReferenceImagesReturned": "Pl@ntNet returned no reference images for these disease candidates.",
+      "problemType": {
+        "pest": "Pest",
+        "disease": "Disease",
+        "unknown": "Unknown problem"
+      },
+      "confidenceBucket": {
+        "low": "Low confidence",
+        "medium": "Medium confidence",
+        "high": "High confidence"
+      },
       "errors": {
         "apiKeyMissing": "Plant diagnosis is not configured (API key missing).",
         "noCompatible": "No compatible JPEG or PNG images available.",
