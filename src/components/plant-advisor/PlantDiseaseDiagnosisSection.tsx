@@ -429,12 +429,3 @@ function Field({ label, value }: { label: string; value: string | null | undefin
     </div>
   );
 }
-
-function Field({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <div>
-      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
-      <div className="truncate">{value || '—'}</div>
-    </div>
-  );
-}
