@@ -2030,8 +2030,16 @@
         "empty": "No diagnosis returned. Try clearer photos.",
         "generic": "Diagnosis failed. Please try again.",
         "confirmFailed": "Confirmation failed. Please try again.",
-        "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG."
+        "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG.",
+        "plantNotConfirmed": "Confirm the plant first to diagnose disease."
       }
+    },
+    "diagnoseFlow": {
+      "step1": "Step 1: Identify plant",
+      "step2": "Step 2: Diagnose disease",
+      "identifyFirst": "Identify and confirm the plant before diagnosing disease.",
+      "diagnoseDisease": "Diagnose disease on the confirmed plant.",
+      "step2Locked": "Confirm the plant first to diagnose disease."
     },
     "settings": {
       "title": "Plant Advisor settings",
