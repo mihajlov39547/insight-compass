@@ -37,13 +37,17 @@ export interface PlantDiseaseReviewItem {
   rank: number;
   score: number | null;
   name: string | null;
+  providerCode: string | null;
   description: string | null;
   affectedOrgans: string[];
+  problemType: 'pest' | 'disease' | 'unknown';
+  confidenceBucket: 'high' | 'medium' | 'low';
   relatedImages: PlantDiseaseRelatedImage[];
 }
 
 export interface PlantDiseaseReview {
   diseases: PlantDiseaseReviewItem[];
+  hasAnyRelatedImages: boolean;
   language: string;
 }
 
