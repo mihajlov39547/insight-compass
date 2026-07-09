@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import ProfileSettings from "./pages/ProfileSettings";
 import Unsubscribe from "./pages/Unsubscribe";
 import ResetPassword from "./pages/ResetPassword";
+import OAuthConsent from "./pages/OAuthConsent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
