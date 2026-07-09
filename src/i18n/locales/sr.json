@@ -2020,6 +2020,19 @@
       "openImage": "Otvori sliku",
       "doneToast": "Dijagnoza završena",
       "confirmedToast": "Dijagnoza potvrđena",
+      "providerCode": "Kod provajdera",
+      "lowConfidenceWarning": "Dijagnoza je neizvesna. Koristite jasnije slike izbliza i potvrdite problem pre traženja tretmana.",
+      "noReferenceImagesReturned": "Pl@ntNet nije vratio referentne slike za ove kandidate.",
+      "problemType": {
+        "pest": "Štetočina",
+        "disease": "Bolest",
+        "unknown": "Nepoznat problem"
+      },
+      "confidenceBucket": {
+        "low": "Niska pouzdanost",
+        "medium": "Srednja pouzdanost",
+        "high": "Visoka pouzdanost"
+      },
       "errors": {
         "apiKeyMissing": "Dijagnoza biljke nije konfigurisana (nedostaje API ključ).",
         "noCompatible": "Nema kompatibilnih JPEG ili PNG slika.",
