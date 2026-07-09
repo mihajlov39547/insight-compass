@@ -47,6 +47,8 @@ function errorKey(code: string | undefined): string {
       return 'plantAdvisor.diagnose.errors.badRequest';
     case 'empty_results':
       return 'plantAdvisor.diagnose.errors.empty';
+    case 'plant_not_confirmed':
+      return 'plantAdvisor.diagnose.errors.plantNotConfirmed';
     default:
       return 'plantAdvisor.diagnose.errors.generic';
   }
