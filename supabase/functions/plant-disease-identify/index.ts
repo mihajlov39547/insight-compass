@@ -104,14 +104,24 @@ Deno.serve(async (req: Request) => {
 
     const { data: pcase } = await admin
       .from('plant_cases')
-      .select('id,user_id,confirmed_scientific_name,confirmed_common_name,confirmed_identification_id')
+      .select('id,user_id,user_goal,confirmed_scientific_name,confirmed_common_name,confirmed_identification_id')
       .eq('id', plantCaseId)
       .maybeSingle();
     if (!pcase) return jsonResponse({ error: 'not_found' }, 404);
     if ((pcase as any).user_id !== userId) return jsonResponse({ error: 'forbidden' }, 403);
+    if ((pcase as any).user_goal !== 'diagnose') {
+      return jsonResponse({ error: 'invalid_case_goal' }, 400);
+    }
     if (!(pcase as any).confirmed_identification_id) {
       return jsonResponse({ error: 'plant_not_confirmed' }, 400);
     }
+
+    // Load confirmed identification for relevance annotation.
+    const { data: confIdent } = await admin
+      .from('plant_identifications')
+      .select('scientific_name,scientific_name_without_author,common_name,genus,family')
+      .eq('id', (pcase as any).confirmed_identification_id)
+      .maybeSingle();
 
     let q = admin
       .from('plant_case_images')
@@ -305,6 +315,73 @@ Deno.serve(async (req: Request) => {
         return 'low';
       }
 
+      // --- Plant relevance heuristic ---
+      const ci: any = confIdent ?? {};
+      const confirmedTokens: string[] = [];
+      const pushTok = (v: unknown) => {
+        if (typeof v !== 'string') return;
+        const t = v.trim().toLowerCase();
+        if (t.length >= 3) confirmedTokens.push(t);
+      };
+      pushTok(ci.scientific_name);
+      pushTok(ci.scientific_name_without_author);
+      pushTok(ci.common_name);
+      pushTok(ci.genus);
+      pushTok(ci.family);
+      pushTok(pc?.confirmed_scientific_name);
+      pushTok(pc?.confirmed_common_name);
+      // Add common alt names for widely used genera (best-effort).
+      const genusLower = (ci.genus || '').toLowerCase();
+      const ALIASES: Record<string, string[]> = {
+        rubus: ['blackberry', 'raspberry', 'bramble', 'kupina', 'malina'],
+        malus: ['apple', 'jabuka'],
+        vitis: ['grape', 'grapevine', 'vinova loza', 'grožđe'],
+        prunus: ['cherry', 'plum', 'peach', 'apricot', 'trešnja', 'šljiva', 'breskva', 'kajsija'],
+        solanum: ['tomato', 'potato', 'paradajz', 'krompir', 'krumpir'],
+        zea: ['maize', 'corn', 'kukuruz'],
+        triticum: ['wheat', 'pšenica'],
+        glycine: ['soybean', 'soja'],
+        citrus: ['orange', 'lemon', 'limun', 'narandža'],
+      };
+      if (ALIASES[genusLower]) for (const a of ALIASES[genusLower]) confirmedTokens.push(a);
+
+      const OTHER_HOST_TOKENS = [
+        'spruce', 'pine', 'fir', 'grasses', 'grass', 'soybean', 'apple', 'tomato',
+        'wheat', 'corn', 'maize', 'grape', 'grapevine', 'potato', 'citrus', 'orange',
+        'lemon', 'rice', 'cotton', 'barley', 'oat', 'onion', 'cabbage', 'strawberry',
+        'peach', 'plum', 'cherry', 'pear', 'walnut', 'hazelnut', 'oak', 'maple',
+        'smrek', 'bor', 'jela', 'trav', 'soja', 'jabuka', 'paradajz', 'pšenica',
+        'kukuruz', 'grožđ', 'vinova', 'krompir', 'krumpir', 'limun', 'narandža',
+        'jagoda', 'breskva', 'šljiva', 'trešnja', 'kruška', 'orah', 'hrast',
+      ];
+      const BROAD_PEST_TOKENS = [
+        'aphid', 'mite', 'caterpillar', 'thrips', 'whitefly', 'mealybug', 'scale',
+        'japanese beetle', 'popillia', 'leafhopper', 'nematode',
+        'lisna uš', 'grinj', 'gusenic', 'trip', 'štitast', 'bela mušica', 'nematod',
+      ];
+
+      function classifyRelevance(text: string, problemType: 'pest' | 'disease' | 'unknown'):
+        { relevance: 'high' | 'medium' | 'low' | 'unknown'; reason: string | null } {
+        const t = text.toLowerCase();
+        if (!t.trim()) return { relevance: 'unknown', reason: null };
+        // High: mentions any confirmed-plant token.
+        for (const tok of confirmedTokens) {
+          if (tok && t.includes(tok)) return { relevance: 'high', reason: 'mentions_confirmed' };
+        }
+        // Low: mentions an unrelated host.
+        const otherHost = OTHER_HOST_TOKENS.find((h) => t.includes(h));
+        if (otherHost) {
+          // Skip if that host is in the confirmed-plant tokens.
+          const isConfirmed = confirmedTokens.some((c) => c.includes(otherHost) || otherHost.includes(c));
+          if (!isConfirmed) return { relevance: 'low', reason: 'mentions_other_host' };
+        }
+        // Medium: broad pest.
+        if (problemType === 'pest' && BROAD_PEST_TOKENS.some((p) => t.includes(p))) {
+          return { relevance: 'medium', reason: 'broad_pest' };
+        }
+        return { relevance: 'unknown', reason: null };
+      }
+
       const enriched = results.slice(0, 10).map((r: any, idx: number) => {
         const disease = r?.disease || r?.species || {};
         const providerCode: string | null =
@@ -335,6 +412,8 @@ Deno.serve(async (req: Request) => {
         const problemType = classifyProblem(classificationText);
         const score = typeof r?.score === 'number' ? r.score : null;
         const images = pickImages(r?.images);
+        const { relevance: plantRelevance, reason: plantRelevanceReason } =
+          classifyRelevance(classificationText, problemType);
         return {
           rank: idx + 1,
           score,
@@ -345,6 +424,8 @@ Deno.serve(async (req: Request) => {
           problemType,
           confidenceBucket: confidenceBucket(score),
           relatedImages: images,
+          plantRelevance,
+          plantRelevanceReason,
           raw: r,
         };
       });
@@ -372,6 +453,8 @@ Deno.serve(async (req: Request) => {
         plant_context_source: plantContextSource,
         plant_scientific_name: pc?.confirmed_scientific_name ?? null,
         plant_common_name: pc?.confirmed_common_name ?? null,
+        plant_relevance: e.plantRelevance,
+        plant_relevance_reason: e.plantRelevanceReason,
       }));
 
       const { data: inserted, error: insErr } = await admin
@@ -396,9 +479,18 @@ Deno.serve(async (req: Request) => {
           problemType: e.problemType,
           confidenceBucket: e.confidenceBucket,
           relatedImages: e.relatedImages,
+          plantRelevance: e.plantRelevance,
+          plantRelevanceReason: e.plantRelevanceReason,
         })),
         hasAnyRelatedImages,
         language: lang,
+        confirmedPlant: {
+          scientificName: (confIdent as any)?.scientific_name ?? pc?.confirmed_scientific_name ?? null,
+          scientificNameWithoutAuthor: (confIdent as any)?.scientific_name_without_author ?? null,
+          commonName: (confIdent as any)?.common_name ?? pc?.confirmed_common_name ?? null,
+          genus: (confIdent as any)?.genus ?? null,
+          family: (confIdent as any)?.family ?? null,
+        },
       };
 
       return jsonResponse({

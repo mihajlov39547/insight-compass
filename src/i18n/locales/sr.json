@@ -2047,7 +2047,20 @@
         "generic": "Dijagnoza nije uspela. Pokušajte ponovo.",
         "confirmFailed": "Potvrda nije uspela. Pokušajte ponovo.",
         "webpConvertFailed": "Konverzija WebP slike nije uspela. Pokušajte JPEG ili PNG.",
-        "plantNotConfirmed": "Prvo potvrdite biljku da biste dijagnostikovali bolest."
+        "plantNotConfirmed": "Prvo potvrdite biljku da biste dijagnostikovali bolest.",
+        "invalidCaseGoal": "Dijagnoza bolesti je dostupna samo za slučajeve tipa Dijagnoza bolesti."
+      },
+      "contextLabel": "Kontekst dijagnoze",
+      "relevance": {
+        "high": "Relevantno za potvrđenu biljku",
+        "medium": "Moguće relevantno",
+        "low": "Niska relevantnost za potvrđenu biljku",
+        "unknown": "Relevantnost nepoznata"
+      },
+      "relevanceReason": {
+        "mentions_confirmed": "Pominje potvrđenu biljku.",
+        "mentions_other_host": "Pominje drugu biljku domaćina.",
+        "broad_pest": "Široko rasprostranjena štetočina; može napadati mnoge biljke."
       }
     },
     "diagnoseFlow": {

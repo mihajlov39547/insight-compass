@@ -17,6 +17,8 @@ export interface PlantDiagnosis {
   plant_scientific_name: string | null;
   plant_common_name: string | null;
   plant_context_source: string | null;
+  plant_relevance: 'high' | 'medium' | 'low' | 'unknown' | null;
+  plant_relevance_reason: string | null;
   is_confirmed: boolean;
   confirmed_at: string | null;
   created_at: string;
@@ -43,12 +45,23 @@ export interface PlantDiseaseReviewItem {
   problemType: 'pest' | 'disease' | 'unknown';
   confidenceBucket: 'high' | 'medium' | 'low';
   relatedImages: PlantDiseaseRelatedImage[];
+  plantRelevance: 'high' | 'medium' | 'low' | 'unknown';
+  plantRelevanceReason: string | null;
+}
+
+export interface PlantDiseaseReviewConfirmedPlant {
+  scientificName: string | null;
+  scientificNameWithoutAuthor: string | null;
+  commonName: string | null;
+  genus: string | null;
+  family: string | null;
 }
 
 export interface PlantDiseaseReview {
   diseases: PlantDiseaseReviewItem[];
   hasAnyRelatedImages: boolean;
   language: string;
+  confirmedPlant?: PlantDiseaseReviewConfirmedPlant;
 }
 
 export interface DiagnoseDiseaseResponse {

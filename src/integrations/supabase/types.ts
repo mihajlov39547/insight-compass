@@ -1412,6 +1412,8 @@ export type Database = {
           name: string | null
           plant_common_name: string | null
           plant_context_source: string | null
+          plant_relevance: string | null
+          plant_relevance_reason: string | null
           plant_scientific_name: string | null
           problem_type: string
           provider: string
@@ -1433,6 +1435,8 @@ export type Database = {
           name?: string | null
           plant_common_name?: string | null
           plant_context_source?: string | null
+          plant_relevance?: string | null
+          plant_relevance_reason?: string | null
           plant_scientific_name?: string | null
           problem_type?: string
           provider?: string
@@ -1454,6 +1458,8 @@ export type Database = {
           name?: string | null
           plant_common_name?: string | null
           plant_context_source?: string | null
+          plant_relevance?: string | null
+          plant_relevance_reason?: string | null
           plant_scientific_name?: string | null
           problem_type?: string
           provider?: string
