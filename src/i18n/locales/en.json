@@ -2031,7 +2031,20 @@
         "generic": "Diagnosis failed. Please try again.",
         "confirmFailed": "Confirmation failed. Please try again.",
         "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG.",
-        "plantNotConfirmed": "Confirm the plant first to diagnose disease."
+        "plantNotConfirmed": "Confirm the plant first to diagnose disease.",
+        "invalidCaseGoal": "Disease diagnosis is available only for Diagnose disease cases."
+      },
+      "contextLabel": "Diagnosis context",
+      "relevance": {
+        "high": "Relevant to confirmed plant",
+        "medium": "Possibly relevant",
+        "low": "Low relevance to confirmed plant",
+        "unknown": "Relevance unknown"
+      },
+      "relevanceReason": {
+        "mentions_confirmed": "Mentions confirmed plant.",
+        "mentions_other_host": "Mentions a different host plant.",
+        "broad_pest": "Broad pest; may affect many plants."
       }
     },
     "diagnoseFlow": {
