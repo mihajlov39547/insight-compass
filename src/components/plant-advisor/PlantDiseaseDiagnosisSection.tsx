@@ -330,6 +330,12 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
                 {problemTypeLabel(problemTypeOf(top))}
               </Badge>
               <Badge
+                variant={relevanceBadgeVariant(relevanceOf(top))}
+                className="text-[10px]"
+              >
+                {relevanceLabel(relevanceOf(top))}
+              </Badge>
+              <Badge
                 variant={topBucket === 'low' ? 'destructive' : 'secondary'}
                 className="text-[10px]"
               >
@@ -337,6 +343,11 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
               </Badge>
             </div>
           </div>
+          {relevanceReasonLabel(relevanceReasonOf(top)) && (
+            <div className="text-[11px] text-muted-foreground italic">
+              {relevanceReasonLabel(relevanceReasonOf(top))}
+            </div>
+          )}
           {top.description && top.description !== top.name && (
             <div className="text-xs text-muted-foreground whitespace-pre-wrap">{top.description}</div>
           )}
