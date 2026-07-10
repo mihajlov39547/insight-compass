@@ -290,6 +290,12 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
           {t('plantAdvisor.diagnose.usesConfirmedPlant')}
         </div>
       )}
+      {contextLine && (
+        <div className="text-xs rounded-md border border-border bg-muted/40 px-2 py-1.5">
+          <span className="text-muted-foreground">{t('plantAdvisor.diagnose.contextLabel')}:</span>{' '}
+          <span className="font-medium">{contextLine}</span>
+        </div>
+      )}
 
       {isLoading && (
         <div className="text-xs text-muted-foreground">{t('plantAdvisor.diagnose.loading')}</div>
