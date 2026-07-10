@@ -17,6 +17,8 @@ export interface PlantDiagnosis {
   plant_scientific_name: string | null;
   plant_common_name: string | null;
   plant_context_source: string | null;
+  plant_relevance: 'high' | 'medium' | 'low' | 'unknown' | null;
+  plant_relevance_reason: string | null;
   is_confirmed: boolean;
   confirmed_at: string | null;
   created_at: string;
