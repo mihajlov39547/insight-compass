@@ -479,9 +479,18 @@ Deno.serve(async (req: Request) => {
           problemType: e.problemType,
           confidenceBucket: e.confidenceBucket,
           relatedImages: e.relatedImages,
+          plantRelevance: e.plantRelevance,
+          plantRelevanceReason: e.plantRelevanceReason,
         })),
         hasAnyRelatedImages,
         language: lang,
+        confirmedPlant: {
+          scientificName: (confIdent as any)?.scientific_name ?? pc?.confirmed_scientific_name ?? null,
+          scientificNameWithoutAuthor: (confIdent as any)?.scientific_name_without_author ?? null,
+          commonName: (confIdent as any)?.common_name ?? pc?.confirmed_common_name ?? null,
+          genus: (confIdent as any)?.genus ?? null,
+          family: (confIdent as any)?.family ?? null,
+        },
       };
 
       return jsonResponse({
