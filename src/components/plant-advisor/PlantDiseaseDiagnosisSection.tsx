@@ -414,6 +414,12 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
                         {problemTypeLabel(problemTypeOf(a))}
                       </Badge>
                       <Badge
+                        variant={relevanceBadgeVariant(relevanceOf(a))}
+                        className="text-[10px]"
+                      >
+                        {relevanceLabel(relevanceOf(a))}
+                      </Badge>
+                      <Badge
                         variant={aBucket === 'low' ? 'destructive' : 'secondary'}
                         className="text-[10px]"
                       >
