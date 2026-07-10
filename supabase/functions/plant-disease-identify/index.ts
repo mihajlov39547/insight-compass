@@ -412,6 +412,8 @@ Deno.serve(async (req: Request) => {
         const problemType = classifyProblem(classificationText);
         const score = typeof r?.score === 'number' ? r.score : null;
         const images = pickImages(r?.images);
+        const { relevance: plantRelevance, reason: plantRelevanceReason } =
+          classifyRelevance(classificationText, problemType);
         return {
           rank: idx + 1,
           score,
@@ -422,6 +424,8 @@ Deno.serve(async (req: Request) => {
           problemType,
           confidenceBucket: confidenceBucket(score),
           relatedImages: images,
+          plantRelevance,
+          plantRelevanceReason,
           raw: r,
         };
       });
