@@ -49,6 +49,8 @@ function errorKey(code: string | undefined): string {
       return 'plantAdvisor.diagnose.errors.empty';
     case 'plant_not_confirmed':
       return 'plantAdvisor.diagnose.errors.plantNotConfirmed';
+    case 'invalid_case_goal':
+      return 'plantAdvisor.diagnose.errors.invalidCaseGoal';
     default:
       return 'plantAdvisor.diagnose.errors.generic';
   }
