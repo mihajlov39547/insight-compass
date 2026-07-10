@@ -443,6 +443,11 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
                       )}
                     </div>
                   </div>
+                  {relevanceReasonLabel(relevanceReasonOf(a)) && (
+                    <div className="text-[10px] text-muted-foreground italic">
+                      {relevanceReasonLabel(relevanceReasonOf(a))}
+                    </div>
+                  )}
                   {a.description && a.description !== a.name && (
                     <div className="text-[11px] text-muted-foreground line-clamp-3">{a.description}</div>
                   )}
