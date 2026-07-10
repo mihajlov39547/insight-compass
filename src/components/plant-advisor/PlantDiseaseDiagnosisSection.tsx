@@ -161,14 +161,28 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
     }
   };
 
-  const confirmed = diagnoses.find((d) => d.is_confirmed) || null;
-  const top: PlantDiagnosis | undefined = confirmed || diagnoses[0];
-  const alts = diagnoses.filter((d) => d.id !== top?.id).slice(0, 5);
-
   const reviewByRank = new Map<number, PlantDiseaseReviewItem>();
   if (review) {
     for (const d of review.diseases) reviewByRank.set(d.rank, d);
   }
+
+  const relevanceOf = (d: PlantDiagnosis): 'high' | 'medium' | 'low' | 'unknown' =>
+    reviewByRank.get(d.rank)?.plantRelevance ?? (d.plant_relevance as any) ?? 'unknown';
+  const relevanceReasonOf = (d: PlantDiagnosis): string | null =>
+    reviewByRank.get(d.rank)?.plantRelevanceReason ?? d.plant_relevance_reason ?? null;
+
+  const RELEVANCE_ORDER: Record<string, number> = { high: 0, medium: 1, unknown: 2, low: 3 };
+  const sortedDiagnoses = [...diagnoses].sort((a, b) => {
+    if (a.is_confirmed !== b.is_confirmed) return a.is_confirmed ? -1 : 1;
+    const ra = RELEVANCE_ORDER[relevanceOf(a)] ?? 2;
+    const rb = RELEVANCE_ORDER[relevanceOf(b)] ?? 2;
+    if (ra !== rb) return ra - rb;
+    return (b.score ?? 0) - (a.score ?? 0);
+  });
+
+  const confirmed = sortedDiagnoses.find((d) => d.is_confirmed) || null;
+  const top: PlantDiagnosis | undefined = confirmed || sortedDiagnoses[0];
+  const alts = sortedDiagnoses.filter((d) => d.id !== top?.id).slice(0, 5);
 
   const problemTypeLabel = (pt: string | null | undefined): string => {
     if (pt === 'pest') return t('plantAdvisor.diagnose.problemType.pest');
@@ -190,6 +204,33 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
     reviewByRank.get(d.rank)?.problemType ?? d.problem_type ?? 'unknown';
   const providerCodeOf = (d: PlantDiagnosis): string | null =>
     reviewByRank.get(d.rank)?.providerCode ?? null;
+
+  const relevanceLabel = (r: string): string =>
+    t(`plantAdvisor.diagnose.relevance.${r === 'high' || r === 'medium' || r === 'low' ? r : 'unknown'}`);
+  const relevanceReasonLabel = (code: string | null): string | null => {
+    if (!code) return null;
+    const key = `plantAdvisor.diagnose.relevanceReason.${code}`;
+    const val = t(key);
+    return val === key ? code : val;
+  };
+  const relevanceBadgeVariant = (r: string): 'default' | 'secondary' | 'outline' | 'destructive' => {
+    if (r === 'high') return 'default';
+    if (r === 'medium') return 'secondary';
+    if (r === 'low') return 'outline';
+    return 'outline';
+  };
+
+  const contextParts = [
+    review?.confirmedPlant?.commonName ??
+      (top?.plant_common_name && top.plant_common_name !== top.plant_scientific_name
+        ? top.plant_common_name
+        : null),
+    review?.confirmedPlant?.scientificNameWithoutAuthor ??
+      review?.confirmedPlant?.scientificName ??
+      top?.plant_scientific_name ??
+      null,
+  ].filter((s): s is string => !!s && s.trim().length > 0);
+  const contextLine = contextParts.length > 0 ? contextParts.join(' / ') : null;
 
   const topBucket = top ? bucketOf(top.score) : 'low';
   const showLowConfidenceWarning = !!top && top.score !== null && top.score < 0.4;
