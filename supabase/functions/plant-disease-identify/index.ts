@@ -104,14 +104,24 @@ Deno.serve(async (req: Request) => {
 
     const { data: pcase } = await admin
       .from('plant_cases')
-      .select('id,user_id,confirmed_scientific_name,confirmed_common_name,confirmed_identification_id')
+      .select('id,user_id,user_goal,confirmed_scientific_name,confirmed_common_name,confirmed_identification_id')
       .eq('id', plantCaseId)
       .maybeSingle();
     if (!pcase) return jsonResponse({ error: 'not_found' }, 404);
     if ((pcase as any).user_id !== userId) return jsonResponse({ error: 'forbidden' }, 403);
+    if ((pcase as any).user_goal !== 'diagnose') {
+      return jsonResponse({ error: 'invalid_case_goal' }, 400);
+    }
     if (!(pcase as any).confirmed_identification_id) {
       return jsonResponse({ error: 'plant_not_confirmed' }, 400);
     }
+
+    // Load confirmed identification for relevance annotation.
+    const { data: confIdent } = await admin
+      .from('plant_identifications')
+      .select('scientific_name,scientific_name_without_author,common_name,genus,family')
+      .eq('id', (pcase as any).confirmed_identification_id)
+      .maybeSingle();
 
     let q = admin
       .from('plant_case_images')
