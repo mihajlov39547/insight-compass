@@ -453,6 +453,8 @@ Deno.serve(async (req: Request) => {
         plant_context_source: plantContextSource,
         plant_scientific_name: pc?.confirmed_scientific_name ?? null,
         plant_common_name: pc?.confirmed_common_name ?? null,
+        plant_relevance: e.plantRelevance,
+        plant_relevance_reason: e.plantRelevanceReason,
       }));
 
       const { data: inserted, error: insErr } = await admin
