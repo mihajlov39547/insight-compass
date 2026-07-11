@@ -110,6 +110,7 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
   const { t } = useTranslation();
   const { user } = useAuth();
   const { data: diagnoses = [], isLoading } = usePlantDiagnoses(caseId);
+  const { data: interpretation } = usePlantDiagnosisInterpretations(caseId);
   const diagnose = useDiagnoseDisease();
   const confirmMut = useConfirmPlantDiagnosis();
   const settings = usePlantAdvisorSettings();
@@ -117,6 +118,8 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
   const [preparing, setPreparing] = useState(false);
   const [review, setReview] = useState<PlantDiseaseReview | null>(null);
   const [openImg, setOpenImg] = useState<PlantDiseaseRelatedImage | null>(null);
+  const [aiFailed, setAiFailed] = useState(false);
+  const [unlikelyOpen, setUnlikelyOpen] = useState(false);
 
   const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
   const webps = images.filter((i) => isWebpMime(i.mime_type));
