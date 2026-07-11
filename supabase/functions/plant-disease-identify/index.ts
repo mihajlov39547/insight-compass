@@ -488,8 +488,8 @@ Deno.serve(async (req: Request) => {
         caseContext: {
           title: (pcase as any)?.title ?? null,
           notes: (pcase as any)?.notes ?? null,
-          location: (pcase as any)?.location ?? null,
-          crop: (pcase as any)?.crop ?? null,
+          location: (pcase as any)?.location_text ?? null,
+          crop: (pcase as any)?.crop_context ?? null,
           imageRoles: Array.from(new Set(picked.map((p) => p.image_role || 'auto'))),
         },
         candidates: enriched,
