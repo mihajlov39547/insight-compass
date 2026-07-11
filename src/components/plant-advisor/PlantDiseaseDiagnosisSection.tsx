@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, RefreshCw, Stethoscope, AlertTriangle, Info } from 'lucide-react';
+import { Check, RefreshCw, Stethoscope, AlertTriangle, Info, Sparkles, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import {
   usePlantDiagnoses,
   useDiagnoseDisease,
   useConfirmPlantDiagnosis,
+  usePlantDiagnosisInterpretations,
   type PlantDiagnosis,
   type PlantDiseaseReview,
   type PlantDiseaseReviewItem,
   type PlantDiseaseRelatedImage,
+  type PlantDiagnosisInterpretationData,
 } from '@/hooks/usePlantDiagnoses';
 import { prepareWebpTempImages } from '@/hooks/usePlantIdentifications';
 import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
@@ -107,6 +110,7 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
   const { t } = useTranslation();
   const { user } = useAuth();
   const { data: diagnoses = [], isLoading } = usePlantDiagnoses(caseId);
+  const { data: interpretation } = usePlantDiagnosisInterpretations(caseId);
   const diagnose = useDiagnoseDisease();
   const confirmMut = useConfirmPlantDiagnosis();
   const settings = usePlantAdvisorSettings();
@@ -114,6 +118,8 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
   const [preparing, setPreparing] = useState(false);
   const [review, setReview] = useState<PlantDiseaseReview | null>(null);
   const [openImg, setOpenImg] = useState<PlantDiseaseRelatedImage | null>(null);
+  const [aiFailed, setAiFailed] = useState(false);
+  const [unlikelyOpen, setUnlikelyOpen] = useState(false);
 
   const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
   const webps = images.filter((i) => isWebpMime(i.mime_type));
@@ -145,6 +151,7 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         toast.error(t(errorKey(res.error)));
       } else {
         setReview(res.review ?? null);
+        setAiFailed(!!res.aiInterpretationFailed);
         toast.success(t('plantAdvisor.diagnose.doneToast'));
       }
     } catch (e: any) {
@@ -305,6 +312,30 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         <div className="text-xs rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-1.5 flex items-start gap-1.5">
           <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
           <span>{t('plantAdvisor.diagnose.lowConfidenceWarning')}</span>
+        </div>
+      )}
+
+      {aiFailed && (
+        <div className="text-xs rounded-md border border-border bg-muted/40 px-2 py-1.5 flex items-start gap-1.5 text-muted-foreground">
+          <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+          <span>{t('plantAdvisor.diagnose.aiFailed')}</span>
+        </div>
+      )}
+
+      {interpretation && interpretation.interpretation && (
+        <AiInterpretationCard
+          data={interpretation.interpretation}
+          model={interpretation.model}
+          usedFallback={interpretation.used_fallback}
+          fallbackModel={interpretation.fallback_model}
+          unlikelyOpen={unlikelyOpen}
+          setUnlikelyOpen={setUnlikelyOpen}
+        />
+      )}
+
+      {(top || diagnoses.length > 0) && (
+        <div className="text-xs font-semibold text-foreground pt-1">
+          {t('plantAdvisor.diagnose.providerCandidatesTitle')}
         </div>
       )}
 
@@ -507,3 +538,159 @@ function Field({ label, value }: { label: string; value: string | null | undefin
     </div>
   );
 }
+
+function AiInterpretationCard({
+  data,
+  model,
+  usedFallback,
+  fallbackModel,
+  unlikelyOpen,
+  setUnlikelyOpen,
+}: {
+  data: PlantDiagnosisInterpretationData;
+  model: string | null;
+  usedFallback: boolean;
+  fallbackModel: string | null;
+  unlikelyOpen: boolean;
+  setUnlikelyOpen: (v: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const confidence = data.overallConfidence || 'low';
+  const confidenceLabel =
+    confidence === 'high'
+      ? t('plantAdvisor.diagnose.confidenceBucket.high')
+      : confidence === 'medium'
+      ? t('plantAdvisor.diagnose.confidenceBucket.medium')
+      : t('plantAdvisor.diagnose.confidenceBucket.low');
+  const relLabel = (r: string) =>
+    t(
+      `plantAdvisor.diagnose.relevance.${
+        r === 'high' || r === 'medium' || r === 'low' ? r : 'unknown'
+      }`,
+    );
+  const ptLabel = (pt: string) =>
+    pt === 'pest'
+      ? t('plantAdvisor.diagnose.problemType.pest')
+      : pt === 'disease'
+      ? t('plantAdvisor.diagnose.problemType.disease')
+      : t('plantAdvisor.diagnose.problemType.unknown');
+  return (
+    <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
+          <div className="font-medium text-sm truncate">
+            {t('plantAdvisor.diagnose.aiInterpretationTitle')}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge
+            variant={confidence === 'low' ? 'destructive' : confidence === 'high' ? 'default' : 'secondary'}
+            className="text-[10px]"
+          >
+            {t('plantAdvisor.diagnose.overallConfidence')}: {confidenceLabel}
+          </Badge>
+        </div>
+      </div>
+      {data.summary && (
+        <div className="text-xs text-foreground whitespace-pre-wrap">{data.summary}</div>
+      )}
+      {model && (
+        <div className="text-[10px] text-muted-foreground">
+          {usedFallback
+            ? `${t('plantAdvisor.diagnose.fallbackModelUsed')}: ${model}`
+            : `${t('plantAdvisor.diagnose.modelUsed')}: ${model}`}
+          {usedFallback && fallbackModel && fallbackModel !== model ? ` (${fallbackModel})` : ''}
+        </div>
+      )}
+
+      {data.bestCandidates && data.bestCandidates.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            {t('plantAdvisor.diagnose.bestCandidatesTitle')}
+          </div>
+          <ul className="space-y-1.5">
+            {data.bestCandidates.map((c, i) => (
+              <li key={i} className="rounded border border-border/60 bg-background/60 p-2 space-y-1">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-xs font-medium truncate">
+                    #{c.providerRank} · {c.name}
+                  </div>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <Badge variant="outline" className="text-[10px]">{ptLabel(c.problemType)}</Badge>
+                    <Badge
+                      variant={c.relevance === 'high' ? 'default' : c.relevance === 'medium' ? 'secondary' : 'outline'}
+                      className="text-[10px]"
+                    >
+                      {t('plantAdvisor.diagnose.relevanceLabel')}: {relLabel(c.relevance)}
+                    </Badge>
+                  </div>
+                </div>
+                {c.reason && (
+                  <div className="text-[11px] text-muted-foreground">{c.reason}</div>
+                )}
+                {c.whatToCheckVisually && c.whatToCheckVisually.length > 0 && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t('plantAdvisor.diagnose.whatToCheckVisually')}
+                    </div>
+                    <ul className="list-disc pl-4 text-[11px] text-foreground space-y-0.5">
+                      {c.whatToCheckVisually.map((v, j) => (
+                        <li key={j}>{v}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {data.needsMoreEvidence && data.needsMoreEvidence.length > 0 && (
+        <div>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            {t('plantAdvisor.diagnose.needsMoreEvidence')}
+          </div>
+          <ul className="list-disc pl-4 text-[11px] text-foreground space-y-0.5">
+            {data.needsMoreEvidence.map((n, i) => (
+              <li key={i}>{n}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {data.unlikelyCandidates && data.unlikelyCandidates.length > 0 && (
+        <Collapsible open={unlikelyOpen} onOpenChange={setUnlikelyOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]">
+              <ChevronDown className={`h-3.5 w-3.5 mr-1 transition-transform ${unlikelyOpen ? 'rotate-180' : ''}`} />
+              {t('plantAdvisor.diagnose.unlikelyCandidatesTitle')} ({data.unlikelyCandidates.length})
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <ul className="space-y-1 pt-1">
+              {data.unlikelyCandidates.map((c, i) => (
+                <li key={i} className="text-[11px] text-muted-foreground">
+                  <span className="font-medium">#{c.providerRank} · {c.name}</span>
+                  {c.reason ? ` — ${c.reason}` : ''}
+                </li>
+              ))}
+            </ul>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {data.safetyNote && (
+        <div className="text-[10px] text-amber-700 dark:text-amber-300 flex items-start gap-1">
+          <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+          <span>{data.safetyNote}</span>
+        </div>
+      )}
+      <div className="text-[10px] text-muted-foreground italic">
+        {t('plantAdvisor.diagnose.aiHelper')}
+      </div>
+    </div>
+  );
+}
+

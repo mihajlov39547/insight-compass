@@ -104,7 +104,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: pcase } = await admin
       .from('plant_cases')
-      .select('id,user_id,user_goal,confirmed_scientific_name,confirmed_common_name,confirmed_identification_id')
+      .select('id,user_id,user_goal,confirmed_scientific_name,confirmed_common_name,confirmed_identification_id,title,notes,location_text,crop_context')
       .eq('id', plantCaseId)
       .maybeSingle();
     if (!pcase) return jsonResponse({ error: 'not_found' }, 404);
@@ -468,35 +468,82 @@ Deno.serve(async (req: Request) => {
 
       const hasAnyRelatedImages = enriched.some((e) => e.relatedImages.length > 0);
 
+      const confirmedPlant = {
+        scientificName: (confIdent as any)?.scientific_name ?? pc?.confirmed_scientific_name ?? null,
+        scientificNameWithoutAuthor: (confIdent as any)?.scientific_name_without_author ?? null,
+        commonName: (confIdent as any)?.common_name ?? pc?.confirmed_common_name ?? null,
+        genus: (confIdent as any)?.genus ?? null,
+        family: (confIdent as any)?.family ?? null,
+      };
+
+      // --- AI interpretation (Phase 4B-2) ---
+      // Non-blocking: any failure returns provider results normally.
+      const aiLang = lang === 'hr' ? 'sr' : 'en';
+      const interpretation = await runAiInterpretation({
+        apiKey: Deno.env.get('LOVABLE_API_KEY') ?? '',
+        primaryModel: normalizeModelId(Deno.env.get('PLANT_DISEASE_AI_PRIMARY_MODEL') ?? 'gemini-3.5-flash'),
+        fallbackModel: normalizeModelId(Deno.env.get('PLANT_DISEASE_AI_FALLBACK_MODEL') ?? 'google/gemini-2.5-pro'),
+        language: aiLang,
+        confirmedPlant,
+        caseContext: {
+          title: (pcase as any)?.title ?? null,
+          notes: (pcase as any)?.notes ?? null,
+          location: (pcase as any)?.location_text ?? null,
+          crop: (pcase as any)?.crop_context ?? null,
+          imageRoles: Array.from(new Set(picked.map((p) => p.image_role || 'auto'))),
+        },
+        candidates: enriched,
+      });
+
+      let interpretationRow: any = null;
+      if (interpretation.ok && interpretation.data) {
+        const { data: iRow } = await admin
+          .from('plant_diagnosis_interpretations')
+          .insert({
+            case_id: plantCaseId,
+            user_id: userId,
+            provider: 'gemini',
+            model: interpretation.modelUsed,
+            fallback_model: interpretation.usedFallback ? interpretation.modelUsed : null,
+            used_fallback: interpretation.usedFallback,
+            fallback_reason: interpretation.fallbackReason ?? null,
+            language: aiLang,
+            summary: interpretation.data.summary ?? null,
+            overall_confidence: interpretation.data.overallConfidence ?? null,
+            interpretation: interpretation.data,
+          })
+          .select('*')
+          .maybeSingle();
+        interpretationRow = iRow;
+      } else {
+        console.warn('[plant-disease-identify] ai interpretation failed', interpretation.reason);
+      }
+
       const review = {
         diseases: enriched.map((e) => ({
-          rank: e.rank,
-          score: e.score,
-          name: e.name,
-          providerCode: e.providerCode,
-          description: e.description,
-          affectedOrgans: e.affectedOrgans,
-          problemType: e.problemType,
-          confidenceBucket: e.confidenceBucket,
-          relatedImages: e.relatedImages,
-          plantRelevance: e.plantRelevance,
-          plantRelevanceReason: e.plantRelevanceReason,
+            rank: e.rank,
+            score: e.score,
+            name: e.name,
+            providerCode: e.providerCode,
+            description: e.description,
+            affectedOrgans: e.affectedOrgans,
+            problemType: e.problemType,
+            confidenceBucket: e.confidenceBucket,
+            relatedImages: e.relatedImages,
+            plantRelevance: e.plantRelevance,
+            plantRelevanceReason: e.plantRelevanceReason,
         })),
         hasAnyRelatedImages,
         language: lang,
-        confirmedPlant: {
-          scientificName: (confIdent as any)?.scientific_name ?? pc?.confirmed_scientific_name ?? null,
-          scientificNameWithoutAuthor: (confIdent as any)?.scientific_name_without_author ?? null,
-          commonName: (confIdent as any)?.common_name ?? pc?.confirmed_common_name ?? null,
-          genus: (confIdent as any)?.genus ?? null,
-          family: (confIdent as any)?.family ?? null,
-        },
+        confirmedPlant,
       };
 
       return jsonResponse({
         ok: true,
         results: inserted,
         review,
+        interpretation: interpretationRow,
+        aiInterpretationFailed: !interpretation.ok,
         usedImageCount: parts.length,
         totalImageCount: allImages.length,
       });
@@ -508,3 +555,179 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'internal_error' }, 500);
   }
 });
+
+// ---------------------------------------------------------------------------
+// AI interpretation helpers (Phase 4B-2)
+// ---------------------------------------------------------------------------
+
+function normalizeModelId(id: string): string {
+  const raw = (id || '').trim();
+  if (!raw) return 'google/gemini-3.5-flash';
+  if (raw.includes('/')) return raw;
+  if (raw.startsWith('gemini')) return `google/${raw}`;
+  if (raw.startsWith('gpt')) return `openai/${raw}`;
+  return raw;
+}
+
+interface AiCandidate {
+  rank: number;
+  score: number | null;
+  providerCode: string | null;
+  name: string | null;
+  description: string | null;
+  problemType: 'pest' | 'disease' | 'unknown';
+  confidenceBucket: 'high' | 'medium' | 'low';
+  plantRelevance: 'high' | 'medium' | 'low' | 'unknown';
+  plantRelevanceReason: string | null;
+}
+
+interface AiInterpretationInput {
+  apiKey: string;
+  primaryModel: string;
+  fallbackModel: string;
+  language: 'en' | 'sr';
+  confirmedPlant: {
+    scientificName: string | null;
+    scientificNameWithoutAuthor: string | null;
+    commonName: string | null;
+    genus: string | null;
+    family: string | null;
+  };
+  caseContext: {
+    title: string | null;
+    notes: string | null;
+    location: string | null;
+    crop: string | null;
+    imageRoles: string[];
+  };
+  candidates: AiCandidate[];
+}
+
+interface AiInterpretationResult {
+  ok: boolean;
+  modelUsed?: string;
+  usedFallback: boolean;
+  fallbackReason?: string;
+  reason?: string;
+  data?: any;
+}
+
+async function runAiInterpretation(input: AiInterpretationInput): Promise<AiInterpretationResult> {
+  if (!input.apiKey) return { ok: false, usedFallback: false, reason: 'missing_api_key' };
+  const langInstruction = input.language === 'sr'
+    ? 'Respond in Serbian (Latin script).'
+    : 'Respond in English.';
+  const systemPrompt = `You are a plant disease triage assistant. You interpret candidate results from Pl@ntNet given a confirmed plant species and case context. ${langInstruction}
+
+Rules:
+- Return STRICT JSON matching the schema. No markdown, no prose outside JSON.
+- Do NOT invent diagnoses outside the provided provider candidates. If you must mention something not in the list, put it ONLY in needsMoreEvidence and label it "not returned by provider".
+- Do NOT provide treatment recommendations.
+- Do NOT recommend chemicals, pesticides, fungicides, fertilizers, doses, or application instructions.
+- Do NOT claim certainty. Explain when Pl@ntNet confidence is low.
+- Prefer candidates relevant to the confirmed plant. Mark obviously unrelated candidates as unlikely.
+- If all candidates are weak, state that diagnosis remains uncertain.
+- whatToCheckVisually: short visual checks only (e.g. "look for orange pustules under leaves", "inspect leaf undersides", "look for insect feeding holes"). No treatment.
+- Keep output concise.
+
+Schema:
+{
+  "summary": string,
+  "overallConfidence": "high" | "medium" | "low",
+  "bestCandidates": [{ "providerRank": number, "name": string, "problemType": "disease"|"pest"|"unknown", "relevance": "high"|"medium"|"low"|"unknown", "reason": string, "whatToCheckVisually": string[] }],
+  "unlikelyCandidates": [{ "providerRank": number, "name": string, "reason": string }],
+  "needsMoreEvidence": string[],
+  "safetyNote": string
+}`;
+
+  const userPayload = {
+    confirmedPlant: input.confirmedPlant,
+    caseContext: input.caseContext,
+    candidates: input.candidates.map((c) => ({
+      providerRank: c.rank,
+      score: c.score,
+      providerCode: c.providerCode,
+      name: c.name,
+      description: c.description,
+      problemType: c.problemType,
+      confidenceBucket: c.confidenceBucket,
+      plantRelevance: c.plantRelevance,
+      plantRelevanceReason: c.plantRelevanceReason,
+    })),
+  };
+
+  const callOnce = async (model: string): Promise<{ ok: boolean; data?: any; reason?: string }> => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    try {
+      const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${input.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: JSON.stringify(userPayload) },
+          ],
+          response_format: { type: 'json_object' },
+        }),
+      });
+      if (!resp.ok) {
+        const t = (await resp.text().catch(() => '')).slice(0, 200);
+        return { ok: false, reason: `http_${resp.status}:${t}` };
+      }
+      const body = await resp.json().catch(() => null);
+      const content = body?.choices?.[0]?.message?.content;
+      if (typeof content !== 'string' || !content.trim()) {
+        return { ok: false, reason: 'empty_content' };
+      }
+      let parsed: any;
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        // Attempt to extract JSON object from surrounding text.
+        const m = content.match(/\{[\s\S]*\}/);
+        if (!m) return { ok: false, reason: 'json_parse_failed' };
+        try {
+          parsed = JSON.parse(m[0]);
+        } catch {
+          return { ok: false, reason: 'json_parse_failed' };
+        }
+      }
+      // Minimal shape validation.
+      if (!parsed || typeof parsed !== 'object' || typeof parsed.summary !== 'string') {
+        return { ok: false, reason: 'schema_mismatch' };
+      }
+      return { ok: true, data: parsed };
+    } catch (e) {
+      return { ok: false, reason: `error:${(e as Error).message}` };
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+
+  const first = await callOnce(input.primaryModel);
+  console.log('[plant-disease-identify][ai] primary', input.primaryModel, first.ok ? 'ok' : first.reason);
+  if (first.ok) {
+    return { ok: true, modelUsed: input.primaryModel, usedFallback: false, data: first.data };
+  }
+  if (!input.fallbackModel || input.fallbackModel === input.primaryModel) {
+    return { ok: false, usedFallback: false, reason: first.reason };
+  }
+  const second = await callOnce(input.fallbackModel);
+  console.log('[plant-disease-identify][ai] fallback', input.fallbackModel, second.ok ? 'ok' : second.reason);
+  if (second.ok) {
+    return {
+      ok: true,
+      modelUsed: input.fallbackModel,
+      usedFallback: true,
+      fallbackReason: first.reason,
+      data: second.data,
+    };
+  }
+  return { ok: false, usedFallback: true, reason: `primary:${first.reason};fallback:${second.reason}` };
+}

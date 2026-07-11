@@ -2061,7 +2061,20 @@
         "mentions_confirmed": "Pominje potvrđenu biljku.",
         "mentions_other_host": "Pominje drugu biljku domaćina.",
         "broad_pest": "Široko rasprostranjena štetočina; može napadati mnoge biljke."
-      }
+      },
+      "aiInterpretationTitle": "AI interpretacija",
+      "providerCandidatesTitle": "Kandidati provajdera",
+      "bestCandidatesTitle": "Najverovatniji kandidati",
+      "unlikelyCandidatesTitle": "Malo verovatni kandidati",
+      "whatToCheckVisually": "Šta vizuelno proveriti",
+      "needsMoreEvidence": "Potrebno je više dokaza",
+      "overallConfidence": "Ukupna pouzdanost",
+      "relevanceLabel": "Relevantnost",
+      "modelUsed": "Korišćeni model",
+      "fallbackModelUsed": "Korišćen rezervni model",
+      "aiHelper": "AI interpretacija pomaže da se poređaju kandidati provajdera. Ne predstavlja savet o lečenju.",
+      "diagnosisUncertain": "Dijagnoza ostaje neizvesna",
+      "aiFailed": "AI interpretaciju nije bilo moguće generisati."
     },
     "diagnoseFlow": {
       "step1": "Korak 1: Prepoznaj biljku",

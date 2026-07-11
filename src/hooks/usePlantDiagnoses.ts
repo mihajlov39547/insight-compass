@@ -64,10 +64,53 @@ export interface PlantDiseaseReview {
   confirmedPlant?: PlantDiseaseReviewConfirmedPlant;
 }
 
+export interface PlantDiagnosisInterpretationBestCandidate {
+  providerRank: number;
+  name: string;
+  problemType: 'disease' | 'pest' | 'unknown';
+  relevance: 'high' | 'medium' | 'low' | 'unknown';
+  reason: string;
+  whatToCheckVisually: string[];
+}
+
+export interface PlantDiagnosisInterpretationUnlikelyCandidate {
+  providerRank: number;
+  name: string;
+  reason: string;
+}
+
+export interface PlantDiagnosisInterpretationData {
+  summary: string;
+  overallConfidence: 'high' | 'medium' | 'low';
+  bestCandidates: PlantDiagnosisInterpretationBestCandidate[];
+  unlikelyCandidates: PlantDiagnosisInterpretationUnlikelyCandidate[];
+  needsMoreEvidence: string[];
+  safetyNote: string;
+}
+
+export interface PlantDiagnosisInterpretation {
+  id: string;
+  case_id: string;
+  user_id: string;
+  provider: string;
+  model: string | null;
+  fallback_model: string | null;
+  used_fallback: boolean;
+  fallback_reason: string | null;
+  diagnosis_run_at: string;
+  language: string | null;
+  summary: string | null;
+  overall_confidence: 'high' | 'medium' | 'low' | null;
+  interpretation: PlantDiagnosisInterpretationData | null;
+  created_at: string;
+}
+
 export interface DiagnoseDiseaseResponse {
   ok?: boolean;
   results?: PlantDiagnosis[];
   review?: PlantDiseaseReview;
+  interpretation?: PlantDiagnosisInterpretation | null;
+  aiInterpretationFailed?: boolean;
   usedImageCount?: number;
   totalImageCount?: number;
   error?: string;
@@ -124,8 +167,28 @@ export function useDiagnoseDisease() {
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['plant_diagnoses', vars.plantCaseId] });
+      qc.invalidateQueries({ queryKey: ['plant_diagnosis_interpretations', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_case', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_cases'] });
+    },
+  });
+}
+
+export function usePlantDiagnosisInterpretations(caseId: string | null | undefined) {
+  return useQuery({
+    enabled: !!caseId,
+    queryKey: ['plant_diagnosis_interpretations', caseId],
+    queryFn: async (): Promise<PlantDiagnosisInterpretation | null> => {
+      if (!caseId) return null;
+      const { data, error } = await (supabase as any)
+        .from('plant_diagnosis_interpretations')
+        .select('*')
+        .eq('case_id', caseId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as PlantDiagnosisInterpretation | null;
     },
   });
 }
