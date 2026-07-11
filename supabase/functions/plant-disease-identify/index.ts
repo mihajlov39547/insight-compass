@@ -468,35 +468,82 @@ Deno.serve(async (req: Request) => {
 
       const hasAnyRelatedImages = enriched.some((e) => e.relatedImages.length > 0);
 
+      const confirmedPlant = {
+        scientificName: (confIdent as any)?.scientific_name ?? pc?.confirmed_scientific_name ?? null,
+        scientificNameWithoutAuthor: (confIdent as any)?.scientific_name_without_author ?? null,
+        commonName: (confIdent as any)?.common_name ?? pc?.confirmed_common_name ?? null,
+        genus: (confIdent as any)?.genus ?? null,
+        family: (confIdent as any)?.family ?? null,
+      };
+
+      // --- AI interpretation (Phase 4B-2) ---
+      // Non-blocking: any failure returns provider results normally.
+      const aiLang = lang === 'hr' ? 'sr' : 'en';
+      const interpretation = await runAiInterpretation({
+        apiKey: Deno.env.get('LOVABLE_API_KEY') ?? '',
+        primaryModel: normalizeModelId(Deno.env.get('PLANT_DISEASE_AI_PRIMARY_MODEL') ?? 'gemini-3.5-flash'),
+        fallbackModel: normalizeModelId(Deno.env.get('PLANT_DISEASE_AI_FALLBACK_MODEL') ?? 'google/gemini-2.5-pro'),
+        language: aiLang,
+        confirmedPlant,
+        caseContext: {
+          title: (pcase as any)?.title ?? null,
+          notes: (pcase as any)?.notes ?? null,
+          location: (pcase as any)?.location ?? null,
+          crop: (pcase as any)?.crop ?? null,
+          imageRoles: Array.from(new Set(picked.map((p) => p.image_role || 'auto'))),
+        },
+        candidates: enriched,
+      });
+
+      let interpretationRow: any = null;
+      if (interpretation.ok && interpretation.data) {
+        const { data: iRow } = await admin
+          .from('plant_diagnosis_interpretations')
+          .insert({
+            case_id: plantCaseId,
+            user_id: userId,
+            provider: 'gemini',
+            model: interpretation.modelUsed,
+            fallback_model: interpretation.usedFallback ? interpretation.modelUsed : null,
+            used_fallback: interpretation.usedFallback,
+            fallback_reason: interpretation.fallbackReason ?? null,
+            language: aiLang,
+            summary: interpretation.data.summary ?? null,
+            overall_confidence: interpretation.data.overallConfidence ?? null,
+            interpretation: interpretation.data,
+          })
+          .select('*')
+          .maybeSingle();
+        interpretationRow = iRow;
+      } else {
+        console.warn('[plant-disease-identify] ai interpretation failed', interpretation.reason);
+      }
+
       const review = {
         diseases: enriched.map((e) => ({
-          rank: e.rank,
-          score: e.score,
-          name: e.name,
-          providerCode: e.providerCode,
-          description: e.description,
-          affectedOrgans: e.affectedOrgans,
-          problemType: e.problemType,
-          confidenceBucket: e.confidenceBucket,
-          relatedImages: e.relatedImages,
-          plantRelevance: e.plantRelevance,
-          plantRelevanceReason: e.plantRelevanceReason,
+            rank: e.rank,
+            score: e.score,
+            name: e.name,
+            providerCode: e.providerCode,
+            description: e.description,
+            affectedOrgans: e.affectedOrgans,
+            problemType: e.problemType,
+            confidenceBucket: e.confidenceBucket,
+            relatedImages: e.relatedImages,
+            plantRelevance: e.plantRelevance,
+            plantRelevanceReason: e.plantRelevanceReason,
         })),
         hasAnyRelatedImages,
         language: lang,
-        confirmedPlant: {
-          scientificName: (confIdent as any)?.scientific_name ?? pc?.confirmed_scientific_name ?? null,
-          scientificNameWithoutAuthor: (confIdent as any)?.scientific_name_without_author ?? null,
-          commonName: (confIdent as any)?.common_name ?? pc?.confirmed_common_name ?? null,
-          genus: (confIdent as any)?.genus ?? null,
-          family: (confIdent as any)?.family ?? null,
-        },
+        confirmedPlant,
       };
 
       return jsonResponse({
         ok: true,
         results: inserted,
         review,
+        interpretation: interpretationRow,
+        aiInterpretationFailed: !interpretation.ok,
         usedImageCount: parts.length,
         totalImageCount: allImages.length,
       });
