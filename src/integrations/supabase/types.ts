@@ -1479,6 +1479,65 @@ export type Database = {
           },
         ]
       }
+      plant_diagnosis_interpretations: {
+        Row: {
+          case_id: string
+          created_at: string
+          diagnosis_run_at: string
+          fallback_model: string | null
+          fallback_reason: string | null
+          id: string
+          interpretation: Json | null
+          language: string | null
+          model: string | null
+          overall_confidence: string | null
+          provider: string
+          summary: string | null
+          used_fallback: boolean
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          diagnosis_run_at?: string
+          fallback_model?: string | null
+          fallback_reason?: string | null
+          id?: string
+          interpretation?: Json | null
+          language?: string | null
+          model?: string | null
+          overall_confidence?: string | null
+          provider?: string
+          summary?: string | null
+          used_fallback?: boolean
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          diagnosis_run_at?: string
+          fallback_model?: string | null
+          fallback_reason?: string | null
+          id?: string
+          interpretation?: Json | null
+          language?: string | null
+          model?: string | null
+          overall_confidence?: string | null
+          provider?: string
+          summary?: string | null
+          used_fallback?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_diagnosis_interpretations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plant_identification_usage: {
         Row: {
           created_at: string
