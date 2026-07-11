@@ -167,8 +167,28 @@ export function useDiagnoseDisease() {
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['plant_diagnoses', vars.plantCaseId] });
+      qc.invalidateQueries({ queryKey: ['plant_diagnosis_interpretations', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_case', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_cases'] });
+    },
+  });
+}
+
+export function usePlantDiagnosisInterpretations(caseId: string | null | undefined) {
+  return useQuery({
+    enabled: !!caseId,
+    queryKey: ['plant_diagnosis_interpretations', caseId],
+    queryFn: async (): Promise<PlantDiagnosisInterpretation | null> => {
+      if (!caseId) return null;
+      const { data, error } = await (supabase as any)
+        .from('plant_diagnosis_interpretations')
+        .select('*')
+        .eq('case_id', caseId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as PlantDiagnosisInterpretation | null;
     },
   });
 }
