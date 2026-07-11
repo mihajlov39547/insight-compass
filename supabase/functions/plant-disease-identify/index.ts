@@ -104,7 +104,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: pcase } = await admin
       .from('plant_cases')
-      .select('id,user_id,user_goal,confirmed_scientific_name,confirmed_common_name,confirmed_identification_id')
+      .select('id,user_id,user_goal,confirmed_scientific_name,confirmed_common_name,confirmed_identification_id,title,notes,location_text,crop_context')
       .eq('id', plantCaseId)
       .maybeSingle();
     if (!pcase) return jsonResponse({ error: 'not_found' }, 404);
