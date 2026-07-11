@@ -315,6 +315,30 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         </div>
       )}
 
+      {aiFailed && (
+        <div className="text-xs rounded-md border border-border bg-muted/40 px-2 py-1.5 flex items-start gap-1.5 text-muted-foreground">
+          <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+          <span>{t('plantAdvisor.diagnose.aiFailed')}</span>
+        </div>
+      )}
+
+      {interpretation && interpretation.interpretation && (
+        <AiInterpretationCard
+          data={interpretation.interpretation}
+          model={interpretation.model}
+          usedFallback={interpretation.used_fallback}
+          fallbackModel={interpretation.fallback_model}
+          unlikelyOpen={unlikelyOpen}
+          setUnlikelyOpen={setUnlikelyOpen}
+        />
+      )}
+
+      {(top || diagnoses.length > 0) && (
+        <div className="text-xs font-semibold text-foreground pt-1">
+          {t('plantAdvisor.diagnose.providerCandidatesTitle')}
+        </div>
+      )}
+
       {top && (
         <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
