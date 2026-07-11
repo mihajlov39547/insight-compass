@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, RefreshCw, Stethoscope, AlertTriangle, Info } from 'lucide-react';
+import { Check, RefreshCw, Stethoscope, AlertTriangle, Info, Sparkles, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import {
   usePlantDiagnoses,
   useDiagnoseDisease,
   useConfirmPlantDiagnosis,
+  usePlantDiagnosisInterpretations,
   type PlantDiagnosis,
   type PlantDiseaseReview,
   type PlantDiseaseReviewItem,
   type PlantDiseaseRelatedImage,
+  type PlantDiagnosisInterpretationData,
 } from '@/hooks/usePlantDiagnoses';
 import { prepareWebpTempImages } from '@/hooks/usePlantIdentifications';
 import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
