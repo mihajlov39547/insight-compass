@@ -64,10 +64,53 @@ export interface PlantDiseaseReview {
   confirmedPlant?: PlantDiseaseReviewConfirmedPlant;
 }
 
+export interface PlantDiagnosisInterpretationBestCandidate {
+  providerRank: number;
+  name: string;
+  problemType: 'disease' | 'pest' | 'unknown';
+  relevance: 'high' | 'medium' | 'low' | 'unknown';
+  reason: string;
+  whatToCheckVisually: string[];
+}
+
+export interface PlantDiagnosisInterpretationUnlikelyCandidate {
+  providerRank: number;
+  name: string;
+  reason: string;
+}
+
+export interface PlantDiagnosisInterpretationData {
+  summary: string;
+  overallConfidence: 'high' | 'medium' | 'low';
+  bestCandidates: PlantDiagnosisInterpretationBestCandidate[];
+  unlikelyCandidates: PlantDiagnosisInterpretationUnlikelyCandidate[];
+  needsMoreEvidence: string[];
+  safetyNote: string;
+}
+
+export interface PlantDiagnosisInterpretation {
+  id: string;
+  case_id: string;
+  user_id: string;
+  provider: string;
+  model: string | null;
+  fallback_model: string | null;
+  used_fallback: boolean;
+  fallback_reason: string | null;
+  diagnosis_run_at: string;
+  language: string | null;
+  summary: string | null;
+  overall_confidence: 'high' | 'medium' | 'low' | null;
+  interpretation: PlantDiagnosisInterpretationData | null;
+  created_at: string;
+}
+
 export interface DiagnoseDiseaseResponse {
   ok?: boolean;
   results?: PlantDiagnosis[];
   review?: PlantDiseaseReview;
+  interpretation?: PlantDiagnosisInterpretation | null;
+  aiInterpretationFailed?: boolean;
   usedImageCount?: number;
   totalImageCount?: number;
   error?: string;
