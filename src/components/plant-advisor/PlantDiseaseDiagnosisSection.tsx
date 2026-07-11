@@ -151,6 +151,7 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         toast.error(t(errorKey(res.error)));
       } else {
         setReview(res.review ?? null);
+        setAiFailed(!!res.aiInterpretationFailed);
         toast.success(t('plantAdvisor.diagnose.doneToast'));
       }
     } catch (e: any) {
