@@ -2045,7 +2045,20 @@
         "mentions_confirmed": "Mentions confirmed plant.",
         "mentions_other_host": "Mentions a different host plant.",
         "broad_pest": "Broad pest; may affect many plants."
-      }
+      },
+      "aiInterpretationTitle": "AI interpretation",
+      "providerCandidatesTitle": "Provider candidates",
+      "bestCandidatesTitle": "Best candidates",
+      "unlikelyCandidatesTitle": "Unlikely candidates",
+      "whatToCheckVisually": "What to check visually",
+      "needsMoreEvidence": "Needs more evidence",
+      "overallConfidence": "Overall confidence",
+      "relevanceLabel": "Relevance",
+      "modelUsed": "Model used",
+      "fallbackModelUsed": "Fallback model used",
+      "aiHelper": "AI interpretation helps prioritize provider candidates. It is not treatment advice.",
+      "diagnosisUncertain": "Diagnosis remains uncertain",
+      "aiFailed": "AI interpretation could not be generated."
     },
     "diagnoseFlow": {
       "step1": "Step 1: Identify plant",
