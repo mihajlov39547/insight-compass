@@ -614,6 +614,8 @@ interface AiInterpretationResult {
   ok: boolean;
   modelUsed?: string;
   usedFallback: boolean;
+  fallbackAttempted: boolean;
+  fallbackModel?: string;
   fallbackReason?: string;
   reason?: string;
   data?: any;
