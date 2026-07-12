@@ -338,12 +338,12 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         </div>
       )}
 
-      {interpretation && interpretation.interpretation && (
+      {visibleInterpretation && visibleInterpretation.interpretation && (
         <AiInterpretationCard
-          data={interpretation.interpretation}
-          model={interpretation.model}
-          usedFallback={interpretation.used_fallback}
-          fallbackModel={interpretation.fallback_model}
+          data={visibleInterpretation.interpretation}
+          model={visibleInterpretation.model}
+          usedFallback={visibleInterpretation.used_fallback}
+          fallbackModel={visibleInterpretation.fallback_model}
           unlikelyOpen={unlikelyOpen}
           setUnlikelyOpen={setUnlikelyOpen}
         />
