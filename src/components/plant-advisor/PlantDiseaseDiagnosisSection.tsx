@@ -110,7 +110,7 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
   const { t } = useTranslation();
   const { user } = useAuth();
   const { data: diagnoses = [], isLoading } = usePlantDiagnoses(caseId);
-  const { data: interpretation } = usePlantDiagnosisInterpretations(caseId);
+  const { data: dbInterpretation } = usePlantDiagnosisInterpretations(caseId);
   const diagnose = useDiagnoseDisease();
   const confirmMut = useConfirmPlantDiagnosis();
   const settings = usePlantAdvisorSettings();
@@ -120,6 +120,13 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
   const [openImg, setOpenImg] = useState<PlantDiseaseRelatedImage | null>(null);
   const [aiFailed, setAiFailed] = useState(false);
   const [unlikelyOpen, setUnlikelyOpen] = useState(false);
+  // undefined = no run this session (fall back to DB); null = latest run has no interpretation.
+  const [latestInterpretation, setLatestInterpretation] = useState<
+    import('@/hooks/usePlantDiagnoses').PlantDiagnosisInterpretation | null | undefined
+  >(undefined);
+
+  const visibleInterpretation =
+    latestInterpretation === undefined ? dbInterpretation ?? null : latestInterpretation;
 
   const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
   const webps = images.filter((i) => isWebpMime(i.mime_type));
@@ -151,7 +158,16 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         toast.error(t(errorKey(res.error)));
       } else {
         setReview(res.review ?? null);
-        setAiFailed(!!res.aiInterpretationFailed);
+        if (res.interpretation) {
+          setLatestInterpretation(res.interpretation);
+          setAiFailed(false);
+        } else if (res.aiInterpretationFailed) {
+          setLatestInterpretation(null);
+          setAiFailed(true);
+        } else {
+          setLatestInterpretation(null);
+          setAiFailed(false);
+        }
         toast.success(t('plantAdvisor.diagnose.doneToast'));
       }
     } catch (e: any) {
