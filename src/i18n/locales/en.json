@@ -1872,7 +1872,46 @@
       "title": "Plant case chat",
       "contextHeader": "Case context",
       "imagesAttached": "Images attached: {{count}}",
-      "inputPh": "Ask about this plant case…"
+      "inputPh": "Ask about this plant case…",
+      "thinking": "Thinking…",
+      "chips": {
+        "diagnosisUnconfirmed": "Diagnosis unconfirmed",
+        "aiConfidence": "AI confidence"
+      },
+      "warnings": {
+        "aiMismatch": "AI interpretation and confirmed diagnosis may differ. Review candidates before acting."
+      },
+      "disclaimers": {
+        "noImageInspection": "Chat uses case context, provider results, and notes. It may not directly inspect images unless image analysis is enabled."
+      },
+      "qq": {
+        "identifyWhyUncertain": "Why is this identification uncertain?",
+        "identifyPhotosToImprove": "What should I photograph to improve identification?",
+        "identifyExplainAlternatives": "Explain the top alternatives.",
+        "uploadForDiagnosis": "What images should I upload for diagnosis?",
+        "whyConfirmPlant": "Why do I need to confirm the plant first?",
+        "aiPreferred": "Why did AI prefer this candidate?",
+        "checkVisually": "What should I check visually next?",
+        "unlikelyCandidates": "Which candidates seem unlikely and why?",
+        "extraPhotos": "What extra photos would improve confidence?",
+        "explainConfirmed": "Explain the confirmed diagnosis.",
+        "evidenceSupports": "What evidence supports this diagnosis?",
+        "monitorNext": "What should I monitor next?"
+      },
+      "errors": {
+        "generic": "Chat failed. Please try again.",
+        "missing_ai_key": "Chat is not configured (AI key missing).",
+        "unauthorized": "Please sign in again.",
+        "case_not_found": "This plant case could not be found.",
+        "rate_limited": "AI rate limit reached. Please try again shortly.",
+        "credits_exhausted": "AI credits exhausted. Please add credits to continue.",
+        "ai_failed": "AI service failed. Please try again.",
+        "empty_reply": "No reply from AI. Please try again."
+      }
+    },
+    "diagnose": {
+      "confirmedShort": "Confirmed",
+      "candidateShort": "Candidate"
     },
     "limits": {
       "caseReached": "Plan limit reached — upgrade to add more plant cases.",
