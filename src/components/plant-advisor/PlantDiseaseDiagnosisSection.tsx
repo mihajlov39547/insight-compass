@@ -616,7 +616,6 @@ function AiInterpretationCard({
           {usedFallback
             ? `${t('plantAdvisor.diagnose.fallbackModelUsed')}: ${model}`
             : `${t('plantAdvisor.diagnose.modelUsed')}: ${model}`}
-          {usedFallback && fallbackModel && fallbackModel !== model ? ` (${fallbackModel})` : ''}
         </div>
       )}
 
