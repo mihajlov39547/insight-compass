@@ -722,10 +722,10 @@ Schema:
   const first = await callOnce(input.primaryModel);
   console.log('[plant-disease-identify][ai] primary', input.primaryModel, first.ok ? 'ok' : first.reason);
   if (first.ok) {
-    return { ok: true, modelUsed: input.primaryModel, usedFallback: false, data: first.data };
+    return { ok: true, modelUsed: input.primaryModel, usedFallback: false, fallbackAttempted: false, data: first.data };
   }
   if (!input.fallbackModel || input.fallbackModel === input.primaryModel) {
-    return { ok: false, usedFallback: false, reason: first.reason };
+    return { ok: false, usedFallback: false, fallbackAttempted: false, reason: first.reason };
   }
   const second = await callOnce(input.fallbackModel);
   console.log('[plant-disease-identify][ai] fallback', input.fallbackModel, second.ok ? 'ok' : second.reason);
@@ -734,9 +734,17 @@ Schema:
       ok: true,
       modelUsed: input.fallbackModel,
       usedFallback: true,
+      fallbackAttempted: true,
+      fallbackModel: input.fallbackModel,
       fallbackReason: first.reason,
       data: second.data,
     };
   }
-  return { ok: false, usedFallback: true, reason: `primary:${first.reason};fallback:${second.reason}` };
+  return {
+    ok: false,
+    usedFallback: false,
+    fallbackAttempted: true,
+    fallbackModel: input.fallbackModel,
+    reason: `primary:${first.reason};fallback:${second.reason}`,
+  };
 }
