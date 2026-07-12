@@ -479,21 +479,28 @@ Deno.serve(async (req: Request) => {
       // --- AI interpretation (Phase 4B-2) ---
       // Non-blocking: any failure returns provider results normally.
       const aiLang = lang === 'hr' ? 'sr' : 'en';
-      const interpretation = await runAiInterpretation({
-        apiKey: Deno.env.get('LOVABLE_API_KEY') ?? '',
-        primaryModel: normalizeModelId(Deno.env.get('PLANT_DISEASE_AI_PRIMARY_MODEL') ?? 'gemini-3.5-flash'),
-        fallbackModel: normalizeModelId(Deno.env.get('PLANT_DISEASE_AI_FALLBACK_MODEL') ?? 'google/gemini-2.5-pro'),
-        language: aiLang,
-        confirmedPlant,
-        caseContext: {
-          title: (pcase as any)?.title ?? null,
-          notes: (pcase as any)?.notes ?? null,
-          location: (pcase as any)?.location_text ?? null,
-          crop: (pcase as any)?.crop_context ?? null,
-          imageRoles: Array.from(new Set(picked.map((p) => p.image_role || 'auto'))),
-        },
-        candidates: enriched,
-      });
+      const aiApiKey = Deno.env.get('LOVABLE_API_KEY') ?? '';
+      let interpretation: AiInterpretationResult;
+      if (!aiApiKey) {
+        console.warn('[plant-disease-identify] missing_ai_key');
+        interpretation = { ok: false, usedFallback: false, fallbackAttempted: false, reason: 'missing_ai_key' };
+      } else {
+        interpretation = await runAiInterpretation({
+          apiKey: aiApiKey,
+          primaryModel: normalizeModelId(Deno.env.get('PLANT_DISEASE_AI_PRIMARY_MODEL') ?? 'gemini-3.5-flash'),
+          fallbackModel: normalizeModelId(Deno.env.get('PLANT_DISEASE_AI_FALLBACK_MODEL') ?? 'google/gemini-2.5-pro'),
+          language: aiLang,
+          confirmedPlant,
+          caseContext: {
+            title: (pcase as any)?.title ?? null,
+            notes: (pcase as any)?.notes ?? null,
+            location: (pcase as any)?.location_text ?? null,
+            crop: (pcase as any)?.crop_context ?? null,
+            imageRoles: Array.from(new Set(picked.map((p) => p.image_role || 'auto'))),
+          },
+          candidates: enriched,
+        });
+      }
 
       let interpretationRow: any = null;
       if (interpretation.ok && interpretation.data) {
@@ -504,9 +511,9 @@ Deno.serve(async (req: Request) => {
             user_id: userId,
             provider: 'gemini',
             model: interpretation.modelUsed,
-            fallback_model: interpretation.usedFallback ? interpretation.modelUsed : null,
+            fallback_model: interpretation.fallbackAttempted ? (interpretation.fallbackModel ?? null) : null,
             used_fallback: interpretation.usedFallback,
-            fallback_reason: interpretation.fallbackReason ?? null,
+            fallback_reason: interpretation.usedFallback ? (interpretation.fallbackReason ?? null) : null,
             language: aiLang,
             summary: interpretation.data.summary ?? null,
             overall_confidence: interpretation.data.overallConfidence ?? null,
@@ -607,6 +614,8 @@ interface AiInterpretationResult {
   ok: boolean;
   modelUsed?: string;
   usedFallback: boolean;
+  fallbackAttempted: boolean;
+  fallbackModel?: string;
   fallbackReason?: string;
   reason?: string;
   data?: any;
@@ -713,10 +722,10 @@ Schema:
   const first = await callOnce(input.primaryModel);
   console.log('[plant-disease-identify][ai] primary', input.primaryModel, first.ok ? 'ok' : first.reason);
   if (first.ok) {
-    return { ok: true, modelUsed: input.primaryModel, usedFallback: false, data: first.data };
+    return { ok: true, modelUsed: input.primaryModel, usedFallback: false, fallbackAttempted: false, data: first.data };
   }
   if (!input.fallbackModel || input.fallbackModel === input.primaryModel) {
-    return { ok: false, usedFallback: false, reason: first.reason };
+    return { ok: false, usedFallback: false, fallbackAttempted: false, reason: first.reason };
   }
   const second = await callOnce(input.fallbackModel);
   console.log('[plant-disease-identify][ai] fallback', input.fallbackModel, second.ok ? 'ok' : second.reason);
@@ -725,9 +734,17 @@ Schema:
       ok: true,
       modelUsed: input.fallbackModel,
       usedFallback: true,
+      fallbackAttempted: true,
+      fallbackModel: input.fallbackModel,
       fallbackReason: first.reason,
       data: second.data,
     };
   }
-  return { ok: false, usedFallback: true, reason: `primary:${first.reason};fallback:${second.reason}` };
+  return {
+    ok: false,
+    usedFallback: false,
+    fallbackAttempted: true,
+    fallbackModel: input.fallbackModel,
+    reason: `primary:${first.reason};fallback:${second.reason}`,
+  };
 }
