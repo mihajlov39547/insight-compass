@@ -289,6 +289,19 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ error: 'provider_unreachable' }, 502);
       }
 
+      // Provider request was consumed — count it against the shared monthly quota.
+      try {
+        const { error: incErr } = await admin.rpc('increment_plant_identification_usage', {
+          p_user_id: userId,
+          p_provider: 'plantnet',
+          p_month_key: monthKey,
+        });
+        if (incErr) console.warn('[plant-disease-identify] usage increment failed', incErr.message);
+      } catch (e) {
+        console.warn('[plant-disease-identify] usage increment threw', (e as Error).message);
+      }
+
+
       if (!pnResp.ok) {
         const status = pnResp.status;
         const shortText = (await pnResp.text().catch(() => '')).slice(0, 200);
