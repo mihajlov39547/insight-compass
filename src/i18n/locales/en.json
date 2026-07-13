@@ -2071,7 +2071,8 @@
         "confirmFailed": "Confirmation failed. Please try again.",
         "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG.",
         "plantNotConfirmed": "Confirm the plant first to diagnose disease.",
-        "invalidCaseGoal": "Disease diagnosis is available only for Diagnose disease cases."
+        "invalidCaseGoal": "Disease diagnosis is available only for Diagnose disease cases.",
+        "limitReached": "Monthly Plant AI scan limit reached. Upgrade or wait until next month."
       },
       "contextLabel": "Diagnosis context",
       "relevance": {
