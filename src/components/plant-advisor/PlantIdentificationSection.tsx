@@ -139,7 +139,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
             <Badge variant="outline" className="text-[10px]">{t('plantAdvisor.identify.providerBadge')}</Badge>
             {!usage.loading && (
               <span>
-                {t('plantAdvisor.identify.usedThisMonth', {
+                {t('plantAdvisor.scans.usedThisMonth', {
                   used: usage.used,
                   limit: usage.limit,
                 })}
