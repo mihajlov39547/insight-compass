@@ -2116,6 +2116,15 @@
       "diagnosisUncertain": "Dijagnoza ostaje neizvesna",
       "aiFailed": "AI interpretaciju nije bilo moguće generisati."
     },
+    "scans": {
+      "label": "Plant AI skeniranja",
+      "usedThisMonth": "Iskorišćeno {{used}} / {{limit}} Plant AI skeniranja ovog meseca",
+      "remaining": "Preostalo skeniranja: {{remaining}}",
+      "limitReached": "Mesečni limit Plant AI skeniranja je dostignut",
+      "upgradeOrWait": "Nadogradite plan ili sačekajte sledeći mesec",
+      "limitReachedWarning": "Mesečni limit Plant AI skeniranja je dostignut. Nadogradite plan ili sačekajte sledeći mesec.",
+      "includesNote": "Plant AI skeniranje obuhvata prepoznavanje biljke i dijagnozu bolesti."
+    },
     "diagnoseFlow": {
       "step1": "Korak 1: Prepoznaj biljku",
       "step2": "Korak 2: Dijagnostikuj bolest",
