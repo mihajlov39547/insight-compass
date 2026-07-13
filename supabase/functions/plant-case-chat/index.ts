@@ -104,8 +104,8 @@ Deno.serve(async (req: Request) => {
 
     const confidenceBucket = (s: number | null | undefined): 'high' | 'medium' | 'low' => {
       const v = s ?? 0;
-      if (v >= 0.6) return 'high';
-      if (v >= 0.3) return 'medium';
+      if (v >= 0.7) return 'high';
+      if (v >= 0.4) return 'medium';
       return 'low';
     };
 
