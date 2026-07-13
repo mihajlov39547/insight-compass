@@ -189,7 +189,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
 
       {usage.isLimitReached && (
         <div className="text-xs rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-1.5">
-          {t('plantAdvisor.identify.limitReachedWarning')}
+          {t('plantAdvisor.scans.limitReachedWarning')}
         </div>
       )}
       {hasImages && !hasIdentifiable && (
