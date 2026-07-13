@@ -22,6 +22,7 @@ import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
 import { useAuth } from '@/contexts/useAuth';
 import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
 import { usePlantAdvisorSettings, toPlantnetApiLang } from '@/hooks/usePlantAdvisorSettings';
+import { usePlantAiScanUsage } from '@/hooks/usePlantIdentificationUsage';
 
 interface Props {
   caseId: string;
