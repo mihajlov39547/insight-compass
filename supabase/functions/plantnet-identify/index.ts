@@ -190,7 +190,7 @@ Deno.serve(async (req: Request) => {
     if (usedSoFar >= monthlyLimit) {
       return jsonResponse(
         {
-          error: 'identification_limit_reached',
+          error: 'plant_ai_scan_limit_reached',
           usage: {
             used: usedSoFar,
             limit: monthlyLimit,
