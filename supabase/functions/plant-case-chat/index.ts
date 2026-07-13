@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
         .limit(10),
       admin
         .from('plant_diagnoses')
-        .select('id, rank, score, provider, name, description, problem_type, plant_relevance, plant_relevance_reason, is_confirmed')
+        .select('id, rank, score, provider, name, description, problem_type, plant_relevance, plant_relevance_reason, is_confirmed, raw_result')
         .eq('case_id', caseId)
         .order('rank', { ascending: true })
         .limit(10),
