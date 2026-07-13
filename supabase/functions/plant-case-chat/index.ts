@@ -280,7 +280,6 @@ Formatting:
       reply: result.text,
       modelUsed,
       usedFallback,
-      context,
     });
   } catch (e) {
     console.error('[plant-case-chat] fatal', (e as Error).message);
