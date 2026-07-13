@@ -155,7 +155,7 @@ Deno.serve(async (req: Request) => {
         providerCandidates: diagRows.slice(0, 8).map((d) => ({
           rank: d.rank,
           name: d.name,
-          providerCode: null,
+          providerCode: (d as any).raw_result?._providerCode ?? null,
           description: d.description,
           problemType: d.problem_type,
           score: d.score,
