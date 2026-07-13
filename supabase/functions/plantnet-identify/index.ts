@@ -40,10 +40,13 @@ const PLANTNET_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
 
 type PlanId = 'free' | 'basic' | 'premium' | 'enterprise';
 
+// Monthly limit shared by plant identification AND disease diagnosis
+// ("Plant AI scans"). Both increment the same counter in
+// `plant_identification_usage` via `increment_plant_identification_usage`.
 function monthlyLimitForPlan(plan: PlanId): number {
   if (plan === 'basic') return 50;
   if (plan === 'premium' || plan === 'enterprise') return 100;
-  return 5;
+  return 10;
 }
 
 function currentMonthKey(): string {
@@ -187,7 +190,7 @@ Deno.serve(async (req: Request) => {
     if (usedSoFar >= monthlyLimit) {
       return jsonResponse(
         {
-          error: 'identification_limit_reached',
+          error: 'plant_ai_scan_limit_reached',
           usage: {
             used: usedSoFar,
             limit: monthlyLimit,

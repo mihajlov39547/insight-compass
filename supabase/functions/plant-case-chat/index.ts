@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
         .limit(10),
       admin
         .from('plant_diagnoses')
-        .select('id, rank, score, provider, name, description, problem_type, plant_relevance, plant_relevance_reason, is_confirmed')
+        .select('id, rank, score, provider, name, description, problem_type, plant_relevance, plant_relevance_reason, is_confirmed, raw_result')
         .eq('case_id', caseId)
         .order('rank', { ascending: true })
         .limit(10),
@@ -104,8 +104,8 @@ Deno.serve(async (req: Request) => {
 
     const confidenceBucket = (s: number | null | undefined): 'high' | 'medium' | 'low' => {
       const v = s ?? 0;
-      if (v >= 0.6) return 'high';
-      if (v >= 0.3) return 'medium';
+      if (v >= 0.7) return 'high';
+      if (v >= 0.4) return 'medium';
       return 'low';
     };
 
@@ -155,7 +155,7 @@ Deno.serve(async (req: Request) => {
         providerCandidates: diagRows.slice(0, 8).map((d) => ({
           rank: d.rank,
           name: d.name,
-          providerCode: null,
+          providerCode: (d as any).raw_result?._providerCode ?? null,
           description: d.description,
           problemType: d.problem_type,
           score: d.score,
@@ -280,7 +280,6 @@ Formatting:
       reply: result.text,
       modelUsed,
       usedFallback,
-      context,
     });
   } catch (e) {
     console.error('[plant-case-chat] fatal', (e as Error).message);

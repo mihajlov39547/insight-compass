@@ -4,28 +4,33 @@ import { useAuth } from '@/contexts/useAuth';
 import { normalizePlan } from '@/types/app';
 import {
   currentMonthKey,
-  getPlantIdentificationMonthlyLimit,
-  type PlantIdentificationPlan,
+  getPlantAiScanMonthlyLimit,
+  type PlantAiScanPlan,
 } from '@/config/plantIdentificationLimits';
 
-export interface PlantIdentificationUsage {
+// Shared monthly counter for plant identification AND disease diagnosis.
+// Reads from the existing `plant_identification_usage` table (kept for
+// back-compat); every successful identify OR diagnose call increments the
+// same row via `increment_plant_identification_usage`.
+export interface PlantAiScanUsage {
   used: number;
   limit: number;
   remaining: number;
   isLimitReached: boolean;
+  plan: PlantAiScanPlan;
   monthKey: string;
   loading: boolean;
 }
 
-export function usePlantIdentificationUsage(): PlantIdentificationUsage {
+export function usePlantAiScanUsage(): PlantAiScanUsage {
   const { user, profile } = useAuth();
-  const plan = normalizePlan(profile?.plan) as PlantIdentificationPlan;
-  const limit = getPlantIdentificationMonthlyLimit(plan);
+  const plan = normalizePlan(profile?.plan) as PlantAiScanPlan;
+  const limit = getPlantAiScanMonthlyLimit(plan);
   const monthKey = currentMonthKey();
 
   const q = useQuery({
     enabled: !!user,
-    queryKey: ['plant_identification_usage', user?.id, monthKey],
+    queryKey: ['plant_ai_scan_usage', user?.id, monthKey],
     queryFn: async (): Promise<number> => {
       const { data, error } = await (supabase as any)
         .from('plant_identification_usage')
@@ -46,7 +51,12 @@ export function usePlantIdentificationUsage(): PlantIdentificationUsage {
     limit,
     remaining,
     isLimitReached: used >= limit,
+    plan,
     monthKey,
     loading: q.isLoading,
   };
 }
+
+// Back-compat alias.
+export const usePlantIdentificationUsage = usePlantAiScanUsage;
+export type PlantIdentificationUsage = PlantAiScanUsage;

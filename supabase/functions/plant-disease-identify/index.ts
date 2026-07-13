@@ -53,6 +53,23 @@ interface ImgRow {
   original_filename: string | null;
 }
 
+// Plant AI scan monthly limits — shared with plant identification.
+// Both endpoints increment the same counter (plant_identification_usage).
+type PlanId = 'free' | 'basic' | 'premium' | 'enterprise';
+function normalizePlan(v: unknown): PlanId {
+  if (v === 'basic' || v === 'premium' || v === 'enterprise' || v === 'free') return v;
+  return 'free';
+}
+function monthlyLimitForPlan(plan: PlanId): number {
+  if (plan === 'basic') return 50;
+  if (plan === 'premium' || plan === 'enterprise') return 100;
+  return 10;
+}
+function currentMonthKey(): string {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { status: 200, headers: corsHeaders });
@@ -115,6 +132,34 @@ Deno.serve(async (req: Request) => {
     if (!(pcase as any).confirmed_identification_id) {
       return jsonResponse({ error: 'plant_not_confirmed' }, 400);
     }
+
+    // Shared Plant AI scan monthly limit (identification + diagnosis).
+    const monthKey = currentMonthKey();
+    const { data: profileRow } = await admin
+      .from('profiles')
+      .select('plan')
+      .eq('user_id', userId)
+      .maybeSingle();
+    const plan = normalizePlan((profileRow as any)?.plan);
+    const monthlyLimit = monthlyLimitForPlan(plan);
+    const { data: usageRow } = await admin
+      .from('plant_identification_usage')
+      .select('request_count')
+      .eq('user_id', userId)
+      .eq('provider', 'plantnet')
+      .eq('month_key', monthKey)
+      .maybeSingle();
+    const usedSoFar = (usageRow as any)?.request_count ?? 0;
+    if (usedSoFar >= monthlyLimit) {
+      return jsonResponse(
+        {
+          error: 'plant_ai_scan_limit_reached',
+          usage: { used: usedSoFar, limit: monthlyLimit, remaining: 0, monthKey },
+        },
+        429,
+      );
+    }
+
 
     // Load confirmed identification for relevance annotation.
     const { data: confIdent } = await admin
@@ -243,6 +288,19 @@ Deno.serve(async (req: Request) => {
         console.error('[plant-disease-identify] network error', (e as Error).message);
         return jsonResponse({ error: 'provider_unreachable' }, 502);
       }
+
+      // Provider request was consumed — count it against the shared monthly quota.
+      try {
+        const { error: incErr } = await admin.rpc('increment_plant_identification_usage', {
+          p_user_id: userId,
+          p_provider: 'plantnet',
+          p_month_key: monthKey,
+        });
+        if (incErr) console.warn('[plant-disease-identify] usage increment failed', incErr.message);
+      } catch (e) {
+        console.warn('[plant-disease-identify] usage increment threw', (e as Error).message);
+      }
+
 
       if (!pnResp.ok) {
         const status = pnResp.status;

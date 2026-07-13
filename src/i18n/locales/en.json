@@ -2071,7 +2071,8 @@
         "confirmFailed": "Confirmation failed. Please try again.",
         "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG.",
         "plantNotConfirmed": "Confirm the plant first to diagnose disease.",
-        "invalidCaseGoal": "Disease diagnosis is available only for Diagnose disease cases."
+        "invalidCaseGoal": "Disease diagnosis is available only for Diagnose disease cases.",
+        "limitReached": "Monthly Plant AI scan limit reached. Upgrade or wait until next month."
       },
       "contextLabel": "Diagnosis context",
       "relevance": {
@@ -2098,6 +2099,15 @@
       "aiHelper": "AI interpretation helps prioritize provider candidates. It is not treatment advice.",
       "diagnosisUncertain": "Diagnosis remains uncertain",
       "aiFailed": "AI interpretation could not be generated."
+    },
+    "scans": {
+      "label": "Plant AI scans",
+      "usedThisMonth": "{{used}} / {{limit}} Plant AI scans used this month",
+      "remaining": "{{remaining}} scans remaining",
+      "limitReached": "Monthly Plant AI scan limit reached",
+      "upgradeOrWait": "Upgrade or wait until next month",
+      "limitReachedWarning": "Monthly Plant AI scan limit reached. Upgrade or wait until next month.",
+      "includesNote": "Plant AI scan usage includes plant identification and disease diagnosis."
     },
     "diagnoseFlow": {
       "step1": "Step 1: Identify plant",

@@ -22,6 +22,7 @@ import type { PlantCaseImage } from '@/hooks/usePlantCaseImages';
 import { useAuth } from '@/contexts/useAuth';
 import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
 import { usePlantAdvisorSettings, toPlantnetApiLang } from '@/hooks/usePlantAdvisorSettings';
+import { usePlantAiScanUsage } from '@/hooks/usePlantIdentificationUsage';
 
 interface Props {
   caseId: string;
@@ -54,6 +55,8 @@ function errorKey(code: string | undefined): string {
       return 'plantAdvisor.diagnose.errors.plantNotConfirmed';
     case 'invalid_case_goal':
       return 'plantAdvisor.diagnose.errors.invalidCaseGoal';
+    case 'plant_ai_scan_limit_reached':
+      return 'plantAdvisor.diagnose.errors.limitReached';
     default:
       return 'plantAdvisor.diagnose.errors.generic';
   }
@@ -114,6 +117,7 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
   const diagnose = useDiagnoseDisease();
   const confirmMut = useConfirmPlantDiagnosis();
   const settings = usePlantAdvisorSettings();
+  const usage = usePlantAiScanUsage();
 
   const [preparing, setPreparing] = useState(false);
   const [review, setReview] = useState<PlantDiseaseReview | null>(null);
@@ -266,14 +270,26 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-medium text-sm">{t('plantAdvisor.diagnose.sectionTitle')}</div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <Badge variant="outline" className="text-[10px]">{t('plantAdvisor.identify.providerBadge')}</Badge>
+            {!usage.loading && (
+              <span>
+                {t('plantAdvisor.scans.usedThisMonth', { used: usage.used, limit: usage.limit })}
+              </span>
+            )}
           </div>
         </div>
         <Button
           size="sm"
           onClick={run}
-          disabled={!hasImages || !hasIdentifiable || !hasConfirmedIdentification || diagnose.isPending || preparing}
+          disabled={
+            !hasImages ||
+            !hasIdentifiable ||
+            !hasConfirmedIdentification ||
+            diagnose.isPending ||
+            preparing ||
+            usage.isLimitReached
+          }
         >
           {preparing ? (
             <>
@@ -298,6 +314,12 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
           )}
         </Button>
       </div>
+
+      {usage.isLimitReached && (
+        <div className="text-xs rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-1.5">
+          {t('plantAdvisor.scans.limitReachedWarning')}
+        </div>
+      )}
 
       {!hasImages && (
         <div className="text-xs text-muted-foreground">{t('plantAdvisor.diagnose.uploadFirst')}</div>

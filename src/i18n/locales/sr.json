@@ -2087,7 +2087,8 @@
         "confirmFailed": "Potvrda nije uspela. Pokušajte ponovo.",
         "webpConvertFailed": "Konverzija WebP slike nije uspela. Pokušajte JPEG ili PNG.",
         "plantNotConfirmed": "Prvo potvrdite biljku da biste dijagnostikovali bolest.",
-        "invalidCaseGoal": "Dijagnoza bolesti je dostupna samo za slučajeve tipa Dijagnoza bolesti."
+        "invalidCaseGoal": "Dijagnoza bolesti je dostupna samo za slučajeve tipa Dijagnoza bolesti.",
+        "limitReached": "Mesečni limit Plant AI skeniranja je dostignut. Nadogradite plan ili sačekajte sledeći mesec."
       },
       "contextLabel": "Kontekst dijagnoze",
       "relevance": {
@@ -2114,6 +2115,15 @@
       "aiHelper": "AI interpretacija pomaže da se poređaju kandidati provajdera. Ne predstavlja savet o lečenju.",
       "diagnosisUncertain": "Dijagnoza ostaje neizvesna",
       "aiFailed": "AI interpretaciju nije bilo moguće generisati."
+    },
+    "scans": {
+      "label": "Plant AI skeniranja",
+      "usedThisMonth": "Iskorišćeno {{used}} / {{limit}} Plant AI skeniranja ovog meseca",
+      "remaining": "Preostalo skeniranja: {{remaining}}",
+      "limitReached": "Mesečni limit Plant AI skeniranja je dostignut",
+      "upgradeOrWait": "Nadogradite plan ili sačekajte sledeći mesec",
+      "limitReachedWarning": "Mesečni limit Plant AI skeniranja je dostignut. Nadogradite plan ili sačekajte sledeći mesec.",
+      "includesNote": "Plant AI skeniranje obuhvata prepoznavanje biljke i dijagnozu bolesti."
     },
     "diagnoseFlow": {
       "step1": "Korak 1: Prepoznaj biljku",

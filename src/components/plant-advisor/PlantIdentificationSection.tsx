@@ -49,6 +49,7 @@ function errorKey(code: string | undefined): string {
     case 'empty_results':
       return 'plantAdvisor.identify.errors.empty';
     case 'identification_limit_reached':
+    case 'plant_ai_scan_limit_reached':
       return 'plantAdvisor.identify.errors.limitReached';
     default:
       return 'plantAdvisor.identify.errors.generic';
@@ -138,7 +139,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
             <Badge variant="outline" className="text-[10px]">{t('plantAdvisor.identify.providerBadge')}</Badge>
             {!usage.loading && (
               <span>
-                {t('plantAdvisor.identify.usedThisMonth', {
+                {t('plantAdvisor.scans.usedThisMonth', {
                   used: usage.used,
                   limit: usage.limit,
                 })}
@@ -188,7 +189,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
 
       {usage.isLimitReached && (
         <div className="text-xs rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-1.5">
-          {t('plantAdvisor.identify.limitReachedWarning')}
+          {t('plantAdvisor.scans.limitReachedWarning')}
         </div>
       )}
       {hasImages && !hasIdentifiable && (
