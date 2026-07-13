@@ -55,6 +55,8 @@ function errorKey(code: string | undefined): string {
       return 'plantAdvisor.diagnose.errors.plantNotConfirmed';
     case 'invalid_case_goal':
       return 'plantAdvisor.diagnose.errors.invalidCaseGoal';
+    case 'plant_ai_scan_limit_reached':
+      return 'plantAdvisor.diagnose.errors.limitReached';
     default:
       return 'plantAdvisor.diagnose.errors.generic';
   }
