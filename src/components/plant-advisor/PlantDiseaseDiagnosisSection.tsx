@@ -117,6 +117,7 @@ export function PlantDiseaseDiagnosisSection({ caseId, images, hasConfirmedIdent
   const diagnose = useDiagnoseDisease();
   const confirmMut = useConfirmPlantDiagnosis();
   const settings = usePlantAdvisorSettings();
+  const usage = usePlantAiScanUsage();
 
   const [preparing, setPreparing] = useState(false);
   const [review, setReview] = useState<PlantDiseaseReview | null>(null);
