@@ -53,6 +53,23 @@ interface ImgRow {
   original_filename: string | null;
 }
 
+// Plant AI scan monthly limits — shared with plant identification.
+// Both endpoints increment the same counter (plant_identification_usage).
+type PlanId = 'free' | 'basic' | 'premium' | 'enterprise';
+function normalizePlan(v: unknown): PlanId {
+  if (v === 'basic' || v === 'premium' || v === 'enterprise' || v === 'free') return v;
+  return 'free';
+}
+function monthlyLimitForPlan(plan: PlanId): number {
+  if (plan === 'basic') return 50;
+  if (plan === 'premium' || plan === 'enterprise') return 100;
+  return 10;
+}
+function currentMonthKey(): string {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { status: 200, headers: corsHeaders });
