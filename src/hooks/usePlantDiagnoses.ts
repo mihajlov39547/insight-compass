@@ -170,6 +170,8 @@ export function useDiagnoseDisease() {
       qc.invalidateQueries({ queryKey: ['plant_diagnosis_interpretations', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_case', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_cases'] });
+      qc.invalidateQueries({ queryKey: ['plant_ai_scan_usage'] });
+      qc.invalidateQueries({ queryKey: ['plant_identification_usage'] });
     },
   });
 }
