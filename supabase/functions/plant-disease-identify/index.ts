@@ -266,38 +266,58 @@ Deno.serve(async (req: Request) => {
       url.searchParams.set('include-related-images', 'true');
       url.searchParams.set('lang', lang);
 
+      // Atomically reserve one Plant AI scan against the shared monthly quota
+      // BEFORE calling Pl@ntNet. Two parallel requests cannot both slip past.
+      let usage = { used: 0, limit: monthlyLimit, remaining: monthlyLimit, monthKey };
+      try {
+        const { data: resv, error: resvErr } = await admin.rpc('reserve_plant_ai_scan_usage', {
+          p_user_id: userId,
+          p_provider: 'plantnet',
+          p_month_key: monthKey,
+          p_limit: monthlyLimit,
+        });
+        if (resvErr) {
+          console.error('[plant-disease-identify] reservation rpc failed', resvErr.message);
+          await cleanupTemp();
+          return jsonResponse({ error: 'internal_error' }, 500);
+        }
+        const r = (resv || {}) as { allowed?: boolean; used?: number; limit?: number; remaining?: number };
+        usage = {
+          used: r.used ?? 0,
+          limit: r.limit ?? monthlyLimit,
+          remaining: r.remaining ?? 0,
+          monthKey,
+        };
+        if (r.allowed === false) {
+          await cleanupTemp();
+          return jsonResponse({ error: 'plant_ai_scan_limit_reached', usage }, 429);
+        }
+      } catch (e) {
+        console.error('[plant-disease-identify] reservation threw', (e as Error).message);
+        await cleanupTemp();
+        return jsonResponse({ error: 'internal_error' }, 500);
+      }
+
       let pnResp: Response;
       try {
         pnResp = await fetch(url.toString(), { method: 'POST', body: form });
       } catch (e) {
         console.error('[plant-disease-identify] network error', (e as Error).message);
-        return jsonResponse({ error: 'provider_unreachable' }, 502);
+        return jsonResponse({ error: 'provider_unreachable', usage }, 502);
       }
-
-      // Provider request was consumed — count it against the shared monthly quota.
-      try {
-        const { error: incErr } = await admin.rpc('increment_plant_identification_usage', {
-          p_user_id: userId,
-          p_provider: 'plantnet',
-          p_month_key: monthKey,
-        });
-        if (incErr) console.warn('[plant-disease-identify] usage increment failed', incErr.message);
-      } catch (e) {
-        console.warn('[plant-disease-identify] usage increment threw', (e as Error).message);
-      }
-
 
       if (!pnResp.ok) {
         const status = pnResp.status;
         const shortText = (await pnResp.text().catch(() => '')).slice(0, 200);
         console.warn('[plant-disease-identify] upstream error', status, shortText);
-        if (status === 400) return jsonResponse({ error: 'bad_request' }, 400);
-        if (status === 401 || status === 403) return jsonResponse({ error: 'auth_failed' }, 502);
-        if (status === 404) return jsonResponse({ error: 'not_found_upstream' }, 502);
-        if (status === 413) return jsonResponse({ error: 'payload_too_large' }, 413);
-        if (status === 429) return jsonResponse({ error: 'quota_exhausted' }, 429);
-        return jsonResponse({ error: 'provider_error' }, 502);
+        if (status === 400) return jsonResponse({ error: 'bad_request', usage }, 400);
+        if (status === 401 || status === 403) return jsonResponse({ error: 'auth_failed', usage }, 502);
+        if (status === 404) return jsonResponse({ error: 'not_found_upstream', usage }, 502);
+        if (status === 413) return jsonResponse({ error: 'payload_too_large', usage }, 413);
+        if (status === 429) return jsonResponse({ error: 'quota_exhausted', usage }, 429);
+        return jsonResponse({ error: 'provider_error', usage }, 502);
       }
+
 
       const raw = await pnResp.json().catch(() => null);
       const results = Array.isArray(raw?.results) ? raw.results : [];
