@@ -322,7 +322,7 @@ Deno.serve(async (req: Request) => {
       const raw = await pnResp.json().catch(() => null);
       const results = Array.isArray(raw?.results) ? raw.results : [];
       if (results.length === 0) {
-        return jsonResponse({ error: 'empty_results', raw }, 200);
+        return jsonResponse({ error: 'empty_results', raw, usage }, 200);
       }
 
       const pickImages = (arr: any): Array<Record<string, unknown>> => {
