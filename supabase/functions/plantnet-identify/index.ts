@@ -282,32 +282,46 @@ Deno.serve(async (req: Request) => {
     url.searchParams.set('detailed', 'true');
     url.searchParams.set('lang', lang);
 
+    // Atomically reserve one Plant AI scan against the shared monthly quota
+    // BEFORE calling Pl@ntNet. Prevents parallel requests from exceeding it.
+    let usage = { used: 0, limit: monthlyLimit, remaining: monthlyLimit, monthKey };
+    try {
+      const { data: resv, error: resvErr } = await admin.rpc('reserve_plant_ai_scan_usage', {
+        p_user_id: userId,
+        p_provider: 'plantnet',
+        p_month_key: monthKey,
+        p_limit: monthlyLimit,
+      });
+      if (resvErr) {
+        console.error('[plantnet-identify] reservation rpc failed', resvErr.message);
+        await cleanupTemp();
+        return jsonResponse({ error: 'internal_error' }, 500);
+      }
+      const r = (resv || {}) as { allowed?: boolean; used?: number; limit?: number; remaining?: number };
+      usage = {
+        used: r.used ?? 0,
+        limit: r.limit ?? monthlyLimit,
+        remaining: r.remaining ?? 0,
+        monthKey,
+      };
+      if (r.allowed === false) {
+        await cleanupTemp();
+        return jsonResponse({ error: 'plant_ai_scan_limit_reached', usage }, 429);
+      }
+    } catch (e) {
+      console.error('[plantnet-identify] reservation threw', (e as Error).message);
+      await cleanupTemp();
+      return jsonResponse({ error: 'internal_error' }, 500);
+    }
+
     let pnResp: Response;
     try {
       pnResp = await fetch(url.toString(), { method: 'POST', body: form });
     } catch (e) {
       console.error('[plantnet-identify] network error', (e as Error).message);
-      return jsonResponse({ error: 'provider_unreachable' }, 502);
+      return jsonResponse({ error: 'provider_unreachable', usage }, 502);
     }
 
-    // Request reached the provider — count it against the user's monthly usage.
-    let newUsedCount = usedSoFar + 1;
-    try {
-      const { data: incData, error: incErr } = await admin.rpc(
-        'increment_plant_identification_usage',
-        { p_user_id: userId, p_provider: 'plantnet', p_month_key: monthKey },
-      );
-      if (!incErr && typeof incData === 'number') newUsedCount = incData;
-      else if (incErr) console.warn('[plantnet-identify] usage increment failed', incErr.message);
-    } catch (e) {
-      console.warn('[plantnet-identify] usage increment threw', (e as Error).message);
-    }
-    const usage = {
-      used: newUsedCount,
-      limit: monthlyLimit,
-      remaining: Math.max(0, monthlyLimit - newUsedCount),
-      monthKey,
-    };
 
     if (!pnResp.ok) {
       const status = pnResp.status;
