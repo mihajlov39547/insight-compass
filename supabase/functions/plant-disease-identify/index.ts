@@ -134,6 +134,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Shared Plant AI scan monthly limit (identification + diagnosis).
+    // Atomic reservation happens later, right before the provider call.
     const monthKey = currentMonthKey();
     const { data: profileRow } = await admin
       .from('profiles')
@@ -142,23 +143,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     const plan = normalizePlan((profileRow as any)?.plan);
     const monthlyLimit = monthlyLimitForPlan(plan);
-    const { data: usageRow } = await admin
-      .from('plant_identification_usage')
-      .select('request_count')
-      .eq('user_id', userId)
-      .eq('provider', 'plantnet')
-      .eq('month_key', monthKey)
-      .maybeSingle();
-    const usedSoFar = (usageRow as any)?.request_count ?? 0;
-    if (usedSoFar >= monthlyLimit) {
-      return jsonResponse(
-        {
-          error: 'plant_ai_scan_limit_reached',
-          usage: { used: usedSoFar, limit: monthlyLimit, remaining: 0, monthKey },
-        },
-        429,
-      );
-    }
+
 
 
     // Load confirmed identification for relevance annotation.
