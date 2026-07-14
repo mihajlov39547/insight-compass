@@ -3040,6 +3040,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      reserve_plant_ai_scan_usage: {
+        Args: {
+          p_limit: number
+          p_month_key: string
+          p_provider: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       reset_resource_for_retry: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: Json
