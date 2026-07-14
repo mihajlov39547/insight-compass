@@ -170,7 +170,9 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Plan-aware monthly limit check.
+    // Plan-aware monthly limit. The atomic reservation happens later, right
+    // before the provider call, to prevent parallel requests from both slipping
+    // through a pre-check.
     const monthKey = currentMonthKey();
     const { data: profileRow } = await admin
       .from('profiles')
@@ -179,28 +181,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     const plan = normalizePlan((profileRow as any)?.plan);
     const monthlyLimit = monthlyLimitForPlan(plan);
-    const { data: usageRow } = await admin
-      .from('plant_identification_usage')
-      .select('request_count')
-      .eq('user_id', userId)
-      .eq('provider', 'plantnet')
-      .eq('month_key', monthKey)
-      .maybeSingle();
-    const usedSoFar = (usageRow as any)?.request_count ?? 0;
-    if (usedSoFar >= monthlyLimit) {
-      return jsonResponse(
-        {
-          error: 'plant_ai_scan_limit_reached',
-          usage: {
-            used: usedSoFar,
-            limit: monthlyLimit,
-            remaining: 0,
-            monthKey,
-          },
-        },
-        429,
-      );
-    }
+
 
     // Rank by role preference; WebP without a temp JPEG is not sendable, so drop it.
     const sendable = allImages.filter((i) => {
