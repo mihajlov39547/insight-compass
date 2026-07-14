@@ -616,6 +616,7 @@ Deno.serve(async (req: Request) => {
         aiInterpretationFailed: !interpretation.ok,
         usedImageCount: parts.length,
         totalImageCount: allImages.length,
+        usage,
       });
     } finally {
       await cleanupTemp();
