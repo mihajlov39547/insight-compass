@@ -2137,6 +2137,55 @@
         "worldFlora": "World flora",
         "all": "All / automatic"
       }
+    },
+    "trefle": {
+      "sectionTitle": "Plant profile",
+      "providerNote": "Reference data from Trefle. May be incomplete.",
+      "refresh": "Refresh plant profile",
+      "refreshedToast": "Plant profile refreshed",
+      "loading": "Loading plant profile…",
+      "noProfileFound": "No Trefle profile found for this plant.",
+      "incompleteNote": "Provider profile data may be incomplete and is not local advice.",
+      "errorGeneric": "Could not load plant profile.",
+      "plantProfile": "Plant profile",
+      "referenceImages": "Reference images",
+      "growthRequirements": "Growth requirements",
+      "safetyUse": "Safety and use",
+      "distribution": "Distribution",
+      "synonyms": "Synonyms",
+      "edible": "Edible",
+      "ediblePart": "Edible parts",
+      "vegetable": "Vegetable",
+      "toxicity": "Toxicity",
+      "native": "Native",
+      "introduced": "Introduced",
+      "fields": {
+        "scientific": "Scientific name",
+        "common": "Common name",
+        "family": "Family",
+        "genus": "Genus",
+        "rank": "Rank",
+        "status": "Status",
+        "author": "Author"
+      },
+      "growth": {
+        "phMin": "pH min",
+        "phMax": "pH max",
+        "light": "Light",
+        "humidity": "Atmospheric humidity",
+        "soilNutriments": "Soil nutriments",
+        "soilSalinity": "Soil salinity",
+        "soilTexture": "Soil texture",
+        "soilHumidity": "Soil humidity",
+        "tempMin": "Minimum temperature",
+        "tempMax": "Maximum temperature",
+        "precipitation": "Precipitation (mm)",
+        "rootDepth": "Root depth (cm)",
+        "growthMonths": "Growth months",
+        "bloomMonths": "Bloom months",
+        "fruitMonths": "Fruit months",
+        "duration": "Duration"
+      }
     }
   }
 }
