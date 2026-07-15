@@ -9,6 +9,7 @@ import { PlantImageUploader } from './PlantImageUploader';
 import { PlantIdentificationSection } from './PlantIdentificationSection';
 import { PlantDiseaseDiagnosisSection } from './PlantDiseaseDiagnosisSection';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
+import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
 import { toast } from 'sonner';
 
 interface Props {
