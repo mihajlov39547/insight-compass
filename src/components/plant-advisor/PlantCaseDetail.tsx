@@ -9,6 +9,7 @@ import { PlantImageUploader } from './PlantImageUploader';
 import { PlantIdentificationSection } from './PlantIdentificationSection';
 import { PlantDiseaseDiagnosisSection } from './PlantDiseaseDiagnosisSection';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
+import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
 import { toast } from 'sonner';
 
 interface Props {
@@ -81,6 +82,11 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           </div>
           <PlantIdentificationSection caseId={plantCase.id} images={images} />
 
+          <PlantSpeciesProfileSection
+            caseId={plantCase.id}
+            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+          />
+
           <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{t('plantAdvisor.diagnoseFlow.step2')}</span>
             {' — '}
@@ -99,7 +105,13 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           )}
         </>
       ) : (
-        <PlantIdentificationSection caseId={plantCase.id} images={images} />
+        <>
+          <PlantIdentificationSection caseId={plantCase.id} images={images} />
+          <PlantSpeciesProfileSection
+            caseId={plantCase.id}
+            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+          />
+        </>
       )}
 
 

@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
-    const [imgs, idents, diags, interps] = await Promise.all([
+    const [imgs, idents, diags, interps, profiles] = await Promise.all([
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
@@ -92,12 +92,20 @@ Deno.serve(async (req: Request) => {
         .eq('case_id', caseId)
         .order('created_at', { ascending: false })
         .limit(1),
+      admin
+        .from('plant_species_profiles')
+        .select('*')
+        .eq('case_id', caseId)
+        .order('fetched_at', { ascending: false })
+        .limit(1),
     ]);
 
     const imageRows = (imgs.data as { image_role: string | null }[] | null) ?? [];
     const identRows = (idents.data as any[] | null) ?? [];
     const diagRows = (diags.data as any[] | null) ?? [];
     const interp = (interps.data as any[] | null)?.[0] ?? null;
+    const profileRow = (profiles.data as any[] | null)?.[0] ?? null;
+    const trefle = profileRow?.profile ?? null;
 
     const confirmedIdent = identRows.find((i) => i.is_confirmed) ?? null;
     const confirmedDiag = diagRows.find((d) => d.is_confirmed) ?? null;
@@ -176,9 +184,32 @@ Deno.serve(async (req: Request) => {
             }
           : null,
       },
+      speciesProfile: trefle
+        ? {
+            provider: 'trefle',
+            fetchedAt: profileRow.fetched_at,
+            scientificName: trefle.scientificName,
+            commonName: trefle.commonName,
+            family: trefle.family,
+            genus: trefle.genus,
+            status: trefle.status,
+            rank: trefle.rank,
+            synonyms: trefle.synonyms ?? [],
+            duration: trefle.duration ?? null,
+            edible: trefle.edible ?? null,
+            ediblePart: trefle.ediblePart ?? null,
+            vegetable: trefle.vegetable ?? null,
+            toxicity: trefle.toxicity ?? null,
+            growth: trefle.growth ?? null,
+            specifications: trefle.specifications ?? null,
+            distributions: trefle.distributions ?? null,
+            sources: trefle.sources ?? null,
+          }
+        : null,
       notes: {
         noConfirmedDiagnosis: !confirmedDiag ? 'No diagnosis has been confirmed yet.' : null,
         noAiInterpretation: !interp ? 'No AI interpretation is available yet.' : null,
+        noSpeciesProfile: !trefle ? 'No Trefle plant profile is available yet.' : null,
       },
     };
 
@@ -187,12 +218,14 @@ Deno.serve(async (req: Request) => {
     const systemPrompt = `You are Plant Advisor's case assistant. You help the user reason about a specific plant case using the provided context. ${langInstruction}
 
 Rules:
-- Answer using ONLY the provided case context (case_context, identification, diagnosis, aiInterpretation).
+- Answer using ONLY the provided case context (caseContext, identification, diagnosis, aiInterpretation, speciesProfile).
 - Clearly distinguish CONFIRMED facts (confirmedPlant, confirmedDiagnosis) from CANDIDATES (providerCandidates, alternatives).
 - When provider confidence is low or plantRelevance is not "high", explicitly mention the uncertainty.
 - Prefer the confirmed plant and confirmed diagnosis when available.
 - If a diagnosis is not confirmed, say the disease/pest is only a candidate.
 - If aiInterpretation exists, use it as triage context and cite its overallConfidence.
+- For plant care, growth requirements, edibility, toxicity, and distribution questions, use speciesProfile (Trefle) when present. Cite the provider ("according to Trefle") and note that this is reference data, not local advice.
+- If speciesProfile is null or a specific field is missing/null, say the profile does not contain that information. Do NOT invent values.
 - Explain what visual details the user should check next when helpful (e.g. "inspect leaf undersides for orange pustules").
 - If evidence is weak or missing, ask the user for clearer photos of the affected parts.
 - You are NOT looking at the images directly. You only see image counts and roles. If the user asks what you see in the photo, say you cannot inspect the images directly in this chat and rely on metadata, provider results, and notes.
@@ -204,6 +237,7 @@ You MUST NOT:
 - Give pesticide, fungicide, herbicide, or fertilizer dose or application instructions.
 - Recommend regulated chemicals or spray schedules in this phase.
 - Fabricate diagnoses that are not in providerCandidates or aiInterpretation.
+- Invent Trefle profile values (pH, temperatures, toxicity, edibility, distribution) that are not in speciesProfile.
 
 Formatting:
 - Use short paragraphs and bullet lists where helpful.

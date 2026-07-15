@@ -2153,6 +2153,55 @@
         "worldFlora": "Svetska flora",
         "all": "Sve / automatski"
       }
+    },
+    "trefle": {
+      "sectionTitle": "Profil biljke",
+      "providerNote": "Referentni podaci sa Trefle servisa. Mogu biti nepotpuni.",
+      "refresh": "Osveži profil biljke",
+      "refreshedToast": "Profil biljke je osvežen",
+      "loading": "Učitavanje profila biljke…",
+      "noProfileFound": "Nije pronađen Trefle profil za ovu biljku.",
+      "incompleteNote": "Podaci provajdera mogu biti nepotpuni i nisu lokalni savet.",
+      "errorGeneric": "Nije moguće učitati profil biljke.",
+      "plantProfile": "Profil biljke",
+      "referenceImages": "Referentne slike",
+      "growthRequirements": "Uslovi rasta",
+      "safetyUse": "Bezbednost i upotreba",
+      "distribution": "Rasprostranjenost",
+      "synonyms": "Sinonimi",
+      "edible": "Jestivo",
+      "ediblePart": "Jestivi delovi",
+      "vegetable": "Povrće",
+      "toxicity": "Toksičnost",
+      "native": "Domicilno",
+      "introduced": "Uneseno",
+      "fields": {
+        "scientific": "Naučni naziv",
+        "common": "Uobičajen naziv",
+        "family": "Familija",
+        "genus": "Rod",
+        "rank": "Rang",
+        "status": "Status",
+        "author": "Autor"
+      },
+      "growth": {
+        "phMin": "pH min",
+        "phMax": "pH max",
+        "light": "Svetlost",
+        "humidity": "Vlažnost vazduha",
+        "soilNutriments": "Hranljive materije u zemljištu",
+        "soilSalinity": "Salinitet zemljišta",
+        "soilTexture": "Tekstura zemljišta",
+        "soilHumidity": "Vlažnost zemljišta",
+        "tempMin": "Minimalna temperatura",
+        "tempMax": "Maksimalna temperatura",
+        "precipitation": "Padavine (mm)",
+        "rootDepth": "Dubina korena (cm)",
+        "growthMonths": "Meseci rasta",
+        "bloomMonths": "Meseci cvetanja",
+        "fruitMonths": "Meseci plodova",
+        "duration": "Trajanje"
+      }
     }
   }
 }

@@ -261,6 +261,7 @@ export function useConfirmPlantIdentification() {
       qc.invalidateQueries({ queryKey: ['plant_identifications', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_case', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_cases'] });
+      qc.invalidateQueries({ queryKey: ['plant_species_profile', vars.plantCaseId] });
     },
   });
 }

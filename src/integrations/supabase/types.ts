@@ -1651,6 +1651,81 @@ export type Database = {
           },
         ]
       }
+      plant_species_profiles: {
+        Row: {
+          case_id: string
+          common_name: string | null
+          created_at: string
+          family: string | null
+          fetched_at: string
+          genus: string | null
+          id: string
+          identification_id: string | null
+          profile: Json
+          provider: string
+          provider_id: string | null
+          rank: string | null
+          scientific_name: string | null
+          slug: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          common_name?: string | null
+          created_at?: string
+          family?: string | null
+          fetched_at?: string
+          genus?: string | null
+          id?: string
+          identification_id?: string | null
+          profile: Json
+          provider?: string
+          provider_id?: string | null
+          rank?: string | null
+          scientific_name?: string | null
+          slug?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          common_name?: string | null
+          created_at?: string
+          family?: string | null
+          fetched_at?: string
+          genus?: string | null
+          id?: string
+          identification_id?: string | null
+          profile?: Json
+          provider?: string
+          provider_id?: string | null
+          rank?: string | null
+          scientific_name?: string | null
+          slug?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_species_profiles_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plant_species_profiles_identification_id_fkey"
+            columns: ["identification_id"]
+            isOneToOne: false
+            referencedRelation: "plant_identifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
