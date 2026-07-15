@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
-    const [imgs, idents, diags, interps] = await Promise.all([
+    const [imgs, idents, diags, interps, profiles] = await Promise.all([
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
@@ -92,12 +92,20 @@ Deno.serve(async (req: Request) => {
         .eq('case_id', caseId)
         .order('created_at', { ascending: false })
         .limit(1),
+      admin
+        .from('plant_species_profiles')
+        .select('*')
+        .eq('case_id', caseId)
+        .order('fetched_at', { ascending: false })
+        .limit(1),
     ]);
 
     const imageRows = (imgs.data as { image_role: string | null }[] | null) ?? [];
     const identRows = (idents.data as any[] | null) ?? [];
     const diagRows = (diags.data as any[] | null) ?? [];
     const interp = (interps.data as any[] | null)?.[0] ?? null;
+    const profileRow = (profiles.data as any[] | null)?.[0] ?? null;
+    const trefle = profileRow?.profile ?? null;
 
     const confirmedIdent = identRows.find((i) => i.is_confirmed) ?? null;
     const confirmedDiag = diagRows.find((d) => d.is_confirmed) ?? null;
