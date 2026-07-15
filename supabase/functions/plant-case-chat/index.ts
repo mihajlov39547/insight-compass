@@ -184,9 +184,32 @@ Deno.serve(async (req: Request) => {
             }
           : null,
       },
+      speciesProfile: trefle
+        ? {
+            provider: 'trefle',
+            fetchedAt: profileRow.fetched_at,
+            scientificName: trefle.scientificName,
+            commonName: trefle.commonName,
+            family: trefle.family,
+            genus: trefle.genus,
+            status: trefle.status,
+            rank: trefle.rank,
+            synonyms: trefle.synonyms ?? [],
+            duration: trefle.duration ?? null,
+            edible: trefle.edible ?? null,
+            ediblePart: trefle.ediblePart ?? null,
+            vegetable: trefle.vegetable ?? null,
+            toxicity: trefle.toxicity ?? null,
+            growth: trefle.growth ?? null,
+            specifications: trefle.specifications ?? null,
+            distributions: trefle.distributions ?? null,
+            sources: trefle.sources ?? null,
+          }
+        : null,
       notes: {
         noConfirmedDiagnosis: !confirmedDiag ? 'No diagnosis has been confirmed yet.' : null,
         noAiInterpretation: !interp ? 'No AI interpretation is available yet.' : null,
+        noSpeciesProfile: !trefle ? 'No Trefle plant profile is available yet.' : null,
       },
     };
 
