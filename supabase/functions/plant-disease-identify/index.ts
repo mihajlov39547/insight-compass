@@ -706,6 +706,7 @@ interface AiInterpretationInput {
     imageRoles: string[];
   };
   candidates: AiCandidate[];
+  speciesProfile?: Record<string, unknown> | null;
 }
 
 interface AiInterpretationResult {
