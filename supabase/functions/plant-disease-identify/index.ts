@@ -153,6 +153,39 @@ Deno.serve(async (req: Request) => {
       .eq('id', (pcase as any).confirmed_identification_id)
       .maybeSingle();
 
+    // Load latest Trefle plant species profile for this case (secondary context only).
+    const { data: speciesProfileRow } = await admin
+      .from('plant_species_profiles')
+      .select('profile, scientific_name, common_name, family, genus, status, rank, fetched_at')
+      .eq('case_id', plantCaseId)
+      .order('fetched_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const spRow: any = speciesProfileRow ?? null;
+    const spProfile: any = spRow?.profile ?? null;
+    const speciesProfile = spProfile
+      ? {
+          provider: 'trefle',
+          fetchedAt: spRow.fetched_at,
+          scientificName: spProfile.scientificName ?? spRow.scientific_name ?? null,
+          commonName: spProfile.commonName ?? spRow.common_name ?? null,
+          family: spProfile.family ?? spRow.family ?? null,
+          genus: spProfile.genus ?? spRow.genus ?? null,
+          status: spProfile.status ?? spRow.status ?? null,
+          rank: spProfile.rank ?? spRow.rank ?? null,
+          synonyms: spProfile.synonyms ?? [],
+          commonNames: spProfile.commonNames ?? null,
+          duration: spProfile.duration ?? null,
+          edible: spProfile.edible ?? null,
+          ediblePart: spProfile.ediblePart ?? null,
+          vegetable: spProfile.vegetable ?? null,
+          toxicity: spProfile.toxicity ?? null,
+          growth: spProfile.growth ?? null,
+          specifications: spProfile.specifications ?? null,
+          distributions: spProfile.distributions ?? null,
+        }
+      : null;
+
     let q = admin
       .from('plant_case_images')
       .select(
