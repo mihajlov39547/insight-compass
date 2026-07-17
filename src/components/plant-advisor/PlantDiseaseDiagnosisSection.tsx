@@ -724,6 +724,50 @@ function AiInterpretationCard({
           <span>{data.safetyNote}</span>
         </div>
       )}
+      {data.plantProfileContext && (
+        <div className="rounded-md border border-border/60 bg-muted/30 p-2 space-y-1">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {t('plantAdvisor.diagnose.plantProfileContext.title')}
+            </div>
+            <Badge variant="outline" className="text-[10px]">
+              {t('plantAdvisor.diagnose.plantProfileContext.trefleReferenceContext')}
+            </Badge>
+          </div>
+          <div className="text-[11px] text-foreground">
+            {data.plantProfileContext.used
+              ? t('plantAdvisor.diagnose.plantProfileContext.used')
+              : t('plantAdvisor.diagnose.plantProfileContext.notAvailable')}
+          </div>
+          {data.plantProfileContext.notes && data.plantProfileContext.notes.length > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {t('plantAdvisor.diagnose.plantProfileContext.notes')}
+              </div>
+              <ul className="list-disc pl-4 text-[11px] text-foreground space-y-0.5">
+                {data.plantProfileContext.notes.map((n, i) => (
+                  <li key={i}>{n}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {data.plantProfileContext.warnings && data.plantProfileContext.warnings.length > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                {t('plantAdvisor.diagnose.plantProfileContext.warnings')}
+              </div>
+              <ul className="list-disc pl-4 text-[11px] text-amber-700 dark:text-amber-300 space-y-0.5">
+                {data.plantProfileContext.warnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="text-[10px] text-muted-foreground italic">
+            {t('plantAdvisor.diagnose.plantProfileContext.disclaimer')}
+          </div>
+        </div>
+      )}
       <div className="text-[10px] text-muted-foreground italic">
         {t('plantAdvisor.diagnose.aiHelper')}
       </div>

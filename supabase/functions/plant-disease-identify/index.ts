@@ -153,6 +153,39 @@ Deno.serve(async (req: Request) => {
       .eq('id', (pcase as any).confirmed_identification_id)
       .maybeSingle();
 
+    // Load latest Trefle plant species profile for this case (secondary context only).
+    const { data: speciesProfileRow } = await admin
+      .from('plant_species_profiles')
+      .select('profile, scientific_name, common_name, family, genus, status, rank, fetched_at')
+      .eq('case_id', plantCaseId)
+      .order('fetched_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const spRow: any = speciesProfileRow ?? null;
+    const spProfile: any = spRow?.profile ?? null;
+    const speciesProfile = spProfile
+      ? {
+          provider: 'trefle',
+          fetchedAt: spRow.fetched_at,
+          scientificName: spProfile.scientificName ?? spRow.scientific_name ?? null,
+          commonName: spProfile.commonName ?? spRow.common_name ?? null,
+          family: spProfile.family ?? spRow.family ?? null,
+          genus: spProfile.genus ?? spRow.genus ?? null,
+          status: spProfile.status ?? spRow.status ?? null,
+          rank: spProfile.rank ?? spRow.rank ?? null,
+          synonyms: spProfile.synonyms ?? [],
+          commonNames: spProfile.commonNames ?? null,
+          duration: spProfile.duration ?? null,
+          edible: spProfile.edible ?? null,
+          ediblePart: spProfile.ediblePart ?? null,
+          vegetable: spProfile.vegetable ?? null,
+          toxicity: spProfile.toxicity ?? null,
+          growth: spProfile.growth ?? null,
+          specifications: spProfile.specifications ?? null,
+          distributions: spProfile.distributions ?? null,
+        }
+      : null;
+
     let q = admin
       .from('plant_case_images')
       .select(
@@ -562,6 +595,7 @@ Deno.serve(async (req: Request) => {
             imageRoles: Array.from(new Set(picked.map((p) => p.image_role || 'auto'))),
           },
           candidates: enriched,
+          speciesProfile,
         });
       }
 
@@ -672,6 +706,7 @@ interface AiInterpretationInput {
     imageRoles: string[];
   };
   candidates: AiCandidate[];
+  speciesProfile?: Record<string, unknown> | null;
 }
 
 interface AiInterpretationResult {
@@ -696,12 +731,22 @@ Rules:
 - Return STRICT JSON matching the schema. No markdown, no prose outside JSON.
 - Do NOT invent diagnoses outside the provided provider candidates. If you must mention something not in the list, put it ONLY in needsMoreEvidence and label it "not returned by provider".
 - Do NOT provide treatment recommendations.
-- Do NOT recommend chemicals, pesticides, fungicides, fertilizers, doses, or application instructions.
+- Do NOT recommend chemicals, pesticides, fungicides, herbicides, fertilizers, doses, spray intervals, schedules, or application instructions.
 - Do NOT claim certainty. Explain when Pl@ntNet confidence is low.
 - Prefer candidates relevant to the confirmed plant. Mark obviously unrelated candidates as unlikely.
 - If all candidates are weak, state that diagnosis remains uncertain.
 - whatToCheckVisually: short visual checks only (e.g. "look for orange pustules under leaves", "inspect leaf undersides", "look for insect feeding holes"). No treatment.
 - Keep output concise.
+
+Species profile rules (Trefle):
+- The optional speciesProfile field is Trefle botanical reference context ONLY. It is NOT a disease diagnosis provider.
+- Pl@ntNet disease candidates remain the ONLY source of disease candidates. Do NOT invent disease or pest candidates from Trefle data.
+- Do NOT infer any disease solely from Trefle growth/environment values.
+- You MAY use Trefle taxonomy (scientificName, synonyms, family, genus, commonName), growth/environment values, toxicity/edibility, and distribution as supporting context to reason about care mismatch or plant stress, and to strengthen or weaken candidate relevance.
+- If Trefle fields are missing or null, say nothing about them or state that data is unavailable. Do NOT invent values.
+- If speciesProfile.scientificName differs from the confirmed plant's scientific name, treat Trefle context as lower confidence and add a warning to plantProfileContext.warnings.
+- If Trefle toxicity/edibility is present, you may add a short safety-relevant caution to safetyNote — never treatment advice.
+- Populate plantProfileContext.used=true only if Trefle context actually influenced your reasoning. Otherwise used=false and notes=[].
 
 Schema:
 {
@@ -710,7 +755,8 @@ Schema:
   "bestCandidates": [{ "providerRank": number, "name": string, "problemType": "disease"|"pest"|"unknown", "relevance": "high"|"medium"|"low"|"unknown", "reason": string, "whatToCheckVisually": string[] }],
   "unlikelyCandidates": [{ "providerRank": number, "name": string, "reason": string }],
   "needsMoreEvidence": string[],
-  "safetyNote": string
+  "safetyNote": string,
+  "plantProfileContext": { "used": boolean, "notes": string[], "warnings": string[] }
 }`;
 
   const userPayload = {
@@ -727,6 +773,7 @@ Schema:
       plantRelevance: c.plantRelevance,
       plantRelevanceReason: c.plantRelevanceReason,
     })),
+    speciesProfile: input.speciesProfile ?? null,
   };
 
   const callOnce = async (model: string): Promise<{ ok: boolean; data?: any; reason?: string }> => {

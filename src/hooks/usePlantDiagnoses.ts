@@ -79,6 +79,12 @@ export interface PlantDiagnosisInterpretationUnlikelyCandidate {
   reason: string;
 }
 
+export interface PlantDiagnosisInterpretationProfileContext {
+  used: boolean;
+  notes: string[];
+  warnings: string[];
+}
+
 export interface PlantDiagnosisInterpretationData {
   summary: string;
   overallConfidence: 'high' | 'medium' | 'low';
@@ -86,6 +92,7 @@ export interface PlantDiagnosisInterpretationData {
   unlikelyCandidates: PlantDiagnosisInterpretationUnlikelyCandidate[];
   needsMoreEvidence: string[];
   safetyNote: string;
+  plantProfileContext?: PlantDiagnosisInterpretationProfileContext;
 }
 
 export interface PlantDiagnosisInterpretation {

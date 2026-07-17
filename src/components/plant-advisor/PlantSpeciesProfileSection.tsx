@@ -238,6 +238,22 @@ export function PlantSpeciesProfileSection({ caseId, hasConfirmedIdentification 
   );
   const rootDepthCm = growth?.minimum_root_depth?.cm;
 
+  const hasGrowthData =
+    !!phRange ||
+    !!scale(growth?.light) ||
+    !!scale(growth?.atmospheric_humidity) ||
+    !!scale(growth?.soil_nutriments) ||
+    !!scale(growth?.soil_salinity) ||
+    !!scale(growth?.soil_texture) ||
+    !!scale(growth?.soil_humidity) ||
+    !!tempRange ||
+    !!precipRange ||
+    rootDepthCm != null ||
+    !!joinList(growth?.growth_months) ||
+    !!joinList(growth?.bloom_months) ||
+    !!joinList(growth?.fruit_months) ||
+    !!joinList(p?.duration);
+
   const sources = Array.isArray(p?.sources) ? (p.sources as any[]) : [];
 
   return (
@@ -327,7 +343,7 @@ export function PlantSpeciesProfileSection({ caseId, hasConfirmedIdentification 
           </Group>
 
           {/* Growth requirements - default open */}
-          {(growth || p.specifications) && (
+          {hasGrowthData && (
             <Group title={t('plantAdvisor.trefle.growthRequirements')} defaultOpen>
               <div className="rounded-md border border-border bg-muted/20 px-3 py-2">
                 <Row label={t('plantAdvisor.trefle.growth.phRange')} value={phRange} />

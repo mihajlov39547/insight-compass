@@ -2098,7 +2098,17 @@
       "fallbackModelUsed": "Fallback model used",
       "aiHelper": "AI interpretation helps prioritize provider candidates. It is not treatment advice.",
       "diagnosisUncertain": "Diagnosis remains uncertain",
-      "aiFailed": "AI interpretation could not be generated."
+      "aiFailed": "AI interpretation could not be generated.",
+      "plantProfileContext": {
+        "title": "Plant profile context",
+        "trefleReferenceContext": "Trefle reference context",
+        "used": "Trefle profile was used as supporting botanical context.",
+        "notAvailable": "Trefle profile was not available.",
+        "notes": "Notes",
+        "warnings": "Warnings",
+        "matchWarning": "Profile match warning",
+        "disclaimer": "Botanical context does not replace disease diagnosis."
+      }
     },
     "scans": {
       "label": "Plant AI scans",
