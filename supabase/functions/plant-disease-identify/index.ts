@@ -595,6 +595,7 @@ Deno.serve(async (req: Request) => {
             imageRoles: Array.from(new Set(picked.map((p) => p.image_role || 'auto'))),
           },
           candidates: enriched,
+          speciesProfile,
         });
       }
 
