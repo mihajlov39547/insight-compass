@@ -2114,7 +2114,17 @@
       "fallbackModelUsed": "Korišćen rezervni model",
       "aiHelper": "AI interpretacija pomaže da se poređaju kandidati provajdera. Ne predstavlja savet o lečenju.",
       "diagnosisUncertain": "Dijagnoza ostaje neizvesna",
-      "aiFailed": "AI interpretaciju nije bilo moguće generisati."
+      "aiFailed": "AI interpretaciju nije bilo moguće generisati.",
+      "plantProfileContext": {
+        "title": "Kontekst biljnog profila",
+        "trefleReferenceContext": "Trefle referentni kontekst",
+        "used": "Trefle profil je korišćen kao pomoćni botanički kontekst.",
+        "notAvailable": "Trefle profil nije bio dostupan.",
+        "notes": "Napomene",
+        "warnings": "Upozorenja",
+        "matchWarning": "Upozorenje o poklapanju profila",
+        "disclaimer": "Botanički kontekst ne zamenjuje dijagnozu bolesti."
+      }
     },
     "scans": {
       "label": "Plant AI skeniranja",
