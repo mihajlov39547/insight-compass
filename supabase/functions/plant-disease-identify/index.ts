@@ -773,6 +773,7 @@ Schema:
       plantRelevance: c.plantRelevance,
       plantRelevanceReason: c.plantRelevanceReason,
     })),
+    speciesProfile: input.speciesProfile ?? null,
   };
 
   const callOnce = async (model: string): Promise<{ ok: boolean; data?: any; reason?: string }> => {
