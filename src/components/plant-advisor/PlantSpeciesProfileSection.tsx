@@ -343,7 +343,7 @@ export function PlantSpeciesProfileSection({ caseId, hasConfirmedIdentification 
           </Group>
 
           {/* Growth requirements - default open */}
-          {(growth || p.specifications) && (
+          {hasGrowthData && (
             <Group title={t('plantAdvisor.trefle.growthRequirements')} defaultOpen>
               <div className="rounded-md border border-border bg-muted/20 px-3 py-2">
                 <Row label={t('plantAdvisor.trefle.growth.phRange')} value={phRange} />
