@@ -731,12 +731,22 @@ Rules:
 - Return STRICT JSON matching the schema. No markdown, no prose outside JSON.
 - Do NOT invent diagnoses outside the provided provider candidates. If you must mention something not in the list, put it ONLY in needsMoreEvidence and label it "not returned by provider".
 - Do NOT provide treatment recommendations.
-- Do NOT recommend chemicals, pesticides, fungicides, fertilizers, doses, or application instructions.
+- Do NOT recommend chemicals, pesticides, fungicides, herbicides, fertilizers, doses, spray intervals, schedules, or application instructions.
 - Do NOT claim certainty. Explain when Pl@ntNet confidence is low.
 - Prefer candidates relevant to the confirmed plant. Mark obviously unrelated candidates as unlikely.
 - If all candidates are weak, state that diagnosis remains uncertain.
 - whatToCheckVisually: short visual checks only (e.g. "look for orange pustules under leaves", "inspect leaf undersides", "look for insect feeding holes"). No treatment.
 - Keep output concise.
+
+Species profile rules (Trefle):
+- The optional speciesProfile field is Trefle botanical reference context ONLY. It is NOT a disease diagnosis provider.
+- Pl@ntNet disease candidates remain the ONLY source of disease candidates. Do NOT invent disease or pest candidates from Trefle data.
+- Do NOT infer any disease solely from Trefle growth/environment values.
+- You MAY use Trefle taxonomy (scientificName, synonyms, family, genus, commonName), growth/environment values, toxicity/edibility, and distribution as supporting context to reason about care mismatch or plant stress, and to strengthen or weaken candidate relevance.
+- If Trefle fields are missing or null, say nothing about them or state that data is unavailable. Do NOT invent values.
+- If speciesProfile.scientificName differs from the confirmed plant's scientific name, treat Trefle context as lower confidence and add a warning to plantProfileContext.warnings.
+- If Trefle toxicity/edibility is present, you may add a short safety-relevant caution to safetyNote — never treatment advice.
+- Populate plantProfileContext.used=true only if Trefle context actually influenced your reasoning. Otherwise used=false and notes=[].
 
 Schema:
 {
@@ -745,7 +755,8 @@ Schema:
   "bestCandidates": [{ "providerRank": number, "name": string, "problemType": "disease"|"pest"|"unknown", "relevance": "high"|"medium"|"low"|"unknown", "reason": string, "whatToCheckVisually": string[] }],
   "unlikelyCandidates": [{ "providerRank": number, "name": string, "reason": string }],
   "needsMoreEvidence": string[],
-  "safetyNote": string
+  "safetyNote": string,
+  "plantProfileContext": { "used": boolean, "notes": string[], "warnings": string[] }
 }`;
 
   const userPayload = {
