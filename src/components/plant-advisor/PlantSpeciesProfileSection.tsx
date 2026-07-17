@@ -238,6 +238,22 @@ export function PlantSpeciesProfileSection({ caseId, hasConfirmedIdentification 
   );
   const rootDepthCm = growth?.minimum_root_depth?.cm;
 
+  const hasGrowthData =
+    !!phRange ||
+    !!scale(growth?.light) ||
+    !!scale(growth?.atmospheric_humidity) ||
+    !!scale(growth?.soil_nutriments) ||
+    !!scale(growth?.soil_salinity) ||
+    !!scale(growth?.soil_texture) ||
+    !!scale(growth?.soil_humidity) ||
+    !!tempRange ||
+    !!precipRange ||
+    rootDepthCm != null ||
+    !!joinList(growth?.growth_months) ||
+    !!joinList(growth?.bloom_months) ||
+    !!joinList(growth?.fruit_months) ||
+    !!joinList(p?.duration);
+
   const sources = Array.isArray(p?.sources) ? (p.sources as any[]) : [];
 
   return (
