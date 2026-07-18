@@ -351,6 +351,7 @@ Deno.serve(async (req: Request) => {
       pnResp = await fetch(url.toString(), { method: 'POST', body: form });
     } catch (e) {
       console.error('[plantnet-identify] network error', (e as Error).message);
+      await updateScanEvent({ status: 'provider_error', error_code: 'provider_unreachable' });
       return jsonResponse({ error: 'provider_unreachable', usage }, 502);
     }
 
@@ -360,6 +361,13 @@ Deno.serve(async (req: Request) => {
       // Don't leak upstream body verbatim; capture short reason for logs only.
       const shortText = (await pnResp.text().catch(() => '')).slice(0, 200);
       console.warn('[plantnet-identify] upstream error', status, shortText);
+      let errCode = 'provider_error';
+      if (status === 400) errCode = 'bad_request';
+      else if (status === 401 || status === 403) errCode = 'auth_failed';
+      else if (status === 404) errCode = 'not_found_upstream';
+      else if (status === 413) errCode = 'payload_too_large';
+      else if (status === 429) errCode = 'quota_exhausted';
+      await updateScanEvent({ status: 'provider_error', provider_status: status, error_code: errCode });
       if (status === 400) return jsonResponse({ error: 'bad_request', usage }, 400);
       if (status === 401 || status === 403) return jsonResponse({ error: 'auth_failed', usage }, 502);
       if (status === 404) return jsonResponse({ error: 'not_found_upstream', usage }, 502);
@@ -371,8 +379,11 @@ Deno.serve(async (req: Request) => {
     const raw = await pnResp.json().catch(() => null);
     const results = Array.isArray(raw?.results) ? raw.results : [];
     if (results.length === 0) {
+      await updateScanEvent({ status: 'empty_results', provider_status: pnResp.status });
       return jsonResponse({ error: 'empty_results', raw, usage }, 200);
     }
+    await updateScanEvent({ status: 'provider_success', provider_status: pnResp.status });
+
 
     const remaining =
       typeof raw?.remainingIdentificationRequests === 'number'
