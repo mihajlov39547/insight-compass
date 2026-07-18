@@ -150,6 +150,8 @@ export function PlantAdvisorDashboard({ onNewScan, onOpenCase }: Props) {
           ))}
         </div>
 
+        <PlantAiScanHistory limit={10} />
+
         <div>
           <div className="flex items-center gap-2 mb-3">
             <FolderOpen className="h-4 w-4 text-muted-foreground" />
