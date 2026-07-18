@@ -331,11 +331,43 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ error: 'internal_error' }, 500);
       }
 
+      // Record scan event (best-effort).
+      let scanEventId: string | null = null;
+      try {
+        const { data: ev } = await admin
+          .from('plant_ai_scan_events')
+          .insert({
+            user_id: userId,
+            case_id: plantCaseId,
+            provider: 'plantnet',
+            scan_type: 'diagnose',
+            month_key: monthKey,
+            status: 'reserved',
+            usage_used: usage.used,
+            usage_limit: usage.limit,
+            usage_remaining: usage.remaining,
+          })
+          .select('id')
+          .single();
+        scanEventId = (ev as { id?: string } | null)?.id ?? null;
+      } catch (e) {
+        console.warn('[plant-disease-identify] scan event insert failed', (e as Error).message);
+      }
+      const updateScanEvent = async (patch: Record<string, unknown>) => {
+        if (!scanEventId) return;
+        try {
+          await admin.from('plant_ai_scan_events').update(patch).eq('id', scanEventId);
+        } catch (e) {
+          console.warn('[plant-disease-identify] scan event update failed', (e as Error).message);
+        }
+      };
+
       let pnResp: Response;
       try {
         pnResp = await fetch(url.toString(), { method: 'POST', body: form });
       } catch (e) {
         console.error('[plant-disease-identify] network error', (e as Error).message);
+        await updateScanEvent({ status: 'provider_error', error_code: 'provider_unreachable' });
         return jsonResponse({ error: 'provider_unreachable', usage }, 502);
       }
 
@@ -343,6 +375,13 @@ Deno.serve(async (req: Request) => {
         const status = pnResp.status;
         const shortText = (await pnResp.text().catch(() => '')).slice(0, 200);
         console.warn('[plant-disease-identify] upstream error', status, shortText);
+        let errCode = 'provider_error';
+        if (status === 400) errCode = 'bad_request';
+        else if (status === 401 || status === 403) errCode = 'auth_failed';
+        else if (status === 404) errCode = 'not_found_upstream';
+        else if (status === 413) errCode = 'payload_too_large';
+        else if (status === 429) errCode = 'quota_exhausted';
+        await updateScanEvent({ status: 'provider_error', provider_status: status, error_code: errCode });
         if (status === 400) return jsonResponse({ error: 'bad_request', usage }, 400);
         if (status === 401 || status === 403) return jsonResponse({ error: 'auth_failed', usage }, 502);
         if (status === 404) return jsonResponse({ error: 'not_found_upstream', usage }, 502);
@@ -355,8 +394,11 @@ Deno.serve(async (req: Request) => {
       const raw = await pnResp.json().catch(() => null);
       const results = Array.isArray(raw?.results) ? raw.results : [];
       if (results.length === 0) {
+        await updateScanEvent({ status: 'empty_results', provider_status: pnResp.status });
         return jsonResponse({ error: 'empty_results', raw, usage }, 200);
       }
+      await updateScanEvent({ status: 'provider_success', provider_status: pnResp.status });
+
 
       const pickImages = (arr: any): Array<Record<string, unknown>> => {
         if (!Array.isArray(arr)) return [];

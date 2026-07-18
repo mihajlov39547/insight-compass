@@ -26,6 +26,7 @@ import { usePlantCases, useDeletePlantCase, type PlantCase } from '@/hooks/usePl
 import { usePlantAdvisorUsage } from '@/hooks/usePlantAdvisorLimits';
 import { PlantCaseCard } from './PlantCaseCard';
 import { PlantAdvisorSettingsDialog } from './PlantAdvisorSettingsDialog';
+import { PlantAiScanHistory } from './PlantAiScanHistory';
 import { toast } from 'sonner';
 
 interface Props {
@@ -148,6 +149,8 @@ export function PlantAdvisorDashboard({ onNewScan, onOpenCase }: Props) {
             </div>
           ))}
         </div>
+
+        <PlantAiScanHistory limit={10} />
 
         <div>
           <div className="flex items-center gap-2 mb-3">

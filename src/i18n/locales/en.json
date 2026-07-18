@@ -1928,6 +1928,25 @@
       "storageProvider": "Storage provider",
       "planLabel": "Plan: {{plan}}"
     },
+    "scanHistory": {
+      "title": "Recent Plant AI scans",
+      "subtitle": "Last {{count}} scans this month",
+      "empty": "No scans yet this month.",
+      "columnWhen": "When",
+      "columnType": "Type",
+      "columnStatus": "Status",
+      "columnUsage": "Usage",
+      "type": {
+        "identify": "Identify",
+        "diagnose": "Diagnose"
+      },
+      "status": {
+        "reserved": "Reserved",
+        "provider_success": "Success",
+        "provider_error": "Failed",
+        "empty_results": "No matches"
+      }
+    },
     "storage": {
       "googleDrive": "Google Drive",
       "supabaseFallback": "Local fallback",
