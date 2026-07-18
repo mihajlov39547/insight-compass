@@ -1191,6 +1191,62 @@ export type Database = {
         }
         Relationships: []
       }
+      plant_ai_scan_events: {
+        Row: {
+          case_id: string | null
+          created_at: string
+          error_code: string | null
+          id: string
+          month_key: string
+          provider: string
+          provider_status: number | null
+          scan_type: string
+          status: string
+          usage_limit: number | null
+          usage_remaining: number | null
+          usage_used: number | null
+          user_id: string
+        }
+        Insert: {
+          case_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          month_key: string
+          provider?: string
+          provider_status?: number | null
+          scan_type: string
+          status: string
+          usage_limit?: number | null
+          usage_remaining?: number | null
+          usage_used?: number | null
+          user_id: string
+        }
+        Update: {
+          case_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          month_key?: string
+          provider?: string
+          provider_status?: number | null
+          scan_type?: string
+          status?: string
+          usage_limit?: number | null
+          usage_remaining?: number | null
+          usage_used?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_ai_scan_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plant_case_images: {
         Row: {
           case_id: string
