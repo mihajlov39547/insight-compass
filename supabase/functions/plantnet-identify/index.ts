@@ -314,6 +314,38 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'internal_error' }, 500);
     }
 
+    // Record scan event (best-effort). Never blocks identification.
+    let scanEventId: string | null = null;
+    try {
+      const { data: ev } = await admin
+        .from('plant_ai_scan_events')
+        .insert({
+          user_id: userId,
+          case_id: plantCaseId,
+          provider: 'plantnet',
+          scan_type: 'identify',
+          month_key: monthKey,
+          status: 'reserved',
+          usage_used: usage.used,
+          usage_limit: usage.limit,
+          usage_remaining: usage.remaining,
+        })
+        .select('id')
+        .single();
+      scanEventId = (ev as { id?: string } | null)?.id ?? null;
+    } catch (e) {
+      console.warn('[plantnet-identify] scan event insert failed', (e as Error).message);
+    }
+    const updateScanEvent = async (patch: Record<string, unknown>) => {
+      if (!scanEventId) return;
+      try {
+        await admin.from('plant_ai_scan_events').update(patch).eq('id', scanEventId);
+      } catch (e) {
+        console.warn('[plantnet-identify] scan event update failed', (e as Error).message);
+      }
+    };
+
+
     let pnResp: Response;
     try {
       pnResp = await fetch(url.toString(), { method: 'POST', body: form });
