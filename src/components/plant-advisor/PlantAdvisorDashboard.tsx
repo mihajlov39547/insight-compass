@@ -26,6 +26,7 @@ import { usePlantCases, useDeletePlantCase, type PlantCase } from '@/hooks/usePl
 import { usePlantAdvisorUsage } from '@/hooks/usePlantAdvisorLimits';
 import { PlantCaseCard } from './PlantCaseCard';
 import { PlantAdvisorSettingsDialog } from './PlantAdvisorSettingsDialog';
+import { PlantAiScanHistory } from './PlantAiScanHistory';
 import { toast } from 'sonner';
 
 interface Props {
