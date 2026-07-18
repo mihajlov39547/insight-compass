@@ -1944,6 +1944,25 @@
       "storageProvider": "Skladište",
       "planLabel": "Plan: {{plan}}"
     },
+    "scanHistory": {
+      "title": "Nedavna AI skeniranja biljaka",
+      "subtitle": "Poslednjih {{count}} skeniranja ovog meseca",
+      "empty": "Još nema skeniranja ovog meseca.",
+      "columnWhen": "Kada",
+      "columnType": "Tip",
+      "columnStatus": "Status",
+      "columnUsage": "Iskorišćeno",
+      "type": {
+        "identify": "Prepoznavanje",
+        "diagnose": "Dijagnoza"
+      },
+      "status": {
+        "reserved": "Rezervisano",
+        "provider_success": "Uspešno",
+        "provider_error": "Neuspešno",
+        "empty_results": "Bez rezultata"
+      }
+    },
     "storage": {
       "googleDrive": "Google Drive",
       "supabaseFallback": "Lokalno (rezerva)",
