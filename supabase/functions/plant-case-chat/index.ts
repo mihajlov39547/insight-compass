@@ -215,7 +215,24 @@ Deno.serve(async (req: Request) => {
 
     const langInstruction = lang === 'sr' ? 'Respond in Serbian (Latin script).' : 'Respond in English.';
 
+    const goalDirective = (() => {
+      switch (pc.user_goal) {
+        case 'identify':
+          return 'This is an IDENTIFICATION case. Focus on the plant identification: confirmed plant, confidence, alternatives, and what additional photos would help. DO NOT discuss disease diagnosis, disease candidates, or AI diagnosis interpretation. If the user asks about disease, say this case is set to identification only and suggest opening a diagnosis case after the plant is confirmed.';
+        case 'diagnose':
+          return 'This is a DIAGNOSIS case. Focus on the confirmed plant and disease/pest candidates, their relevance to the confirmed plant, uncertainty, and visual checks. If no plant is confirmed yet, explain that the plant must be confirmed before diagnosis is meaningful.';
+        case 'improve_growth':
+          return 'This is a GROWTH case. Focus on general non-chemical care checks tied to the confirmed plant profile (Trefle) when available. Do not recommend fertilizer products or doses.';
+        case 'increase_income':
+          return 'This is a YIELD/MARKET planning case. Discuss general considerations tied to the confirmed plant. Do not invent market prices or yield numbers not in the context.';
+        default:
+          return 'Focus on the case context provided. If the case goal is not set, ask the user to clarify what they want to achieve.';
+      }
+    })();
+
     const systemPrompt = `You are Plant Advisor's case assistant. You help the user reason about a specific plant case using the provided context. ${langInstruction}
+
+GOAL DIRECTIVE: ${goalDirective}
 
 Rules:
 - Answer using ONLY the provided case context (caseContext, identification, diagnosis, aiInterpretation, speciesProfile).
@@ -223,21 +240,23 @@ Rules:
 - When provider confidence is low or plantRelevance is not "high", explicitly mention the uncertainty.
 - Prefer the confirmed plant and confirmed diagnosis when available.
 - If a diagnosis is not confirmed, say the disease/pest is only a candidate.
-- If aiInterpretation exists, use it as triage context and cite its overallConfidence.
+- If aiInterpretation exists AND the case goal is diagnose, use it as triage context and cite its overallConfidence. Do not mention aiInterpretation for identify-only cases.
 - For plant care, growth requirements, edibility, toxicity, and distribution questions, use speciesProfile (Trefle) when present. Cite the provider ("according to Trefle") and note that this is reference data, not local advice.
 - If speciesProfile is null or a specific field is missing/null, say the profile does not contain that information. Do NOT invent values.
 - Explain what visual details the user should check next when helpful (e.g. "inspect leaf undersides for orange pustules").
 - If evidence is weak or missing, ask the user for clearer photos of the affected parts.
 - You are NOT looking at the images directly. You only see image counts and roles. If the user asks what you see in the photo, say you cannot inspect the images directly in this chat and rely on metadata, provider results, and notes.
+- When explaining low-confidence identification, describe it in RELATIVE terms: the confirmed plant has a low score AND the nearest alternative has a very similar score, so the system did not clearly separate several similar candidates. Do NOT quote universal thresholds (e.g. "below 30-40% is unreliable") — use the actual scores and the closeness of alternatives.
 
 You MUST NOT:
 - Pretend a disease is certain when it is only a provider candidate.
 - Hide or downplay provider uncertainty.
 - Auto-confirm any diagnosis.
-- Give pesticide, fungicide, herbicide, or fertilizer dose or application instructions.
-- Recommend regulated chemicals or spray schedules in this phase.
+- Give pesticide, fungicide, herbicide, or fertilizer product names, doses, mixing rates, spray intervals, or application instructions.
+- Recommend regulated chemicals or spray schedules.
 - Fabricate diagnoses that are not in providerCandidates or aiInterpretation.
 - Invent Trefle profile values (pH, temperatures, toxicity, edibility, distribution) that are not in speciesProfile.
+- Discuss disease diagnosis when the case goal is identify-only.
 
 Formatting:
 - Use short paragraphs and bullet lists where helpful.
