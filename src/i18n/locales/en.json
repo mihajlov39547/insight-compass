@@ -1874,6 +1874,50 @@
       "imagesAttached": "Images attached: {{count}}",
       "inputPh": "Ask about this plant case…",
       "thinking": "Thinking…",
+      "assistantTitle": {
+        "default": "Plant case assistant",
+        "identify": "Plant identification assistant",
+        "diagnose": "Disease diagnosis assistant",
+        "improve_growth": "Growth advisor",
+        "increase_income": "Yield and market advisor"
+      },
+      "modeBadge": {
+        "default": "Plant case",
+        "identify": "Identification case",
+        "diagnose": "Diagnosis case",
+        "improve_growth": "Growth case",
+        "increase_income": "Yield planning case"
+      },
+      "intro": {
+        "default": "I have your plant case \"{{title}}\" loaded. I use case context, provider results, and your notes — I do not directly inspect the photos here.",
+        "identify": "I have your plant identification case \"{{title}}\" loaded. I can explain the confirmed plant, confidence score, possible alternatives, and what extra photos could improve identification. I do not directly inspect the photos here; I use the case context, provider results, and your notes.",
+        "diagnose": "I have your plant diagnosis case \"{{title}}\" loaded. I can explain the confirmed plant, possible disease or pest candidates, confidence, relevance to this plant, and what visual checks could help confirm the issue. I do not provide chemical treatment instructions or dosage guidance.",
+        "improve_growth": "I have your growth case \"{{title}}\" loaded. I can suggest general care checks based on the case context and confirmed plant profile if available. I do not provide fertilizer product names or doses.",
+        "increase_income": "I have your yield planning case \"{{title}}\" loaded. I can discuss general considerations based on the confirmed plant and case context."
+      },
+      "sections": {
+        "caseSummary": "Case summary",
+        "diagnosisCandidates": "Diagnosis candidates",
+        "aiInterpretation": "AI interpretation",
+        "bestCandidate": "Best candidate",
+        "unlikely": "Unlikely",
+        "missingEvidence": "Missing evidence",
+        "nextPhotos": "Recommended next photos"
+      },
+      "photoRoles": {
+        "leafUpper": "Leaf, upper side",
+        "leafUnder": "Leaf, underside",
+        "stemBark": "Stem or bark",
+        "flower": "Flower, if available",
+        "fruit": "Fruit or seed, if available",
+        "wholePlant": "Whole plant habit",
+        "damagedPart": "Damaged part in close-up, if relevant"
+      },
+      "banners": {
+        "identifyLowConfidence": "Low confidence identification. The confirmed plant has a low provider score and close alternatives. Use this chat to understand the result and collect better evidence before relying on the exact species.",
+        "diagnoseUncertain": "Diagnosis is uncertain. Review symptoms, candidate relevance, and missing evidence before relying on this result.",
+        "diagnoseNeedsPlantConfirm": "This is a diagnosis case. Confirm the plant identification first — disease candidates need a confirmed plant to be meaningful."
+      },
       "chips": {
         "diagnosisUnconfirmed": "Diagnosis unconfirmed",
         "aiConfidence": "AI confidence"
@@ -1882,14 +1926,25 @@
         "aiMismatch": "AI interpretation and confirmed diagnosis may differ. Review candidates before acting."
       },
       "disclaimers": {
-        "noImageInspection": "Chat uses case context, provider results, and notes. It may not directly inspect images unless image analysis is enabled."
+        "noImageInspection": "Chat uses case context, provider results, and notes. It does not directly inspect images.",
+        "noChemicalGuidance": "This chat explains symptoms, uncertainty, and visual checks. It does not provide pesticide, fungicide, herbicide, or fertilizer product names, doses, mixing rates, spray intervals, or product-specific treatment instructions."
       },
       "qq": {
         "identifyWhyUncertain": "Why is this identification uncertain?",
-        "identifyPhotosToImprove": "What should I photograph to improve identification?",
+        "identifyCheckDetails": "What details should I check on the plant?",
+        "identifyPhotosToImprove": "What should I photograph next?",
         "identifyExplainAlternatives": "Explain the top alternatives.",
+        "identifyHowConfident": "How confident is this result?",
+        "identifyCouldBeSimilar": "Could this be another similar plant?",
         "uploadForDiagnosis": "What images should I upload for diagnosis?",
         "whyConfirmPlant": "Why do I need to confirm the plant first?",
+        "diagnoseWhyConfirmFirst": "Why do I need to confirm the plant before diagnosis?",
+        "diagnosePrepPhotos": "What photos should I add to prepare for diagnosis?",
+        "diagnoseSymptomsToCheck": "What symptoms should I check?",
+        "diagnoseMostLikely": "What is the most likely issue?",
+        "diagnoseWhyUncertain": "Why is this diagnosis uncertain?",
+        "diagnoseCouldBePest": "Could this be pest damage instead of disease?",
+        "diagnoseWhatToAvoid": "What should I avoid doing now?",
         "aiPreferred": "Why did AI prefer this candidate?",
         "checkVisually": "What should I check visually next?",
         "unlikelyCandidates": "Which candidates seem unlikely and why?",
