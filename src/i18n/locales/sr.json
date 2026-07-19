@@ -1890,6 +1890,50 @@
       "imagesAttached": "Priloženih fotografija: {{count}}",
       "inputPh": "Pitajte o ovom slučaju…",
       "thinking": "Razmišljam…",
+      "assistantTitle": {
+        "default": "Asistent za slučaj biljke",
+        "identify": "Asistent za identifikaciju biljke",
+        "diagnose": "Asistent za dijagnozu bolesti",
+        "improve_growth": "Savetnik za rast biljke",
+        "increase_income": "Savetnik za prinos i tržište"
+      },
+      "modeBadge": {
+        "default": "Slučaj biljke",
+        "identify": "Slučaj identifikacije",
+        "diagnose": "Slučaj dijagnoze",
+        "improve_growth": "Slučaj rasta",
+        "increase_income": "Planiranje prinosa"
+      },
+      "intro": {
+        "default": "Učitao sam slučaj \"{{title}}\". Koristim kontekst slučaja, rezultate provajdera i vaše beleške — ne pregledam direktno fotografije ovde.",
+        "identify": "Učitao sam slučaj identifikacije \"{{title}}\". Mogu da objasnim potvrđenu biljku, rezultat pouzdanosti, moguće alternative i koje dodatne fotografije bi poboljšale identifikaciju. Ne pregledam direktno fotografije ovde; koristim kontekst slučaja, rezultate provajdera i vaše beleške.",
+        "diagnose": "Učitao sam slučaj dijagnoze \"{{title}}\". Mogu da objasnim potvrđenu biljku, moguće kandidate za bolest ili štetočinu, pouzdanost, relevantnost za ovu biljku i koje vizuelne provere mogu pomoći da se problem potvrdi. Ne dajem uputstva za hemijski tretman niti doziranje.",
+        "improve_growth": "Učitao sam slučaj rasta \"{{title}}\". Mogu da predložim opšte provere nege na osnovu konteksta slučaja i profila potvrđene biljke ako je dostupan. Ne dajem imena đubriva niti doze.",
+        "increase_income": "Učitao sam slučaj planiranja prinosa \"{{title}}\". Mogu da razgovaram o opštim razmatranjima na osnovu potvrđene biljke i konteksta slučaja."
+      },
+      "sections": {
+        "caseSummary": "Rezime slučaja",
+        "diagnosisCandidates": "Kandidati za dijagnozu",
+        "aiInterpretation": "AI interpretacija",
+        "bestCandidate": "Najbolji kandidat",
+        "unlikely": "Malo verovatno",
+        "missingEvidence": "Nedostajući dokazi",
+        "nextPhotos": "Preporučene sledeće fotografije"
+      },
+      "photoRoles": {
+        "leafUpper": "List, gornja strana",
+        "leafUnder": "List, donja strana",
+        "stemBark": "Stablo ili kora",
+        "flower": "Cvet, ako je dostupan",
+        "fruit": "Plod ili seme, ako je dostupno",
+        "wholePlant": "Cela biljka",
+        "damagedPart": "Oštećeni deo iz blizine, ako je relevantno"
+      },
+      "banners": {
+        "identifyLowConfidence": "Identifikacija ima nizak nivo pouzdanosti. Potvrđena biljka ima nizak rezultat, a postoje bliske alternative. Koristite ovaj razgovor za razumevanje rezultata i prikupljanje boljih fotografija pre oslanjanja na tačnu vrstu.",
+        "diagnoseUncertain": "Dijagnoza je nesigurna. Pregledajte simptome, relevantnost kandidata i nedostajuće dokaze pre nego što se oslonite na ovaj rezultat.",
+        "diagnoseNeedsPlantConfirm": "Ovo je slučaj dijagnoze. Prvo potvrdite identifikaciju biljke — kandidati za bolest imaju smisla samo uz potvrđenu biljku."
+      },
       "chips": {
         "diagnosisUnconfirmed": "Dijagnoza nije potvrđena",
         "aiConfidence": "AI pouzdanost"
@@ -1898,17 +1942,28 @@
         "aiMismatch": "AI interpretacija i potvrđena dijagnoza se možda razlikuju. Pregledajte kandidate pre delovanja."
       },
       "disclaimers": {
-        "noImageInspection": "Razgovor koristi kontekst slučaja, rezultate provajdera i beleške. Ne može direktno da pregleda slike osim ako je analiza slika omogućena."
+        "noImageInspection": "Razgovor koristi kontekst slučaja, rezultate provajdera i beleške. Ne pregleda direktno fotografije.",
+        "noChemicalGuidance": "Ovaj razgovor objašnjava simptome, nesigurnost i vizuelne provere. Ne daje imena, doze, koncentracije, intervale prskanja niti uputstva za pesticide, fungicide, herbicide ili đubriva."
       },
       "qq": {
         "identifyWhyUncertain": "Zašto je ova identifikacija nesigurna?",
-        "identifyPhotosToImprove": "Koje fotografije da napravim za bolju identifikaciju?",
-        "identifyExplainAlternatives": "Objasni najbolje alternative.",
+        "identifyCheckDetails": "Koje detalje treba proveriti na biljci?",
+        "identifyPhotosToImprove": "Šta treba dodatno fotografisati?",
+        "identifyExplainAlternatives": "Objasni glavne alternative.",
+        "identifyHowConfident": "Koliko je ovaj rezultat pouzdan?",
+        "identifyCouldBeSimilar": "Da li ovo može biti slična vrsta biljke?",
         "uploadForDiagnosis": "Koje slike treba da priložim za dijagnozu?",
         "whyConfirmPlant": "Zašto prvo moram da potvrdim biljku?",
+        "diagnoseWhyConfirmFirst": "Zašto moram prvo da potvrdim biljku pre dijagnoze?",
+        "diagnosePrepPhotos": "Koje fotografije da dodam kao pripremu za dijagnozu?",
+        "diagnoseSymptomsToCheck": "Koje simptome treba proveriti?",
+        "diagnoseMostLikely": "Koji je najverovatniji problem?",
+        "diagnoseWhyUncertain": "Zašto je ova dijagnoza nesigurna?",
+        "diagnoseCouldBePest": "Da li ovo može biti oštećenje od insekata umesto bolesti?",
+        "diagnoseWhatToAvoid": "Šta sada ne bi trebalo raditi?",
         "aiPreferred": "Zašto je AI izabrao ovog kandidata?",
         "checkVisually": "Šta sledeće da proverim vizuelno?",
-        "unlikelyCandidates": "Koji kandidati deluju neverovatno i zašto?",
+        "unlikelyCandidates": "Koji kandidati deluju malo verovatno i zašto?",
         "extraPhotos": "Koje dodatne fotografije bi povećale pouzdanost?",
         "explainConfirmed": "Objasni potvrđenu dijagnozu.",
         "evidenceSupports": "Koji dokazi podržavaju ovu dijagnozu?",
