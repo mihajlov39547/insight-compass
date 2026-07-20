@@ -1918,7 +1918,11 @@
         "bestCandidate": "Najbolji kandidat",
         "unlikely": "Malo verovatno",
         "missingEvidence": "Nedostajući dokazi",
-        "nextPhotos": "Preporučene sledeće fotografije"
+        "nextPhotos": "Preporučene sledeće fotografije",
+        "symptomPhotos": "Preporučene fotografije simptoma"
+      },
+      "emptyStates": {
+        "diagnoseNotRunYet": "Biljka je potvrđena, ali dijagnoza još nije pokrenuta. Dodajte jasne fotografije simptoma i pokrenite dijagnozu da biste dobili kandidate za bolest ili štetočinu."
       },
       "photoRoles": {
         "leafUpper": "List, gornja strana",
@@ -1928,6 +1932,15 @@
         "fruit": "Plod ili seme, ako je dostupno",
         "wholePlant": "Cela biljka",
         "damagedPart": "Oštećeni deo iz blizine, ako je relevantno"
+      },
+      "symptomPhotoRoles": {
+        "wholePlantCondition": "Cela biljka sa vidljivim opštim stanjem",
+        "affectedLeafUpper": "Krupan kadar gornje strane oštećenog lista",
+        "affectedLeafUnder": "Krupan kadar donje strane oštećenog lista",
+        "stemCaneLesions": "Oštećenja na stablu ili izdanku, ako postoje",
+        "fruitFlowerDamage": "Oštećenja na plodu ili cvetu, ako postoje",
+        "healthyVsAffected": "Zdravi i oštećeni delovi jedan pored drugog",
+        "symptomStages": "Više faza simptoma, ako su dostupne"
       },
       "banners": {
         "identifyLowConfidence": "Identifikacija ima nizak nivo pouzdanosti. Potvrđena biljka ima nizak rezultat, a postoje bliske alternative. Koristite ovaj razgovor za razumevanje rezultata i prikupljanje boljih fotografija pre oslanjanja na tačnu vrstu.",
