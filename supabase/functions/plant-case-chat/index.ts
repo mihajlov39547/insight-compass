@@ -218,7 +218,7 @@ Deno.serve(async (req: Request) => {
     const goalDirective = (() => {
       switch (pc.user_goal) {
         case 'identify':
-          return 'This is an IDENTIFICATION case. Focus on the plant identification: confirmed plant, confidence, alternatives, and what additional photos would help. DO NOT discuss disease diagnosis, disease candidates, or AI diagnosis interpretation. If the user asks about disease, say this case is set to identification only and suggest opening a diagnosis case after the plant is confirmed.';
+          return 'This is an IDENTIFICATION case. Focus on the plant identification: confirmed plant, confidence, alternatives, and what additional photos would help. Do not answer disease, pest, treatment, or remediation questions inside an identify-only case. Redirect the user to create/open a diagnosis or treatment workflow after plant confirmation. If the user asks about disease, pests, or treatment, say this case is configured for identification only and suggest creating or opening a diagnosis case after the plant is confirmed.';
         case 'diagnose':
           return 'This is a DIAGNOSIS case. Focus on the confirmed plant and disease/pest candidates, their relevance to the confirmed plant, uncertainty, and visual checks. If no plant is confirmed yet, explain that the plant must be confirmed before diagnosis is meaningful.';
         case 'improve_growth':

@@ -1902,7 +1902,11 @@
         "bestCandidate": "Best candidate",
         "unlikely": "Unlikely",
         "missingEvidence": "Missing evidence",
-        "nextPhotos": "Recommended next photos"
+        "nextPhotos": "Recommended next photos",
+        "symptomPhotos": "Recommended symptom photos"
+      },
+      "emptyStates": {
+        "diagnoseNotRunYet": "Plant is confirmed, but diagnosis has not been run yet. Add clear symptom photos and run diagnosis to get disease or pest candidates."
       },
       "photoRoles": {
         "leafUpper": "Leaf, upper side",
@@ -1912,6 +1916,15 @@
         "fruit": "Fruit or seed, if available",
         "wholePlant": "Whole plant habit",
         "damagedPart": "Damaged part in close-up, if relevant"
+      },
+      "symptomPhotoRoles": {
+        "wholePlantCondition": "Whole plant showing overall condition",
+        "affectedLeafUpper": "Close-up of affected leaf upper side",
+        "affectedLeafUnder": "Close-up of affected leaf underside",
+        "stemCaneLesions": "Stem or cane lesions, if present",
+        "fruitFlowerDamage": "Fruit or flower damage, if present",
+        "healthyVsAffected": "Healthy and affected parts side by side",
+        "symptomStages": "Several stages of symptoms, if available"
       },
       "banners": {
         "identifyLowConfidence": "Low confidence identification. The confirmed plant has a low provider score and close alternatives. Use this chat to understand the result and collect better evidence before relying on the exact species.",
