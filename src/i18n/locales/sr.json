@@ -1956,7 +1956,7 @@
       },
       "disclaimers": {
         "noImageInspection": "Razgovor koristi kontekst slučaja, rezultate provajdera i beleške. Ne pregleda direktno fotografije.",
-        "noChemicalGuidance": "Ovaj razgovor objašnjava simptome, nesigurnost i vizuelne provere. Ne daje imena, doze, koncentracije, intervale prskanja niti uputstva za pesticide, fungicide, herbicide ili đubriva."
+        "noChemicalGuidance": "Ovaj razgovor objašnjava simptome, nesigurnost i vizuelne provere. Ne daje nazive preparata, doze, koncentracije, intervale prskanja niti uputstva za primenu pesticida, fungicida, herbicida ili đubriva."
       },
       "qq": {
         "identifyWhyUncertain": "Zašto je ova identifikacija nesigurna?",
