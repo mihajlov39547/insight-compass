@@ -261,7 +261,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const showRecommendedPhotos = isIdentify && identUncertain;
   const showSymptomPhotos =
     isDiagnose && !!confirmedIdent &&
-    (diagnoses.length === 0 || diagBucket === 'low' || needsMoreEvidence);
+    (diagnoses.length === 0 || diagBucket === 'low' || diagLowRelevance || needsMoreEvidence);
 
   return (
     <div className="flex flex-col h-full">
