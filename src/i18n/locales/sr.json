@@ -1907,7 +1907,7 @@
       "intro": {
         "default": "Učitao sam slučaj \"{{title}}\". Koristim kontekst slučaja, rezultate provajdera i vaše beleške — ne pregledam direktno fotografije ovde.",
         "identify": "Učitao sam slučaj identifikacije \"{{title}}\". Mogu da objasnim potvrđenu biljku, rezultat pouzdanosti, moguće alternative i koje dodatne fotografije bi poboljšale identifikaciju. Ne pregledam direktno fotografije ovde; koristim kontekst slučaja, rezultate provajdera i vaše beleške.",
-        "diagnose": "Učitao sam slučaj dijagnoze \"{{title}}\". Mogu da objasnim potvrđenu biljku, moguće kandidate za bolest ili štetočinu, pouzdanost, relevantnost za ovu biljku i koje vizuelne provere mogu pomoći da se problem potvrdi. Ne dajem uputstva za hemijski tretman niti doziranje.",
+        "diagnose": "Učitao sam slučaj dijagnoze \"{{title}}\". Mogu da razgovaram o mogućim problemima — bolesti, oštećenju od štetočina, nedostatku hraniva, fitotoksičnosti ili stresu iz okoline — na osnovu potvrđene biljke, kandidata provajdera i vaših beleški. Ne dajem nazive hemijskih preparata, doze niti uputstva za tretman.",
         "improve_growth": "Učitao sam slučaj rasta \"{{title}}\". Mogu da predložim opšte provere nege na osnovu konteksta slučaja i profila potvrđene biljke ako je dostupan. Ne dajem imena đubriva niti doze.",
         "increase_income": "Učitao sam slučaj planiranja prinosa \"{{title}}\". Mogu da razgovaram o opštim razmatranjima na osnovu potvrđene biljke i konteksta slučaja."
       },
