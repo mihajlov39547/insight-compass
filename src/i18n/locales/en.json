@@ -1877,7 +1877,7 @@
       "assistantTitle": {
         "default": "Plant case assistant",
         "identify": "Plant identification assistant",
-        "diagnose": "Disease diagnosis assistant",
+        "diagnose": "Problem diagnosis assistant",
         "improve_growth": "Growth advisor",
         "increase_income": "Yield and market advisor"
       },
@@ -1891,7 +1891,7 @@
       "intro": {
         "default": "I have your plant case \"{{title}}\" loaded. I use case context, provider results, and your notes — I do not directly inspect the photos here.",
         "identify": "I have your plant identification case \"{{title}}\" loaded. I can explain the confirmed plant, confidence score, possible alternatives, and what extra photos could improve identification. I do not directly inspect the photos here; I use the case context, provider results, and your notes.",
-        "diagnose": "I have your plant diagnosis case \"{{title}}\" loaded. I can explain the confirmed plant, possible disease or pest candidates, confidence, relevance to this plant, and what visual checks could help confirm the issue. I do not provide chemical treatment instructions or dosage guidance.",
+        "diagnose": "I have your plant diagnosis case \"{{title}}\" loaded. I can discuss possible problems — disease, pest damage, nutrient deficiency, pesticide injury, or environmental stress — based on the confirmed plant, provider candidates, and your notes. I do not provide chemical product names, doses, or treatment instructions.",
         "improve_growth": "I have your growth case \"{{title}}\" loaded. I can suggest general care checks based on the case context and confirmed plant profile if available. I do not provide fertilizer product names or doses.",
         "increase_income": "I have your yield planning case \"{{title}}\" loaded. I can discuss general considerations based on the confirmed plant and case context."
       },
