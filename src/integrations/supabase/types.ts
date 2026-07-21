@@ -1247,6 +1247,71 @@ export type Database = {
           },
         ]
       }
+      plant_case_grounding_contexts: {
+        Row: {
+          case_id: string
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          fetched_at: string
+          goal: string
+          id: string
+          location_text: string | null
+          normalized_summary: Json
+          primary_common_name: string | null
+          primary_scientific_name: string | null
+          provider_payload: Json
+          sources: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          fetched_at?: string
+          goal: string
+          id?: string
+          location_text?: string | null
+          normalized_summary?: Json
+          primary_common_name?: string | null
+          primary_scientific_name?: string | null
+          provider_payload?: Json
+          sources?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          fetched_at?: string
+          goal?: string
+          id?: string
+          location_text?: string | null
+          normalized_summary?: Json
+          primary_common_name?: string | null
+          primary_scientific_name?: string | null
+          provider_payload?: Json
+          sources?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_case_grounding_contexts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plant_case_images: {
         Row: {
           case_id: string
