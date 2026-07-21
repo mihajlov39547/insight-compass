@@ -1968,7 +1968,14 @@
         "extraPhotos": "What extra photos would improve confidence?",
         "explainConfirmed": "Explain the confirmed diagnosis.",
         "evidenceSupports": "What evidence supports this diagnosis?",
-        "monitorNext": "What should I monitor next?"
+        "monitorNext": "What should I monitor next?",
+        "growthHowWater": "How should I water this plant?",
+        "growthHowMuchSun": "How much sun does it need?",
+        "growthSoil": "What soil conditions are best?",
+        "growthWhenPrune": "When should I prune it?",
+        "growthLimitsLocation": "What could limit its growth in this location?",
+        "growthMonitorMonth": "What should I monitor this month?",
+        "growthReliabilityLowConf": "How reliable is this advice given the low identification confidence?"
       },
       "errors": {
         "generic": "Chat failed. Please try again.",

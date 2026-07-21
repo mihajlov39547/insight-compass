@@ -203,11 +203,22 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         q('diagnoseWhatToAvoid'),
       ];
     }
+    if (goal === 'improve_growth') {
+      return [
+        q('growthHowWater'),
+        q('growthHowMuchSun'),
+        q('growthSoil'),
+        q('growthWhenPrune'),
+        q('growthLimitsLocation'),
+        q('growthMonitorMonth'),
+        q('growthReliabilityLowConf'),
+      ];
+    }
     return [
       q('identifyPhotosToImprove'),
       q('diagnoseWhatToAvoid'),
     ];
-  }, [t, isIdentify, isDiagnose, confirmedIdent, confirmedDiag, diagnoses.length]);
+  }, [t, isIdentify, isDiagnose, goal, confirmedIdent, confirmedDiag, diagnoses.length]);
 
   const send = async (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
