@@ -1992,6 +1992,51 @@
       "confirmedShort": "Confirmed",
       "candidateShort": "Candidate"
     },
+    "growth": {
+      "title": "Growth guidance",
+      "helper": "Find care guidance from plant databases and trusted web sources before asking chat.",
+      "gather": "Gather growth guidance",
+      "refresh": "Refresh growth guidance",
+      "matched": "Matched plant",
+      "fetchedAt": "Fetched {{date}}",
+      "sources": "Sources",
+      "limitations": "Limitations",
+      "requireConfirmation": "Confirm the plant identification first — care guidance depends on the correct species.",
+      "lowConfidenceWarning": "Care guidance may be uncertain because the plant identification has low confidence. Confirm the plant with clearer photos before relying on species-specific advice.",
+      "disclaimer": "This is general care reference data. It does not include fertilizer, pesticide, fungicide, or herbicide product names, doses, mixing rates, or spray schedules.",
+      "status": {
+        "success": "Gathered",
+        "partial": "Partial",
+        "error": "Failed"
+      },
+      "confidence": {
+        "high": "High confidence",
+        "medium": "Medium confidence",
+        "low": "Low confidence"
+      },
+      "categories": {
+        "watering": "Watering",
+        "sunlight": "Sunlight",
+        "soil": "Soil",
+        "pruning": "Pruning",
+        "hardinessClimate": "Hardiness / climate",
+        "growthRateMaintenance": "Growth rate / maintenance",
+        "fruitingHarvest": "Fruiting / harvest"
+      },
+      "toasts": {
+        "gathered": "Growth guidance gathered.",
+        "cached": "Loaded cached growth guidance."
+      },
+      "errors": {
+        "generic": "Could not gather growth guidance. Please try again.",
+        "wrong_goal": "Growth guidance is only available for Improve growth cases.",
+        "no_plant_reference": "Confirm the plant identification first.",
+        "case_not_found": "Plant case not found.",
+        "unauthorized": "Please sign in again.",
+        "persist_failed": "Could not save growth guidance.",
+        "internal_error": "Internal error while gathering growth guidance."
+      }
+    },
     "limits": {
       "caseReached": "Plan limit reached — upgrade to add more plant cases.",
       "imagePerCaseReached": "Image limit per case reached for your plan.",
