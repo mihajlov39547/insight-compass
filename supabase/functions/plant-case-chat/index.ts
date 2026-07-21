@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
-    const [imgs, idents, diags, interps, profiles] = await Promise.all([
+    const [imgs, idents, diags, interps, profiles, groundings] = await Promise.all([
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
@@ -98,6 +98,14 @@ Deno.serve(async (req: Request) => {
         .eq('case_id', caseId)
         .order('fetched_at', { ascending: false })
         .limit(1),
+      admin
+        .from('plant_case_grounding_contexts')
+        .select('*')
+        .eq('case_id', caseId)
+        .eq('goal', 'improve_growth')
+        .eq('status', 'success')
+        .order('fetched_at', { ascending: false })
+        .limit(1),
     ]);
 
     const imageRows = (imgs.data as { image_role: string | null }[] | null) ?? [];
@@ -106,6 +114,7 @@ Deno.serve(async (req: Request) => {
     const interp = (interps.data as any[] | null)?.[0] ?? null;
     const profileRow = (profiles.data as any[] | null)?.[0] ?? null;
     const trefle = profileRow?.profile ?? null;
+    const groundingRow = (groundings.data as any[] | null)?.[0] ?? null;
 
     const confirmedIdent = identRows.find((i) => i.is_confirmed) ?? null;
     const confirmedDiag = diagRows.find((d) => d.is_confirmed) ?? null;
@@ -206,10 +215,28 @@ Deno.serve(async (req: Request) => {
             sources: trefle.sources ?? null,
           }
         : null,
+      growthGrounding: groundingRow
+        ? {
+            fetchedAt: groundingRow.fetched_at,
+            status: groundingRow.status,
+            plant: groundingRow.normalized_summary?.plant ?? null,
+            location: groundingRow.normalized_summary?.location ?? null,
+            normalizedCare: groundingRow.normalized_summary?.normalizedCare ?? null,
+            limitations: groundingRow.normalized_summary?.limitations ?? [],
+            sources: (groundingRow.sources ?? []).map((s: any) => ({
+              provider: s.provider,
+              title: s.title,
+              url: s.url,
+              summary: s.summary,
+              careCategories: s.careCategories,
+            })),
+          }
+        : null,
       notes: {
         noConfirmedDiagnosis: !confirmedDiag ? 'No diagnosis has been confirmed yet.' : null,
         noAiInterpretation: !interp ? 'No AI interpretation is available yet.' : null,
         noSpeciesProfile: !trefle ? 'No Trefle plant profile is available yet.' : null,
+        noGrowthGrounding: !groundingRow ? 'No growth grounding has been gathered yet.' : null,
       },
     };
 
@@ -222,7 +249,7 @@ Deno.serve(async (req: Request) => {
         case 'diagnose':
           return 'This is a DIAGNOSIS case. Focus on the confirmed plant and disease/pest candidates, their relevance to the confirmed plant, uncertainty, and visual checks. If no plant is confirmed yet, explain that the plant must be confirmed before diagnosis is meaningful.';
         case 'improve_growth':
-          return 'This is a GROWTH case. Focus on general non-chemical care checks tied to the confirmed plant profile (Trefle) when available. Do not recommend fertilizer products or doses.';
+          return 'This is an IMPROVE-GROWTH case. Prioritize the confirmed plant, user location, crop context, Trefle profile, and growthGrounding (Perenual + web sources). Cite source names ("according to Perenual", "per Trefle", or the web source title) when giving care advice. Distinguish structured database facts (Trefle, Perenual) from web-sourced guidance. If sources conflict, say so and prefer more authoritative/local sources (university extensions, botanical gardens, government agriculture pages). Do NOT invent missing values. If plant identification confidence is low, warn that advice applies only if the plant is correctly identified. Do NOT diagnose disease. Do NOT recommend fertilizer product names, pesticide/fungicide/herbicide products, doses, mixing rates, or chemical application schedules. General watering, sunlight, soil, pruning timing, mulching, monitoring, and when-to-seek-expert-help are OK.';
         case 'increase_income':
           return 'This is a YIELD/MARKET planning case. Discuss general considerations tied to the confirmed plant. Do not invent market prices or yield numbers not in the context.';
         default:
