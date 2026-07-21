@@ -1834,15 +1834,15 @@
     },
     "goals": {
       "identify": "Identify plant",
-      "diagnose": "Diagnose disease",
+      "diagnose": "Diagnose problem",
       "improve_growth": "Improve growth",
       "increase_income": "Increase income"
     },
     "goalDescriptions": {
       "identify": "Figure out what plant this is.",
-      "diagnose": "Investigate symptoms and possible issues.",
-      "improve_growth": "Get tips on care and conditions.",
-      "increase_income": "Plan yield and market value."
+      "diagnose": "Check disease, pest damage, nutrient deficiency, pesticide injury, or environmental stress.",
+      "improve_growth": "Get care guidance for watering, soil, light, pruning, and growing conditions.",
+      "increase_income": "Plan yield, quality, harvest timing, and market value."
     },
     "statuses": {
       "draft": "Draft",
