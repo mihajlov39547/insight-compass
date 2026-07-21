@@ -1834,15 +1834,15 @@
     },
     "goals": {
       "identify": "Identify plant",
-      "diagnose": "Diagnose disease",
+      "diagnose": "Diagnose problem",
       "improve_growth": "Improve growth",
       "increase_income": "Increase income"
     },
     "goalDescriptions": {
       "identify": "Figure out what plant this is.",
-      "diagnose": "Investigate symptoms and possible issues.",
-      "improve_growth": "Get tips on care and conditions.",
-      "increase_income": "Plan yield and market value."
+      "diagnose": "Check disease, pest damage, nutrient deficiency, pesticide injury, or environmental stress.",
+      "improve_growth": "Get care guidance for watering, soil, light, pruning, and growing conditions.",
+      "increase_income": "Plan yield, quality, harvest timing, and market value."
     },
     "statuses": {
       "draft": "Draft",
@@ -1877,7 +1877,7 @@
       "assistantTitle": {
         "default": "Plant case assistant",
         "identify": "Plant identification assistant",
-        "diagnose": "Disease diagnosis assistant",
+        "diagnose": "Problem diagnosis assistant",
         "improve_growth": "Growth advisor",
         "increase_income": "Yield and market advisor"
       },
@@ -1891,7 +1891,7 @@
       "intro": {
         "default": "I have your plant case \"{{title}}\" loaded. I use case context, provider results, and your notes — I do not directly inspect the photos here.",
         "identify": "I have your plant identification case \"{{title}}\" loaded. I can explain the confirmed plant, confidence score, possible alternatives, and what extra photos could improve identification. I do not directly inspect the photos here; I use the case context, provider results, and your notes.",
-        "diagnose": "I have your plant diagnosis case \"{{title}}\" loaded. I can explain the confirmed plant, possible disease or pest candidates, confidence, relevance to this plant, and what visual checks could help confirm the issue. I do not provide chemical treatment instructions or dosage guidance.",
+        "diagnose": "I have your plant diagnosis case \"{{title}}\" loaded. I can discuss possible problems — disease, pest damage, nutrient deficiency, pesticide injury, or environmental stress — based on the confirmed plant, provider candidates, and your notes. I do not provide chemical product names, doses, or treatment instructions.",
         "improve_growth": "I have your growth case \"{{title}}\" loaded. I can suggest general care checks based on the case context and confirmed plant profile if available. I do not provide fertilizer product names or doses.",
         "increase_income": "I have your yield planning case \"{{title}}\" loaded. I can discuss general considerations based on the confirmed plant and case context."
       },
@@ -1954,9 +1954,13 @@
         "diagnoseWhyConfirmFirst": "Why do I need to confirm the plant before diagnosis?",
         "diagnosePrepPhotos": "What photos should I add to prepare for diagnosis?",
         "diagnoseSymptomsToCheck": "What symptoms should I check?",
-        "diagnoseMostLikely": "What is the most likely issue?",
+        "diagnoseMostLikely": "What is the most likely problem?",
         "diagnoseWhyUncertain": "Why is this diagnosis uncertain?",
         "diagnoseCouldBePest": "Could this be pest damage instead of disease?",
+        "diagnoseCouldBeDiseasePestStress": "Could this be disease, pest damage, or plant stress?",
+        "diagnoseCouldBeDeficiency": "Could this be a nutrient deficiency?",
+        "diagnoseCouldBePesticide": "Could pesticide injury cause these symptoms?",
+        "diagnosePhotosToImprove": "What photos would improve diagnosis?",
         "diagnoseWhatToAvoid": "What should I avoid doing now?",
         "aiPreferred": "Why did AI prefer this candidate?",
         "checkVisually": "What should I check visually next?",

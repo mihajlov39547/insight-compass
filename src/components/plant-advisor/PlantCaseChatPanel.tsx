@@ -195,11 +195,11 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       }
       return [
         q('diagnoseMostLikely'),
-        q('diagnoseWhyUncertain'),
+        q('diagnoseCouldBeDiseasePestStress'),
+        q('diagnoseCouldBeDeficiency'),
+        q('diagnoseCouldBePesticide'),
         q('diagnoseSymptomsToCheck'),
-        q('unlikelyCandidates'),
-        q('diagnoseCouldBePest'),
-        q('extraPhotos'),
+        q('diagnosePhotosToImprove'),
         q('diagnoseWhatToAvoid'),
       ];
     }

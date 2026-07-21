@@ -1849,16 +1849,16 @@
       "notesPh": "Simptomi, uslovi gajenja, promene…"
     },
     "goals": {
-      "identify": "Prepoznaj biljku",
-      "diagnose": "Dijagnostikuj bolest",
+      "identify": "Identifikuj biljku",
+      "diagnose": "Dijagnostikuj problem",
       "improve_growth": "Poboljšaj rast",
       "increase_income": "Povećaj prihod"
     },
     "goalDescriptions": {
-      "identify": "Saznajte koja je ovo biljka.",
-      "diagnose": "Istražite simptome i moguće uzroke.",
-      "improve_growth": "Saveti za negu i uslove.",
-      "increase_income": "Planirajte prinos i tržišnu vrednost."
+      "identify": "Saznaj koja je ovo biljka.",
+      "diagnose": "Proveri bolest, oštećenje od štetočina, nedostatak hraniva, fitotoksičnost ili stres iz okoline.",
+      "improve_growth": "Dobij smernice za zalivanje, zemljište, svetlost, rezidbu i uslove gajenja.",
+      "increase_income": "Planiraj prinos, kvalitet, vreme berbe i tržišnu vrednost."
     },
     "statuses": {
       "draft": "Skica",
@@ -1893,7 +1893,7 @@
       "assistantTitle": {
         "default": "Asistent za slučaj biljke",
         "identify": "Asistent za identifikaciju biljke",
-        "diagnose": "Asistent za dijagnozu bolesti",
+        "diagnose": "Asistent za dijagnozu problema",
         "improve_growth": "Savetnik za rast biljke",
         "increase_income": "Savetnik za prinos i tržište"
       },
@@ -1907,7 +1907,7 @@
       "intro": {
         "default": "Učitao sam slučaj \"{{title}}\". Koristim kontekst slučaja, rezultate provajdera i vaše beleške — ne pregledam direktno fotografije ovde.",
         "identify": "Učitao sam slučaj identifikacije \"{{title}}\". Mogu da objasnim potvrđenu biljku, rezultat pouzdanosti, moguće alternative i koje dodatne fotografije bi poboljšale identifikaciju. Ne pregledam direktno fotografije ovde; koristim kontekst slučaja, rezultate provajdera i vaše beleške.",
-        "diagnose": "Učitao sam slučaj dijagnoze \"{{title}}\". Mogu da objasnim potvrđenu biljku, moguće kandidate za bolest ili štetočinu, pouzdanost, relevantnost za ovu biljku i koje vizuelne provere mogu pomoći da se problem potvrdi. Ne dajem uputstva za hemijski tretman niti doziranje.",
+        "diagnose": "Učitao sam slučaj dijagnoze \"{{title}}\". Mogu da razgovaram o mogućim problemima — bolesti, oštećenju od štetočina, nedostatku hraniva, fitotoksičnosti ili stresu iz okoline — na osnovu potvrđene biljke, kandidata provajdera i vaših beleški. Ne dajem nazive hemijskih preparata, doze niti uputstva za tretman.",
         "improve_growth": "Učitao sam slučaj rasta \"{{title}}\". Mogu da predložim opšte provere nege na osnovu konteksta slučaja i profila potvrđene biljke ako je dostupan. Ne dajem imena đubriva niti doze.",
         "increase_income": "Učitao sam slučaj planiranja prinosa \"{{title}}\". Mogu da razgovaram o opštim razmatranjima na osnovu potvrđene biljke i konteksta slučaja."
       },
@@ -1973,6 +1973,10 @@
         "diagnoseMostLikely": "Koji je najverovatniji problem?",
         "diagnoseWhyUncertain": "Zašto je ova dijagnoza nesigurna?",
         "diagnoseCouldBePest": "Da li ovo može biti oštećenje od insekata umesto bolesti?",
+        "diagnoseCouldBeDiseasePestStress": "Da li ovo može biti bolest, oštećenje od štetočina ili stres biljke?",
+        "diagnoseCouldBeDeficiency": "Da li ovo može biti nedostatak hraniva?",
+        "diagnoseCouldBePesticide": "Da li oštećenje od pesticida može izazvati ove simptome?",
+        "diagnosePhotosToImprove": "Koje fotografije bi poboljšale dijagnozu?",
         "diagnoseWhatToAvoid": "Šta sada ne bi trebalo raditi?",
         "aiPreferred": "Zašto je AI izabrao ovog kandidata?",
         "checkVisually": "Šta sledeće da proverim vizuelno?",
