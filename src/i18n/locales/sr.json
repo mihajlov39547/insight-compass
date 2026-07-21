@@ -1893,7 +1893,7 @@
       "assistantTitle": {
         "default": "Asistent za slučaj biljke",
         "identify": "Asistent za identifikaciju biljke",
-        "diagnose": "Asistent za dijagnozu bolesti",
+        "diagnose": "Asistent za dijagnozu problema",
         "improve_growth": "Savetnik za rast biljke",
         "increase_income": "Savetnik za prinos i tržište"
       },
