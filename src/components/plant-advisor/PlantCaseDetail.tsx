@@ -10,6 +10,7 @@ import { PlantIdentificationSection } from './PlantIdentificationSection';
 import { PlantDiseaseDiagnosisSection } from './PlantDiseaseDiagnosisSection';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
+import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
 import { toast } from 'sonner';
 
 interface Props {
@@ -103,6 +104,18 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
               {t('plantAdvisor.diagnoseFlow.step2Locked')}
             </div>
           )}
+        </>
+      ) : plantCase.user_goal === 'improve_growth' ? (
+        <>
+          <PlantIdentificationSection caseId={plantCase.id} images={images} />
+          <PlantSpeciesProfileSection
+            caseId={plantCase.id}
+            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+          />
+          <PlantGrowthGuidanceSection
+            caseId={plantCase.id}
+            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+          />
         </>
       ) : (
         <>

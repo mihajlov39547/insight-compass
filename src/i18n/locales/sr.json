@@ -1984,7 +1984,14 @@
         "extraPhotos": "Koje dodatne fotografije bi povećale pouzdanost?",
         "explainConfirmed": "Objasni potvrđenu dijagnozu.",
         "evidenceSupports": "Koji dokazi podržavaju ovu dijagnozu?",
-        "monitorNext": "Šta sledeće da pratim?"
+        "monitorNext": "Šta sledeće da pratim?",
+        "growthHowWater": "Kako treba zalivati ovu biljku?",
+        "growthHowMuchSun": "Koliko sunca joj je potrebno?",
+        "growthSoil": "Kakvi uslovi zemljišta joj najviše odgovaraju?",
+        "growthWhenPrune": "Kada treba obaviti rezidbu?",
+        "growthLimitsLocation": "Šta može ograničiti njen rast na ovoj lokaciji?",
+        "growthMonitorMonth": "Šta treba pratiti ovog meseca?",
+        "growthReliabilityLowConf": "Koliko su ove smernice pouzdane s obzirom na nisku pouzdanost identifikacije?"
       },
       "errors": {
         "generic": "Razgovor nije uspeo. Pokušajte ponovo.",
@@ -2000,6 +2007,51 @@
     "diagnose": {
       "confirmedShort": "Potvrđeno",
       "candidateShort": "Kandidat"
+    },
+    "growth": {
+      "title": "Smernice za rast",
+      "helper": "Pronađi smernice za negu iz biljnih baza i pouzdanih web izvora pre razgovora sa asistentom.",
+      "gather": "Prikupi smernice za rast",
+      "refresh": "Osveži smernice za rast",
+      "matched": "Pronađena biljka",
+      "fetchedAt": "Preuzeto {{date}}",
+      "sources": "Izvori",
+      "limitations": "Ograničenja",
+      "requireConfirmation": "Prvo potvrdite identifikaciju biljke — smernice zavise od tačne vrste.",
+      "lowConfidenceWarning": "Smernice za negu mogu biti nesigurne jer identifikacija biljke ima nisku pouzdanost. Potvrdite biljku jasnijim fotografijama pre nego što se oslonite na savete vezane za vrstu.",
+      "disclaimer": "Ovo su opšti referentni podaci o nezi. Ne uključuju nazive preparata (đubriva, pesticidi, fungicidi, herbicidi), doze, količine mešanja ni raspored primene.",
+      "status": {
+        "success": "Prikupljeno",
+        "partial": "Delimično",
+        "error": "Nije uspelo"
+      },
+      "confidence": {
+        "high": "Visoka pouzdanost",
+        "medium": "Srednja pouzdanost",
+        "low": "Niska pouzdanost"
+      },
+      "categories": {
+        "watering": "Zalivanje",
+        "sunlight": "Osvetljenje",
+        "soil": "Zemljište",
+        "pruning": "Rezidba",
+        "hardinessClimate": "Otpornost / klima",
+        "growthRateMaintenance": "Brzina rasta / održavanje",
+        "fruitingHarvest": "Plodonošenje / berba"
+      },
+      "toasts": {
+        "gathered": "Smernice za rast su prikupljene.",
+        "cached": "Učitane keširane smernice za rast."
+      },
+      "errors": {
+        "generic": "Nije uspelo prikupljanje smernica. Pokušajte ponovo.",
+        "wrong_goal": "Smernice za rast su dostupne samo za slučajeve „Poboljšaj rast“.",
+        "no_plant_reference": "Prvo potvrdite identifikaciju biljke.",
+        "case_not_found": "Slučaj biljke nije pronađen.",
+        "unauthorized": "Prijavite se ponovo.",
+        "persist_failed": "Nije uspelo čuvanje smernica.",
+        "internal_error": "Interna greška pri prikupljanju smernica."
+      }
     },
     "limits": {
       "caseReached": "Dostignut je limit plana — nadogradite plan da biste dodali još slučajeva.",
