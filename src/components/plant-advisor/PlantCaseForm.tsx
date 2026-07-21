@@ -79,7 +79,12 @@ export function PlantCaseForm({ initial, onSaved, onCancel }: Props) {
             <SelectTrigger><SelectValue placeholder={t('plantAdvisor.fields.goalPh')} /></SelectTrigger>
             <SelectContent>
               {PLANT_CASE_GOALS.map((g) => (
-                <SelectItem key={g} value={g}>{t(`plantAdvisor.goals.${g}`)}</SelectItem>
+                <SelectItem key={g} value={g} className="py-2">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium">{t(`plantAdvisor.goals.${g}`)}</span>
+                    <span className="text-xs text-muted-foreground">{t(`plantAdvisor.goalDescriptions.${g}`)}</span>
+                  </div>
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
