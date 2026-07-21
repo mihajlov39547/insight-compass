@@ -1849,16 +1849,16 @@
       "notesPh": "Simptomi, uslovi gajenja, promene…"
     },
     "goals": {
-      "identify": "Prepoznaj biljku",
-      "diagnose": "Dijagnostikuj bolest",
+      "identify": "Identifikuj biljku",
+      "diagnose": "Dijagnostikuj problem",
       "improve_growth": "Poboljšaj rast",
       "increase_income": "Povećaj prihod"
     },
     "goalDescriptions": {
-      "identify": "Saznajte koja je ovo biljka.",
-      "diagnose": "Istražite simptome i moguće uzroke.",
-      "improve_growth": "Saveti za negu i uslove.",
-      "increase_income": "Planirajte prinos i tržišnu vrednost."
+      "identify": "Saznaj koja je ovo biljka.",
+      "diagnose": "Proveri bolest, oštećenje od štetočina, nedostatak hraniva, fitotoksičnost ili stres iz okoline.",
+      "improve_growth": "Dobij smernice za zalivanje, zemljište, svetlost, rezidbu i uslove gajenja.",
+      "increase_income": "Planiraj prinos, kvalitet, vreme berbe i tržišnu vrednost."
     },
     "statuses": {
       "draft": "Skica",
