@@ -229,6 +229,8 @@ Deno.serve(async (req: Request) => {
               url: s.url,
               summary: s.summary,
               careCategories: s.careCategories,
+              sourceType: s.sourceType,
+              authorityScore: s.authorityScore,
             })),
           }
         : null,
@@ -249,7 +251,7 @@ Deno.serve(async (req: Request) => {
         case 'diagnose':
           return 'This is a DIAGNOSIS case. Focus on the confirmed plant and disease/pest candidates, their relevance to the confirmed plant, uncertainty, and visual checks. If no plant is confirmed yet, explain that the plant must be confirmed before diagnosis is meaningful.';
         case 'improve_growth':
-          return 'This is an IMPROVE-GROWTH case. Prioritize the confirmed plant, user location, crop context, Trefle profile, and growthGrounding (Perenual + web sources). Cite source names ("according to Perenual", "per Trefle", or the web source title) when giving care advice. Distinguish structured database facts (Trefle, Perenual) from web-sourced guidance. If sources conflict, say so and prefer more authoritative/local sources (university extensions, botanical gardens, government agriculture pages). Do NOT invent missing values. If plant identification confidence is low, warn that advice applies only if the plant is correctly identified. Do NOT diagnose disease. Do NOT recommend fertilizer product names, pesticide/fungicide/herbicide products, doses, mixing rates, or chemical application schedules. General watering, sunlight, soil, pruning timing, mulching, monitoring, and when-to-seek-expert-help are OK.';
+          return 'This is an IMPROVE-GROWTH case. Prioritize the confirmed plant, user location, crop context, Trefle profile, and growthGrounding (Perenual + web sources). If growthGrounding is MISSING (notes.noGrowthGrounding is set), tell the user that dedicated growth guidance has not been gathered yet and suggest they run "Gather growth guidance" before giving detailed species-specific care advice; you may still answer generally from the confirmed plant and Trefle profile, clearly noting the guidance has not been gathered. When growthGrounding IS present, cite source names ("according to Perenual", "per Trefle", or the web source title) when giving care advice, and prefer sources with authorityScore "high" (university extensions, botanical gardens, government agriculture pages). Distinguish structured database facts (Trefle, Perenual) from web-sourced guidance. If sources conflict, say so and prefer the higher-authority / more local source. Do NOT invent missing values. If plant identification confidence is low, warn that advice applies only if the plant is correctly identified. Do NOT diagnose disease. Do NOT recommend fertilizer product names, pesticide/fungicide/herbicide products, doses, mixing rates, or chemical application schedules. General watering, sunlight, soil, pruning timing, mulching, monitoring, and when-to-seek-expert-help are OK.';
         case 'increase_income':
           return 'This is a YIELD/MARKET planning case. Discuss general considerations tied to the confirmed plant. Do not invent market prices or yield numbers not in the context.';
         default:
