@@ -1,6 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export type GroundingSourceType =
+  | 'university_extension'
+  | 'botanical_garden'
+  | 'government'
+  | 'plant_database'
+  | 'horticulture_site'
+  | 'other';
+
+export type GroundingAuthorityScore = 'high' | 'medium' | 'low';
+
 export interface GroundingSource {
   provider: 'trefle' | 'perenual' | 'web';
   title: string;
@@ -9,6 +19,8 @@ export interface GroundingSource {
   summary: string;
   fields?: Record<string, unknown> | null;
   careCategories?: string[];
+  sourceType?: GroundingSourceType;
+  authorityScore?: GroundingAuthorityScore;
 }
 
 export interface CareCategory {
