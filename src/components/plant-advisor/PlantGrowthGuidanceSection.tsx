@@ -204,10 +204,23 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
               </div>
               <ul className="space-y-1 text-xs">
                 {grounding.sources.map((s: GroundingSource, i) => (
-                  <li key={i} className="flex items-start gap-1.5">
+                  <li key={i} className="flex items-start gap-1.5 flex-wrap">
                     <Badge variant="outline" className="text-[10px] capitalize flex-shrink-0">
                       {s.provider}
                     </Badge>
+                    {s.sourceType && s.sourceType !== 'other' && (
+                      <Badge variant="secondary" className="text-[10px] flex-shrink-0">
+                        {t(`plantAdvisor.growth.sourceType.${s.sourceType}`)}
+                      </Badge>
+                    )}
+                    {s.authorityScore && (
+                      <Badge
+                        variant={s.authorityScore === 'high' ? 'default' : 'outline'}
+                        className="text-[10px] flex-shrink-0"
+                      >
+                        {t(`plantAdvisor.growth.authority.${s.authorityScore}`)}
+                      </Badge>
+                    )}
                     {s.url ? (
                       <a
                         href={s.url}
