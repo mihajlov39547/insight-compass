@@ -175,6 +175,13 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
             ))}
           </div>
 
+          {grounding.status === 'partial' && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+              <span>{t('plantAdvisor.growth.partialNote')}</span>
+            </div>
+          )}
+
           {lowConfidence && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
               <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
@@ -197,10 +204,23 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
               </div>
               <ul className="space-y-1 text-xs">
                 {grounding.sources.map((s: GroundingSource, i) => (
-                  <li key={i} className="flex items-start gap-1.5">
+                  <li key={i} className="flex items-start gap-1.5 flex-wrap">
                     <Badge variant="outline" className="text-[10px] capitalize flex-shrink-0">
                       {s.provider}
                     </Badge>
+                    {s.sourceType && s.sourceType !== 'other' && (
+                      <Badge variant="secondary" className="text-[10px] flex-shrink-0">
+                        {t(`plantAdvisor.growth.sourceType.${s.sourceType}`)}
+                      </Badge>
+                    )}
+                    {s.authorityScore && (
+                      <Badge
+                        variant={s.authorityScore === 'high' ? 'default' : 'outline'}
+                        className="text-[10px] flex-shrink-0"
+                      >
+                        {t(`plantAdvisor.growth.authority.${s.authorityScore}`)}
+                      </Badge>
+                    )}
                     {s.url ? (
                       <a
                         href={s.url}

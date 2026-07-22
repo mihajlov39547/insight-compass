@@ -2003,7 +2003,21 @@
       "limitations": "Limitations",
       "requireConfirmation": "Confirm the plant identification first — care guidance depends on the correct species.",
       "lowConfidenceWarning": "Care guidance may be uncertain because the plant identification has low confidence. Confirm the plant with clearer photos before relying on species-specific advice.",
+      "partialNote": "Some sources were unavailable; guidance is based on the sources shown.",
       "disclaimer": "This is general care reference data. It does not include fertilizer, pesticide, fungicide, or herbicide product names, doses, mixing rates, or spray schedules.",
+      "sourceType": {
+        "university_extension": "University extension",
+        "botanical_garden": "Botanical garden",
+        "government": "Government / agriculture",
+        "plant_database": "Plant database",
+        "horticulture_site": "Horticulture site",
+        "other": "Other"
+      },
+      "authority": {
+        "high": "High authority",
+        "medium": "Medium authority",
+        "low": "Low authority"
+      },
       "status": {
         "success": "Gathered",
         "partial": "Partial",

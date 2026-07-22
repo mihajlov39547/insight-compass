@@ -2,14 +2,14 @@
 // For `improve_growth` cases, gathers grounded care/growth information from:
 //   1) existing Trefle profile (plant_species_profiles) as botanical baseline
 //   2) Perenual API (species-list + species/details + species-care-guide-list)
-//   3) Tavily web search (curated queries; snippets only, no chemical products)
+//   3) Tavily web search (curated queries; filtered to authoritative sources)
 // The result is normalized into care categories and persisted to
 // `plant_case_grounding_contexts`. Successful grounding is cached (7d).
 //
-// Safety: this function does NOT recommend fertilizer/pesticide/fungicide
-// product names, doses, mixing rates, or spray schedules. It stores raw
-// provider data and lightweight summaries. The chat layer enforces final
-// safety boundaries in its system prompt.
+// Safety: this function does NOT recommend fertilizer/pesticide/fungicide/
+// herbicide product names, doses, mixing rates, or spray schedules. It stores
+// raw provider data and lightweight, product-word-stripped summaries. The
+// chat layer enforces final safety boundaries in its system prompt.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
@@ -23,12 +23,32 @@ const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const PERENUAL_BASE = 'https://perenual.com/api';
 const TAVILY_URL = 'https://api.tavily.com/search';
 
+// Confidence threshold below which we flag species-specific guidance as
+// uncertain. Kept as a named constant so future tuning is centralised.
+const GROWTH_CONFIDENCE_WARNING_THRESHOLD = 0.5;
+
+const MAX_WEB_SOURCES = 5;
+
+// Product / chemistry vocabulary we scrub from stored summaries so we never
+// surface product names, doses, mixing rates, or spray schedules.
+const PRODUCT_WORD_PATTERN =
+  /\b(fertili[sz]er|pesticide|fungicide|herbicide|insecticide|miticide|weed[- ]?killer|spray|neem oil|copper spray|bordeaux|round\s*up|glyphosate|imidacloprid|malathion|permethrin|dose|dosage|mixing rate|application rate|active ingredient|npk\s*\d+[-–]\d+[-–]\d+)\b/gi;
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
+
+type AuthorityScore = 'high' | 'medium' | 'low';
+type SourceType =
+  | 'university_extension'
+  | 'botanical_garden'
+  | 'government'
+  | 'plant_database'
+  | 'horticulture_site'
+  | 'other';
 
 interface CareCategory {
   summary: string;
@@ -44,6 +64,8 @@ interface SourceEntry {
   summary: string;
   fields?: Record<string, unknown> | null;
   careCategories?: string[];
+  sourceType?: SourceType;
+  authorityScore?: AuthorityScore;
 }
 
 async function fetchJson(url: string, init?: RequestInit, timeoutMs = 15000): Promise<any | null> {
@@ -81,6 +103,109 @@ function joinArr(v: unknown): string | null {
     return arr.length ? arr.join(', ') : null;
   }
   return normStr(v);
+}
+
+function scrubProductWords(input: string): string {
+  if (!input) return input;
+  // Replace product/chemistry terms with a neutral placeholder, then collapse
+  // whitespace and orphaned punctuation.
+  return input
+    .replace(PRODUCT_WORD_PATTERN, '[general care]')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([,.;:])/g, '$1')
+    .trim();
+}
+
+function dedupeAndJoin(parts: string[], maxLen = 1200): string {
+  const seen = new Set<string>();
+  const kept: string[] = [];
+  for (const raw of parts) {
+    const cleaned = scrubProductWords(String(raw || '').trim());
+    if (!cleaned) continue;
+    const key = cleaned.toLowerCase().slice(0, 160);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    kept.push(cleaned);
+  }
+  return kept.join('\n\n').slice(0, maxLen);
+}
+
+// Domain-based source classification for Tavily web results.
+const DOMAIN_RULES: Array<{ match: RegExp; type: SourceType; score: AuthorityScore }> = [
+  // University extensions and .edu horticulture programs.
+  { match: /(^|\.)extension\.[a-z-]+\.edu$/i, type: 'university_extension', score: 'high' },
+  { match: /(^|\.)[a-z-]+\.edu$/i, type: 'university_extension', score: 'high' },
+  { match: /extension\./i, type: 'university_extension', score: 'high' },
+  // Government agriculture / research.
+  { match: /(^|\.)usda\.gov$/i, type: 'government', score: 'high' },
+  { match: /\.gov(\.[a-z]{2})?$/i, type: 'government', score: 'high' },
+  { match: /\.gc\.ca$/i, type: 'government', score: 'high' },
+  { match: /\.europa\.eu$/i, type: 'government', score: 'high' },
+  // Botanical gardens & major plant institutions.
+  { match: /kew\.org$/i, type: 'botanical_garden', score: 'high' },
+  { match: /missouribotanicalgarden\.org$/i, type: 'botanical_garden', score: 'high' },
+  { match: /rhs\.org\.uk$/i, type: 'botanical_garden', score: 'high' },
+  { match: /bbg\.org$/i, type: 'botanical_garden', score: 'high' },
+  { match: /nybg\.org$/i, type: 'botanical_garden', score: 'high' },
+  { match: /botanicalgarden/i, type: 'botanical_garden', score: 'high' },
+  // Reputable plant databases.
+  { match: /perenual\.com$/i, type: 'plant_database', score: 'medium' },
+  { match: /trefle\.io$/i, type: 'plant_database', score: 'medium' },
+  { match: /powo\.science\.kew\.org$/i, type: 'plant_database', score: 'high' },
+  { match: /gbif\.org$/i, type: 'plant_database', score: 'high' },
+  { match: /wikipedia\.org$/i, type: 'plant_database', score: 'medium' },
+  // Reputable horticulture sites (curated shortlist).
+  { match: /gardenersworld\.com$/i, type: 'horticulture_site', score: 'medium' },
+  { match: /almanac\.com$/i, type: 'horticulture_site', score: 'medium' },
+  { match: /gardeningknowhow\.com$/i, type: 'horticulture_site', score: 'medium' },
+  { match: /finegardening\.com$/i, type: 'horticulture_site', score: 'medium' },
+];
+
+// Domains we skip outright — ecommerce, product catalogs, forums, and
+// low-signal SEO farms.
+const BLOCKED_HOST_PATTERN =
+  /(amazon\.|ebay\.|walmart\.|homedepot\.|lowes\.|etsy\.|aliexpress\.|shopify|reddit\.com|quora\.com|pinterest\.|facebook\.com|tiktok\.com|houzz\.com)/i;
+
+// URL-path hints for product / chemistry pages we skip even on otherwise OK
+// domains.
+const BLOCKED_PATH_PATTERN =
+  /(product|shop|cart|checkout|fertili[sz]er|pesticide|fungicide|herbicide|insecticide|weed-?killer|spray-?guide|buy-?online)/i;
+
+function classifySource(url: string, title: string, snippet: string):
+  | { sourceType: SourceType; authorityScore: AuthorityScore }
+  | null {
+  let host = '';
+  let path = '';
+  try {
+    const u = new URL(url);
+    host = u.hostname.toLowerCase();
+    path = u.pathname.toLowerCase();
+  } catch {
+    return null;
+  }
+  if (BLOCKED_HOST_PATTERN.test(host)) return null;
+  if (BLOCKED_PATH_PATTERN.test(path)) return null;
+
+  const hay = `${title} ${snippet}`.toLowerCase();
+  // Skip content clearly focused on product/chemistry recommendations.
+  if (/(best\s+fertili[sz]er|top\s+\d+\s+fertili[sz]er|which\s+pesticide|spray\s+schedule)/i.test(hay)) {
+    return null;
+  }
+
+  for (const rule of DOMAIN_RULES) {
+    if (rule.match.test(host)) {
+      return { sourceType: rule.type, authorityScore: rule.score };
+    }
+  }
+  // Unknown domain — allow but as low authority.
+  return { sourceType: 'other', authorityScore: 'low' };
+}
+
+function authorityRank(a: AuthorityScore | undefined): number {
+  if (a === 'high') return 3;
+  if (a === 'medium') return 2;
+  if (a === 'low') return 1;
+  return 0;
 }
 
 Deno.serve(async (req: Request) => {
@@ -160,7 +285,8 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'no_plant_reference' }, 400);
     }
 
-    const confidenceWarning = identConfidence != null && identConfidence < 0.5;
+    const confidenceWarning =
+      identConfidence != null && identConfidence < GROWTH_CONFIDENCE_WARNING_THRESHOLD;
     const sources: SourceEntry[] = [];
 
     // 1) Trefle baseline (already cached in plant_species_profiles)
@@ -184,7 +310,7 @@ Deno.serve(async (req: Request) => {
         title: `Trefle: ${p.scientificName || primarySci || primaryCommon}`,
         url: null,
         fetchedAt: profile.fetched_at,
-        summary: trefleSummaryParts.join('. ').slice(0, 800) || 'Trefle botanical baseline data.',
+        summary: scrubProductWords(trefleSummaryParts.join('. ')).slice(0, 800) || 'Trefle botanical baseline data.',
         fields: {
           scientificName: p.scientificName,
           commonName: p.commonName,
@@ -203,8 +329,8 @@ Deno.serve(async (req: Request) => {
     // 2) Perenual
     let perenualDetails: any = null;
     let perenualCare: any[] = [];
+    let perenualSpeciesId: number | null = null;
     if (perenualKey) {
-      // Try scientific name first, then common name, then genus + common.
       const tries: string[] = [];
       if (primarySci) tries.push(primarySci);
       if (scientificName && scientificName !== primarySci) tries.push(scientificName);
@@ -216,7 +342,6 @@ Deno.serve(async (req: Request) => {
         const listData = await fetchJson(listUrl);
         const items = Array.isArray(listData?.data) ? listData.data : [];
         if (items.length > 0) {
-          // Prefer scientific-name match.
           const qLower = q.toLowerCase();
           match =
             items.find((it: any) => {
@@ -227,6 +352,7 @@ Deno.serve(async (req: Request) => {
         }
       }
       if (match?.id) {
+        perenualSpeciesId = Number(match.id) || null;
         const detUrl = `${PERENUAL_BASE}/v2/species/details/${match.id}?key=${encodeURIComponent(perenualKey)}`;
         perenualDetails = await fetchJson(detUrl);
         const careUrl = `${PERENUAL_BASE}/species-care-guide-list?key=${encodeURIComponent(perenualKey)}&species_id=${match.id}`;
@@ -241,15 +367,22 @@ Deno.serve(async (req: Request) => {
           for (const s of secs) {
             const t = typeof s?.type === 'string' ? s.type.toLowerCase() : null;
             const desc = normStr(s?.description);
-            if (t && desc) careSections[t] = careSections[t] ? `${careSections[t]}\n\n${desc}` : desc;
+            if (t && desc) {
+              const cleaned = scrubProductWords(desc);
+              careSections[t] = careSections[t] ? `${careSections[t]}\n\n${cleaned}` : cleaned;
+            }
           }
         }
+        // Best-effort public-facing Perenual URL for the matched species.
+        const perenualPublicUrl = perenualSpeciesId
+          ? `https://perenual.com/plant-database-search-finder-guide/species/${perenualSpeciesId}`
+          : null;
         sources.push({
           provider: 'perenual',
           title: `Perenual: ${normStr(joinArr(d.common_name)) || normStr(joinArr(d.scientific_name)) || primarySci || primaryCommon}`,
-          url: null,
+          url: perenualPublicUrl,
           fetchedAt: new Date().toISOString(),
-          summary: (normStr(d.description) || '').slice(0, 800),
+          summary: scrubProductWords(normStr(d.description) || '').slice(0, 800),
           fields: {
             common_name: joinArr(d.common_name),
             scientific_name: joinArr(d.scientific_name),
@@ -279,15 +412,16 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 3) Tavily web grounding — a couple of curated queries.
+    // 3) Tavily web grounding — curated queries, filtered + ranked by authority.
     if (tavilyKey && (primarySci || primaryCommon)) {
       const q = primarySci || primaryCommon!;
       const queries = [
-        `${q} growing conditions watering sunlight pruning`,
+        `${q} growing conditions watering sunlight pruning site:.edu OR site:.gov OR extension`,
         `${q} care guide soil pruning`,
       ];
       if (pc.location_text) queries.push(`${q} garden care ${pc.location_text}`);
       const seen = new Set<string>();
+      const candidateWeb: SourceEntry[] = [];
       for (const query of queries) {
         const resp = await fetchJson(TAVILY_URL, {
           method: 'POST',
@@ -296,7 +430,7 @@ Deno.serve(async (req: Request) => {
             api_key: tavilyKey,
             query,
             search_depth: 'basic',
-            max_results: 4,
+            max_results: 6,
             include_answer: false,
           }),
         }, 12000);
@@ -307,6 +441,8 @@ Deno.serve(async (req: Request) => {
           seen.add(url);
           const title = normStr(r.title) || url;
           const snippet = normStr(r.content) || '';
+          const cls = classifySource(url, title, snippet);
+          if (!cls) continue; // filtered out
           const cats: string[] = [];
           const hay = `${title} ${snippet}`.toLowerCase();
           for (const [cat, keys] of [
@@ -319,18 +455,21 @@ Deno.serve(async (req: Request) => {
           ] as const) {
             if (keys.some((k) => hay.includes(k))) cats.push(cat);
           }
-          sources.push({
+          candidateWeb.push({
             provider: 'web',
             title,
             url,
             fetchedAt: new Date().toISOString(),
-            summary: snippet.slice(0, 500),
+            summary: scrubProductWords(snippet).slice(0, 500),
             careCategories: cats,
+            sourceType: cls.sourceType,
+            authorityScore: cls.authorityScore,
           });
-          if (sources.filter((s) => s.provider === 'web').length >= 8) break;
         }
-        if (sources.filter((s) => s.provider === 'web').length >= 8) break;
       }
+      // Rank by authority desc, keep the best 3–5.
+      candidateWeb.sort((a, b) => authorityRank(b.authorityScore) - authorityRank(a.authorityScore));
+      sources.push(...candidateWeb.slice(0, MAX_WEB_SOURCES));
     }
 
     // Normalize care categories: aggregate short summaries by category from
@@ -351,19 +490,25 @@ Deno.serve(async (req: Request) => {
       const parts: string[] = [];
       if (perenualText) {
         parts.push(perenualText);
-        srcs.push({ provider: 'perenual', title: perenualSrc?.title });
+        srcs.push({ provider: 'perenual', title: perenualSrc?.title, url: perenualSrc?.url ?? undefined });
       }
-      for (const w of webItems.slice(0, 3)) {
+      // Prefer higher-authority web items first.
+      const sortedWeb = [...webItems].sort(
+        (a, b) => authorityRank(b.authorityScore) - authorityRank(a.authorityScore),
+      );
+      for (const w of sortedWeb.slice(0, 3)) {
         if (w.summary) parts.push(w.summary);
         srcs.push({ provider: 'web', title: w.title, url: w.url ?? undefined });
       }
-      if (!parts.length) return null;
-      const confidence: CareCategory['confidence'] = srcs.length >= 2 ? 'medium' : 'low';
-      return {
-        summary: parts.join('\n\n').slice(0, 1200),
-        confidence: perenualText && webItems.length ? 'medium' : confidence,
-        sources: srcs,
-      };
+      const summary = dedupeAndJoin(parts, 1200);
+      if (!summary) return null;
+      const confidence: CareCategory['confidence'] =
+        perenualText && sortedWeb.some((w) => w.authorityScore === 'high')
+          ? 'medium'
+          : srcs.length >= 2
+            ? 'medium'
+            : 'low';
+      return { summary, confidence, sources: srcs };
     };
 
     const normalizedCare: Record<string, CareCategory | null> = {
@@ -381,7 +526,7 @@ Deno.serve(async (req: Request) => {
       limitations.push('Plant identification confidence is low; exact species-specific care may be uncertain.');
     }
     if (!perenualDetails) limitations.push('No structured Perenual care record was found for this plant.');
-    if (!sources.some((s) => s.provider === 'web')) limitations.push('No web sources were retrieved for this grounding pass.');
+    if (!sources.some((s) => s.provider === 'web')) limitations.push('No authoritative web sources were retrieved for this grounding pass.');
     limitations.push('Local soil, irrigation, and microclimate conditions were not measured.');
 
     const anySource = sources.length > 0;
@@ -419,6 +564,7 @@ Deno.serve(async (req: Request) => {
       provider_payload: {
         perenual: perenualDetails ?? null,
         perenualCareGuides: perenualCare,
+        perenualSpeciesId,
       },
       normalized_summary: {
         plant: grounding.plant,
