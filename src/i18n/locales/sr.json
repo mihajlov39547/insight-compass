@@ -2020,6 +2020,8 @@
       "requireConfirmation": "Prvo potvrdite identifikaciju biljke — smernice zavise od tačne vrste.",
       "lowConfidenceWarning": "Smernice za negu mogu biti nesigurne jer identifikacija biljke ima nisku pouzdanost. Potvrdite biljku jasnijim fotografijama pre nego što se oslonite na savete vezane za vrstu.",
       "partialNote": "Neki izvori nisu bili dostupni; smernice su zasnovane na prikazanim izvorima.",
+      "perenualUnavailable": "Perenual: nije pronađen strukturirani zapis o nezi.",
+      "emptyCategory": "Trenutni izvori ne pružaju dovoljno konkretnih smernica za ovu kategoriju.",
       "disclaimer": "Ovo su opšti referentni podaci o nezi. Ne uključuju nazive preparata (đubriva, pesticidi, fungicidi, herbicidi), doze, količine mešanja ni raspored primene.",
       "sourceType": {
         "university_extension": "Univerzitetska ekstenzija",
