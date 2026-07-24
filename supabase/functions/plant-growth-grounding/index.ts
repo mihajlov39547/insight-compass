@@ -493,54 +493,130 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 3) Tavily web grounding — curated queries, filtered + ranked by authority.
+    // 3) Tavily web grounding — plant-specific queries first, then narrower
+    // care queries. Rank by plant relevance > care relevance > authority.
+    // Care cards require BOTH plant relevance and category relevance.
+    const webDebug: Array<{
+      query: string;
+      url: string;
+      title: string;
+      score: number | null;
+      matchedPlantTerms: string[];
+      matchedCareTerms: string[];
+      authorityScore: AuthorityScore | null;
+      acceptedForSources: boolean;
+      acceptedForCareCards: boolean;
+      rejectionReason?: string;
+    }> = [];
+    let tavilyAnswer: string | null = null;
+
+    // Care keyword taxonomy (used both for tagging and for care-card gating).
+    const CARE_KEYWORDS: Array<[string, readonly string[]]> = [
+      ['watering', ['water', 'irrigat', 'moist', 'drought']],
+      ['sunlight', ['sun', 'shade', 'light', 'partial', 'full sun']],
+      ['soil', ['soil', 'ph', 'drain', 'loam', 'sandy', 'clay']],
+      ['pruning', ['prun', 'trim', 'cut back']],
+      ['hardiness', ['hardin', 'zone', 'climate', 'frost', 'cold-hardy']],
+      ['fruiting', ['fruit', 'harvest', 'yield', 'flower', 'bloom', 'berry']],
+    ];
+
+    // Plant-term matcher: prefer scientific + common name tokens.
+    const plantTerms: string[] = [];
+    if (primarySci) plantTerms.push(primarySci.toLowerCase());
+    if (primaryCommon) plantTerms.push(primaryCommon.toLowerCase());
+    if (genus) plantTerms.push(genus.toLowerCase());
+    // Also accept genus token from scientific name if present.
+    if (primarySci) {
+      const g = primarySci.split(/\s+/)[0];
+      if (g && !plantTerms.includes(g.toLowerCase())) plantTerms.push(g.toLowerCase());
+    }
+    const matchPlantTerms = (hay: string): string[] =>
+      plantTerms.filter((t) => t && hay.includes(t));
+
     if (tavilyKey && (primarySci || primaryCommon)) {
-      const q = primarySci || primaryCommon!;
-      const queries = [
-        `${q} growing conditions watering sunlight pruning site:.edu OR site:.gov OR extension`,
-        `${q} care guide soil pruning`,
+      const sci = primarySci || '';
+      const common = primaryCommon || '';
+      const label = sci && common ? `${sci} / ${common}` : sci || common;
+
+      // 1st: simple plant-specific query. 2nd+: narrower care queries.
+      const queries: Array<{ q: string; depth: 'basic' | 'advanced'; answer: 'basic' | 'advanced' | false; max: number }> = [
+        { q: label, depth: 'advanced', answer: 'advanced', max: 5 },
       ];
-      if (pc.location_text) queries.push(`${q} garden care ${pc.location_text}`);
+      const base = [sci, common].filter(Boolean).join(' ').trim();
+      if (base) {
+        queries.push({ q: `${base} care`, depth: 'basic', answer: false, max: 5 });
+        queries.push({ q: `${base} growing conditions`, depth: 'basic', answer: false, max: 5 });
+        queries.push({ q: `${base} pruning sunlight soil watering`, depth: 'basic', answer: false, max: 5 });
+        queries.push({ q: `${base} extension`, depth: 'basic', answer: false, max: 5 });
+      }
+
       const seen = new Set<string>();
-      const candidateWeb: SourceEntry[] = [];
-      for (const query of queries) {
+      const primary: Array<SourceEntry & { _plantMatches: string[]; _score: number }> = [];
+      const background: Array<SourceEntry & { _plantMatches: string[]; _score: number }> = [];
+
+      for (const { q: query, depth, answer, max } of queries) {
         const resp = await fetchJson(TAVILY_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             api_key: tavilyKey,
             query,
-            search_depth: 'basic',
-            max_results: 6,
-            include_answer: false,
+            search_depth: depth,
+            max_results: max,
+            include_answer: answer,
           }),
-        }, 12000);
+        }, 15000);
+
+        if (!tavilyAnswer && typeof resp?.answer === 'string' && resp.answer.trim()) {
+          tavilyAnswer = resp.answer.trim();
+        }
+
         const results = Array.isArray(resp?.results) ? resp.results : [];
         for (const r of results) {
           const url: string | null = normStr(r.url);
-          if (!url || seen.has(url)) continue;
-          seen.add(url);
+          if (!url) continue;
           const title = normStr(r.title) || url;
           const snippet = normStr(r.content) || '';
-          const cls = classifySource(url, title, snippet);
-          if (!cls) continue; // filtered out
-          const cats: string[] = [];
+          const score = typeof r?.score === 'number' ? r.score : null;
           const hay = `${title} ${snippet}`.toLowerCase();
-          for (const [cat, keys] of [
-            ['watering', ['water', 'irrigat']],
-            ['sunlight', ['sun', 'light', 'shade']],
-            ['soil', ['soil', 'ph', 'drain']],
-            ['pruning', ['prun', 'trim']],
-            ['hardiness', ['hardin', 'zone', 'climate', 'frost']],
-            ['fruiting', ['fruit', 'harvest', 'yield', 'flower']],
-          ] as const) {
+          const cls = classifySource(url, title, snippet);
+          const plantMatches = matchPlantTerms(hay);
+          const cats: string[] = [];
+          for (const [cat, keys] of CARE_KEYWORDS) {
             if (keys.some((k) => hay.includes(k))) cats.push(cat);
           }
+
+          const dbg = {
+            query,
+            url,
+            title,
+            score,
+            matchedPlantTerms: plantMatches,
+            matchedCareTerms: cats,
+            authorityScore: cls?.authorityScore ?? null,
+            acceptedForSources: false,
+            acceptedForCareCards: false,
+            rejectionReason: undefined as string | undefined,
+          };
+
+          if (seen.has(url)) {
+            dbg.rejectionReason = 'duplicate';
+            webDebug.push(dbg);
+            continue;
+          }
+          if (!cls) {
+            dbg.rejectionReason = 'blocked_domain_or_path';
+            webDebug.push(dbg);
+            seen.add(url);
+            continue;
+          }
+          seen.add(url);
+
           const cleanedSnippet = trimToSentence(
             scrubProductWords(stripBoilerplate(snippet)),
             360,
           );
-          candidateWeb.push({
+          const entry: SourceEntry & { _plantMatches: string[]; _score: number } = {
             provider: 'web',
             title: stripBoilerplate(title).slice(0, 200) || url,
             url,
@@ -549,12 +625,56 @@ Deno.serve(async (req: Request) => {
             careCategories: cats,
             sourceType: cls.sourceType,
             authorityScore: cls.authorityScore,
-          });
+            _plantMatches: plantMatches,
+            _score: score ?? 0,
+          };
+
+          if (plantMatches.length > 0) {
+            dbg.acceptedForSources = true;
+            dbg.acceptedForCareCards = cats.length > 0;
+            primary.push(entry);
+          } else {
+            dbg.rejectionReason = 'no_plant_term_match';
+            background.push(entry);
+          }
+          webDebug.push(dbg);
         }
       }
-      // Rank by authority desc, keep the best 3–5.
-      candidateWeb.sort((a, b) => authorityRank(b.authorityScore) - authorityRank(a.authorityScore));
-      sources.push(...candidateWeb.slice(0, MAX_WEB_SOURCES));
+
+      // If Tavily returned an answer, expose it as a general summary source
+      // (not tied to any care category — those still require category evidence).
+      if (tavilyAnswer) {
+        sources.push({
+          provider: 'web',
+          title: `Web summary: ${label}`,
+          url: null,
+          fetchedAt: new Date().toISOString(),
+          summary: trimToSentence(scrubProductWords(stripBoilerplate(tavilyAnswer)), 600),
+          careCategories: [],
+          sourceType: 'other',
+          authorityScore: 'medium',
+        });
+      }
+
+      // Rank: plant relevance first (already partitioned), then care-category
+      // count, then authority, then Tavily score.
+      const rankPrimary = (a: typeof primary[number], b: typeof primary[number]) => {
+        const catDiff = (b.careCategories?.length ?? 0) - (a.careCategories?.length ?? 0);
+        if (catDiff !== 0) return catDiff;
+        const authDiff = authorityRank(b.authorityScore) - authorityRank(a.authorityScore);
+        if (authDiff !== 0) return authDiff;
+        return (b._score ?? 0) - (a._score ?? 0);
+      };
+      primary.sort(rankPrimary);
+      background.sort((a, b) => authorityRank(b.authorityScore) - authorityRank(a.authorityScore));
+
+      // Push only plant-relevant results into the primary sources list.
+      for (const p of primary.slice(0, MAX_WEB_SOURCES)) {
+        const { _plantMatches, _score, ...rest } = p;
+        sources.push(rest);
+      }
+      // Stash background candidates via debug payload (available for future UI).
+      (webDebug as any).__background = background.slice(0, 5).map(({ _plantMatches, _score, ...rest }) => rest);
     }
 
     // Normalize care categories: build clean, user-facing summaries composed
