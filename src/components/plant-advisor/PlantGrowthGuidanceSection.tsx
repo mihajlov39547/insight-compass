@@ -197,6 +197,12 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
             </div>
           )}
 
+          {!providers.has('perenual' as any) && (
+            <div className="text-xs text-muted-foreground">
+              {t('plantAdvisor.growth.perenualUnavailable')}
+            </div>
+          )}
+
           {lowConfidence && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
               <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
