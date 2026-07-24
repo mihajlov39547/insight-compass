@@ -116,6 +116,44 @@ function scrubProductWords(input: string): string {
     .trim();
 }
 
+// Strip page boilerplate / navigation fragments frequently returned by
+// Tavily-style scrapes so care cards don't display debug-like text.
+function stripBoilerplate(input: string): string {
+  if (!input) return '';
+  let t = String(input);
+  // Remove leading field-label prefixes like "Title:", "Description:", etc.
+  t = t.replace(/\b(Title|Description|Summary|URL|Author|Published|Source|Menu|Show\s*Menu|Plant\s*Details?|Home|Sign\s*In)\s*[:—–-]\s*/gi, ' ');
+  // Drop lone navigation-y tokens.
+  t = t.replace(/\b(Show Menu|Plant Detail|Skip to (?:main )?content|Read more|Toggle navigation)\b/gi, ' ');
+  // Strip markdown heading markers and horizontal-rule lines.
+  t = t.replace(/^#{1,6}\s+/gm, '');
+  t = t.replace(/^[=\-*_]{3,}\s*$/gm, '');
+  // Collapse breadcrumb separators.
+  t = t.replace(/\s*[|›»]\s*/g, ' ');
+  // Strip stray bracketed edit/citation refs.
+  t = t.replace(/\[(edit|citation needed|\d+)\]/gi, '');
+  return t.replace(/\s+/g, ' ').trim();
+}
+
+function trimToSentence(s: string, max = 260): string {
+  if (!s) return '';
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+  return (stop > 80 ? cut.slice(0, stop + 1) : cut).trim() + '…';
+}
+
+function hostFamily(url: string | null | undefined): string {
+  if (!url) return '';
+  try {
+    const h = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+    const parts = h.split('.');
+    return parts.slice(-2).join('.');
+  } catch {
+    return '';
+  }
+}
+
 function dedupeAndJoin(parts: string[], maxLen = 1200): string {
   const seen = new Set<string>();
   const kept: string[] = [];
@@ -127,7 +165,50 @@ function dedupeAndJoin(parts: string[], maxLen = 1200): string {
     seen.add(key);
     kept.push(cleaned);
   }
-  return kept.join('\n\n').slice(0, maxLen);
+  return kept.join(' ').slice(0, maxLen);
+}
+
+// Turn structured Perenual boolean/object fields into readable phrases. Booleans
+// that would surface as bare "true"/"false"/"0"/"1" are converted or omitted.
+function boolPhrase(field: string, val: unknown): string | null {
+  const truthy = val === true || val === 1 || val === '1';
+  const falsy = val === false || val === 0 || val === '0';
+  if (!truthy && !falsy) return null;
+  const map: Record<string, [string, string | null]> = {
+    edible_fruit: ['Edible fruit: yes', null],
+    poisonous_to_humans: ['Reported toxic to humans in this source', null],
+    poisonous_to_pets: ['Reported toxic to pets in this source', null],
+    drought_tolerant: ['Considered drought tolerant', null],
+    salt_tolerant: ['Considered salt tolerant', null],
+  };
+  const entry = map[field];
+  if (!entry) return null;
+  return truthy ? entry[0] : entry[1];
+}
+
+function fmtWaterBenchmark(v: unknown): string | null {
+  if (!v || typeof v !== 'object') return null;
+  const val = (v as any).value;
+  const unit = (v as any).unit;
+  if (val == null || val === '' || val === 0 || val === '0') return null;
+  return `Watering benchmark: ${val}${unit ? ' ' + String(unit).toLowerCase() : ''}`;
+}
+
+function fmtPruningCount(v: unknown): string | null {
+  if (!v || typeof v !== 'object') return null;
+  const amount = (v as any).amount;
+  const interval = (v as any).interval;
+  if (!amount || amount === 0) return null;
+  const n = Number(amount);
+  return `Prune approximately ${amount} time${n > 1 ? 's' : ''}${interval ? ` per ${interval}` : ''}`;
+}
+
+function fmtHardiness(v: unknown): string | null {
+  if (!v || typeof v !== 'object') return null;
+  const min = (v as any).min;
+  const max = (v as any).max;
+  if (min == null && max == null) return null;
+  return `USDA hardiness zones ${min ?? '?'}–${max ?? '?'}`;
 }
 
 // Domain-based source classification for Tavily web results.
