@@ -48,8 +48,23 @@ const ERROR_I18N: Record<string, string> = {
 
 function CareCard({ category, data }: { category: string; data: CareCategory | null }) {
   const { t } = useTranslation();
-  if (!data) return null;
   const Icon = CARE_ICONS[category] ?? Sprout;
+  if (!data) {
+    return (
+      <div className="rounded-md border border-dashed border-border bg-card/50 p-3 space-y-1.5">
+        <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+          <Icon className="h-4 w-4" />
+          {t(`plantAdvisor.growth.categories.${category}`)}
+        </div>
+        <div className="text-xs text-muted-foreground italic">
+          {t('plantAdvisor.growth.emptyCategory')}
+        </div>
+      </div>
+    );
+  }
+  // Dedupe provider chips so we don't render "web · web · web".
+  const uniqueProviders = Array.from(new Set(data.sources.map((s) => s.provider)));
+  const webCount = data.sources.filter((s) => s.provider === 'web').length;
   return (
     <div className="rounded-md border border-border bg-card p-3 space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -62,11 +77,11 @@ function CareCard({ category, data }: { category: string; data: CareCategory | n
         </Badge>
       </div>
       <div className="text-xs whitespace-pre-wrap text-muted-foreground">{data.summary}</div>
-      {data.sources.length > 0 && (
+      {uniqueProviders.length > 0 && (
         <div className="flex flex-wrap gap-1 pt-1">
-          {data.sources.map((s, i) => (
-            <Badge key={i} variant="secondary" className="text-[10px] capitalize">
-              {s.provider}
+          {uniqueProviders.map((p) => (
+            <Badge key={p} variant="secondary" className="text-[10px] capitalize">
+              {p === 'web' && webCount > 1 ? `${p} · ${webCount}` : p}
             </Badge>
           ))}
         </div>
