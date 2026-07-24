@@ -536,12 +536,16 @@ Deno.serve(async (req: Request) => {
           ] as const) {
             if (keys.some((k) => hay.includes(k))) cats.push(cat);
           }
+          const cleanedSnippet = trimToSentence(
+            scrubProductWords(stripBoilerplate(snippet)),
+            360,
+          );
           candidateWeb.push({
             provider: 'web',
-            title,
+            title: stripBoilerplate(title).slice(0, 200) || url,
             url,
             fetchedAt: new Date().toISOString(),
-            summary: scrubProductWords(snippet).slice(0, 500),
+            summary: cleanedSnippet,
             careCategories: cats,
             sourceType: cls.sourceType,
             authorityScore: cls.authorityScore,
@@ -553,8 +557,10 @@ Deno.serve(async (req: Request) => {
       sources.push(...candidateWeb.slice(0, MAX_WEB_SOURCES));
     }
 
-    // Normalize care categories: aggregate short summaries by category from
-    // Perenual care sections + Perenual fields + web snippets tagged with the category.
+    // Normalize care categories: build clean, user-facing summaries composed
+    // primarily from structured Perenual fields + at most one snippet per
+    // domain family from authoritative web sources. Raw Tavily snippets are
+    // never dumped verbatim into cards.
     const perenualSrc = sources.find((s) => s.provider === 'perenual');
     const pFields = (perenualSrc?.fields ?? {}) as any;
     const pCare = pFields.careSections ?? {};
@@ -563,28 +569,39 @@ Deno.serve(async (req: Request) => {
 
     const buildCat = (
       cat: string,
-      perenualParts: (string | null | undefined)[],
+      structuredParts: (string | null | undefined)[],
     ): CareCategory | null => {
-      const perenualText = perenualParts.map((p) => (p == null ? '' : String(p))).filter(Boolean).join(' · ');
+      const structured = structuredParts
+        .map((p) => (p == null ? '' : String(p).trim()))
+        .filter((p) => p && p !== 'true' && p !== 'false' && p !== '0' && p !== '1');
       const webItems = webByCat(cat);
       const srcs: CareCategory['sources'] = [];
       const parts: string[] = [];
-      if (perenualText) {
-        parts.push(perenualText);
+      if (structured.length) {
+        parts.push(structured.join('. ') + (structured[structured.length - 1]!.endsWith('.') ? '' : '.'));
         srcs.push({ provider: 'perenual', title: perenualSrc?.title, url: perenualSrc?.url ?? undefined });
       }
-      // Prefer higher-authority web items first.
+      // Prefer higher-authority web items first, and use at most one snippet
+      // per host family so we don't repeat the same domain inside one card.
       const sortedWeb = [...webItems].sort(
         (a, b) => authorityRank(b.authorityScore) - authorityRank(a.authorityScore),
       );
-      for (const w of sortedWeb.slice(0, 3)) {
-        if (w.summary) parts.push(w.summary);
-        srcs.push({ provider: 'web', title: w.title, url: w.url ?? undefined });
+      const seenHosts = new Set<string>();
+      for (const w of sortedWeb) {
+        const family = hostFamily(w.url);
+        if (family && seenHosts.has(family)) continue;
+        if (family) seenHosts.add(family);
+        const cleaned = trimToSentence(scrubProductWords(stripBoilerplate(w.summary || '')), 260);
+        if (cleaned && cleaned.length >= 40) {
+          parts.push(cleaned);
+          srcs.push({ provider: 'web', title: w.title, url: w.url ?? undefined });
+          if (parts.length >= (structured.length ? 2 : 3)) break;
+        }
       }
-      const summary = dedupeAndJoin(parts, 1200);
-      if (!summary) return null;
+      const summary = dedupeAndJoin(parts, 900);
+      if (!summary || summary.length < 20) return null;
       const confidence: CareCategory['confidence'] =
-        perenualText && sortedWeb.some((w) => w.authorityScore === 'high')
+        structured.length && sortedWeb.some((w) => w.authorityScore === 'high')
           ? 'medium'
           : srcs.length >= 2
             ? 'medium'
@@ -593,14 +610,41 @@ Deno.serve(async (req: Request) => {
     };
 
     const normalizedCare: Record<string, CareCategory | null> = {
-      watering: buildCat('watering', [pFields.watering, pCare.watering, pFields.watering_general_benchmark && `Benchmark: ${JSON.stringify(pFields.watering_general_benchmark)}`]),
-      sunlight: buildCat('sunlight', [pFields.sunlight, pCare.sunlight]),
-      soil: buildCat('soil', [pFields.soil]),
-      pruning: buildCat('pruning', [pFields.pruning_month && `Pruning months: ${pFields.pruning_month}`, pFields.pruning_count && `Pruning count: ${JSON.stringify(pFields.pruning_count)}`, pCare.pruning]),
-      hardinessClimate: buildCat('hardiness', [pFields.hardiness && `Hardiness zones: ${JSON.stringify(pFields.hardiness)}`]),
-      growthRateMaintenance: buildCat('growth', [pFields.growth_rate && `Growth rate: ${pFields.growth_rate}`, pFields.maintenance && `Maintenance: ${pFields.maintenance}`, pFields.care_level && `Care level: ${pFields.care_level}`]),
-      fruitingHarvest: buildCat('fruiting', [pFields.harvest_season && `Harvest season: ${pFields.harvest_season}`, pFields.edible_fruit != null && `Edible fruit: ${pFields.edible_fruit}`]),
+      watering: buildCat('watering', [
+        pFields.watering && `Watering need: ${String(pFields.watering).toLowerCase()}`,
+        pCare.watering,
+        fmtWaterBenchmark(pFields.watering_general_benchmark),
+        boolPhrase('drought_tolerant', pFields.drought_tolerant),
+      ]),
+      sunlight: buildCat('sunlight', [
+        pFields.sunlight && `Preferred exposure: ${pFields.sunlight}`,
+        pCare.sunlight,
+      ]),
+      soil: buildCat('soil', [
+        pFields.soil && `Preferred soil: ${pFields.soil}`,
+        boolPhrase('salt_tolerant', pFields.salt_tolerant),
+        pCare.soil,
+      ]),
+      pruning: buildCat('pruning', [
+        pFields.pruning_month && `Typical pruning months: ${pFields.pruning_month}`,
+        fmtPruningCount(pFields.pruning_count),
+        pCare.pruning,
+      ]),
+      hardinessClimate: buildCat('hardiness', [
+        fmtHardiness(pFields.hardiness),
+        pCare.hardiness,
+      ]),
+      growthRateMaintenance: buildCat('growth', [
+        pFields.growth_rate && `Growth rate: ${pFields.growth_rate}`,
+        pFields.maintenance && `Maintenance: ${pFields.maintenance}`,
+        pFields.care_level && `Care level: ${pFields.care_level}`,
+      ]),
+      fruitingHarvest: buildCat('fruiting', [
+        pFields.harvest_season && `Harvest season: ${pFields.harvest_season}`,
+        boolPhrase('edible_fruit', pFields.edible_fruit),
+      ]),
     };
+
 
     const limitations: string[] = [];
     if (confidenceWarning) {
