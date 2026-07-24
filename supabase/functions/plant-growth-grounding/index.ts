@@ -810,6 +810,9 @@ Deno.serve(async (req: Request) => {
         perenual: perenualDetails ?? null,
         perenualCareGuides: perenualCare,
         perenualSpeciesId,
+        tavilyAnswer,
+        webDebug,
+        webBackgroundSources: (webDebug as any).__background ?? [],
       },
       normalized_summary: {
         plant: grounding.plant,
