@@ -493,9 +493,10 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 3) Tavily web grounding — plant-specific queries first, then narrower
-    // care queries. Rank by plant relevance > care relevance > authority.
-    // Care cards require BOTH plant relevance and category relevance.
+    // 3) Tavily web grounding — plant-specific query first, then narrower
+    // category-specific queries. Source-level plant relevance is separate
+    // from sentence-level category extraction (whole snippets never leak
+    // into care cards).
     const webDebug: Array<{
       query: string;
       url: string;
@@ -504,54 +505,115 @@ Deno.serve(async (req: Request) => {
       matchedPlantTerms: string[];
       matchedCareTerms: string[];
       authorityScore: AuthorityScore | null;
+      cultivarSpecific: boolean;
       acceptedForSources: boolean;
       acceptedForCareCards: boolean;
+      usedInCategory: string[];
       rejectionReason?: string;
     }> = [];
     let tavilyAnswer: string | null = null;
 
-    // Care keyword taxonomy (used both for tagging and for care-card gating).
+    // Source-level care keyword taxonomy (used only for tagging / sorting).
     const CARE_KEYWORDS: Array<[string, readonly string[]]> = [
       ['watering', ['water', 'irrigat', 'moist', 'drought']],
-      ['sunlight', ['sun', 'shade', 'light', 'partial', 'full sun']],
-      ['soil', ['soil', 'ph', 'drain', 'loam', 'sandy', 'clay']],
+      ['sunlight', ['sun', 'shade', 'light exposure', 'partial shade', 'full sun']],
+      ['soil', ['soil', ' ph ', 'drain', 'loam', 'sand', 'clay']],
       ['pruning', ['prun', 'trim', 'cut back']],
-      ['hardiness', ['hardin', 'zone', 'climate', 'frost', 'cold-hardy']],
-      ['fruiting', ['fruit', 'harvest', 'yield', 'flower', 'bloom', 'berry']],
+      ['hardiness', ['hardin', 'usda zone', 'zone ', 'frost', 'cold-hardy', 'climate']],
+      ['fruiting', ['fruit', 'harvest', 'flower', 'bloom', 'berry', 'berries']],
+      ['growth', ['growth rate', 'fast-grow', 'slow-grow', 'habit', 'mature height']],
     ];
+
+    // Sentence-level category regexes (stricter than source tagging).
+    const CATEGORY_SENTENCE_TERMS: Record<string, RegExp> = {
+      watering: /\b(water(?:ing)?|irrigat\w*|moist\w*|drought|dry soil)\b/i,
+      sunlight: /\b(full sun|partial shade|part shade|deep shade|\bshade\b|sunlight|light exposure|sun to (?:part(?:ial)? )?shade)\b/i,
+      soil: /\b(soil|drainage|drained|\bph\b|loam|clay|sandy?|organic matter|bottomland|floodplain|well[- ]drained)\b/i,
+      pruning: /\b(prun\w*|trim(?:ming)?|branch removal|dormant|canopy)\b/i,
+      hardiness: /\b(hardin\w*|usda zone|zone\s*\d|frost|\bcold\b|climate|temperature)\b/i,
+      fruiting: /\b(fruit\w*|berry|berries|harvest\w*|ripen\w*|flower\w*|bloom\w*|edible)\b/i,
+      growth: /\b(growth rate|fast[- ]growing|slow[- ]growing|rapid grow\w*|habit|mature (?:height|size)|reaches? \d)\b/i,
+    };
 
     // Plant-term matcher: prefer scientific + common name tokens.
     const plantTerms: string[] = [];
     if (primarySci) plantTerms.push(primarySci.toLowerCase());
     if (primaryCommon) plantTerms.push(primaryCommon.toLowerCase());
     if (genus) plantTerms.push(genus.toLowerCase());
-    // Also accept genus token from scientific name if present.
     if (primarySci) {
       const g = primarySci.split(/\s+/)[0];
       if (g && !plantTerms.includes(g.toLowerCase())) plantTerms.push(g.toLowerCase());
+      // species epithet on its own is too generic, but "rubra" + genus form
+      // is captured by the full binomial term above.
     }
     const matchPlantTerms = (hay: string): string[] =>
       plantTerms.filter((t) => t && hay.includes(t));
+
+    // Split text into short sentences suitable for card summaries.
+    const splitSentences = (text: string): string[] => {
+      const cleaned = String(text || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!cleaned) return [];
+      return cleaned
+        .split(/(?<=[.!?])\s+(?=[A-Z0-9"'“‘(\[])/)
+        .map((s) => s.replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
+    };
+
+    // A sentence looks like usable prose (not HTML, menu, or list scaffolding).
+    const looksLikeProse = (s: string): boolean => {
+      if (/<[a-z][^>]*>/i.test(s)) return false;
+      if (/(^|\s)(menu|home|sign in|show menu|read more|toggle navigation)(\s|$)/i.test(s)) return false;
+      // Reject sentences that are mostly bullet/label fragments like "Habit: Dense".
+      const colonHeavy = (s.match(/:/g) || []).length >= 3 && s.length < 160;
+      if (colonHeavy) return false;
+      // Require at least a few words.
+      if (s.split(/\s+/).length < 6) return false;
+      return true;
+    };
+
+    // Detect single-quoted cultivar name in title/url (e.g., "Morus rubra 'Super Dwarf'")
+    const cultivarPattern = /['‘][A-Z][A-Za-z0-9 \-]{1,40}['’]|\bcultivar\b|\bcv\.\s/;
+
+    interface WebCandidate {
+      url: string;
+      title: string;
+      snippetClean: string;
+      sentences: string[];
+      plantMatches: string[];
+      authorityScore: AuthorityScore;
+      sourceType: SourceType;
+      score: number;
+      cultivarSpecific: boolean;
+      cats: string[];
+    }
+
+    const webCandidates: WebCandidate[] = [];
 
     if (tavilyKey && (primarySci || primaryCommon)) {
       const sci = primarySci || '';
       const common = primaryCommon || '';
       const label = sci && common ? `${sci} / ${common}` : sci || common;
+      const base = [sci, common].filter(Boolean).join(' ').trim();
 
-      // 1st: simple plant-specific query. 2nd+: narrower care queries.
+      // 1st: simple plant-specific query. Then narrow, category-specific
+      // queries (source discovery). A single broad "care" query is kept only
+      // for discovery — its snippets are gated by sentence-level extraction.
       const queries: Array<{ q: string; depth: 'basic' | 'advanced'; answer: 'basic' | 'advanced' | false; max: number }> = [
         { q: label, depth: 'advanced', answer: 'advanced', max: 5 },
       ];
-      const base = [sci, common].filter(Boolean).join(' ').trim();
       if (base) {
-        queries.push({ q: `${base} care`, depth: 'basic', answer: false, max: 5 });
-        queries.push({ q: `${base} growing conditions`, depth: 'basic', answer: false, max: 5 });
-        queries.push({ q: `${base} pruning sunlight soil watering`, depth: 'basic', answer: false, max: 5 });
-        queries.push({ q: `${base} extension`, depth: 'basic', answer: false, max: 5 });
+        queries.push({ q: `${base} watering moisture soil`, depth: 'basic', answer: false, max: 4 });
+        queries.push({ q: `${base} sun shade light`, depth: 'basic', answer: false, max: 4 });
+        queries.push({ q: `${base} soil drainage habitat`, depth: 'basic', answer: false, max: 4 });
+        queries.push({ q: `${base} pruning`, depth: 'basic', answer: false, max: 3 });
+        queries.push({ q: `${base} hardiness zone climate`, depth: 'basic', answer: false, max: 3 });
+        queries.push({ q: `${base} fruit harvest flowering`, depth: 'basic', answer: false, max: 3 });
       }
 
       const seen = new Set<string>();
-      const primary: Array<SourceEntry & { _plantMatches: string[]; _score: number }> = [];
+      const primary: Array<SourceEntry & { _plantMatches: string[]; _score: number; _cultivar: boolean; _cand: WebCandidate }> = [];
       const background: Array<SourceEntry & { _plantMatches: string[]; _score: number }> = [];
 
       for (const { q: query, depth, answer, max } of queries) {
@@ -585,6 +647,7 @@ Deno.serve(async (req: Request) => {
           for (const [cat, keys] of CARE_KEYWORDS) {
             if (keys.some((k) => hay.includes(k))) cats.push(cat);
           }
+          const cultivarSpecific = cultivarPattern.test(title) || cultivarPattern.test(url);
 
           const dbg = {
             query,
@@ -594,8 +657,10 @@ Deno.serve(async (req: Request) => {
             matchedPlantTerms: plantMatches,
             matchedCareTerms: cats,
             authorityScore: cls?.authorityScore ?? null,
+            cultivarSpecific,
             acceptedForSources: false,
             acceptedForCareCards: false,
+            usedInCategory: [] as string[],
             rejectionReason: undefined as string | undefined,
           };
 
@@ -612,37 +677,52 @@ Deno.serve(async (req: Request) => {
           }
           seen.add(url);
 
-          const cleanedSnippet = trimToSentence(
-            scrubProductWords(stripBoilerplate(snippet)),
-            360,
-          );
-          const entry: SourceEntry & { _plantMatches: string[]; _score: number } = {
-            provider: 'web',
+          const snippetClean = scrubProductWords(stripBoilerplate(snippet));
+          const sentences = splitSentences(snippetClean).filter(looksLikeProse);
+          const cleanedSummary = trimToSentence(snippetClean, 360);
+
+          const cand: WebCandidate = {
+            url,
             title: stripBoilerplate(title).slice(0, 200) || url,
+            snippetClean,
+            sentences,
+            plantMatches,
+            authorityScore: cls.authorityScore,
+            sourceType: cls.sourceType,
+            score: score ?? 0,
+            cultivarSpecific,
+            cats,
+          };
+
+          const entry: SourceEntry & { _plantMatches: string[]; _score: number; _cultivar: boolean; _cand: WebCandidate } = {
+            provider: 'web',
+            title: cand.title,
             url,
             fetchedAt: new Date().toISOString(),
-            summary: cleanedSnippet,
+            summary: cleanedSummary,
             careCategories: cats,
             sourceType: cls.sourceType,
             authorityScore: cls.authorityScore,
             _plantMatches: plantMatches,
             _score: score ?? 0,
+            _cultivar: cultivarSpecific,
+            _cand: cand,
           };
 
           if (plantMatches.length > 0) {
             dbg.acceptedForSources = true;
             dbg.acceptedForCareCards = cats.length > 0;
             primary.push(entry);
+            webCandidates.push(cand);
           } else {
             dbg.rejectionReason = 'no_plant_term_match';
-            background.push(entry);
+            background.push({ ...entry });
           }
           webDebug.push(dbg);
         }
       }
 
-      // If Tavily returned an answer, expose it as a general summary source
-      // (not tied to any care category — those still require category evidence).
+      // Web summary from Tavily answer — general only, never used for cards.
       if (tavilyAnswer) {
         sources.push({
           provider: 'web',
@@ -656,9 +736,12 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      // Rank: plant relevance first (already partitioned), then care-category
-      // count, then authority, then Tavily score.
-      const rankPrimary = (a: typeof primary[number], b: typeof primary[number]) => {
+      // Rank: species-level first, then care-category count, authority, score.
+      const rankPrimary = (
+        a: (typeof primary)[number],
+        b: (typeof primary)[number],
+      ) => {
+        if (a._cultivar !== b._cultivar) return a._cultivar ? 1 : -1;
         const catDiff = (b.careCategories?.length ?? 0) - (a.careCategories?.length ?? 0);
         if (catDiff !== 0) return catDiff;
         const authDiff = authorityRank(b.authorityScore) - authorityRank(a.authorityScore);
@@ -668,24 +751,115 @@ Deno.serve(async (req: Request) => {
       primary.sort(rankPrimary);
       background.sort((a, b) => authorityRank(b.authorityScore) - authorityRank(a.authorityScore));
 
-      // Push only plant-relevant results into the primary sources list.
       for (const p of primary.slice(0, MAX_WEB_SOURCES)) {
-        const { _plantMatches, _score, ...rest } = p;
+        const { _plantMatches, _score, _cultivar, _cand, ...rest } = p;
         sources.push(rest);
       }
-      // Stash background candidates via debug payload (available for future UI).
       (webDebug as any).__background = background.slice(0, 5).map(({ _plantMatches, _score, ...rest }) => rest);
     }
 
-    // Normalize care categories: build clean, user-facing summaries composed
-    // primarily from structured Perenual fields + at most one snippet per
-    // domain family from authoritative web sources. Raw Tavily snippets are
-    // never dumped verbatim into cards.
+    // ---- Sentence-level extraction per care category ----
+    // Only sentences that satisfy proximity (plant term + category term in same
+    // sentence, or a category sentence immediately after a plant-identifying
+    // sentence) are eligible. Species-level sources are preferred; cultivar
+    // sources are used only as a fallback with a warning prefix.
     const perenualSrc = sources.find((s) => s.provider === 'perenual');
     const pFields = (perenualSrc?.fields ?? {}) as any;
     const pCare = pFields.careSections ?? {};
-    const webByCat = (cat: string) =>
-      sources.filter((s) => s.provider === 'web' && s.careCategories?.includes(cat));
+
+    const extractedSentencesByCategory: Record<string, Array<{ text: string; url: string; title: string; cultivar: boolean; authority: AuthorityScore }>> = {};
+    const rejectedSentences: Array<{ url: string; sentence: string; reason: string }> = [];
+    let cultivarMismatchOverall = false;
+
+    const usedByCategoryDebug: Record<string, Set<string>> = {}; // url set per cat
+    const registerUsed = (cat: string, url: string) => {
+      if (!usedByCategoryDebug[cat]) usedByCategoryDebug[cat] = new Set();
+      usedByCategoryDebug[cat].add(url);
+    };
+
+    // Detects a Latin binomial in a sentence that does NOT match our plant.
+    const otherBinomialInSentence = (s: string, plantMatchesLower: string[]): boolean => {
+      const re = /\b([A-Z][a-z]{2,})\s([a-z]{3,})\b/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(s)) !== null) {
+        const bin = `${m[1]} ${m[2]}`.toLowerCase();
+        const genusOnly = m[1].toLowerCase();
+        const matchesOurs =
+          plantMatchesLower.some((t) => t && (bin.includes(t) || t.includes(bin))) ||
+          plantMatchesLower.some((t) => t && t.startsWith(genusOnly));
+        if (!matchesOurs) return true;
+      }
+      return false;
+    };
+
+    for (const cat of Object.keys(CATEGORY_SENTENCE_TERMS)) {
+      const rx = CATEGORY_SENTENCE_TERMS[cat];
+      const speciesHits: Array<{ text: string; cand: WebCandidate }> = [];
+      const cultivarHits: Array<{ text: string; cand: WebCandidate }> = [];
+      for (const cand of webCandidates) {
+        for (let i = 0; i < cand.sentences.length; i++) {
+          const s = cand.sentences[i];
+          if (s.length < 40 || s.length > 320) {
+            if (rx.test(s)) rejectedSentences.push({ url: cand.url, sentence: s, reason: 'length' });
+            continue;
+          }
+          if (!rx.test(s)) continue;
+          const sLower = s.toLowerCase();
+          const plantInSentence = cand.plantMatches.some((t) => sLower.includes(t));
+          const prevPlant =
+            i > 0 && cand.plantMatches.some((t) => cand.sentences[i - 1].toLowerCase().includes(t));
+          if (!plantInSentence && !prevPlant) {
+            rejectedSentences.push({ url: cand.url, sentence: s, reason: 'no_plant_proximity' });
+            continue;
+          }
+          if (otherBinomialInSentence(s, cand.plantMatches)) {
+            rejectedSentences.push({ url: cand.url, sentence: s, reason: 'other_species_mention' });
+            continue;
+          }
+          if (cand.cultivarSpecific) cultivarHits.push({ text: s, cand });
+          else speciesHits.push({ text: s, cand });
+        }
+      }
+
+      const rank = (a: { cand: WebCandidate }, b: { cand: WebCandidate }) => {
+        const d = authorityRank(b.cand.authorityScore) - authorityRank(a.cand.authorityScore);
+        if (d !== 0) return d;
+        return (b.cand.score ?? 0) - (a.cand.score ?? 0);
+      };
+      speciesHits.sort(rank);
+      cultivarHits.sort(rank);
+
+      const chosen: Array<{ text: string; url: string; title: string; cultivar: boolean; authority: AuthorityScore }> = [];
+      const seenHosts = new Set<string>();
+      const seenText = new Set<string>();
+      for (const h of speciesHits) {
+        const fam = hostFamily(h.cand.url);
+        if (fam && seenHosts.has(fam)) continue;
+        const key = h.text.toLowerCase().slice(0, 120);
+        if (seenText.has(key)) continue;
+        if (fam) seenHosts.add(fam);
+        seenText.add(key);
+        chosen.push({ text: h.text, url: h.cand.url, title: h.cand.title, cultivar: false, authority: h.cand.authorityScore });
+        registerUsed(cat, h.cand.url);
+        if (chosen.length >= 3) break;
+      }
+      if (chosen.length === 0) {
+        for (const h of cultivarHits) {
+          const fam = hostFamily(h.cand.url);
+          if (fam && seenHosts.has(fam)) continue;
+          const key = h.text.toLowerCase().slice(0, 120);
+          if (seenText.has(key)) continue;
+          if (fam) seenHosts.add(fam);
+          seenText.add(key);
+          chosen.push({ text: h.text, url: h.cand.url, title: h.cand.title, cultivar: true, authority: h.cand.authorityScore });
+          registerUsed(cat, h.cand.url);
+          cultivarMismatchOverall = true;
+          if (chosen.length >= 2) break;
+        }
+      }
+
+      if (chosen.length) extractedSentencesByCategory[cat] = chosen;
+    }
 
     const buildCat = (
       cat: string,
@@ -694,36 +868,31 @@ Deno.serve(async (req: Request) => {
       const structured = structuredParts
         .map((p) => (p == null ? '' : String(p).trim()))
         .filter((p) => p && p !== 'true' && p !== 'false' && p !== '0' && p !== '1');
-      const webItems = webByCat(cat);
+      const evidence = extractedSentencesByCategory[cat] ?? [];
       const srcs: CareCategory['sources'] = [];
       const parts: string[] = [];
       if (structured.length) {
-        parts.push(structured.join('. ') + (structured[structured.length - 1]!.endsWith('.') ? '' : '.'));
-        srcs.push({ provider: 'perenual', title: perenualSrc?.title, url: perenualSrc?.url ?? undefined });
+        const joined = structured.join('. ').replace(/\.+\s*$/, '') + '.';
+        parts.push(joined);
+        srcs.push({
+          provider: 'perenual',
+          title: perenualSrc?.title,
+          url: perenualSrc?.url ?? undefined,
+        });
       }
-      // Prefer higher-authority web items first, and use at most one snippet
-      // per host family so we don't repeat the same domain inside one card.
-      const sortedWeb = [...webItems].sort(
-        (a, b) => authorityRank(b.authorityScore) - authorityRank(a.authorityScore),
-      );
-      const seenHosts = new Set<string>();
-      for (const w of sortedWeb) {
-        const family = hostFamily(w.url);
-        if (family && seenHosts.has(family)) continue;
-        if (family) seenHosts.add(family);
-        const cleaned = trimToSentence(scrubProductWords(stripBoilerplate(w.summary || '')), 260);
-        if (cleaned && cleaned.length >= 40) {
-          parts.push(cleaned);
-          srcs.push({ provider: 'web', title: w.title, url: w.url ?? undefined });
-          if (parts.length >= (structured.length ? 2 : 3)) break;
-        }
+      for (const ev of evidence) {
+        const prefix = ev.cultivar ? 'Cultivar-specific source; may not fully apply to the confirmed plant. ' : '';
+        parts.push(`${prefix}${ev.text}`);
+        srcs.push({ provider: 'web', title: ev.title, url: ev.url });
       }
-      const summary = dedupeAndJoin(parts, 900);
+      if (parts.length === 0) return null;
+      const summary = dedupeAndJoin(parts, 1100);
       if (!summary || summary.length < 20) return null;
+      const hasHigh = evidence.some((e) => e.authority === 'high');
       const confidence: CareCategory['confidence'] =
-        structured.length && sortedWeb.some((w) => w.authorityScore === 'high')
+        structured.length && hasHigh
           ? 'medium'
-          : srcs.length >= 2
+          : evidence.length >= 2 || (structured.length && evidence.length >= 1)
             ? 'medium'
             : 'low';
       return { summary, confidence, sources: srcs };
@@ -765,14 +934,22 @@ Deno.serve(async (req: Request) => {
       ]),
     };
 
-
-    const limitations: string[] = [];
-    if (confidenceWarning) {
-      limitations.push('Plant identification confidence is low; exact species-specific care may be uncertain.');
+    // Annotate debug metadata with the categories a source URL ended up feeding.
+    for (const dbg of webDebug) {
+      const used: string[] = [];
+      for (const [cat, urls] of Object.entries(usedByCategoryDebug)) {
+        if (urls.has(dbg.url)) used.push(cat);
+      }
+      dbg.usedInCategory = used;
     }
-    if (!perenualDetails) limitations.push('No structured Perenual care record was found for this plant.');
-    if (!sources.some((s) => s.provider === 'web')) limitations.push('No authoritative web sources were retrieved for this grounding pass.');
-    limitations.push('Local soil, irrigation, and microclimate conditions were not measured.');
+
+    // Limitations are emitted as codes; frontend localises the message.
+    const limitations: Array<{ code: string }> = [];
+    if (confidenceWarning) limitations.push({ code: 'low_confidence' });
+    if (!perenualDetails) limitations.push({ code: 'perenual_missing' });
+    if (!sources.some((s) => s.provider === 'web')) limitations.push({ code: 'no_web_sources' });
+    if (cultivarMismatchOverall) limitations.push({ code: 'cultivar_mismatch' });
+    limitations.push({ code: 'local_conditions_unknown' });
 
     const anySource = sources.length > 0;
     const status: 'success' | 'partial' | 'error' = !anySource
@@ -813,6 +990,9 @@ Deno.serve(async (req: Request) => {
         tavilyAnswer,
         webDebug,
         webBackgroundSources: (webDebug as any).__background ?? [],
+        extractedSentencesByCategory,
+        rejectedSentences: rejectedSentences.slice(0, 200),
+        cultivarMismatch: cultivarMismatchOverall,
       },
       normalized_summary: {
         plant: grounding.plant,

@@ -267,9 +267,17 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
                 {t('plantAdvisor.growth.limitations')}
               </div>
               <ul className="list-disc pl-4 space-y-0.5">
-                {limitations.map((l, i) => (
-                  <li key={i}>{l}</li>
-                ))}
+                {limitations.map((l, i) => {
+                  let text: string;
+                  if (typeof l === 'string') {
+                    text = l;
+                  } else {
+                    const key = `plantAdvisor.growth.limitationCodes.${l.code}`;
+                    const translated = t(key, l.params ?? {});
+                    text = translated === key ? l.code : translated;
+                  }
+                  return <li key={i}>{text}</li>;
+                })}
               </ul>
             </div>
           )}

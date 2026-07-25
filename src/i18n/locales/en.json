@@ -2005,7 +2005,14 @@
       "lowConfidenceWarning": "Care guidance may be uncertain because the plant identification has low confidence. Confirm the plant with clearer photos before relying on species-specific advice.",
       "partialNote": "Some sources were unavailable; guidance is based on the sources shown.",
       "perenualUnavailable": "Perenual: no structured care record found.",
-      "emptyCategory": "Current sources did not provide enough specific guidance for this category.",
+      "emptyCategory": "Current sources did not provide enough plant-specific guidance for this category.",
+      "limitationCodes": {
+        "low_confidence": "Plant identification confidence is low; species-specific care may be uncertain.",
+        "perenual_missing": "No structured Perenual care record was found for this plant.",
+        "no_web_sources": "No authoritative web sources were retrieved for this grounding pass.",
+        "cultivar_mismatch": "Some evidence comes from cultivar-specific sources and may not fully apply to the confirmed species.",
+        "local_conditions_unknown": "Local soil, irrigation, and microclimate conditions were not measured."
+      },
       "disclaimer": "This is general care reference data. It does not include fertilizer, pesticide, fungicide, or herbicide product names, doses, mixing rates, or spray schedules.",
       "sourceType": {
         "university_extension": "University extension",
