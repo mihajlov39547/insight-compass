@@ -990,6 +990,9 @@ Deno.serve(async (req: Request) => {
         tavilyAnswer,
         webDebug,
         webBackgroundSources: (webDebug as any).__background ?? [],
+        extractedSentencesByCategory,
+        rejectedSentences: rejectedSentences.slice(0, 200),
+        cultivarMismatch: cultivarMismatchOverall,
       },
       normalized_summary: {
         plant: grounding.plant,
