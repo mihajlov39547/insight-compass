@@ -46,7 +46,59 @@ const ERROR_I18N: Record<string, string> = {
   internal_error: 'plantAdvisor.growth.errors.internal_error',
 };
 
-function CareCard({ category, data }: { category: string; data: CareCategory | null }) {
+type CardSource = {
+  provider: 'web';
+  title: string;
+  url: string;
+  sourceType?: string;
+  authorityScore?: 'high' | 'medium' | 'low';
+  cultivarSpecific?: boolean;
+};
+
+function CardSourcesDetails({ sources }: { sources: CardSource[] }) {
+  const { t } = useTranslation();
+  if (!sources || sources.length === 0) return null;
+  return (
+    <details className="mt-1 group">
+      <summary className="cursor-pointer text-[11px] font-medium text-muted-foreground hover:text-foreground select-none">
+        {t('plantAdvisor.growth.sourcesForCard', { count: sources.length })}
+      </summary>
+      <ul className="mt-1.5 space-y-1 text-[11px]">
+        {sources.map((s, i) => (
+          <li key={i} className="flex items-start gap-1 flex-wrap">
+            {s.authorityScore && (
+              <Badge
+                variant={s.authorityScore === 'high' ? 'default' : 'outline'}
+                className="text-[10px] flex-shrink-0"
+              >
+                {t(`plantAdvisor.growth.authority.${s.authorityScore}`)}
+              </Badge>
+            )}
+            <a
+              href={s.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline inline-flex items-center gap-1 break-all"
+            >
+              {s.title}
+              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+function CareCard({
+  category,
+  data,
+  sources,
+}: {
+  category: string;
+  data: CareCategory | null;
+  sources: CardSource[];
+}) {
   const { t } = useTranslation();
   const Icon = CARE_ICONS[category] ?? Sprout;
   if (!data) {
@@ -59,10 +111,10 @@ function CareCard({ category, data }: { category: string; data: CareCategory | n
         <div className="text-xs text-muted-foreground italic">
           {t('plantAdvisor.growth.emptyCategory')}
         </div>
+        <CardSourcesDetails sources={sources} />
       </div>
     );
   }
-  // Dedupe provider chips so we don't render "web · web · web".
   const uniqueProviders = Array.from(new Set(data.sources.map((s) => s.provider)));
   const webCount = data.sources.filter((s) => s.provider === 'web').length;
   return (
@@ -86,6 +138,26 @@ function CareCard({ category, data }: { category: string; data: CareCategory | n
           ))}
         </div>
       )}
+      <CardSourcesDetails sources={sources} />
+    </div>
+  );
+}
+
+function OverviewCard({ data, sources }: { data: CareCategory; sources: CardSource[] }) {
+  const { t } = useTranslation();
+  return (
+    <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-sm font-semibold">
+          <Sprout className="h-4 w-4 text-primary" />
+          {t('plantAdvisor.growth.overview')}
+        </div>
+        <Badge variant="outline" className="text-[10px]">
+          {t(`plantAdvisor.growth.confidence.${data.confidence}`)}
+        </Badge>
+      </div>
+      <div className="text-xs whitespace-pre-wrap text-foreground/90">{data.summary}</div>
+      <CardSourcesDetails sources={sources} />
     </div>
   );
 }
@@ -109,6 +181,8 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
 
   const providers = new Set(grounding?.sources?.map((s) => s.provider) ?? []);
   const care = grounding?.normalized_summary?.normalizedCare ?? {};
+  const overview = grounding?.normalized_summary?.overview ?? null;
+  const sourceGroups = (grounding?.normalized_summary?.sourceGroups ?? {}) as Record<string, CardSource[]>;
   const plant = grounding?.normalized_summary?.plant;
   const limitations = grounding?.normalized_summary?.limitations ?? [];
   const lowConfidence = !!plant?.confidenceWarning;
@@ -210,20 +284,30 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
             </div>
           )}
 
+          {/* Overview card from the base Tavily answer */}
+          {overview && (
+            <OverviewCard data={overview} sources={sourceGroups.overview ?? []} />
+          )}
+
           {/* Care cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {CARE_ORDER.map((cat) => (
-              <CareCard key={cat} category={cat} data={care[cat] ?? null} />
+              <CareCard
+                key={cat}
+                category={cat}
+                data={care[cat] ?? null}
+                sources={sourceGroups[cat] ?? []}
+              />
             ))}
           </div>
 
-          {/* Sources list */}
+          {/* Global (deduped) source list — collapsible */}
           {grounding.sources.length > 0 && (
-            <div className="space-y-1">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t('plantAdvisor.growth.sources')}
-              </div>
-              <ul className="space-y-1 text-xs">
+            <details className="rounded-md border border-border bg-background p-2.5">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted-foreground select-none">
+                {t('plantAdvisor.growth.allSources', { count: grounding.sources.length })}
+              </summary>
+              <ul className="mt-2 space-y-1 text-xs">
                 {grounding.sources.map((s: GroundingSource, i) => (
                   <li key={i} className="flex items-start gap-1.5 flex-wrap">
                     <Badge variant="outline" className="text-[10px] capitalize flex-shrink-0">
@@ -258,7 +342,7 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
                   </li>
                 ))}
               </ul>
-            </div>
+            </details>
           )}
 
           {limitations.length > 0 && (

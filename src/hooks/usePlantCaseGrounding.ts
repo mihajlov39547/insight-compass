@@ -47,7 +47,18 @@ export interface GroundingRow {
       confidenceWarning: boolean;
     };
     location?: { text: string | null; cropContext: string | null };
+    overview?: CareCategory | null;
     normalizedCare?: Record<string, CareCategory | null>;
+    sourceGroups?: Record<string, Array<{
+      provider: 'web';
+      title: string;
+      url: string;
+      fetchedAt: string;
+      summary: string;
+      sourceType?: GroundingSourceType;
+      authorityScore?: GroundingAuthorityScore;
+      cultivarSpecific?: boolean;
+    }>>;
     limitations?: Array<string | { code: string; params?: Record<string, unknown> }>;
   };
   sources: GroundingSource[];
