@@ -604,12 +604,12 @@ Deno.serve(async (req: Request) => {
         { q: label, depth: 'advanced', answer: 'advanced', max: 5 },
       ];
       if (base) {
-        queries.push({ q: `${base} watering moisture soil`, depth: 'basic', answer: false, max: 4 });
-        queries.push({ q: `${base} sun shade light`, depth: 'basic', answer: false, max: 4 });
-        queries.push({ q: `${base} soil drainage habitat`, depth: 'basic', answer: false, max: 4 });
-        queries.push({ q: `${base} pruning`, depth: 'basic', answer: false, max: 3 });
-        queries.push({ q: `${base} hardiness zone climate`, depth: 'basic', answer: false, max: 3 });
-        queries.push({ q: `${base} fruit harvest flowering`, depth: 'basic', answer: false, max: 3 });
+        queries.push({ q: `${base} watering moisture soil`, depth: 'advanced', answer: 'advanced', max: 5 });
+        queries.push({ q: `${base} sun shade light`, depth: 'advanced', answer: 'advanced', max: 5 });
+        queries.push({ q: `${base} soil drainage habitat`, depth: 'advanced', answer: 'advanced', max: 5 });
+        queries.push({ q: `${base} pruning`, depth: 'advanced', answer: 'advanced', max: 5 });
+        queries.push({ q: `${base} hardiness zone climate`, depth: 'advanced', answer: 'advanced', max: 5 });
+        queries.push({ q: `${base} fruit harvest flowering`, depth: 'advanced', answer: 'advanced', max: 5 });
       }
 
       const seen = new Set<string>();
