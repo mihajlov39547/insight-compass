@@ -791,15 +791,6 @@ Deno.serve(async (req: Request) => {
       fruitingHarvest: cardData.fruitingHarvest.sources,
     };
 
-    // Annotate debug metadata with the categories a source URL ended up feeding.
-    for (const dbg of webDebug) {
-      const used: string[] = [];
-      for (const [cat, urls] of Object.entries(usedByCategoryDebug)) {
-        if (urls.has(dbg.url)) used.push(cat);
-      }
-      dbg.usedInCategory = used;
-    }
-
     // Limitations are emitted as codes; frontend localises the message.
     const limitations: Array<{ code: string }> = [];
     if (confidenceWarning) limitations.push({ code: 'low_confidence' });
@@ -815,23 +806,6 @@ Deno.serve(async (req: Request) => {
         ? 'success'
         : 'partial';
 
-    const grounding = {
-      caseId: pc.id,
-      plant: {
-        confirmedCommonName: primaryCommon,
-        confirmedScientificName: primarySci,
-        identificationConfidence: identConfidence,
-        confidenceWarning,
-      },
-      location: {
-        text: pc.location_text || null,
-        cropContext: pc.crop_context || null,
-      },
-      sources,
-      normalizedCare,
-      limitations,
-    };
-
     const insertRow = {
       user_id: userId,
       case_id: caseId,
@@ -844,17 +818,23 @@ Deno.serve(async (req: Request) => {
         perenual: perenualDetails ?? null,
         perenualCareGuides: perenualCare,
         perenualSpeciesId,
-        tavilyAnswer,
-        webDebug,
-        webBackgroundSources: (webDebug as any).__background ?? [],
-        extractedSentencesByCategory,
-        rejectedSentences: rejectedSentences.slice(0, 200),
+        tavilyQueries,
         cultivarMismatch: cultivarMismatchOverall,
       },
       normalized_summary: {
-        plant: grounding.plant,
-        location: grounding.location,
+        plant: {
+          confirmedCommonName: primaryCommon,
+          confirmedScientificName: primarySci,
+          identificationConfidence: identConfidence,
+          confidenceWarning,
+        },
+        location: {
+          text: pc.location_text || null,
+          cropContext: pc.crop_context || null,
+        },
+        overview,
         normalizedCare,
+        sourceGroups,
         limitations,
       },
       sources,
