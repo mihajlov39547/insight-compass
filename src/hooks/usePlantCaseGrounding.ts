@@ -48,7 +48,7 @@ export interface GroundingRow {
     };
     location?: { text: string | null; cropContext: string | null };
     normalizedCare?: Record<string, CareCategory | null>;
-    limitations?: string[];
+    limitations?: Array<string | { code: string; params?: Record<string, unknown> }>;
   };
   sources: GroundingSource[];
   error_code: string | null;
