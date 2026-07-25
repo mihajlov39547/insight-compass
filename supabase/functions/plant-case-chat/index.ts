@@ -221,7 +221,9 @@ Deno.serve(async (req: Request) => {
             status: groundingRow.status,
             plant: groundingRow.normalized_summary?.plant ?? null,
             location: groundingRow.normalized_summary?.location ?? null,
+            overview: groundingRow.normalized_summary?.overview ?? null,
             normalizedCare: groundingRow.normalized_summary?.normalizedCare ?? null,
+            sourceGroups: groundingRow.normalized_summary?.sourceGroups ?? null,
             limitations: groundingRow.normalized_summary?.limitations ?? [],
             sources: (groundingRow.sources ?? []).map((s: any) => ({
               provider: s.provider,
