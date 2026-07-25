@@ -284,20 +284,30 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
             </div>
           )}
 
+          {/* Overview card from the base Tavily answer */}
+          {overview && (
+            <OverviewCard data={overview} sources={sourceGroups.overview ?? []} />
+          )}
+
           {/* Care cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {CARE_ORDER.map((cat) => (
-              <CareCard key={cat} category={cat} data={care[cat] ?? null} />
+              <CareCard
+                key={cat}
+                category={cat}
+                data={care[cat] ?? null}
+                sources={sourceGroups[cat] ?? []}
+              />
             ))}
           </div>
 
-          {/* Sources list */}
+          {/* Global (deduped) source list — collapsible */}
           {grounding.sources.length > 0 && (
-            <div className="space-y-1">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t('plantAdvisor.growth.sources')}
-              </div>
-              <ul className="space-y-1 text-xs">
+            <details className="rounded-md border border-border bg-background p-2.5">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted-foreground select-none">
+                {t('plantAdvisor.growth.allSources', { count: grounding.sources.length })}
+              </summary>
+              <ul className="mt-2 space-y-1 text-xs">
                 {grounding.sources.map((s: GroundingSource, i) => (
                   <li key={i} className="flex items-start gap-1.5 flex-wrap">
                     <Badge variant="outline" className="text-[10px] capitalize flex-shrink-0">
@@ -332,7 +342,7 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
                   </li>
                 ))}
               </ul>
-            </div>
+            </details>
           )}
 
           {limitations.length > 0 && (
