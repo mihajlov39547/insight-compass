@@ -181,6 +181,8 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
 
   const providers = new Set(grounding?.sources?.map((s) => s.provider) ?? []);
   const care = grounding?.normalized_summary?.normalizedCare ?? {};
+  const overview = grounding?.normalized_summary?.overview ?? null;
+  const sourceGroups = (grounding?.normalized_summary?.sourceGroups ?? {}) as Record<string, CardSource[]>;
   const plant = grounding?.normalized_summary?.plant;
   const limitations = grounding?.normalized_summary?.limitations ?? [];
   const lowConfidence = !!plant?.confidenceWarning;
