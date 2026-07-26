@@ -2014,7 +2014,8 @@
         "perenual_missing": "No structured Perenual care record was found for this plant.",
         "no_web_sources": "No authoritative web sources were retrieved for this grounding pass.",
         "cultivar_mismatch": "Some evidence comes from cultivar-specific sources and may not fully apply to the confirmed species.",
-        "local_conditions_unknown": "Local soil, irrigation, and microclimate conditions were not measured."
+        "local_conditions_unknown": "Local soil, irrigation, and microclimate conditions were not measured.",
+        "ai_formatter_unavailable": "The AI formatter could not produce localized guidance for one or more cards; those cards show a limited-evidence placeholder."
       },
       "disclaimer": "This is general care reference data. It does not include fertilizer, pesticide, fungicide, or herbicide product names, doses, mixing rates, or spray schedules.",
       "sourceType": {
