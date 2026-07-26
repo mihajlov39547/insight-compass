@@ -336,7 +336,9 @@ Deno.serve(async (req: Request) => {
         .order('fetched_at', { ascending: false })
         .limit(1);
       const row = (cached as any[] | null)?.[0];
-      if (row && Date.now() - new Date(row.fetched_at).getTime() < CACHE_TTL_MS) {
+      const cachedLang = row?.provider_payload?.aiFormatter?.language ?? null;
+      const langMatches = cachedLang === lang;
+      if (row && langMatches && Date.now() - new Date(row.fetched_at).getTime() < CACHE_TTL_MS) {
         return json({ ok: true, cached: true, grounding: row });
       }
     }
