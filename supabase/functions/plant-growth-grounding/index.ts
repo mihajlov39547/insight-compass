@@ -991,6 +991,7 @@ If insufficientEvidence is true, "summary" MUST be null.`;
     if (!perenualDetails) limitations.push({ code: 'perenual_missing' });
     if (!sources.some((s) => s.provider === 'web')) limitations.push({ code: 'no_web_sources' });
     if (cultivarMismatchOverall) limitations.push({ code: 'cultivar_mismatch' });
+    if (!aiFormatterAvailable || !aiFormatterUsed) limitations.push({ code: 'ai_formatter_unavailable' });
     limitations.push({ code: 'local_conditions_unknown' });
 
     const anySource = sources.length > 0;
