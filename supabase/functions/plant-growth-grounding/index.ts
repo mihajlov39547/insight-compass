@@ -310,6 +310,8 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const caseId = String(body?.caseId || '');
     const force = !!body?.force;
+    const lang: 'en' | 'sr' = (typeof body?.lang === 'string' && body.lang.toLowerCase().startsWith('sr')) ? 'sr' : 'en';
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY') || '';
     if (!caseId) return json({ error: 'missing_case_id' }, 400);
 
     const admin = createClient(supaUrl, serviceKey);
