@@ -94,8 +94,9 @@ export function useGatherGrowthGuidance() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (args: { caseId: string; force?: boolean }) => {
+      const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
       const { data, error } = await supabase.functions.invoke('plant-growth-grounding', {
-        body: { caseId: args.caseId, force: !!args.force },
+        body: { caseId: args.caseId, force: !!args.force, lang: langCode },
       });
       if (error) {
         const ctx: any = (error as any).context;
