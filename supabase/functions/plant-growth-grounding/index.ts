@@ -1015,6 +1015,19 @@ If insufficientEvidence is true, "summary" MUST be null.`;
         perenualSpeciesId,
         tavilyQueries,
         cultivarMismatch: cultivarMismatchOverall,
+        aiFormatter: {
+          available: aiFormatterAvailable,
+          used: aiFormatterUsed,
+          model: AI_CARD_MODEL,
+          language: lang,
+          perCard: cardKeys.map((c, i) => ({
+            card: c,
+            ok: !!(aiResults[i] && !aiResults[i]!.insufficientEvidence && aiResults[i]!.summary),
+            insufficientEvidence: aiResults[i]?.insufficientEvidence ?? true,
+            usedSourceTitles: aiResults[i]?.usedSourceTitles ?? [],
+            notes: aiResults[i]?.notes ?? [],
+          })),
+        },
       },
       normalized_summary: {
         plant: {
