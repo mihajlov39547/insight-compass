@@ -694,91 +694,283 @@ Deno.serve(async (req: Request) => {
     globalWebSources.sort((a, b) => authorityRank(b.authorityScore) - authorityRank(a.authorityScore));
     for (const s of globalWebSources.slice(0, 8)) sources.push(s);
 
-    // ---- Build cards (Overview + care cards) ----
+    // ---- Build cards (Overview + care cards) via AI formatter ----
     const perenualSrc = sources.find((s) => s.provider === 'perenual');
+    const trefleSrc = sources.find((s) => s.provider === 'trefle');
     const pFields = (perenualSrc?.fields ?? {}) as any;
     const pCare = pFields.careSections ?? {};
+    const tFields = (trefleSrc?.fields ?? {}) as any;
 
-    const buildCard = (
+    // Per-card slices of structured provider facts. Keeps cross-card leakage
+    // impossible: each card sees only fields relevant to it.
+    const cardProviderFacts: Record<CardKey, { perenual: any; trefle: any }> = {
+      overview: {
+        perenual: perenualSrc ? {
+          common_name: pFields.common_name,
+          scientific_name: pFields.scientific_name,
+          family: pFields.family,
+          genus: pFields.genus,
+          cycle: pFields.cycle,
+          care_level: pFields.care_level,
+          description: perenualSrc.summary || null,
+        } : null,
+        trefle: trefleSrc ? {
+          scientificName: tFields.scientificName,
+          commonName: tFields.commonName,
+          family: tFields.family,
+          genus: tFields.genus,
+          duration: tFields.duration,
+          description: trefleSrc.summary || null,
+        } : null,
+      },
+      watering: {
+        perenual: perenualSrc ? {
+          watering: pFields.watering,
+          watering_general_benchmark: pFields.watering_general_benchmark,
+          drought_tolerant: pFields.drought_tolerant,
+          careGuide: pCare.watering ?? null,
+        } : null,
+        trefle: tFields.growth ? { minimumPrecipitation: tFields.growth?.minimum_precipitation, maximumPrecipitation: tFields.growth?.maximum_precipitation } : null,
+      },
+      sunlight: {
+        perenual: perenualSrc ? { sunlight: pFields.sunlight, careGuide: pCare.sunlight ?? null } : null,
+        trefle: tFields.growth ? { light: tFields.growth?.light } : null,
+      },
+      soil: {
+        perenual: perenualSrc ? { soil: pFields.soil, salt_tolerant: pFields.salt_tolerant, careGuide: pCare.soil ?? null } : null,
+        trefle: tFields.growth ? { soilTexture: tFields.growth?.soil_texture, soilHumidity: tFields.growth?.soil_humidity, phMinimum: tFields.growth?.ph_minimum, phMaximum: tFields.growth?.ph_maximum } : null,
+      },
+      pruning: {
+        perenual: perenualSrc ? { pruning_month: pFields.pruning_month, pruning_count: pFields.pruning_count, careGuide: pCare.pruning ?? null } : null,
+        trefle: null,
+      },
+      hardinessClimate: {
+        perenual: perenualSrc ? { hardiness: pFields.hardiness, careGuide: pCare.hardiness ?? null } : null,
+        trefle: tFields.growth ? { minimumTemperature: tFields.growth?.minimum_temperature, maximumTemperature: tFields.growth?.maximum_temperature } : null,
+      },
+      growthRateMaintenance: {
+        perenual: perenualSrc ? { growth_rate: pFields.growth_rate, maintenance: pFields.maintenance, care_level: pFields.care_level } : null,
+        trefle: (tFields.specifications || tFields.growth) ? { growthHabit: tFields.specifications?.growth_habit, growthMonths: tFields.growth?.growth_months, averageHeight: tFields.specifications?.average_height } : null,
+      },
+      fruitingHarvest: {
+        perenual: perenualSrc ? { harvest_season: pFields.harvest_season, edible_fruit: pFields.edible_fruit } : null,
+        trefle: null,
+      },
+    };
+
+    const AI_CARD_MODEL = 'google/gemini-2.5-flash';
+    const langName = lang === 'sr' ? 'Serbian (Latin script)' : 'English';
+
+    interface AiFormatterResult {
+      summary: string | null;
+      confidence: 'low' | 'medium';
+      insufficientEvidence: boolean;
+      usedSourceTitles: string[];
+      notes: string[];
+    }
+
+    const formatCardWithAi = async (
       card: CardKey,
-      structuredParts: (string | null | undefined)[],
-    ): CareCategory | null => {
-      const structured = structuredParts
-        .map((p) => (p == null ? '' : String(p).trim()))
-        .filter((p) => p && p !== 'true' && p !== 'false' && p !== '0' && p !== '1');
-      const answer = cardData[card].answer;
+      query: string,
+      tavilyAnswer: string | null,
+      acceptedSources: CardSource[],
+      providerFacts: { perenual: any; trefle: any },
+    ): Promise<AiFormatterResult | null> => {
+      if (!lovableApiKey) return null;
+      const hasProviderEvidence = !!(providerFacts.perenual || providerFacts.trefle);
+      const hasWebEvidence = !!tavilyAnswer || acceptedSources.length > 0;
+      if (!hasProviderEvidence && !hasWebEvidence) {
+        return { summary: null, confidence: 'low', insufficientEvidence: true, usedSourceTitles: [], notes: [] };
+      }
+
+      const systemPrompt = `You format one Plant Advisor "Improve Growth" guidance card.
+
+Language: Write the "summary" and "notes" fields in ${langName}. If Serbian, use Latin script (Serbian Latin), matching the rest of the app. Keep scientific names (e.g. "${primarySci ?? ''}") unchanged. Common names can be included as available.
+
+Card: ${card}
+
+Rules:
+- Use ONLY the provided Tavily answer, accepted sources, and structured provider facts. Do not browse. Do not invent missing facts.
+- Preserve useful gathered information for this card. Organize it into readable paragraphs or compact bullet-like lines. Do not aggressively shorten.
+- Do NOT output raw snippets, URLs, HTML, markdown image fragments, image-processing fragments, or page boilerplate.
+- Do NOT include duplicated fragments.
+- Do NOT transfer information between cards — stay strictly within the "${card}" topic.
+- If evidence is weak, conflicting, or generic, explain that clearly in the selected language instead of inventing details.
+- If plant identification confidence is low (confidenceWarning=true), phrase species-specific guidance as provisional.
+- Do NOT include fertilizer, pesticide, fungicide, herbicide, or insecticide product names, doses, mixing rates, spray intervals, or regulated chemical application instructions.
+- Do NOT diagnose disease.
+
+Return STRICT JSON matching this schema (no markdown, no prose outside JSON):
+{
+  "summary": string | null,
+  "confidence": "low" | "medium",
+  "insufficientEvidence": boolean,
+  "usedSourceTitles": string[],
+  "notes": string[]
+}
+
+If insufficientEvidence is true, "summary" MUST be null.`;
+
+      const userPayload = {
+        language: lang,
+        card,
+        plant: {
+          scientificName: primarySci,
+          commonName: primaryCommon,
+          identificationConfidence: identConfidence,
+          confidenceWarning,
+        },
+        location: {
+          text: pc.location_text || null,
+          cropContext: pc.crop_context || null,
+        },
+        tavilyQuery: query,
+        tavilyAnswer,
+        acceptedSources: acceptedSources.map((s) => ({
+          title: s.title,
+          url: s.url,
+          summary: s.summary,
+          sourceType: s.sourceType,
+          authorityScore: s.authorityScore,
+          cultivarSpecific: !!s.cultivarSpecific,
+        })),
+        structuredProviderFacts: providerFacts,
+        safetyRules: {
+          noChemicalProducts: true,
+          noDoses: true,
+          noMixingRates: true,
+          noSpraySchedules: true,
+          noDiseaseDiagnosis: true,
+        },
+      };
+
+      const controller = new AbortController();
+      const to = setTimeout(() => controller.abort(), 25000);
+      try {
+        const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${lovableApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: AI_CARD_MODEL,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: JSON.stringify(userPayload) },
+            ],
+            response_format: { type: 'json_object' },
+          }),
+        });
+        if (!resp.ok) {
+          console.warn('[grounding][ai] card', card, 'http', resp.status);
+          return null;
+        }
+        const data = await resp.json().catch(() => null);
+        const content = data?.choices?.[0]?.message?.content;
+        if (typeof content !== 'string' || !content.trim()) return null;
+        let parsed: any;
+        try {
+          parsed = JSON.parse(content);
+        } catch {
+          const m = content.match(/\{[\s\S]*\}/);
+          if (!m) return null;
+          try { parsed = JSON.parse(m[0]); } catch { return null; }
+        }
+        if (!parsed || typeof parsed !== 'object') return null;
+        const rawSummary = parsed.summary;
+        const summary = typeof rawSummary === 'string' && rawSummary.trim()
+          ? scrubProductWords(rawSummary.trim())
+          : null;
+        const conf: 'low' | 'medium' = parsed.confidence === 'medium' ? 'medium' : 'low';
+        const insuff = summary == null || !!parsed.insufficientEvidence;
+        const used = Array.isArray(parsed.usedSourceTitles)
+          ? parsed.usedSourceTitles.filter((x: unknown) => typeof x === 'string')
+          : [];
+        const notes = Array.isArray(parsed.notes)
+          ? parsed.notes.filter((x: unknown) => typeof x === 'string').map((s: string) => scrubProductWords(s))
+          : [];
+        return {
+          summary: insuff ? null : summary,
+          confidence: conf,
+          insufficientEvidence: insuff,
+          usedSourceTitles: used,
+          notes,
+        };
+      } catch (e) {
+        console.warn('[grounding][ai] card', card, 'failed', (e as Error).message);
+        return null;
+      } finally {
+        clearTimeout(to);
+      }
+    };
+
+    // Kick off all card formatter calls in parallel.
+    const cardKeys: CardKey[] = [
+      'overview',
+      'watering',
+      'sunlight',
+      'soil',
+      'pruning',
+      'hardinessClimate',
+      'growthRateMaintenance',
+      'fruitingHarvest',
+    ];
+    const cardQueryByKey: Partial<Record<CardKey, string>> = {};
+    for (const t of CARD_QUERY_TEMPLATES) cardQueryByKey[t.card] = t.q;
+
+    const aiResults = await Promise.all(
+      cardKeys.map((card) =>
+        formatCardWithAi(
+          card,
+          cardQueryByKey[card] ?? label,
+          cardData[card].answer,
+          cardData[card].sources,
+          cardProviderFacts[card],
+        ),
+      ),
+    );
+
+    const buildCareCategory = (card: CardKey, ai: AiFormatterResult | null): CareCategory | null => {
       const cardSources = cardData[card].sources;
+      const providerFacts = cardProviderFacts[card];
+      const hasProviderEvidence = !!(providerFacts.perenual || providerFacts.trefle);
+      const hasAnyEvidence = hasProviderEvidence || !!cardData[card].answer || cardSources.length > 0;
+      if (!hasAnyEvidence) return null;
+
+      // Fallback: AI unavailable or failed. Do NOT dump raw Tavily text — leave
+      // the summary empty so the UI shows the localized limited-evidence
+      // placeholder. Sources still surface via the sourceGroups map.
+      if (!ai || ai.insufficientEvidence || !ai.summary) return null;
 
       const srcs: CareCategory['sources'] = [];
-      const parts: string[] = [];
-
-      if (answer) parts.push(answer);
-      if (structured.length) {
-        const joined = structured.join('. ').replace(/\.+\s*$/, '') + '.';
-        parts.push(joined);
-        if (perenualSrc) {
-          srcs.push({
-            provider: 'perenual',
-            title: perenualSrc.title,
-            url: perenualSrc.url ?? undefined,
-          });
-        }
+      if (hasProviderEvidence && perenualSrc && providerFacts.perenual) {
+        srcs.push({ provider: 'perenual', title: perenualSrc.title, url: perenualSrc.url ?? undefined });
+      }
+      if (hasProviderEvidence && trefleSrc && providerFacts.trefle) {
+        srcs.push({ provider: 'trefle', title: trefleSrc.title });
       }
       for (const s of cardSources) {
         srcs.push({ provider: 'web', title: s.title, url: s.url });
       }
-      if (parts.length === 0) return null;
-      const summary = dedupeAndJoin(parts, 1100);
-      if (!summary || summary.length < 20) return null;
-
-      const hasHighAuthority = cardSources.some((s) => s.authorityScore === 'high');
-      const confidence: CareCategory['confidence'] = answer
-        ? hasHighAuthority || structured.length
-          ? 'medium'
-          : 'medium'
-        : structured.length && cardSources.length >= 1
-          ? 'medium'
-          : 'low';
-      return { summary, confidence, sources: srcs };
+      return { summary: ai.summary, confidence: ai.confidence, sources: srcs };
     };
 
-    const overview: CareCategory | null = buildCard('overview', []);
+    const overview: CareCategory | null = buildCareCategory('overview', aiResults[0]);
 
     const normalizedCare: Record<string, CareCategory | null> = {
-      watering: buildCard('watering', [
-        pFields.watering && `Watering need: ${String(pFields.watering).toLowerCase()}`,
-        pCare.watering,
-        fmtWaterBenchmark(pFields.watering_general_benchmark),
-        boolPhrase('drought_tolerant', pFields.drought_tolerant),
-      ]),
-      sunlight: buildCard('sunlight', [
-        pFields.sunlight && `Preferred exposure: ${pFields.sunlight}`,
-        pCare.sunlight,
-      ]),
-      soil: buildCard('soil', [
-        pFields.soil && `Preferred soil: ${pFields.soil}`,
-        boolPhrase('salt_tolerant', pFields.salt_tolerant),
-        pCare.soil,
-      ]),
-      pruning: buildCard('pruning', [
-        pFields.pruning_month && `Typical pruning months: ${pFields.pruning_month}`,
-        fmtPruningCount(pFields.pruning_count),
-        pCare.pruning,
-      ]),
-      hardinessClimate: buildCard('hardinessClimate', [
-        fmtHardiness(pFields.hardiness),
-        pCare.hardiness,
-      ]),
-      growthRateMaintenance: buildCard('growthRateMaintenance', [
-        pFields.growth_rate && `Growth rate: ${pFields.growth_rate}`,
-        pFields.maintenance && `Maintenance: ${pFields.maintenance}`,
-        pFields.care_level && `Care level: ${pFields.care_level}`,
-      ]),
-      fruitingHarvest: buildCard('fruitingHarvest', [
-        pFields.harvest_season && `Harvest season: ${pFields.harvest_season}`,
-        boolPhrase('edible_fruit', pFields.edible_fruit),
-      ]),
+      watering: buildCareCategory('watering', aiResults[1]),
+      sunlight: buildCareCategory('sunlight', aiResults[2]),
+      soil: buildCareCategory('soil', aiResults[3]),
+      pruning: buildCareCategory('pruning', aiResults[4]),
+      hardinessClimate: buildCareCategory('hardinessClimate', aiResults[5]),
+      growthRateMaintenance: buildCareCategory('growthRateMaintenance', aiResults[6]),
+      fruitingHarvest: buildCareCategory('fruitingHarvest', aiResults[7]),
     };
+
+    const aiFormatterUsed = aiResults.some((r) => r && !r.insufficientEvidence && r.summary);
+    const aiFormatterAvailable = !!lovableApiKey;
 
     // Per-card grouped web sources for UI (kept even if the card summary was
     // suppressed because of insufficient evidence).
