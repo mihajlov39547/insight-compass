@@ -2030,7 +2030,8 @@
         "perenual_missing": "Nije pronađen strukturirani Perenual zapis o nezi za ovu biljku.",
         "no_web_sources": "U ovom prolazu nisu pronađeni autoritativni web izvori.",
         "cultivar_mismatch": "Deo dokaza potiče iz izvora specifičnih za kultivar i možda se ne odnosi u potpunosti na potvrđenu vrstu.",
-        "local_conditions_unknown": "Lokalno zemljište, navodnjavanje i mikroklima nisu izmereni."
+        "local_conditions_unknown": "Lokalno zemljište, navodnjavanje i mikroklima nisu izmereni.",
+        "ai_formatter_unavailable": "AI formater nije uspeo da pripremi lokalizovan sadržaj za jednu ili više kartica; te kartice prikazuju znak da ima malo dokaza."
       },
       "disclaimer": "Ovo su opšti referentni podaci o nezi. Ne uključuju nazive preparata (đubriva, pesticidi, fungicidi, herbicidi), doze, količine mešanja ni raspored primene.",
       "sourceType": {
