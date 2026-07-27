@@ -785,6 +785,13 @@ Deno.serve(async (req: Request) => {
         return { summary: null, confidence: 'low', insufficientEvidence: true, usedSourceTitles: [], notes: [] };
       }
 
+      const overviewGuidance = card === 'overview'
+        ? `\n- OVERVIEW SPECIFIC: This card describes what the plant is (identity, habitat, growth context). If the Tavily answer or provider description mentions the plant by scientific or common name, that IS sufficient evidence — do NOT mark insufficientEvidence. Populate "summary" with 2–5 sentences covering: what the plant is (species/family), native range or typical habitat, general growth form/size, and a brief uncertainty note when confidenceWarning=true.`
+        : '';
+      const fruitingGuidance = card === 'fruitingHarvest'
+        ? `\n- FRUITING/HARVEST SPECIFIC: Any information about flowering time, pollination, fruit set, ripening, harvest window, berry/fruit color at maturity, yield timing, or edible-fruit notes IS sufficient evidence for this card. Do not require locale-specific harvest dates — general seasonality and ripening indicators are enough.`
+        : '';
+
       const systemPrompt = `You format one Plant Advisor "Improve Growth" guidance card.
 
 Language: Write the "summary" and "notes" fields in ${langName}. If Serbian, use Latin script (Serbian Latin), matching the rest of the app. Keep scientific names (e.g. "${primarySci ?? ''}") unchanged. Common names can be included as available.
@@ -797,10 +804,11 @@ Rules:
 - Do NOT output raw snippets, URLs, HTML, markdown image fragments, image-processing fragments, or page boilerplate.
 - Do NOT include duplicated fragments.
 - Do NOT transfer information between cards — stay strictly within the "${card}" topic.
-- If evidence is weak, conflicting, or generic, explain that clearly in the selected language instead of inventing details.
+- Set insufficientEvidence=true ONLY when there is genuinely no usable content for this card's topic. A Tavily answer that discusses the plant and touches on the card's topic IS sufficient — write it up in "summary", do not push it into "notes".
+- If evidence is weak or generic, still write a "summary" using what is available and set confidence="low"; only use insufficientEvidence=true when nothing on-topic exists at all.
 - If plant identification confidence is low (confidenceWarning=true), phrase species-specific guidance as provisional.
 - Do NOT include fertilizer, pesticide, fungicide, herbicide, or insecticide product names, doses, mixing rates, spray intervals, or regulated chemical application instructions.
-- Do NOT diagnose disease.
+- Do NOT diagnose disease.${overviewGuidance}${fruitingGuidance}
 
 Return STRICT JSON matching this schema (no markdown, no prose outside JSON):
 {
