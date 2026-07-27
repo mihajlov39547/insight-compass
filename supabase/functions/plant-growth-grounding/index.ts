@@ -946,13 +946,26 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       const cardSources = cardData[card].sources;
       const providerFacts = cardProviderFacts[card];
       const hasProviderEvidence = !!(providerFacts.perenual || providerFacts.trefle);
-      const hasAnyEvidence = hasProviderEvidence || !!cardData[card].answer || cardSources.length > 0;
+      const tavilyAnswer = cardData[card].answer;
+      const hasAnyEvidence = hasProviderEvidence || !!tavilyAnswer || cardSources.length > 0;
       if (!hasAnyEvidence) return null;
 
-      // Fallback: AI unavailable or failed. Do NOT dump raw Tavily text — leave
-      // the summary empty so the UI shows the localized limited-evidence
-      // placeholder. Sources still surface via the sourceGroups map.
-      if (!ai || ai.insufficientEvidence || !ai.summary) return null;
+      // Determine the effective summary. Prefer the AI-formatted summary; fall
+      // back to the cleaned Tavily answer when the AI over-conservatively flags
+      // insufficient evidence but we actually have a plant-relevant answer
+      // (Overview + Fruiting/Harvest are the most common victims). This is
+      // scrubbed for product/chemistry words and capped in length.
+      let summary: string | null = ai && !ai.insufficientEvidence ? ai.summary : null;
+      let confidence: 'low' | 'medium' = ai?.confidence ?? 'low';
+      const tavilyLooksUsable = !!tavilyAnswer && tavilyAnswer.length >= 80 && (
+        !primarySci || matchPlantTerms(tavilyAnswer.toLowerCase()).length > 0 ||
+        (!!primaryCommon && tavilyAnswer.toLowerCase().includes(primaryCommon.toLowerCase()))
+      );
+      if (!summary && tavilyLooksUsable) {
+        summary = scrubProductWords(trimToSentence(tavilyAnswer!, 1200));
+        confidence = 'low';
+      }
+      if (!summary) return null;
 
       const srcs: CareCategory['sources'] = [];
       if (hasProviderEvidence && perenualSrc && providerFacts.perenual) {
@@ -964,7 +977,7 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       for (const s of cardSources) {
         srcs.push({ provider: 'web', title: s.title, url: s.url });
       }
-      return { summary: ai.summary, confidence: ai.confidence, sources: srcs };
+      return { summary, confidence, sources: srcs };
     };
 
     const overview: CareCategory | null = buildCareCategory('overview', aiResults[0]);
