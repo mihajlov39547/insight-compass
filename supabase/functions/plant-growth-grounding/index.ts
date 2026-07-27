@@ -785,6 +785,13 @@ Deno.serve(async (req: Request) => {
         return { summary: null, confidence: 'low', insufficientEvidence: true, usedSourceTitles: [], notes: [] };
       }
 
+      const overviewGuidance = card === 'overview'
+        ? `\n- OVERVIEW SPECIFIC: This card describes what the plant is (identity, habitat, growth context). If the Tavily answer or provider description mentions the plant by scientific or common name, that IS sufficient evidence — do NOT mark insufficientEvidence. Populate "summary" with 2–5 sentences covering: what the plant is (species/family), native range or typical habitat, general growth form/size, and a brief uncertainty note when confidenceWarning=true.`
+        : '';
+      const fruitingGuidance = card === 'fruitingHarvest'
+        ? `\n- FRUITING/HARVEST SPECIFIC: Any information about flowering time, pollination, fruit set, ripening, harvest window, berry/fruit color at maturity, yield timing, or edible-fruit notes IS sufficient evidence for this card. Do not require locale-specific harvest dates — general seasonality and ripening indicators are enough.`
+        : '';
+
       const systemPrompt = `You format one Plant Advisor "Improve Growth" guidance card.
 
 Language: Write the "summary" and "notes" fields in ${langName}. If Serbian, use Latin script (Serbian Latin), matching the rest of the app. Keep scientific names (e.g. "${primarySci ?? ''}") unchanged. Common names can be included as available.
@@ -797,10 +804,11 @@ Rules:
 - Do NOT output raw snippets, URLs, HTML, markdown image fragments, image-processing fragments, or page boilerplate.
 - Do NOT include duplicated fragments.
 - Do NOT transfer information between cards — stay strictly within the "${card}" topic.
-- If evidence is weak, conflicting, or generic, explain that clearly in the selected language instead of inventing details.
+- Set insufficientEvidence=true ONLY when there is genuinely no usable content for this card's topic. A Tavily answer that discusses the plant and touches on the card's topic IS sufficient — write it up in "summary", do not push it into "notes".
+- If evidence is weak or generic, still write a "summary" using what is available and set confidence="low"; only use insufficientEvidence=true when nothing on-topic exists at all.
 - If plant identification confidence is low (confidenceWarning=true), phrase species-specific guidance as provisional.
 - Do NOT include fertilizer, pesticide, fungicide, herbicide, or insecticide product names, doses, mixing rates, spray intervals, or regulated chemical application instructions.
-- Do NOT diagnose disease.
+- Do NOT diagnose disease.${overviewGuidance}${fruitingGuidance}
 
 Return STRICT JSON matching this schema (no markdown, no prose outside JSON):
 {
@@ -938,13 +946,26 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       const cardSources = cardData[card].sources;
       const providerFacts = cardProviderFacts[card];
       const hasProviderEvidence = !!(providerFacts.perenual || providerFacts.trefle);
-      const hasAnyEvidence = hasProviderEvidence || !!cardData[card].answer || cardSources.length > 0;
+      const tavilyAnswer = cardData[card].answer;
+      const hasAnyEvidence = hasProviderEvidence || !!tavilyAnswer || cardSources.length > 0;
       if (!hasAnyEvidence) return null;
 
-      // Fallback: AI unavailable or failed. Do NOT dump raw Tavily text — leave
-      // the summary empty so the UI shows the localized limited-evidence
-      // placeholder. Sources still surface via the sourceGroups map.
-      if (!ai || ai.insufficientEvidence || !ai.summary) return null;
+      // Determine the effective summary. Prefer the AI-formatted summary; fall
+      // back to the cleaned Tavily answer when the AI over-conservatively flags
+      // insufficient evidence but we actually have a plant-relevant answer
+      // (Overview + Fruiting/Harvest are the most common victims). This is
+      // scrubbed for product/chemistry words and capped in length.
+      let summary: string | null = ai && !ai.insufficientEvidence ? ai.summary : null;
+      let confidence: 'low' | 'medium' = ai?.confidence ?? 'low';
+      const tavilyLooksUsable = !!tavilyAnswer && tavilyAnswer.length >= 80 && (
+        !primarySci || matchPlantTerms(tavilyAnswer.toLowerCase()).length > 0 ||
+        (!!primaryCommon && tavilyAnswer.toLowerCase().includes(primaryCommon.toLowerCase()))
+      );
+      if (!summary && tavilyLooksUsable) {
+        summary = scrubProductWords(trimToSentence(tavilyAnswer!, 1200));
+        confidence = 'low';
+      }
+      if (!summary) return null;
 
       const srcs: CareCategory['sources'] = [];
       if (hasProviderEvidence && perenualSrc && providerFacts.perenual) {
@@ -956,7 +977,7 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       for (const s of cardSources) {
         srcs.push({ provider: 'web', title: s.title, url: s.url });
       }
-      return { summary: ai.summary, confidence: ai.confidence, sources: srcs };
+      return { summary, confidence, sources: srcs };
     };
 
     const overview: CareCategory | null = buildCareCategory('overview', aiResults[0]);
