@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import i18n from 'i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
 
 export type GroundingSourceType =
   | 'university_extension'
