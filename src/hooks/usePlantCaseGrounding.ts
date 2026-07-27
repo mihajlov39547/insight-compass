@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import i18n from 'i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
 
 export type GroundingSourceType =
   | 'university_extension'
@@ -92,9 +92,10 @@ export function usePlantCaseGrounding(caseId: string | null | undefined) {
 
 export function useGatherGrowthGuidance() {
   const qc = useQueryClient();
+  const { identificationLanguage } = usePlantAdvisorSettings();
   return useMutation({
     mutationFn: async (args: { caseId: string; force?: boolean }) => {
-      const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
+      const langCode = identificationLanguage === 'sr' ? 'sr' : 'en';
       const { data, error } = await supabase.functions.invoke('plant-growth-grounding', {
         body: { caseId: args.caseId, force: !!args.force, lang: langCode },
       });
