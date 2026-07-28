@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sprout, RefreshCw, ExternalLink, AlertTriangle, Loader2, Droplets, Sun, Mountain, Scissors, Thermometer, Gauge, Apple } from 'lucide-react';
+import { Sprout, RefreshCw, ExternalLink, AlertTriangle, Loader2, Droplets, Sun, Mountain, Scissors, Thermometer, Gauge, Apple, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -24,6 +24,7 @@ const CARE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   pruning: Scissors,
   hardinessClimate: Thermometer,
   growthRateMaintenance: Gauge,
+  pestsDisease: Bug,
   fruitingHarvest: Apple,
 };
 
@@ -34,6 +35,7 @@ const CARE_ORDER = [
   'pruning',
   'hardinessClimate',
   'growthRateMaintenance',
+  'pestsDisease',
   'fruitingHarvest',
 ] as const;
 

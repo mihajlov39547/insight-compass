@@ -509,6 +509,7 @@ Deno.serve(async (req: Request) => {
       | 'pruning'
       | 'hardinessClimate'
       | 'growthRateMaintenance'
+      | 'pestsDisease'
       | 'fruitingHarvest';
 
     interface CardSource {
@@ -579,6 +580,7 @@ Deno.serve(async (req: Request) => {
           { card: 'pruning', q: `${label} when and how should it be pruned, and what pruning maintenance is recommended?` },
           { card: 'hardinessClimate', q: `${label} what USDA hardiness zones, cold tolerance, climate range, and temperature conditions does it tolerate?` },
           { card: 'growthRateMaintenance', q: `${label} what is its growth rate, mature size, maintenance level, vigor, and general care difficulty?` },
+          { card: 'pestsDisease', q: `${label} what common pests, diseases, and health problems affect this plant, and what signs should growers monitor?` },
           { card: 'fruitingHarvest', q: `${label} when does it flower and fruit, when are berries ready to harvest, and what harvest or fruiting guidance is available?` },
         ]
       : [];
@@ -592,6 +594,7 @@ Deno.serve(async (req: Request) => {
       pruning: { answer: null, sources: [] },
       hardinessClimate: { answer: null, sources: [] },
       growthRateMaintenance: { answer: null, sources: [] },
+      pestsDisease: { answer: null, sources: [] },
       fruitingHarvest: { answer: null, sources: [] },
     };
     let cultivarMismatchOverall = false;
@@ -754,6 +757,10 @@ Deno.serve(async (req: Request) => {
         perenual: perenualSrc ? { growth_rate: pFields.growth_rate, maintenance: pFields.maintenance, care_level: pFields.care_level } : null,
         trefle: (tFields.specifications || tFields.growth) ? { growthHabit: tFields.specifications?.growth_habit, growthMonths: tFields.growth?.growth_months, averageHeight: tFields.specifications?.average_height } : null,
       },
+      pestsDisease: {
+        perenual: null,
+        trefle: null,
+      },
       fruitingHarvest: {
         perenual: perenualSrc ? { harvest_season: pFields.harvest_season, edible_fruit: pFields.edible_fruit } : null,
         trefle: null,
@@ -791,6 +798,9 @@ Deno.serve(async (req: Request) => {
       const fruitingGuidance = card === 'fruitingHarvest'
         ? `\n- FRUITING/HARVEST SPECIFIC: Any information about flowering time, pollination, fruit set, ripening, harvest window, berry/fruit color at maturity, yield timing, or edible-fruit notes IS sufficient evidence for this card. Do not require locale-specific harvest dates — general seasonality and ripening indicators are enough.`
         : '';
+      const pestsGuidance = card === 'pestsDisease'
+        ? `\n- PESTS/DISEASE SPECIFIC: This card is informational and PREVENTIVE. Cover common pests, diseases, and health problems that affect this plant, symptoms/signs to monitor, prevention, sanitation, and cultural care that reduces risk. You may say when to seek local expert help. Do NOT diagnose the user's plant. Do NOT recommend pesticide, fungicide, herbicide, or insecticide product names, doses, mixing rates, spray schedules, or chemical treatment instructions — not even generic ones. If the source text contains such content, omit it. General cultural practices (spacing, airflow, watering habits, sanitation, resistant varieties, monitoring) are OK.`
+        : '';
 
       const systemPrompt = `You format one Plant Advisor "Improve Growth" guidance card.
 
@@ -808,7 +818,7 @@ Rules:
 - If evidence is weak or generic, still write a "summary" using what is available and set confidence="low"; only use insufficientEvidence=true when nothing on-topic exists at all.
 - If plant identification confidence is low (confidenceWarning=true), phrase species-specific guidance as provisional.
 - Do NOT include fertilizer, pesticide, fungicide, herbicide, or insecticide product names, doses, mixing rates, spray intervals, or regulated chemical application instructions.
-- Do NOT diagnose disease.${overviewGuidance}${fruitingGuidance}
+- Do NOT diagnose disease.${overviewGuidance}${fruitingGuidance}${pestsGuidance}
 
 Return STRICT JSON matching this schema (no markdown, no prose outside JSON):
 {
@@ -925,6 +935,7 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       'pruning',
       'hardinessClimate',
       'growthRateMaintenance',
+      'pestsDisease',
       'fruitingHarvest',
     ];
     const cardQueryByKey: Partial<Record<CardKey, string>> = {};
@@ -989,7 +1000,8 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       pruning: buildCareCategory('pruning', aiResults[4]),
       hardinessClimate: buildCareCategory('hardinessClimate', aiResults[5]),
       growthRateMaintenance: buildCareCategory('growthRateMaintenance', aiResults[6]),
-      fruitingHarvest: buildCareCategory('fruitingHarvest', aiResults[7]),
+      pestsDisease: buildCareCategory('pestsDisease', aiResults[7]),
+      fruitingHarvest: buildCareCategory('fruitingHarvest', aiResults[8]),
     };
 
     const aiFormatterUsed = aiResults.some((r) => r && !r.insufficientEvidence && r.summary);
@@ -1005,8 +1017,10 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       pruning: cardData.pruning.sources,
       hardinessClimate: cardData.hardinessClimate.sources,
       growthRateMaintenance: cardData.growthRateMaintenance.sources,
+      pestsDisease: cardData.pestsDisease.sources,
       fruitingHarvest: cardData.fruitingHarvest.sources,
     };
+
 
     // Limitations are emitted as codes; frontend localises the message.
     const limitations: Array<{ code: string }> = [];

@@ -2064,6 +2064,7 @@
         "pruning": "Rezidba",
         "hardinessClimate": "Otpornost / klima",
         "growthRateMaintenance": "Brzina rasta / održavanje",
+        "pestsDisease": "Štetočine i bolesti",
         "fruitingHarvest": "Plodonošenje / berba"
       },
       "toasts": {
