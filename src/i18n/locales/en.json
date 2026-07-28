@@ -2048,6 +2048,7 @@
         "pruning": "Pruning",
         "hardinessClimate": "Hardiness / climate",
         "growthRateMaintenance": "Growth rate / maintenance",
+        "pestsDisease": "Pests and disease",
         "fruitingHarvest": "Fruiting / harvest"
       },
       "toasts": {
