@@ -1000,7 +1000,8 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       pruning: buildCareCategory('pruning', aiResults[4]),
       hardinessClimate: buildCareCategory('hardinessClimate', aiResults[5]),
       growthRateMaintenance: buildCareCategory('growthRateMaintenance', aiResults[6]),
-      fruitingHarvest: buildCareCategory('fruitingHarvest', aiResults[7]),
+      pestsDisease: buildCareCategory('pestsDisease', aiResults[7]),
+      fruitingHarvest: buildCareCategory('fruitingHarvest', aiResults[8]),
     };
 
     const aiFormatterUsed = aiResults.some((r) => r && !r.insufficientEvidence && r.summary);
@@ -1016,8 +1017,10 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       pruning: cardData.pruning.sources,
       hardinessClimate: cardData.hardinessClimate.sources,
       growthRateMaintenance: cardData.growthRateMaintenance.sources,
+      pestsDisease: cardData.pestsDisease.sources,
       fruitingHarvest: cardData.fruitingHarvest.sources,
     };
+
 
     // Limitations are emitted as codes; frontend localises the message.
     const limitations: Array<{ code: string }> = [];
