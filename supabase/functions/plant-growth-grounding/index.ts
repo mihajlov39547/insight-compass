@@ -509,6 +509,7 @@ Deno.serve(async (req: Request) => {
       | 'pruning'
       | 'hardinessClimate'
       | 'growthRateMaintenance'
+      | 'pestsDisease'
       | 'fruitingHarvest';
 
     interface CardSource {
