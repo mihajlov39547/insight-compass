@@ -798,6 +798,9 @@ Deno.serve(async (req: Request) => {
       const fruitingGuidance = card === 'fruitingHarvest'
         ? `\n- FRUITING/HARVEST SPECIFIC: Any information about flowering time, pollination, fruit set, ripening, harvest window, berry/fruit color at maturity, yield timing, or edible-fruit notes IS sufficient evidence for this card. Do not require locale-specific harvest dates — general seasonality and ripening indicators are enough.`
         : '';
+      const pestsGuidance = card === 'pestsDisease'
+        ? `\n- PESTS/DISEASE SPECIFIC: This card is informational and PREVENTIVE. Cover common pests, diseases, and health problems that affect this plant, symptoms/signs to monitor, prevention, sanitation, and cultural care that reduces risk. You may say when to seek local expert help. Do NOT diagnose the user's plant. Do NOT recommend pesticide, fungicide, herbicide, or insecticide product names, doses, mixing rates, spray schedules, or chemical treatment instructions — not even generic ones. If the source text contains such content, omit it. General cultural practices (spacing, airflow, watering habits, sanitation, resistant varieties, monitoring) are OK.`
+        : '';
 
       const systemPrompt = `You format one Plant Advisor "Improve Growth" guidance card.
 
@@ -815,7 +818,7 @@ Rules:
 - If evidence is weak or generic, still write a "summary" using what is available and set confidence="low"; only use insufficientEvidence=true when nothing on-topic exists at all.
 - If plant identification confidence is low (confidenceWarning=true), phrase species-specific guidance as provisional.
 - Do NOT include fertilizer, pesticide, fungicide, herbicide, or insecticide product names, doses, mixing rates, spray intervals, or regulated chemical application instructions.
-- Do NOT diagnose disease.${overviewGuidance}${fruitingGuidance}
+- Do NOT diagnose disease.${overviewGuidance}${fruitingGuidance}${pestsGuidance}
 
 Return STRICT JSON matching this schema (no markdown, no prose outside JSON):
 {
