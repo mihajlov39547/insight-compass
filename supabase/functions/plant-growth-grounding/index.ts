@@ -935,6 +935,7 @@ If insufficientEvidence is true, "summary" MUST be null.`;
       'pruning',
       'hardinessClimate',
       'growthRateMaintenance',
+      'pestsDisease',
       'fruitingHarvest',
     ];
     const cardQueryByKey: Partial<Record<CardKey, string>> = {};
