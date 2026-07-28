@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sprout, RefreshCw, ExternalLink, AlertTriangle, Loader2, Droplets, Sun, Mountain, Scissors, Thermometer, Gauge, Apple } from 'lucide-react';
+import { Sprout, RefreshCw, ExternalLink, AlertTriangle, Loader2, Droplets, Sun, Mountain, Scissors, Thermometer, Gauge, Apple, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
