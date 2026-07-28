@@ -24,6 +24,7 @@ const CARE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   pruning: Scissors,
   hardinessClimate: Thermometer,
   growthRateMaintenance: Gauge,
+  pestsDisease: Bug,
   fruitingHarvest: Apple,
 };
 
@@ -34,6 +35,7 @@ const CARE_ORDER = [
   'pruning',
   'hardinessClimate',
   'growthRateMaintenance',
+  'pestsDisease',
   'fruitingHarvest',
 ] as const;
 
