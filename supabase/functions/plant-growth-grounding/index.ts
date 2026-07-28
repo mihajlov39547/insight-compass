@@ -757,6 +757,10 @@ Deno.serve(async (req: Request) => {
         perenual: perenualSrc ? { growth_rate: pFields.growth_rate, maintenance: pFields.maintenance, care_level: pFields.care_level } : null,
         trefle: (tFields.specifications || tFields.growth) ? { growthHabit: tFields.specifications?.growth_habit, growthMonths: tFields.growth?.growth_months, averageHeight: tFields.specifications?.average_height } : null,
       },
+      pestsDisease: {
+        perenual: null,
+        trefle: null,
+      },
       fruitingHarvest: {
         perenual: perenualSrc ? { harvest_season: pFields.harvest_season, edible_fruit: pFields.edible_fruit } : null,
         trefle: null,
