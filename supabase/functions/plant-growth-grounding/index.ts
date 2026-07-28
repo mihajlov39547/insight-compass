@@ -580,6 +580,7 @@ Deno.serve(async (req: Request) => {
           { card: 'pruning', q: `${label} when and how should it be pruned, and what pruning maintenance is recommended?` },
           { card: 'hardinessClimate', q: `${label} what USDA hardiness zones, cold tolerance, climate range, and temperature conditions does it tolerate?` },
           { card: 'growthRateMaintenance', q: `${label} what is its growth rate, mature size, maintenance level, vigor, and general care difficulty?` },
+          { card: 'pestsDisease', q: `${label} what common pests, diseases, and health problems affect this plant, and what signs should growers monitor?` },
           { card: 'fruitingHarvest', q: `${label} when does it flower and fruit, when are berries ready to harvest, and what harvest or fruiting guidance is available?` },
         ]
       : [];
@@ -593,6 +594,7 @@ Deno.serve(async (req: Request) => {
       pruning: { answer: null, sources: [] },
       hardinessClimate: { answer: null, sources: [] },
       growthRateMaintenance: { answer: null, sources: [] },
+      pestsDisease: { answer: null, sources: [] },
       fruitingHarvest: { answer: null, sources: [] },
     };
     let cultivarMismatchOverall = false;
