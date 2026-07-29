@@ -167,6 +167,16 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     { role: 'assistant', content: introContent },
   ]));
 
+  // Keep the initial assistant intro in sync with async grounding data —
+  // only rewrite when the user has not sent anything yet.
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length !== 1 || prev[0].role !== 'assistant') return prev;
+      if (prev[0].content === introContent) return prev;
+      return [{ role: 'assistant', content: introContent }];
+    });
+  }, [introContent]);
+
   const quickQuestions = useMemo<string[]>(() => {
     const q = (k: string) => t(`plantAdvisor.chat.qq.${k}`);
     if (isIdentify) {
