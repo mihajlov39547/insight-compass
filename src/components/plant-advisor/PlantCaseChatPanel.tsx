@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, MessageSquare, Send, Loader2, AlertTriangle, Info, Camera, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,10 @@ import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantDiagnoses, usePlantDiagnosisInterpretations } from '@/hooks/usePlantDiagnoses';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
+import {
+  usePlantCaseChatMessages,
+  useInvalidatePlantCaseChatMessages,
+} from '@/hooks/usePlantCaseChatMessages';
 import type { PlantCase, PlantCaseGoal } from '@/hooks/usePlantCases';
 
 interface Props {
@@ -161,21 +165,31 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     return t(cfg.introKey, { title: plantCase.title });
   }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding]);
 
+  const {
+    data: persistedMessages = [],
+    isLoading: messagesLoading,
+  } = usePlantCaseChatMessages(plantCase.id);
+  const invalidateChatMessages = useInvalidatePlantCaseChatMessages();
+
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>(() => ([
-    { role: 'assistant', content: introContent },
-  ]));
+  // Optimistic messages shown while awaiting the assistant reply.
+  // Cleared after the query invalidation returns persisted rows.
+  const [optimistic, setOptimistic] = useState<Msg[]>([]);
 
-  // Keep the initial assistant intro in sync with async grounding data —
-  // only rewrite when the user has not sent anything yet.
-  useEffect(() => {
-    setMessages((prev) => {
-      if (prev.length !== 1 || prev[0].role !== 'assistant') return prev;
-      if (prev[0].content === introContent) return prev;
-      return [{ role: 'assistant', content: introContent }];
-    });
-  }, [introContent]);
+  const hasPersistedHistory = persistedMessages.length > 0;
+
+  const displayMessages = useMemo<Msg[]>(() => {
+    if (hasPersistedHistory) {
+      return [
+        ...persistedMessages.map((m) => ({ role: m.role, content: m.content } as Msg)),
+        ...optimistic,
+      ];
+    }
+    // No persisted history yet — show the grounding-aware intro.
+    // Do NOT persist the intro; it's derived and re-renders with grounding data.
+    return [{ role: 'assistant', content: introContent }, ...optimistic];
+  }, [hasPersistedHistory, persistedMessages, optimistic, introContent]);
 
   const quickQuestions = useMemo<string[]>(() => {
     const q = (k: string) => t(`plantAdvisor.chat.qq.${k}`);
@@ -254,8 +268,12 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     const text = (textOverride ?? input).trim();
     if (!text || pending) return;
     setInput('');
-    const nextMsgs: Msg[] = [...messages, { role: 'user', content: text }];
-    setMessages(nextMsgs);
+    // Full conversation history sent to the model = persisted rows + the new user turn.
+    const historyForModel: Msg[] = [
+      ...persistedMessages.map((m) => ({ role: m.role, content: m.content } as Msg)),
+      { role: 'user', content: text },
+    ];
+    setOptimistic([{ role: 'user', content: text }]);
     setPending(true);
     try {
       const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
@@ -263,7 +281,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         body: {
           caseId: plantCase.id,
           lang: langCode,
-          messages: nextMsgs.map((m) => ({ role: m.role, content: m.content })),
+          messages: historyForModel.map((m) => ({ role: m.role, content: m.content })),
         },
       });
       if (error) {
@@ -277,9 +295,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       }
       const reply = (data as any)?.reply;
       if (typeof reply !== 'string' || !reply.trim()) throw new Error('empty_reply');
-      setMessages([...nextMsgs, { role: 'assistant', content: reply }]);
+      // Refetch persisted messages; clear optimistic overlay once the persisted rows arrive.
+      await invalidateChatMessages(plantCase.id);
+      setOptimistic([]);
     } catch (e) {
       const msg = (e as Error).message;
+      // Drop the optimistic user message on failure so the user can retry.
+      setOptimistic([]);
       toast.error(
         t(`plantAdvisor.chat.errors.${msg}`, {
           defaultValue: t('plantAdvisor.chat.errors.generic'),
@@ -548,7 +570,15 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           </section>
         </div>
 
-        {messages.map((m, i) => (
+        {messagesLoading && !hasPersistedHistory && (
+          <div className="flex justify-start">
+            <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {t('plantAdvisor.chat.loading', { defaultValue: 'Loading conversation…' })}
+            </div>
+          </div>
+        )}
+        {!messagesLoading && displayMessages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
             <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'}`}>
               {m.role === 'user' ? m.content : <MarkdownContent content={m.content} />}

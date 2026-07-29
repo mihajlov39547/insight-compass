@@ -359,11 +359,62 @@ Formatting:
       return json({ error: 'ai_failed', reason: result.reason }, 502);
     }
 
+    // Persist the latest user message + assistant reply to plant_case_chat_messages.
+    // Only the last user message is saved (prior turns were saved on their own request).
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+    const userGoal = pc.user_goal ?? null;
+    const savedIds: { userMessageId?: string; assistantMessageId?: string } = {};
+    try {
+      if (lastUser) {
+        const { data: userRow, error: userInsErr } = await admin
+          .from('plant_case_chat_messages')
+          .insert({
+            user_id: userId,
+            case_id: caseId,
+            role: 'user',
+            content: lastUser.content,
+            metadata: { goal: userGoal },
+          })
+          .select('id')
+          .single();
+        if (userInsErr) {
+          console.error('[plant-case-chat] persist user message failed', userInsErr.message);
+        } else {
+          savedIds.userMessageId = userRow?.id;
+        }
+      }
+      const { data: asstRow, error: asstInsErr } = await admin
+        .from('plant_case_chat_messages')
+        .insert({
+          user_id: userId,
+          case_id: caseId,
+          role: 'assistant',
+          content: result.text!,
+          metadata: {
+            goal: userGoal,
+            groundingId: groundingRow?.id ?? null,
+            model: modelUsed,
+            usedFallback,
+            usedGrowthGrounding: !!groundingRow,
+          },
+        })
+        .select('id')
+        .single();
+      if (asstInsErr) {
+        console.error('[plant-case-chat] persist assistant message failed', asstInsErr.message);
+      } else {
+        savedIds.assistantMessageId = asstRow?.id;
+      }
+    } catch (persistErr) {
+      console.error('[plant-case-chat] persist messages threw', (persistErr as Error).message);
+    }
+
     return json({
       ok: true,
       reply: result.text,
       modelUsed,
       usedFallback,
+      ...savedIds,
     });
   } catch (e) {
     console.error('[plant-case-chat] fatal', (e as Error).message);
