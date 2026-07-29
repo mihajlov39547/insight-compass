@@ -582,11 +582,22 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       )}
 
       <div className="border-t border-border p-3">
+        {isImproveGrowth && (
+          <div className="text-[11px] text-muted-foreground mb-2">
+            {t(
+              hasGrowthGrounding
+                ? 'plantAdvisor.chat.helper.improve_growth_with_grounding'
+                : 'plantAdvisor.chat.helper.improve_growth_no_grounding',
+            )}
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t('plantAdvisor.chat.inputPh')}
+            placeholder={t(
+              isImproveGrowth ? 'plantAdvisor.chat.inputPh_improve_growth' : 'plantAdvisor.chat.inputPh',
+            )}
             rows={2}
             disabled={pending}
             onKeyDown={(e) => {
