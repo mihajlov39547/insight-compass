@@ -268,8 +268,12 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     const text = (textOverride ?? input).trim();
     if (!text || pending) return;
     setInput('');
-    const nextMsgs: Msg[] = [...messages, { role: 'user', content: text }];
-    setMessages(nextMsgs);
+    // Full conversation history sent to the model = persisted rows + the new user turn.
+    const historyForModel: Msg[] = [
+      ...persistedMessages.map((m) => ({ role: m.role, content: m.content } as Msg)),
+      { role: 'user', content: text },
+    ];
+    setOptimistic([{ role: 'user', content: text }]);
     setPending(true);
     try {
       const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
@@ -277,7 +281,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         body: {
           caseId: plantCase.id,
           lang: langCode,
-          messages: nextMsgs.map((m) => ({ role: m.role, content: m.content })),
+          messages: historyForModel.map((m) => ({ role: m.role, content: m.content })),
         },
       });
       if (error) {
@@ -291,9 +295,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       }
       const reply = (data as any)?.reply;
       if (typeof reply !== 'string' || !reply.trim()) throw new Error('empty_reply');
-      setMessages([...nextMsgs, { role: 'assistant', content: reply }]);
+      // Refetch persisted messages; clear optimistic overlay once the persisted rows arrive.
+      await invalidateChatMessages(plantCase.id);
+      setOptimistic([]);
     } catch (e) {
       const msg = (e as Error).message;
+      // Drop the optimistic user message on failure so the user can retry.
+      setOptimistic([]);
       toast.error(
         t(`plantAdvisor.chat.errors.${msg}`, {
           defaultValue: t('plantAdvisor.chat.errors.generic'),
