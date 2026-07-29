@@ -1247,6 +1247,44 @@ export type Database = {
           },
         ]
       }
+      plant_case_chat_messages: {
+        Row: {
+          case_id: string
+          content: string
+          created_at: string
+          id: string
+          metadata: Json
+          role: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          role: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_case_chat_messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plant_case_grounding_contexts: {
         Row: {
           case_id: string
