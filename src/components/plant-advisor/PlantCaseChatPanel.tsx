@@ -570,7 +570,15 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           </section>
         </div>
 
-        {messages.map((m, i) => (
+        {messagesLoading && !hasPersistedHistory && (
+          <div className="flex justify-start">
+            <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {t('plantAdvisor.chat.loading', { defaultValue: 'Loading conversation…' })}
+            </div>
+          </div>
+        )}
+        {!messagesLoading && displayMessages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
             <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'}`}>
               {m.role === 'user' ? m.content : <MarkdownContent content={m.content} />}
