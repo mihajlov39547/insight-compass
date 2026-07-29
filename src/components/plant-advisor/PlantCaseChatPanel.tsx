@@ -224,6 +224,16 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       ];
     }
     if (goal === 'improve_growth') {
+      if (hasGrowthGrounding) {
+        return [
+          q('growthEncourageTaller'),
+          q('growthWaterSunSoilFirst'),
+          q('growthSafestLowConf'),
+          q('growthPruneStructure'),
+          q('growthMonitorPests'),
+          q('growthLocalRelevance'),
+        ];
+      }
       return [
         q('growthHowWater'),
         q('growthHowMuchSun'),
