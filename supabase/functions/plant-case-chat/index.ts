@@ -103,7 +103,7 @@ Deno.serve(async (req: Request) => {
         .select('*')
         .eq('case_id', caseId)
         .eq('goal', 'improve_growth')
-        .eq('status', 'success')
+        .in('status', ['success', 'partial'])
         .order('fetched_at', { ascending: false })
         .limit(1),
     ]);
