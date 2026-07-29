@@ -151,10 +151,15 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     isDiagnose && !!confirmedIdent && diagnoses.length > 0 &&
     (diagBucket === 'low' || diagLowRelevance || needsMoreEvidence);
 
-  const introContent = useMemo(
-    () => t(cfg.introKey, { title: plantCase.title }),
-    [t, cfg.introKey, plantCase.title],
-  );
+  const introContent = useMemo(() => {
+    if (isImproveGrowth) {
+      const key = hasGrowthGrounding
+        ? 'plantAdvisor.chat.intro.improve_growth_with_grounding'
+        : 'plantAdvisor.chat.intro.improve_growth_no_grounding';
+      return t(key, { title: plantCase.title });
+    }
+    return t(cfg.introKey, { title: plantCase.title });
+  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding]);
 
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
