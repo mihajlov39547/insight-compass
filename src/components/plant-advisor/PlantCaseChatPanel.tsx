@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantDiagnoses, usePlantDiagnosisInterpretations } from '@/hooks/usePlantDiagnoses';
+import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import type { PlantCase, PlantCaseGoal } from '@/hooks/usePlantCases';
 
 interface Props {
