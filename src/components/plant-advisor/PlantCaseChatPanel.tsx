@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, MessageSquare, Send, Loader2, AlertTriangle, Info, Camera, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantDiagnoses, usePlantDiagnosisInterpretations } from '@/hooks/usePlantDiagnoses';
+import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import type { PlantCase, PlantCaseGoal } from '@/hooks/usePlantCases';
 
 interface Props {
@@ -101,6 +102,10 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const { data: idents = [] } = usePlantIdentifications(plantCase.id);
   const { data: diagnoses = [] } = usePlantDiagnoses(plantCase.id);
   const { data: interpretation } = usePlantDiagnosisInterpretations(plantCase.id);
+  const { data: grounding } = usePlantCaseGrounding(plantCase.id);
+  const hasGrowthGrounding =
+    !!grounding && (grounding.status === 'success' || grounding.status === 'partial');
+  const isImproveGrowth = plantCase.user_goal === 'improve_growth';
 
   const confirmedIdent = idents.find((i) => i.is_confirmed) || null;
   const topIdent = confirmedIdent || idents[0] || null;
@@ -146,16 +151,31 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     isDiagnose && !!confirmedIdent && diagnoses.length > 0 &&
     (diagBucket === 'low' || diagLowRelevance || needsMoreEvidence);
 
-  const introContent = useMemo(
-    () => t(cfg.introKey, { title: plantCase.title }),
-    [t, cfg.introKey, plantCase.title],
-  );
+  const introContent = useMemo(() => {
+    if (isImproveGrowth) {
+      const key = hasGrowthGrounding
+        ? 'plantAdvisor.chat.intro.improve_growth_with_grounding'
+        : 'plantAdvisor.chat.intro.improve_growth_no_grounding';
+      return t(key, { title: plantCase.title });
+    }
+    return t(cfg.introKey, { title: plantCase.title });
+  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding]);
 
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [messages, setMessages] = useState<Msg[]>(() => ([
     { role: 'assistant', content: introContent },
   ]));
+
+  // Keep the initial assistant intro in sync with async grounding data —
+  // only rewrite when the user has not sent anything yet.
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length !== 1 || prev[0].role !== 'assistant') return prev;
+      if (prev[0].content === introContent) return prev;
+      return [{ role: 'assistant', content: introContent }];
+    });
+  }, [introContent]);
 
   const quickQuestions = useMemo<string[]>(() => {
     const q = (k: string) => t(`plantAdvisor.chat.qq.${k}`);
@@ -204,6 +224,16 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       ];
     }
     if (goal === 'improve_growth') {
+      if (hasGrowthGrounding) {
+        return [
+          q('growthEncourageTaller'),
+          q('growthWaterSunSoilFirst'),
+          q('growthSafestLowConf'),
+          q('growthPruneStructure'),
+          q('growthMonitorPests'),
+          q('growthLocalRelevance'),
+        ];
+      }
       return [
         q('growthHowWater'),
         q('growthHowMuchSun'),
@@ -218,7 +248,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       q('identifyPhotosToImprove'),
       q('diagnoseWhatToAvoid'),
     ];
-  }, [t, isIdentify, isDiagnose, goal, confirmedIdent, confirmedDiag, diagnoses.length]);
+  }, [t, isIdentify, isDiagnose, goal, confirmedIdent, confirmedDiag, diagnoses.length, hasGrowthGrounding]);
 
   const send = async (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
@@ -552,11 +582,22 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       )}
 
       <div className="border-t border-border p-3">
+        {isImproveGrowth && (
+          <div className="text-[11px] text-muted-foreground mb-2">
+            {t(
+              hasGrowthGrounding
+                ? 'plantAdvisor.chat.helper.improve_growth_with_grounding'
+                : 'plantAdvisor.chat.helper.improve_growth_no_grounding',
+            )}
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t('plantAdvisor.chat.inputPh')}
+            placeholder={t(
+              isImproveGrowth ? 'plantAdvisor.chat.inputPh_improve_growth' : 'plantAdvisor.chat.inputPh',
+            )}
             rows={2}
             disabled={pending}
             onKeyDown={(e) => {

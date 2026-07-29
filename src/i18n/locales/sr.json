@@ -1909,7 +1909,9 @@
         "identify": "Učitao sam slučaj identifikacije \"{{title}}\". Mogu da objasnim potvrđenu biljku, rezultat pouzdanosti, moguće alternative i koje dodatne fotografije bi poboljšale identifikaciju. Ne pregledam direktno fotografije ovde; koristim kontekst slučaja, rezultate provajdera i vaše beleške.",
         "diagnose": "Učitao sam slučaj dijagnoze \"{{title}}\". Mogu da razgovaram o mogućim problemima — bolesti, oštećenju od štetočina, nedostatku hraniva, fitotoksičnosti ili stresu iz okoline — na osnovu potvrđene biljke, kandidata provajdera i vaših beleški. Ne dajem nazive hemijskih preparata, doze niti uputstva za tretman.",
         "improve_growth": "Učitao sam slučaj rasta \"{{title}}\". Mogu da predložim opšte provere nege na osnovu konteksta slučaja i profila potvrđene biljke ako je dostupan. Ne dajem imena đubriva niti doze.",
-        "increase_income": "Učitao sam slučaj planiranja prinosa \"{{title}}\". Mogu da razgovaram o opštim razmatranjima na osnovu potvrđene biljke i konteksta slučaja."
+        "increase_income": "Učitao sam slučaj planiranja prinosa \"{{title}}\". Mogu da razgovaram o opštim razmatranjima na osnovu potvrđene biljke i konteksta slučaja.",
+        "improve_growth_with_grounding": "Učitao sam ovaj slučaj za unapređenje rasta, uključujući prikupljene kartice sa smernicama za rast. Mogu da odgovorim koristeći Pregled, Zalivanje, Osvetljenje, Zemljište, Rezidbu, Otpornost / klimu, Brzinu rasta / održavanje, Štetočine i bolesti i Plodonošenje / berbu. Pošto je pouzdanost identifikacije niska, smernice specifične za vrstu treba tretirati kao privremene.",
+        "improve_growth_no_grounding": "Namenske smernice za rast još nisu prikupljene. Prvo pokrenite 'Prikupi smernice za rast' za kartice nege specifične za vrstu, ili postavite opšte pitanje na osnovu potvrđene biljke i beleški slučaja."
       },
       "sections": {
         "caseSummary": "Rezime slučaja",
@@ -1991,7 +1993,13 @@
         "growthWhenPrune": "Kada treba obaviti rezidbu?",
         "growthLimitsLocation": "Šta može ograničiti njen rast na ovoj lokaciji?",
         "growthMonitorMonth": "Šta treba pratiti ovog meseca?",
-        "growthReliabilityLowConf": "Koliko su ove smernice pouzdane s obzirom na nisku pouzdanost identifikacije?"
+        "growthReliabilityLowConf": "Koliko su ove smernice pouzdane s obzirom na nisku pouzdanost identifikacije?",
+        "growthEncourageTaller": "Kako mogu da podstaknem viši rast?",
+        "growthWaterSunSoilFirst": "Šta prvo da poboljšam: zalivanje, sunce ili zemljište?",
+        "growthSafestLowConf": "Koje mere su najbezbednije s obzirom na nisku pouzdanost identifikacije?",
+        "growthPruneStructure": "Kako da orežem biljku za bolju strukturu?",
+        "growthMonitorPests": "Šta da pratim od štetočina ili bolesti?",
+        "growthLocalRelevance": "Koje smernice su najvažnije za moju lokaciju?"
       },
       "errors": {
         "generic": "Razgovor nije uspeo. Pokušajte ponovo.",
@@ -2002,11 +2010,107 @@
         "credits_exhausted": "AI krediti su iscrpljeni. Dodajte kredite da nastavite.",
         "ai_failed": "AI servis nije uspeo. Pokušajte ponovo.",
         "empty_reply": "Nema odgovora od AI. Pokušajte ponovo."
-      }
+      },
+      "helper": {
+        "improve_growth_with_grounding": "Pitajte o prikupljenim karticama za rast, npr. zalivanje, zemljište, rezidba, štetočine ili kako podstaći viši rast.",
+        "improve_growth_no_grounding": "Za bolje odgovore, prvo prikupite smernice za rast."
+      },
+      "inputPh_improve_growth": "Pitajte o rastu, zalivanju, zemljištu, rezidbi, štetočinama ili berbi…"
     },
     "diagnose": {
-      "confirmedShort": "Potvrđeno",
-      "candidateShort": "Kandidat"
+      "sectionTitle": "Dijagnoza biljke",
+      "diagnose": "Dijagnostikuj bolest",
+      "diagnoseDirectly": "Dijagnostikuj direktno",
+      "running": "Dijagnostikovanje…",
+      "runAgain": "Pokreni ponovo",
+      "loading": "Učitavanje dijagnoza…",
+      "uploadFirst": "Prvo otpremite slike biljke.",
+      "plantNotConfirmedHint": "Prvo potvrdite biljku za relevantniju dijagnozu bolesti.",
+      "confirmPlantFirst": "Prvo potvrdite biljku da biste dijagnostikovali bolest.",
+      "usesConfirmedPlant": "Dijagnoza bolesti koristi potvrđenu biljku radi veće relevantnosti.",
+      "plantConfirmedAvailable": "Biljka potvrđena, dijagnoza dostupna.",
+      "plantNotConfirmed": "Biljka nije potvrđena",
+      "disease": "Bolest",
+      "confidence": "Pouzdanost",
+      "affectedOrgans": "Zahvaćeni organi",
+      "description": "Opis",
+      "provider": "Provajder",
+      "languageUsed": "Jezik",
+      "confirmThis": "Potvrdi ovu dijagnozu",
+      "useThis": "Koristi ovu dijagnozu",
+      "confirmedDiagnosis": "Potvrđena dijagnoza",
+      "uncertain": "Dijagnoza je neizvesna",
+      "noDiagnosis": "Nema rezultata dijagnoze",
+      "notTreatmentAdvice": "Ovo nije savet za tretman.",
+      "treatmentComingNext": "Preporuke za tretman uskoro",
+      "referenceImages": "Referentne slike",
+      "imageAttribution": "Atribucija slike",
+      "openImage": "Otvori sliku",
+      "doneToast": "Dijagnoza završena",
+      "confirmedToast": "Dijagnoza potvrđena",
+      "providerCode": "Kod provajdera",
+      "lowConfidenceWarning": "Dijagnoza je neizvesna. Koristite jasnije slike izbliza i potvrdite problem pre traženja tretmana.",
+      "noReferenceImagesReturned": "Pl@ntNet nije vratio referentne slike za ove kandidate.",
+      "problemType": {
+        "pest": "Štetočina",
+        "disease": "Bolest",
+        "unknown": "Nepoznat problem"
+      },
+      "confidenceBucket": {
+        "low": "Niska pouzdanost",
+        "medium": "Srednja pouzdanost",
+        "high": "Visoka pouzdanost"
+      },
+      "errors": {
+        "apiKeyMissing": "Dijagnoza biljke nije konfigurisana (nedostaje API ključ).",
+        "noCompatible": "Nema kompatibilnih JPEG ili PNG slika.",
+        "downloadFailed": "Nije moguće preuzeti slike za dijagnozu.",
+        "quotaExhausted": "Pl@ntNet kvota je iscrpljena. Pokušajte kasnije.",
+        "authFailed": "Pl@ntNet autentifikacija nije uspela.",
+        "badRequest": "Pl@ntNet je odbio zahtev.",
+        "empty": "Nema rezultata dijagnoze. Pokušajte sa jasnijim fotografijama.",
+        "generic": "Dijagnoza nije uspela. Pokušajte ponovo.",
+        "confirmFailed": "Potvrda nije uspela. Pokušajte ponovo.",
+        "webpConvertFailed": "Konverzija WebP slike nije uspela. Pokušajte JPEG ili PNG.",
+        "plantNotConfirmed": "Prvo potvrdite biljku da biste dijagnostikovali bolest.",
+        "invalidCaseGoal": "Dijagnoza bolesti je dostupna samo za slučajeve tipa Dijagnoza bolesti.",
+        "limitReached": "Mesečni limit Plant AI skeniranja je dostignut. Nadogradite plan ili sačekajte sledeći mesec."
+      },
+      "contextLabel": "Kontekst dijagnoze",
+      "relevance": {
+        "high": "Relevantno za potvrđenu biljku",
+        "medium": "Moguće relevantno",
+        "low": "Niska relevantnost za potvrđenu biljku",
+        "unknown": "Relevantnost nepoznata"
+      },
+      "relevanceReason": {
+        "mentions_confirmed": "Pominje potvrđenu biljku.",
+        "mentions_other_host": "Pominje drugu biljku domaćina.",
+        "broad_pest": "Široko rasprostranjena štetočina; može napadati mnoge biljke."
+      },
+      "aiInterpretationTitle": "AI interpretacija",
+      "providerCandidatesTitle": "Kandidati provajdera",
+      "bestCandidatesTitle": "Najverovatniji kandidati",
+      "unlikelyCandidatesTitle": "Malo verovatni kandidati",
+      "whatToCheckVisually": "Šta vizuelno proveriti",
+      "needsMoreEvidence": "Potrebno je više dokaza",
+      "overallConfidence": "Ukupna pouzdanost",
+      "relevanceLabel": "Relevantnost",
+      "modelUsed": "Korišćeni model",
+      "fallbackModelUsed": "Korišćen rezervni model",
+      "aiHelper": "AI interpretacija pomaže da se poređaju kandidati provajdera. Ne predstavlja savet o lečenju.",
+      "diagnosisUncertain": "Dijagnoza ostaje neizvesna",
+      "aiFailed": "AI interpretaciju nije bilo moguće generisati.",
+      "plantProfileContext": {
+        "title": "Kontekst biljnog profila",
+        "trefleReferenceContext": "Trefle referentni kontekst",
+        "used": "Trefle profil je korišćen kao pomoćni botanički kontekst.",
+        "notAvailable": "Trefle profil nije bio dostupan.",
+        "notes": "Napomene",
+        "warnings": "Upozorenja",
+        "matchWarning": "Upozorenje o poklapanju profila",
+        "disclaimer": "Botanički kontekst ne zamenjuje dijagnozu bolesti."
+      }
     },
     "growth": {
       "title": "Smernice za rast",
@@ -2201,101 +2305,6 @@
       "openImage": "Otvori sliku",
       "fromSpeciesResult": "iz rezultata vrste",
       "referenceImagesEphemeralNote": "Referentne slike se prikazuju samo za ovo pokretanje i ne čuvaju se."
-    },
-    "diagnose": {
-      "sectionTitle": "Dijagnoza biljke",
-      "diagnose": "Dijagnostikuj bolest",
-      "diagnoseDirectly": "Dijagnostikuj direktno",
-      "running": "Dijagnostikovanje…",
-      "runAgain": "Pokreni ponovo",
-      "loading": "Učitavanje dijagnoza…",
-      "uploadFirst": "Prvo otpremite slike biljke.",
-      "plantNotConfirmedHint": "Prvo potvrdite biljku za relevantniju dijagnozu bolesti.",
-      "confirmPlantFirst": "Prvo potvrdite biljku da biste dijagnostikovali bolest.",
-      "usesConfirmedPlant": "Dijagnoza bolesti koristi potvrđenu biljku radi veće relevantnosti.",
-      "plantConfirmedAvailable": "Biljka potvrđena, dijagnoza dostupna.",
-      "plantNotConfirmed": "Biljka nije potvrđena",
-      "disease": "Bolest",
-      "confidence": "Pouzdanost",
-      "affectedOrgans": "Zahvaćeni organi",
-      "description": "Opis",
-      "provider": "Provajder",
-      "languageUsed": "Jezik",
-      "confirmThis": "Potvrdi ovu dijagnozu",
-      "useThis": "Koristi ovu dijagnozu",
-      "confirmedDiagnosis": "Potvrđena dijagnoza",
-      "uncertain": "Dijagnoza je neizvesna",
-      "noDiagnosis": "Nema rezultata dijagnoze",
-      "notTreatmentAdvice": "Ovo nije savet za tretman.",
-      "treatmentComingNext": "Preporuke za tretman uskoro",
-      "referenceImages": "Referentne slike",
-      "imageAttribution": "Atribucija slike",
-      "openImage": "Otvori sliku",
-      "doneToast": "Dijagnoza završena",
-      "confirmedToast": "Dijagnoza potvrđena",
-      "providerCode": "Kod provajdera",
-      "lowConfidenceWarning": "Dijagnoza je neizvesna. Koristite jasnije slike izbliza i potvrdite problem pre traženja tretmana.",
-      "noReferenceImagesReturned": "Pl@ntNet nije vratio referentne slike za ove kandidate.",
-      "problemType": {
-        "pest": "Štetočina",
-        "disease": "Bolest",
-        "unknown": "Nepoznat problem"
-      },
-      "confidenceBucket": {
-        "low": "Niska pouzdanost",
-        "medium": "Srednja pouzdanost",
-        "high": "Visoka pouzdanost"
-      },
-      "errors": {
-        "apiKeyMissing": "Dijagnoza biljke nije konfigurisana (nedostaje API ključ).",
-        "noCompatible": "Nema kompatibilnih JPEG ili PNG slika.",
-        "downloadFailed": "Nije moguće preuzeti slike za dijagnozu.",
-        "quotaExhausted": "Pl@ntNet kvota je iscrpljena. Pokušajte kasnije.",
-        "authFailed": "Pl@ntNet autentifikacija nije uspela.",
-        "badRequest": "Pl@ntNet je odbio zahtev.",
-        "empty": "Nema rezultata dijagnoze. Pokušajte sa jasnijim fotografijama.",
-        "generic": "Dijagnoza nije uspela. Pokušajte ponovo.",
-        "confirmFailed": "Potvrda nije uspela. Pokušajte ponovo.",
-        "webpConvertFailed": "Konverzija WebP slike nije uspela. Pokušajte JPEG ili PNG.",
-        "plantNotConfirmed": "Prvo potvrdite biljku da biste dijagnostikovali bolest.",
-        "invalidCaseGoal": "Dijagnoza bolesti je dostupna samo za slučajeve tipa Dijagnoza bolesti.",
-        "limitReached": "Mesečni limit Plant AI skeniranja je dostignut. Nadogradite plan ili sačekajte sledeći mesec."
-      },
-      "contextLabel": "Kontekst dijagnoze",
-      "relevance": {
-        "high": "Relevantno za potvrđenu biljku",
-        "medium": "Moguće relevantno",
-        "low": "Niska relevantnost za potvrđenu biljku",
-        "unknown": "Relevantnost nepoznata"
-      },
-      "relevanceReason": {
-        "mentions_confirmed": "Pominje potvrđenu biljku.",
-        "mentions_other_host": "Pominje drugu biljku domaćina.",
-        "broad_pest": "Široko rasprostranjena štetočina; može napadati mnoge biljke."
-      },
-      "aiInterpretationTitle": "AI interpretacija",
-      "providerCandidatesTitle": "Kandidati provajdera",
-      "bestCandidatesTitle": "Najverovatniji kandidati",
-      "unlikelyCandidatesTitle": "Malo verovatni kandidati",
-      "whatToCheckVisually": "Šta vizuelno proveriti",
-      "needsMoreEvidence": "Potrebno je više dokaza",
-      "overallConfidence": "Ukupna pouzdanost",
-      "relevanceLabel": "Relevantnost",
-      "modelUsed": "Korišćeni model",
-      "fallbackModelUsed": "Korišćen rezervni model",
-      "aiHelper": "AI interpretacija pomaže da se poređaju kandidati provajdera. Ne predstavlja savet o lečenju.",
-      "diagnosisUncertain": "Dijagnoza ostaje neizvesna",
-      "aiFailed": "AI interpretaciju nije bilo moguće generisati.",
-      "plantProfileContext": {
-        "title": "Kontekst biljnog profila",
-        "trefleReferenceContext": "Trefle referentni kontekst",
-        "used": "Trefle profil je korišćen kao pomoćni botanički kontekst.",
-        "notAvailable": "Trefle profil nije bio dostupan.",
-        "notes": "Napomene",
-        "warnings": "Upozorenja",
-        "matchWarning": "Upozorenje o poklapanju profila",
-        "disclaimer": "Botanički kontekst ne zamenjuje dijagnozu bolesti."
-      }
     },
     "scans": {
       "label": "Plant AI skeniranja",
