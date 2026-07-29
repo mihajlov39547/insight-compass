@@ -1893,7 +1893,9 @@
         "identify": "I have your plant identification case \"{{title}}\" loaded. I can explain the confirmed plant, confidence score, possible alternatives, and what extra photos could improve identification. I do not directly inspect the photos here; I use the case context, provider results, and your notes.",
         "diagnose": "I have your plant diagnosis case \"{{title}}\" loaded. I can discuss possible problems — disease, pest damage, nutrient deficiency, pesticide injury, or environmental stress — based on the confirmed plant, provider candidates, and your notes. I do not provide chemical product names, doses, or treatment instructions.",
         "improve_growth": "I have your growth case \"{{title}}\" loaded. I can suggest general care checks based on the case context and confirmed plant profile if available. I do not provide fertilizer product names or doses.",
-        "increase_income": "I have your yield planning case \"{{title}}\" loaded. I can discuss general considerations based on the confirmed plant and case context."
+        "increase_income": "I have your yield planning case \"{{title}}\" loaded. I can discuss general considerations based on the confirmed plant and case context.",
+        "improve_growth_with_grounding": "I have this Improve Growth case loaded, including the gathered growth guidance cards. I can answer using the Overview, Watering, Sunlight, Soil, Pruning, Hardiness / climate, Growth rate / maintenance, Pests and disease, and Fruiting / harvest sections. Because the plant identification confidence is low, treat species-specific advice as provisional.",
+        "improve_growth_no_grounding": "Dedicated growth guidance has not been gathered yet. Run 'Gather growth guidance' first for species-specific care cards, or ask a general question based on the confirmed plant and case notes."
       },
       "sections": {
         "caseSummary": "Case summary",
@@ -1975,7 +1977,13 @@
         "growthWhenPrune": "When should I prune it?",
         "growthLimitsLocation": "What could limit its growth in this location?",
         "growthMonitorMonth": "What should I monitor this month?",
-        "growthReliabilityLowConf": "How reliable is this advice given the low identification confidence?"
+        "growthReliabilityLowConf": "How reliable is this advice given the low identification confidence?",
+        "growthEncourageTaller": "How can I encourage taller growth?",
+        "growthWaterSunSoilFirst": "What should I improve first: water, sun, or soil?",
+        "growthSafestLowConf": "What care steps are safest given the low identification confidence?",
+        "growthPruneStructure": "How should I prune it for better structure?",
+        "growthMonitorPests": "What should I monitor for pests or disease?",
+        "growthLocalRelevance": "Which guidance is most relevant for my location?"
       },
       "errors": {
         "generic": "Chat failed. Please try again.",
@@ -1986,11 +1994,107 @@
         "credits_exhausted": "AI credits exhausted. Please add credits to continue.",
         "ai_failed": "AI service failed. Please try again.",
         "empty_reply": "No reply from AI. Please try again."
-      }
+      },
+      "helper": {
+        "improve_growth_with_grounding": "Ask about the gathered growth cards, e.g. watering, soil, pruning, pests, or how to encourage taller growth.",
+        "improve_growth_no_grounding": "For better answers, gather growth guidance first."
+      },
+      "inputPh_improve_growth": "Ask about growth, watering, soil, pruning, pests, or harvest…"
     },
     "diagnose": {
-      "confirmedShort": "Confirmed",
-      "candidateShort": "Candidate"
+      "sectionTitle": "Plant diagnosis",
+      "diagnose": "Diagnose disease",
+      "diagnoseDirectly": "Diagnose directly",
+      "running": "Diagnosing…",
+      "runAgain": "Run again",
+      "loading": "Loading diagnoses…",
+      "uploadFirst": "Upload plant images first.",
+      "plantNotConfirmedHint": "Confirm the plant first for more relevant disease diagnosis.",
+      "confirmPlantFirst": "Confirm the plant first to diagnose disease.",
+      "usesConfirmedPlant": "Disease diagnosis uses the confirmed plant to improve relevance.",
+      "plantConfirmedAvailable": "Plant confirmed, diagnosis available.",
+      "plantNotConfirmed": "Plant not confirmed",
+      "disease": "Disease",
+      "confidence": "Confidence",
+      "affectedOrgans": "Affected organs",
+      "description": "Description",
+      "provider": "Provider",
+      "languageUsed": "Language used",
+      "confirmThis": "Confirm this diagnosis",
+      "useThis": "Use this diagnosis",
+      "confirmedDiagnosis": "Confirmed diagnosis",
+      "uncertain": "Diagnosis is uncertain",
+      "noDiagnosis": "No diagnosis returned",
+      "notTreatmentAdvice": "This is not treatment advice.",
+      "treatmentComingNext": "Treatment recommendations coming next",
+      "referenceImages": "Reference images",
+      "imageAttribution": "Image attribution",
+      "openImage": "Open image",
+      "doneToast": "Diagnosis complete",
+      "confirmedToast": "Diagnosis confirmed",
+      "providerCode": "Provider code",
+      "lowConfidenceWarning": "Diagnosis is uncertain. Use clearer close-up images and confirm the issue before requesting treatment.",
+      "noReferenceImagesReturned": "Pl@ntNet returned no reference images for these disease candidates.",
+      "problemType": {
+        "pest": "Pest",
+        "disease": "Disease",
+        "unknown": "Unknown problem"
+      },
+      "confidenceBucket": {
+        "low": "Low confidence",
+        "medium": "Medium confidence",
+        "high": "High confidence"
+      },
+      "errors": {
+        "apiKeyMissing": "Plant diagnosis is not configured (API key missing).",
+        "noCompatible": "No compatible JPEG or PNG images available.",
+        "downloadFailed": "Could not download images for diagnosis.",
+        "quotaExhausted": "Pl@ntNet quota is exhausted. Try again later.",
+        "authFailed": "Pl@ntNet authentication failed.",
+        "badRequest": "Pl@ntNet rejected the request.",
+        "empty": "No diagnosis returned. Try clearer photos.",
+        "generic": "Diagnosis failed. Please try again.",
+        "confirmFailed": "Confirmation failed. Please try again.",
+        "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG.",
+        "plantNotConfirmed": "Confirm the plant first to diagnose disease.",
+        "invalidCaseGoal": "Disease diagnosis is available only for Diagnose disease cases.",
+        "limitReached": "Monthly Plant AI scan limit reached. Upgrade or wait until next month."
+      },
+      "contextLabel": "Diagnosis context",
+      "relevance": {
+        "high": "Relevant to confirmed plant",
+        "medium": "Possibly relevant",
+        "low": "Low relevance to confirmed plant",
+        "unknown": "Relevance unknown"
+      },
+      "relevanceReason": {
+        "mentions_confirmed": "Mentions confirmed plant.",
+        "mentions_other_host": "Mentions a different host plant.",
+        "broad_pest": "Broad pest; may affect many plants."
+      },
+      "aiInterpretationTitle": "AI interpretation",
+      "providerCandidatesTitle": "Provider candidates",
+      "bestCandidatesTitle": "Best candidates",
+      "unlikelyCandidatesTitle": "Unlikely candidates",
+      "whatToCheckVisually": "What to check visually",
+      "needsMoreEvidence": "Needs more evidence",
+      "overallConfidence": "Overall confidence",
+      "relevanceLabel": "Relevance",
+      "modelUsed": "Model used",
+      "fallbackModelUsed": "Fallback model used",
+      "aiHelper": "AI interpretation helps prioritize provider candidates. It is not treatment advice.",
+      "diagnosisUncertain": "Diagnosis remains uncertain",
+      "aiFailed": "AI interpretation could not be generated.",
+      "plantProfileContext": {
+        "title": "Plant profile context",
+        "trefleReferenceContext": "Trefle reference context",
+        "used": "Trefle profile was used as supporting botanical context.",
+        "notAvailable": "Trefle profile was not available.",
+        "notes": "Notes",
+        "warnings": "Warnings",
+        "matchWarning": "Profile match warning",
+        "disclaimer": "Botanical context does not replace disease diagnosis."
+      }
     },
     "growth": {
       "title": "Growth guidance",
@@ -2185,101 +2289,6 @@
       "openImage": "Open image",
       "fromSpeciesResult": "from species result",
       "referenceImagesEphemeralNote": "Reference images are shown only for this run and are not stored."
-    },
-    "diagnose": {
-      "sectionTitle": "Plant diagnosis",
-      "diagnose": "Diagnose disease",
-      "diagnoseDirectly": "Diagnose directly",
-      "running": "Diagnosing…",
-      "runAgain": "Run again",
-      "loading": "Loading diagnoses…",
-      "uploadFirst": "Upload plant images first.",
-      "plantNotConfirmedHint": "Confirm the plant first for more relevant disease diagnosis.",
-      "confirmPlantFirst": "Confirm the plant first to diagnose disease.",
-      "usesConfirmedPlant": "Disease diagnosis uses the confirmed plant to improve relevance.",
-      "plantConfirmedAvailable": "Plant confirmed, diagnosis available.",
-      "plantNotConfirmed": "Plant not confirmed",
-      "disease": "Disease",
-      "confidence": "Confidence",
-      "affectedOrgans": "Affected organs",
-      "description": "Description",
-      "provider": "Provider",
-      "languageUsed": "Language used",
-      "confirmThis": "Confirm this diagnosis",
-      "useThis": "Use this diagnosis",
-      "confirmedDiagnosis": "Confirmed diagnosis",
-      "uncertain": "Diagnosis is uncertain",
-      "noDiagnosis": "No diagnosis returned",
-      "notTreatmentAdvice": "This is not treatment advice.",
-      "treatmentComingNext": "Treatment recommendations coming next",
-      "referenceImages": "Reference images",
-      "imageAttribution": "Image attribution",
-      "openImage": "Open image",
-      "doneToast": "Diagnosis complete",
-      "confirmedToast": "Diagnosis confirmed",
-      "providerCode": "Provider code",
-      "lowConfidenceWarning": "Diagnosis is uncertain. Use clearer close-up images and confirm the issue before requesting treatment.",
-      "noReferenceImagesReturned": "Pl@ntNet returned no reference images for these disease candidates.",
-      "problemType": {
-        "pest": "Pest",
-        "disease": "Disease",
-        "unknown": "Unknown problem"
-      },
-      "confidenceBucket": {
-        "low": "Low confidence",
-        "medium": "Medium confidence",
-        "high": "High confidence"
-      },
-      "errors": {
-        "apiKeyMissing": "Plant diagnosis is not configured (API key missing).",
-        "noCompatible": "No compatible JPEG or PNG images available.",
-        "downloadFailed": "Could not download images for diagnosis.",
-        "quotaExhausted": "Pl@ntNet quota is exhausted. Try again later.",
-        "authFailed": "Pl@ntNet authentication failed.",
-        "badRequest": "Pl@ntNet rejected the request.",
-        "empty": "No diagnosis returned. Try clearer photos.",
-        "generic": "Diagnosis failed. Please try again.",
-        "confirmFailed": "Confirmation failed. Please try again.",
-        "webpConvertFailed": "Could not convert WebP image. Try JPEG or PNG.",
-        "plantNotConfirmed": "Confirm the plant first to diagnose disease.",
-        "invalidCaseGoal": "Disease diagnosis is available only for Diagnose disease cases.",
-        "limitReached": "Monthly Plant AI scan limit reached. Upgrade or wait until next month."
-      },
-      "contextLabel": "Diagnosis context",
-      "relevance": {
-        "high": "Relevant to confirmed plant",
-        "medium": "Possibly relevant",
-        "low": "Low relevance to confirmed plant",
-        "unknown": "Relevance unknown"
-      },
-      "relevanceReason": {
-        "mentions_confirmed": "Mentions confirmed plant.",
-        "mentions_other_host": "Mentions a different host plant.",
-        "broad_pest": "Broad pest; may affect many plants."
-      },
-      "aiInterpretationTitle": "AI interpretation",
-      "providerCandidatesTitle": "Provider candidates",
-      "bestCandidatesTitle": "Best candidates",
-      "unlikelyCandidatesTitle": "Unlikely candidates",
-      "whatToCheckVisually": "What to check visually",
-      "needsMoreEvidence": "Needs more evidence",
-      "overallConfidence": "Overall confidence",
-      "relevanceLabel": "Relevance",
-      "modelUsed": "Model used",
-      "fallbackModelUsed": "Fallback model used",
-      "aiHelper": "AI interpretation helps prioritize provider candidates. It is not treatment advice.",
-      "diagnosisUncertain": "Diagnosis remains uncertain",
-      "aiFailed": "AI interpretation could not be generated.",
-      "plantProfileContext": {
-        "title": "Plant profile context",
-        "trefleReferenceContext": "Trefle reference context",
-        "used": "Trefle profile was used as supporting botanical context.",
-        "notAvailable": "Trefle profile was not available.",
-        "notes": "Notes",
-        "warnings": "Warnings",
-        "matchWarning": "Profile match warning",
-        "disclaimer": "Botanical context does not replace disease diagnosis."
-      }
     },
     "scans": {
       "label": "Plant AI scans",
