@@ -11,6 +11,10 @@ import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantDiagnoses, usePlantDiagnosisInterpretations } from '@/hooks/usePlantDiagnoses';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
+import {
+  usePlantCaseChatMessages,
+  useInvalidatePlantCaseChatMessages,
+} from '@/hooks/usePlantCaseChatMessages';
 import type { PlantCase, PlantCaseGoal } from '@/hooks/usePlantCases';
 
 interface Props {
