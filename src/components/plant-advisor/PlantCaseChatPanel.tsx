@@ -102,6 +102,10 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const { data: idents = [] } = usePlantIdentifications(plantCase.id);
   const { data: diagnoses = [] } = usePlantDiagnoses(plantCase.id);
   const { data: interpretation } = usePlantDiagnosisInterpretations(plantCase.id);
+  const { data: grounding } = usePlantCaseGrounding(plantCase.id);
+  const hasGrowthGrounding =
+    !!grounding && (grounding.status === 'success' || grounding.status === 'partial');
+  const isImproveGrowth = plantCase.user_goal === 'improve_growth';
 
   const confirmedIdent = idents.find((i) => i.is_confirmed) || null;
   const topIdent = confirmedIdent || idents[0] || null;
