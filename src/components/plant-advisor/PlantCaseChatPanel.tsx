@@ -248,7 +248,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       q('identifyPhotosToImprove'),
       q('diagnoseWhatToAvoid'),
     ];
-  }, [t, isIdentify, isDiagnose, goal, confirmedIdent, confirmedDiag, diagnoses.length]);
+  }, [t, isIdentify, isDiagnose, goal, confirmedIdent, confirmedDiag, diagnoses.length, hasGrowthGrounding]);
 
   const send = async (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
