@@ -625,8 +625,10 @@ ${assistantAnswer.slice(0, 4000)}`;
             model: modelUsed,
             usedFallback,
             usedGrowthGrounding: !!groundingRow,
+            sourcesUsed,
           },
         })
+
         .select('id')
         .single();
       if (asstInsErr) {
