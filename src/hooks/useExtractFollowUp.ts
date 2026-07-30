@@ -146,9 +146,18 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
 
       setExtractingMessageId(sourceMessageId);
       try {
+        // Plant Advisor generated summaries follow the Plant Advisor
+        // identification language, not the global UI language.
+        const langSuffix =
+          scope.kind === 'plant_case' && scope.lang === 'sr'
+            ? ' (Odgovori na srpskom jeziku, latinicom.)'
+            : scope.kind === 'plant_case'
+              ? ' (Answer in English.)'
+              : '';
+
         const result = await runTavilyExtract({
           urls: selections.map((s) => s.url),
-          query: question,
+          query: question ? `${question}${langSuffix}` : (langSuffix.trim() || null),
           extract_depth: depth,
         });
 
@@ -172,7 +181,7 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
           });
           if (insertError) throw insertError;
           qc.invalidateQueries({ queryKey: ['messages', scope.chatId] });
-        } else {
+        } else if (scope.kind === 'notebook') {
           const { error: insertError } = await (supabase.from('notebook_messages' as any) as any).insert({
             notebook_id: scope.notebookId,
             user_id: user.id,
@@ -183,7 +192,36 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
           });
           if (insertError) throw insertError;
           qc.invalidateQueries({ queryKey: ['notebook-messages', scope.notebookId] });
+        } else {
+          const { error: insertError } = await supabase.from('plant_case_chat_messages').insert({
+            case_id: scope.caseId,
+            user_id: user.id,
+            role: 'assistant',
+            content,
+            metadata: {
+              kind: 'extract',
+              model: modelId,
+              lang: scope.lang ?? 'en',
+              sourceMessageId,
+              sourcesUsed: persistedSources.items.map((it) => ({
+                id: it.id,
+                provider: 'web',
+                title: it.title,
+                url: it.url,
+                domain: (() => { try { return new URL(it.url).hostname.replace(/^www\./, ''); } catch { return null; } })(),
+                score: it.relevance,
+                sourceType: 'extracted',
+                authorityScore: null,
+                cardKey: null,
+                snippet: it.snippet,
+              })),
+              extract: persistedSources.extract,
+            } as any,
+          });
+          if (insertError) throw insertError;
+          qc.invalidateQueries({ queryKey: ['plant-case-chat-messages', scope.caseId] });
         }
+
 
         if (result.results.length > 0) {
           const depthLabel = result.extract_depth === 'advanced' ? ' (deep)' : '';
