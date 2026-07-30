@@ -1890,6 +1890,8 @@
       "imagesAttached": "Priloženih fotografija: {{count}}",
       "inputPh": "Pitajte o ovom slučaju…",
       "thinking": "Razmišljam…",
+      "suggestedFollowUps": "Predložena dodatna pitanja",
+
       "assistantTitle": {
         "default": "Asistent za slučaj biljke",
         "identify": "Asistent za identifikaciju biljke",
