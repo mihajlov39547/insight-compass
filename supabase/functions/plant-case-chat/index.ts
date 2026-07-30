@@ -646,6 +646,8 @@ ${assistantAnswer.slice(0, 4000)}`;
       ok: true,
       reply: result.text,
       suggestedFollowUps,
+      sourcesUsed,
+
       modelUsed,
       usedFallback,
       ...savedIds,
