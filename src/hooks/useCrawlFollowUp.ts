@@ -13,7 +13,11 @@ import {
 
 export type CrawlScope =
   | { kind: 'chat'; chatId: string }
-  | { kind: 'notebook'; notebookId: string };
+  | { kind: 'notebook'; notebookId: string }
+  // Plant Advisor: saves the crawled content into the plant case chat so it
+  // stays linked to the user + case + source URL.
+  | { kind: 'plant_case'; caseId: string; lang?: 'en' | 'sr' };
+
 
 export interface CrawlSelection {
   url: string;
