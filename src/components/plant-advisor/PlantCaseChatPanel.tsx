@@ -199,6 +199,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   } = usePlantCaseChatMessages(plantCase.id);
   const invalidateChatMessages = useInvalidatePlantCaseChatMessages();
 
+  // Plant Advisor identification language drives AI-generated source summaries.
+  const { identificationLanguage } = usePlantAdvisorSettings();
+  const advisorLang: 'en' | 'sr' = identificationLanguage === 'sr' ? 'sr' : 'en';
+  const { runExtract, isExtracting, extractingMessageId } = useExtractFollowUp();
+  const { runCrawl, isCrawling, crawlingMessageId } = useCrawlFollowUp();
+
+
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   // Optimistic messages shown while awaiting the assistant reply.
