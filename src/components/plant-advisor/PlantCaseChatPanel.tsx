@@ -176,8 +176,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   // Optimistic messages shown while awaiting the assistant reply.
   // Cleared after the query invalidation returns persisted rows.
   const [optimistic, setOptimistic] = useState<Msg[]>([]);
+  // Rolling follow-up suggestions returned by the backend (not persisted).
+  const [followUps, setFollowUps] = useState<string[] | null>(null);
+  const [askedQuestions, setAskedQuestions] = useState<string[]>([]);
+  const followUpsRequestedRef = useRef(false);
 
   const hasPersistedHistory = persistedMessages.length > 0;
+
 
   const displayMessages = useMemo<Msg[]>(() => {
     if (hasPersistedHistory) {
