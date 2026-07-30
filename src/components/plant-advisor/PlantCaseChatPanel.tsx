@@ -669,13 +669,46 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
             </div>
           </div>
         )}
-        {!messagesLoading && displayMessages.map((m, i) => (
-          <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-            <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'}`}>
-              {m.role === 'user' ? m.content : <MarkdownContent content={m.content} />}
+        {!messagesLoading && displayMessages.map((m, i) => {
+          const items = m.role === 'assistant' ? toSourceItems(m.sourcesUsed) : [];
+          const msgId = m.id ?? `local-${i}`;
+          return (
+            <div key={msgId} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+              <div className="max-w-[80%] space-y-2">
+                <div className={`rounded-lg px-3 py-2 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'}`}>
+                  {m.role === 'user' ? m.content : <MarkdownContent content={m.content} />}
+                </div>
+                {items.length > 0 && (
+                  <SourceAttribution
+                    sources={items}
+                    messageId={msgId}
+                    context="project"
+                    onExtract={(sels, q) =>
+                      runExtract(
+                        { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang },
+                        msgId,
+                        sels,
+                        q,
+                      )
+                    }
+                    isExtracting={isExtracting && extractingMessageId === msgId}
+                    onCrawl={(sel, instructions) =>
+                      runCrawl(
+                        { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang },
+                        msgId,
+                        sel,
+                        instructions,
+                      )
+                    }
+                    isCrawling={isCrawling && crawlingMessageId === msgId}
+                    crawlingUrl={crawlingMessageId === msgId ? null : undefined}
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+
         {pending && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
