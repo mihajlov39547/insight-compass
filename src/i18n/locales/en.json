@@ -1874,6 +1874,8 @@
       "imagesAttached": "Images attached: {{count}}",
       "inputPh": "Ask about this plant case…",
       "thinking": "Thinking…",
+      "suggestedFollowUps": "Suggested follow-ups",
+
       "assistantTitle": {
         "default": "Plant case assistant",
         "identify": "Plant identification assistant",

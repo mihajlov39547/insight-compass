@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, MessageSquare, Send, Loader2, AlertTriangle, Info, Camera, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -176,8 +176,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   // Optimistic messages shown while awaiting the assistant reply.
   // Cleared after the query invalidation returns persisted rows.
   const [optimistic, setOptimistic] = useState<Msg[]>([]);
+  // Rolling follow-up suggestions returned by the backend (not persisted).
+  const [followUps, setFollowUps] = useState<string[] | null>(null);
+  const [askedQuestions, setAskedQuestions] = useState<string[]>([]);
+  const followUpsRequestedRef = useRef(false);
 
   const hasPersistedHistory = persistedMessages.length > 0;
+
 
   const displayMessages = useMemo<Msg[]>(() => {
     if (hasPersistedHistory) {
@@ -264,6 +269,41 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     ];
   }, [t, isIdentify, isDiagnose, goal, confirmedIdent, confirmedDiag, diagnoses.length, hasGrowthGrounding]);
 
+  const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
+
+  // Suggestions shown right now: backend follow-ups once a turn exists,
+  // starter questions only for an empty chat. Never repeat asked questions.
+  const visibleSuggestions = useMemo(() => {
+    const base = followUps ?? (hasPersistedHistory ? [] : quickQuestions);
+    return base.filter((q) => !askedQuestions.includes(q)).slice(0, 4);
+  }, [followUps, hasPersistedHistory, quickQuestions, askedQuestions]);
+
+  // Reopening a persisted chat: derive follow-ups from the last assistant answer.
+  useEffect(() => {
+    if (!hasPersistedHistory || followUps !== null || followUpsRequestedRef.current) return;
+    followUpsRequestedRef.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke('plant-case-chat', {
+          body: {
+            caseId: plantCase.id,
+            lang: langCode,
+            followUpsOnly: true,
+            messages: persistedMessages.map((m) => ({ role: m.role, content: m.content })),
+          },
+        });
+        const list = (data as any)?.suggestedFollowUps;
+        if (!cancelled && Array.isArray(list)) setFollowUps(list.filter((s: unknown) => typeof s === 'string'));
+      } catch {
+        /* suggestions are best-effort */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [hasPersistedHistory, followUps, persistedMessages, plantCase.id, langCode]);
+
+
+
   const send = async (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
     if (!text || pending) return;
@@ -274,9 +314,11 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       { role: 'user', content: text },
     ];
     setOptimistic([{ role: 'user', content: text }]);
+    // Hide the clicked suggestion immediately.
+    setAskedQuestions((prev) => (prev.includes(text) ? prev : [...prev, text]));
+    setFollowUps((prev) => (prev ? prev.filter((q) => q !== text) : prev));
     setPending(true);
     try {
-      const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
       const { data, error } = await supabase.functions.invoke('plant-case-chat', {
         body: {
           caseId: plantCase.id,
@@ -295,9 +337,17 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       }
       const reply = (data as any)?.reply;
       if (typeof reply !== 'string' || !reply.trim()) throw new Error('empty_reply');
+      const nextFollowUps = (data as any)?.suggestedFollowUps;
+      followUpsRequestedRef.current = true;
+      setFollowUps(
+        Array.isArray(nextFollowUps)
+          ? nextFollowUps.filter((s: unknown) => typeof s === 'string')
+          : [],
+      );
       // Refetch persisted messages; clear optimistic overlay once the persisted rows arrive.
       await invalidateChatMessages(plantCase.id);
       setOptimistic([]);
+
     } catch (e) {
       const msg = (e as Error).message;
       // Drop the optimistic user message on failure so the user can retry.
@@ -595,21 +645,28 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         )}
       </div>
 
-      {quickQuestions.length > 0 && (
-        <div className="border-t border-border px-3 pt-2 flex flex-wrap gap-1.5">
-          {quickQuestions.map((q) => (
-            <button
-              key={q}
-              type="button"
-              onClick={() => send(q)}
-              disabled={pending}
-              className="text-xs px-2 py-1 rounded-md border border-border bg-muted/40 hover:bg-muted disabled:opacity-50"
-            >
-              {q}
-            </button>
-          ))}
+      {visibleSuggestions.length > 0 && (
+        <div className="border-t border-border px-3 py-1.5">
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+            {t('plantAdvisor.chat.suggestedFollowUps')}
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:thin]">
+            {visibleSuggestions.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => send(q)}
+                disabled={pending}
+                title={q}
+                className="text-xs px-2 py-1 rounded-full border border-border bg-muted/40 hover:bg-muted disabled:opacity-50 whitespace-nowrap flex-shrink-0 max-w-[240px] truncate"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         </div>
       )}
+
 
       <div className="border-t border-border p-3">
         {isImproveGrowth && (

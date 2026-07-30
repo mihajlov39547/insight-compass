@@ -54,6 +54,9 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const caseId = String(body?.caseId || '');
     const lang = (body?.lang === 'sr' ? 'sr' : 'en') as 'en' | 'sr';
+    // When true, skip generating/persisting a reply and only return follow-up
+    // suggestions derived from the existing conversation (used when reopening a chat).
+    const followUpsOnly = body?.followUpsOnly === true;
     const messages: ChatMessage[] = Array.isArray(body?.messages)
       ? body.messages
           .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
@@ -61,6 +64,7 @@ Deno.serve(async (req: Request) => {
       : [];
     if (!caseId) return json({ error: 'missing_case_id' }, 400);
     if (messages.length === 0) return json({ error: 'empty_messages' }, 400);
+
 
     const admin = createClient(supaUrl, serviceKey);
 
@@ -339,7 +343,89 @@ Formatting:
       }
     };
 
+    // ---- Suggested follow-ups -------------------------------------------------
+    const availableCards = groundingRow?.normalized_summary?.normalizedCare
+      ? Object.keys(groundingRow.normalized_summary.normalizedCare).filter(
+          (k) => !!groundingRow.normalized_summary.normalizedCare[k],
+        )
+      : [];
+
+    const generateFollowUps = async (
+      lastUserQuestion: string,
+      assistantAnswer: string,
+    ): Promise<string[]> => {
+      const langLine = lang === 'sr' ? 'Serbian (Latin script)' : 'English';
+      const cardLine =
+        pc.user_goal === 'improve_growth'
+          ? `This is an Improve Growth case. Prefer follow-ups tied to these care areas: ${
+              availableCards.length
+                ? availableCards.join(', ')
+                : 'watering, sunlight, soil, pruning, hardiness/climate, growth rate/maintenance, pests and disease, fruiting/harvest, local conditions'
+            }.`
+          : '';
+      const prompt = `Based on the conversation below, propose up to 4 short follow-up questions the USER could ask next.
+
+Rules:
+- Write them in ${langLine}.
+- Each is a single short question (max ~12 words), actionable and natural to ask next.
+- Do NOT repeat or rephrase the user's last question.
+- Must stay within the case goal: ${pc.user_goal ?? 'unspecified'}.
+- NEVER suggest questions about pesticide/fungicide/herbicide/fertilizer product names, doses, mixing rates, spray schedules, or chemical treatments.
+- ${cardLine}
+- Return ONLY a JSON array of strings, nothing else.
+
+USER'S LAST QUESTION:
+${lastUserQuestion || '(none)'}
+
+ASSISTANT ANSWER:
+${assistantAnswer.slice(0, 4000)}`;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+      try {
+        const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${aiKey}`, 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: normalizeModelId(Deno.env.get('PLANT_CHAT_AI_PRIMARY_MODEL') ?? 'gemini-3.5-flash'),
+            messages: [
+              { role: 'system', content: 'You generate short follow-up question suggestions. Output strict JSON only.' },
+              { role: 'user', content: prompt },
+            ],
+          }),
+        });
+        if (!resp.ok) return [];
+        const b = await resp.json().catch(() => null);
+        const raw = b?.choices?.[0]?.message?.content;
+        if (typeof raw !== 'string') return [];
+        const match = raw.match(/\[[\s\S]*\]/);
+        if (!match) return [];
+        const parsed = JSON.parse(match[0]);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .filter((s: unknown) => typeof s === 'string' && s.trim().length > 0)
+          .map((s: string) => s.trim())
+          .filter((s: string) => !/pesticid|fungicid|herbicid|insekticid|pesticide|fungicide|herbicide|insecticide|fertiliz|đubriv|dubriv|dose|doza|spray|prskan/i.test(s))
+          .slice(0, 4);
+      } catch {
+        return [];
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
+
+    if (followUpsOnly) {
+      const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+      const lastUserQ = [...messages].reverse().find((m) => m.role === 'user');
+      const suggestedFollowUps = lastAssistant
+        ? await generateFollowUps(lastUserQ?.content ?? '', lastAssistant.content)
+        : [];
+      return json({ ok: true, suggestedFollowUps });
+    }
+
     let result = await callModel(primaryModel);
+
     let modelUsed = primaryModel;
     let usedFallback = false;
     if (!result.ok && fallbackModel && fallbackModel !== primaryModel) {
@@ -409,13 +495,17 @@ Formatting:
       console.error('[plant-case-chat] persist messages threw', (persistErr as Error).message);
     }
 
+    const suggestedFollowUps = await generateFollowUps(lastUser?.content ?? '', result.text!);
+
     return json({
       ok: true,
       reply: result.text,
+      suggestedFollowUps,
       modelUsed,
       usedFallback,
       ...savedIds,
     });
+
   } catch (e) {
     console.error('[plant-case-chat] fatal', (e as Error).message);
     return json({ error: 'internal_error' }, 500);
