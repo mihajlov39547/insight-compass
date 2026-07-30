@@ -314,9 +314,11 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       { role: 'user', content: text },
     ];
     setOptimistic([{ role: 'user', content: text }]);
+    // Hide the clicked suggestion immediately.
+    setAskedQuestions((prev) => (prev.includes(text) ? prev : [...prev, text]));
+    setFollowUps((prev) => (prev ? prev.filter((q) => q !== text) : prev));
     setPending(true);
     try {
-      const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
       const { data, error } = await supabase.functions.invoke('plant-case-chat', {
         body: {
           caseId: plantCase.id,
@@ -335,9 +337,17 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
       }
       const reply = (data as any)?.reply;
       if (typeof reply !== 'string' || !reply.trim()) throw new Error('empty_reply');
+      const nextFollowUps = (data as any)?.suggestedFollowUps;
+      followUpsRequestedRef.current = true;
+      setFollowUps(
+        Array.isArray(nextFollowUps)
+          ? nextFollowUps.filter((s: unknown) => typeof s === 'string')
+          : [],
+      );
       // Refetch persisted messages; clear optimistic overlay once the persisted rows arrive.
       await invalidateChatMessages(plantCase.id);
       setOptimistic([]);
+
     } catch (e) {
       const msg = (e as Error).message;
       // Drop the optimistic user message on failure so the user can retry.
