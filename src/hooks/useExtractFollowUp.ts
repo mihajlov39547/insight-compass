@@ -15,7 +15,11 @@ import type { ExtractSelection } from '@/components/chat/SourceAttribution';
 
 export type ExtractScope =
   | { kind: 'chat'; chatId: string }
-  | { kind: 'notebook'; notebookId: string };
+  | { kind: 'notebook'; notebookId: string }
+  // Plant Advisor: saves the extracted content into the plant case chat so it
+  // stays linked to the user + case + source URL.
+  | { kind: 'plant_case'; caseId: string; lang?: 'en' | 'sr' };
+
 
 interface UseExtractFollowUpResult {
   isExtracting: boolean;
