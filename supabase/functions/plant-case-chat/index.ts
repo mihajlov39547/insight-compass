@@ -590,7 +590,9 @@ ${assistantAnswer.slice(0, 4000)}`;
     // Only the last user message is saved (prior turns were saved on their own request).
     const lastUser = [...messages].reverse().find((m) => m.role === 'user');
     const userGoal = pc.user_goal ?? null;
+    const sourcesUsed = buildSourcesUsed(lastUser?.content ?? '');
     const savedIds: { userMessageId?: string; assistantMessageId?: string } = {};
+
     try {
       if (lastUser) {
         const { data: userRow, error: userInsErr } = await admin
