@@ -269,6 +269,41 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     ];
   }, [t, isIdentify, isDiagnose, goal, confirmedIdent, confirmedDiag, diagnoses.length, hasGrowthGrounding]);
 
+  const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
+
+  // Suggestions shown right now: backend follow-ups once a turn exists,
+  // starter questions only for an empty chat. Never repeat asked questions.
+  const visibleSuggestions = useMemo(() => {
+    const base = followUps ?? (hasPersistedHistory ? [] : quickQuestions);
+    return base.filter((q) => !askedQuestions.includes(q)).slice(0, 4);
+  }, [followUps, hasPersistedHistory, quickQuestions, askedQuestions]);
+
+  // Reopening a persisted chat: derive follow-ups from the last assistant answer.
+  useEffect(() => {
+    if (!hasPersistedHistory || followUps !== null || followUpsRequestedRef.current) return;
+    followUpsRequestedRef.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke('plant-case-chat', {
+          body: {
+            caseId: plantCase.id,
+            lang: langCode,
+            followUpsOnly: true,
+            messages: persistedMessages.map((m) => ({ role: m.role, content: m.content })),
+          },
+        });
+        const list = (data as any)?.suggestedFollowUps;
+        if (!cancelled && Array.isArray(list)) setFollowUps(list.filter((s: unknown) => typeof s === 'string'));
+      } catch {
+        /* suggestions are best-effort */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [hasPersistedHistory, followUps, persistedMessages, plantCase.id, langCode]);
+
+
+
   const send = async (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
     if (!text || pending) return;
