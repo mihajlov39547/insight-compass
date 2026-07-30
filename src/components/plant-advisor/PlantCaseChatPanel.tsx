@@ -5,15 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
+import { SourceAttribution, type SourceItem } from '@/components/chat/SourceAttribution';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantDiagnoses, usePlantDiagnosisInterpretations } from '@/hooks/usePlantDiagnoses';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
+import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
+import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
+import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
 import {
   usePlantCaseChatMessages,
   useInvalidatePlantCaseChatMessages,
+  type PlantChatUsedSource,
 } from '@/hooks/usePlantCaseChatMessages';
 import type { PlantCase, PlantCaseGoal } from '@/hooks/usePlantCases';
 
@@ -22,7 +27,30 @@ interface Props {
   onBack: () => void;
 }
 
-interface Msg { role: 'user' | 'assistant'; content: string }
+interface Msg {
+  id?: string;
+  role: 'user' | 'assistant';
+  content: string;
+  sourcesUsed?: PlantChatUsedSource[];
+}
+
+/** Map persisted plant-chat sources onto the shared Project Chat source model. */
+function toSourceItems(list: PlantChatUsedSource[] | undefined): SourceItem[] {
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((s) => s && (s.title || s.url))
+    .map((s, i) => ({
+      id: s.id || `plant-src-${i}`,
+      type: s.url ? 'web' : 'document',
+      title: s.title || s.url || `Source ${i + 1}`,
+      snippet: s.snippet || '',
+      relevance: typeof s.score === 'number' ? s.score : 0,
+      score: typeof s.score === 'number' ? s.score : undefined,
+      url: s.url ?? undefined,
+      documentId: s.url ? undefined : s.id,
+    }));
+}
+
 
 interface PlantChatGoalConfig {
   assistantTitleKey: string;
