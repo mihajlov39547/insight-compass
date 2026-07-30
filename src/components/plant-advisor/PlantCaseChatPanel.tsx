@@ -645,21 +645,28 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         )}
       </div>
 
-      {quickQuestions.length > 0 && (
-        <div className="border-t border-border px-3 pt-2 flex flex-wrap gap-1.5">
-          {quickQuestions.map((q) => (
-            <button
-              key={q}
-              type="button"
-              onClick={() => send(q)}
-              disabled={pending}
-              className="text-xs px-2 py-1 rounded-md border border-border bg-muted/40 hover:bg-muted disabled:opacity-50"
-            >
-              {q}
-            </button>
-          ))}
+      {visibleSuggestions.length > 0 && (
+        <div className="border-t border-border px-3 py-1.5">
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+            {t('plantAdvisor.chat.suggestedFollowUps')}
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:thin]">
+            {visibleSuggestions.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => send(q)}
+                disabled={pending}
+                title={q}
+                className="text-xs px-2 py-1 rounded-full border border-border bg-muted/40 hover:bg-muted disabled:opacity-50 whitespace-nowrap flex-shrink-0 max-w-[240px] truncate"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         </div>
       )}
+
 
       <div className="border-t border-border p-3">
         {isImproveGrowth && (
