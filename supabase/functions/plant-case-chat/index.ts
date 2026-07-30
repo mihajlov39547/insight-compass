@@ -54,6 +54,9 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const caseId = String(body?.caseId || '');
     const lang = (body?.lang === 'sr' ? 'sr' : 'en') as 'en' | 'sr';
+    // When true, skip generating/persisting a reply and only return follow-up
+    // suggestions derived from the existing conversation (used when reopening a chat).
+    const followUpsOnly = body?.followUpsOnly === true;
     const messages: ChatMessage[] = Array.isArray(body?.messages)
       ? body.messages
           .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
@@ -61,6 +64,7 @@ Deno.serve(async (req: Request) => {
       : [];
     if (!caseId) return json({ error: 'missing_case_id' }, 400);
     if (messages.length === 0) return json({ error: 'empty_messages' }, 400);
+
 
     const admin = createClient(supaUrl, serviceKey);
 
