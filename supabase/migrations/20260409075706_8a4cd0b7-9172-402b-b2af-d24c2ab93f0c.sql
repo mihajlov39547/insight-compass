@@ -13,7 +13,14 @@ END;
 $$;
 
 -- Drop the old broken cron job (missing auth headers)
-SELECT cron.unschedule('youtube-transcript-worker-minute');
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'youtube-transcript-worker-minute') THEN
+    PERFORM cron.unschedule('youtube-transcript-worker-minute');
+  END IF;
+END;
+$$;
+
 
 -- Re-create with proper vault-based auth (same pattern as email queue)
 SELECT cron.schedule(

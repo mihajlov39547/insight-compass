@@ -319,6 +319,8 @@ $$;
 
 -- 16. Update get_document_question_stats for shared access
 
+DROP FUNCTION get_document_question_stats(uuid[]);
+
 CREATE OR REPLACE FUNCTION public.get_document_question_stats(doc_ids uuid[])
 RETURNS TABLE(document_id uuid, question_count bigint, embedded_question_count bigint)
 LANGUAGE sql

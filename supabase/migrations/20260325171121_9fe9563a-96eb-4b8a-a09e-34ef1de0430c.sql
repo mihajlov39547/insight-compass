@@ -12,7 +12,7 @@ CREATE TABLE public.document_chunks (
   notebook_id uuid REFERENCES public.notebooks(id) ON DELETE SET NULL,
   chunk_index integer NOT NULL,
   chunk_text text NOT NULL,
-  embedding vector(1536),
+  embedding extensions.vector(1536),
   page integer,
   section text,
   token_count integer,

@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS public.get_document_question_stats(uuid[]);
+
 CREATE OR REPLACE FUNCTION public.get_document_question_stats(doc_ids uuid[])
 RETURNS TABLE(
   document_id uuid,

@@ -1,6 +1,13 @@
 
 -- Update worker cron to run every 30 seconds with higher batch size
-SELECT cron.unschedule('workflow-worker-shadow');
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'workflow-worker-shadow') THEN
+    PERFORM cron.unschedule('workflow-worker-shadow');
+  END IF;
+END;
+$$;
+
 
 SELECT cron.schedule(
   'workflow-worker-poll',
