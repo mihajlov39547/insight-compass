@@ -350,6 +350,147 @@ Formatting:
         )
       : [];
 
+    // ---- Sources used ---------------------------------------------------------
+    // Deterministically derive which grounding/provider sources back the answer
+    // for the latest user question. Only sources that exist in the loaded
+    // context are ever returned (never model-invented titles).
+    const CARD_KEYWORDS: Record<string, RegExp> = {
+      watering: /water|irrig|moist|drought|zaliv|voda|vlag|navodnj|suš|sus[ae]/i,
+      sunlight: /sun|light|shade|expos|sunc|svetl|senk|osunč|osunc/i,
+      soil: /soil|ph\b|compost|mulch|substrat|zemlj|tlo|supstrat|kompost|malč|malc/i,
+      pruning: /prun|trim|cut back|train|shape|orez|rezidb|potkres|obliko/i,
+      hardinessClimate: /cold|frost|winter|climate|zone|hardi|heat|mraz|zim|klim|temperatur|otporn/i,
+      growthRateMaintenance: /growth rate|fast|slow|tall|size|maintenance|rast|brzin|visin|održav|odrzav/i,
+      pestsDisease: /pest|disease|insect|fung|mold|rot|bolest|štetoč|stetoc|gljiv|insekt|trulež|trulez/i,
+      fruitingHarvest: /fruit|harvest|yield|berry|bloom|flower|crop|plod|rod\b|berb|prinos|cvet|cvjet/i,
+    };
+
+    const detectCards = (question: string): string[] => {
+      const hits = Object.keys(CARD_KEYWORDS).filter((k) => CARD_KEYWORDS[k].test(question));
+      return hits.length > 0 ? hits : [];
+    };
+
+    const domainOf = (url: string | null | undefined): string | null => {
+      if (!url) return null;
+      try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return null; }
+    };
+
+    interface UsedSource {
+      id: string;
+      provider: string;
+      title: string;
+      url: string | null;
+      domain: string | null;
+      score: number | null;
+      sourceType: string | null;
+      authorityScore: string | null;
+      cardKey: string | null;
+      snippet: string;
+    }
+
+    const buildSourcesUsed = (question: string): UsedSource[] => {
+      const out: UsedSource[] = [];
+      const seen = new Set<string>();
+      const push = (s: UsedSource) => {
+        const key = s.url || `${s.provider}:${s.title}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push(s);
+      };
+
+      const authorityWeight = (a?: string | null) =>
+        a === 'high' ? 0.9 : a === 'medium' ? 0.7 : a === 'low' ? 0.5 : 0.6;
+
+      const groups = groundingRow?.normalized_summary?.sourceGroups ?? null;
+      if (groups) {
+        const detected = detectCards(question);
+        // Card-specific first, then overview, then remaining populated cards.
+        const ordered = [
+          ...detected.filter((c) => Array.isArray(groups[c]) && groups[c].length > 0),
+          ...(Array.isArray(groups.overview) ? ['overview'] : []),
+          ...(detected.length === 0
+            ? availableCards.filter((c) => Array.isArray(groups[c]) && groups[c].length > 0)
+            : []),
+        ];
+        for (const cardKey of ordered) {
+          const list = Array.isArray(groups[cardKey]) ? groups[cardKey] : [];
+          for (const s of list.slice(0, 4)) {
+            if (!s?.url && !s?.title) continue;
+            push({
+              id: `grounding-${cardKey}-${out.length}`,
+              provider: s.provider || 'web',
+              title: s.title || s.url,
+              url: s.url ?? null,
+              domain: domainOf(s.url),
+              score: authorityWeight(s.authorityScore),
+              sourceType: s.sourceType ?? null,
+              authorityScore: s.authorityScore ?? null,
+              cardKey,
+              snippet: typeof s.summary === 'string' ? s.summary.slice(0, 300) : '',
+            });
+          }
+          if (out.length >= 8) break;
+        }
+      }
+
+      // Structured provider sources (Trefle / Perenual) recorded on the grounding row.
+      for (const s of (groundingRow?.sources ?? []) as any[]) {
+        if (out.length >= 10) break;
+        if (!s || s.provider === 'web') continue;
+        push({
+          id: `provider-${s.provider}-${out.length}`,
+          provider: s.provider,
+          title: s.title || s.provider,
+          url: s.url ?? null,
+          domain: domainOf(s.url),
+          score: 0.8,
+          sourceType: 'plant_database',
+          authorityScore: 'high',
+          cardKey: null,
+          snippet: typeof s.summary === 'string' ? s.summary.slice(0, 300) : '',
+        });
+      }
+
+      // Trefle species profile (used whenever care/botanical facts are answered).
+      if (trefle && out.length < 10) {
+        push({
+          id: 'provider-trefle-profile',
+          provider: 'trefle',
+          title: `Trefle — ${trefle.scientificName || trefle.commonName || pc.title}`,
+          url: null,
+          domain: 'trefle.io',
+          score: 0.8,
+          sourceType: 'plant_database',
+          authorityScore: 'high',
+          cardKey: null,
+          snippet: [trefle.commonName, trefle.family, trefle.genus].filter(Boolean).join(' · '),
+        });
+      }
+
+      // Diagnosis candidates as provider-backed context (diagnose cases).
+      if (pc.user_goal === 'diagnose') {
+        for (const d of diagRows.slice(0, 3)) {
+          if (out.length >= 10) break;
+          if (!d?.name) continue;
+          push({
+            id: `diagnosis-${d.id}`,
+            provider: d.provider || 'plantnet',
+            title: d.name,
+            url: null,
+            domain: null,
+            score: typeof d.score === 'number' ? d.score : null,
+            sourceType: 'diagnosis_candidate',
+            authorityScore: null,
+            cardKey: null,
+            snippet: typeof d.description === 'string' ? d.description.slice(0, 300) : '',
+          });
+        }
+      }
+
+      return out.slice(0, 10);
+    };
+
+
     const generateFollowUps = async (
       lastUserQuestion: string,
       assistantAnswer: string,
@@ -449,7 +590,9 @@ ${assistantAnswer.slice(0, 4000)}`;
     // Only the last user message is saved (prior turns were saved on their own request).
     const lastUser = [...messages].reverse().find((m) => m.role === 'user');
     const userGoal = pc.user_goal ?? null;
+    const sourcesUsed = buildSourcesUsed(lastUser?.content ?? '');
     const savedIds: { userMessageId?: string; assistantMessageId?: string } = {};
+
     try {
       if (lastUser) {
         const { data: userRow, error: userInsErr } = await admin
@@ -482,8 +625,10 @@ ${assistantAnswer.slice(0, 4000)}`;
             model: modelUsed,
             usedFallback,
             usedGrowthGrounding: !!groundingRow,
+            sourcesUsed,
           },
         })
+
         .select('id')
         .single();
       if (asstInsErr) {
@@ -501,6 +646,8 @@ ${assistantAnswer.slice(0, 4000)}`;
       ok: true,
       reply: result.text,
       suggestedFollowUps,
+      sourcesUsed,
+
       modelUsed,
       usedFallback,
       ...savedIds,

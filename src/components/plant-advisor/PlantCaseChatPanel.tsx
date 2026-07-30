@@ -5,15 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
+import { SourceAttribution, type SourceItem } from '@/components/chat/SourceAttribution';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantDiagnoses, usePlantDiagnosisInterpretations } from '@/hooks/usePlantDiagnoses';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
+import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
+import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
+import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
 import {
   usePlantCaseChatMessages,
   useInvalidatePlantCaseChatMessages,
+  type PlantChatUsedSource,
 } from '@/hooks/usePlantCaseChatMessages';
 import type { PlantCase, PlantCaseGoal } from '@/hooks/usePlantCases';
 
@@ -22,7 +27,30 @@ interface Props {
   onBack: () => void;
 }
 
-interface Msg { role: 'user' | 'assistant'; content: string }
+interface Msg {
+  id?: string;
+  role: 'user' | 'assistant';
+  content: string;
+  sourcesUsed?: PlantChatUsedSource[];
+}
+
+/** Map persisted plant-chat sources onto the shared Project Chat source model. */
+function toSourceItems(list: PlantChatUsedSource[] | undefined): SourceItem[] {
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((s) => s && (s.title || s.url))
+    .map((s, i) => ({
+      id: s.id || `plant-src-${i}`,
+      type: s.url ? 'web' : 'document',
+      title: s.title || s.url || `Source ${i + 1}`,
+      snippet: s.snippet || '',
+      relevance: typeof s.score === 'number' ? s.score : 0,
+      score: typeof s.score === 'number' ? s.score : undefined,
+      url: s.url ?? undefined,
+      documentId: s.url ? undefined : s.id,
+    }));
+}
+
 
 interface PlantChatGoalConfig {
   assistantTitleKey: string;
@@ -171,6 +199,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   } = usePlantCaseChatMessages(plantCase.id);
   const invalidateChatMessages = useInvalidatePlantCaseChatMessages();
 
+  // Plant Advisor identification language drives AI-generated source summaries.
+  const { identificationLanguage } = usePlantAdvisorSettings();
+  const advisorLang: 'en' | 'sr' = identificationLanguage === 'sr' ? 'sr' : 'en';
+  const { runExtract, isExtracting, extractingMessageId } = useExtractFollowUp();
+  const { runCrawl, isCrawling, crawlingMessageId } = useCrawlFollowUp();
+
+
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   // Optimistic messages shown while awaiting the assistant reply.
@@ -187,7 +222,12 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const displayMessages = useMemo<Msg[]>(() => {
     if (hasPersistedHistory) {
       return [
-        ...persistedMessages.map((m) => ({ role: m.role, content: m.content } as Msg)),
+        ...persistedMessages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          sourcesUsed: m.role === 'assistant' ? m.metadata?.sourcesUsed : undefined,
+        } as Msg)),
         ...optimistic,
       ];
     }
@@ -195,6 +235,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     // Do NOT persist the intro; it's derived and re-renders with grounding data.
     return [{ role: 'assistant', content: introContent }, ...optimistic];
   }, [hasPersistedHistory, persistedMessages, optimistic, introContent]);
+
 
   const quickQuestions = useMemo<string[]>(() => {
     const q = (k: string) => t(`plantAdvisor.chat.qq.${k}`);
@@ -628,13 +669,46 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
             </div>
           </div>
         )}
-        {!messagesLoading && displayMessages.map((m, i) => (
-          <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-            <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'}`}>
-              {m.role === 'user' ? m.content : <MarkdownContent content={m.content} />}
+        {!messagesLoading && displayMessages.map((m, i) => {
+          const items = m.role === 'assistant' ? toSourceItems(m.sourcesUsed) : [];
+          const msgId = m.id ?? `local-${i}`;
+          return (
+            <div key={msgId} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+              <div className="max-w-[80%] space-y-2">
+                <div className={`rounded-lg px-3 py-2 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'}`}>
+                  {m.role === 'user' ? m.content : <MarkdownContent content={m.content} />}
+                </div>
+                {items.length > 0 && (
+                  <SourceAttribution
+                    sources={items}
+                    messageId={msgId}
+                    context="project"
+                    onExtract={(sels, q) =>
+                      runExtract(
+                        { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang },
+                        msgId,
+                        sels,
+                        q,
+                      )
+                    }
+                    isExtracting={isExtracting && extractingMessageId === msgId}
+                    onCrawl={(sel, instructions) =>
+                      runCrawl(
+                        { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang },
+                        msgId,
+                        sel,
+                        instructions,
+                      )
+                    }
+                    isCrawling={isCrawling && crawlingMessageId === msgId}
+                    crawlingUrl={crawlingMessageId === msgId ? null : undefined}
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+
         {pending && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
