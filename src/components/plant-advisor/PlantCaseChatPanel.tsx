@@ -215,7 +215,12 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const displayMessages = useMemo<Msg[]>(() => {
     if (hasPersistedHistory) {
       return [
-        ...persistedMessages.map((m) => ({ role: m.role, content: m.content } as Msg)),
+        ...persistedMessages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          sourcesUsed: m.role === 'assistant' ? m.metadata?.sourcesUsed : undefined,
+        } as Msg)),
         ...optimistic,
       ];
     }
@@ -223,6 +228,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     // Do NOT persist the intro; it's derived and re-renders with grounding data.
     return [{ role: 'assistant', content: introContent }, ...optimistic];
   }, [hasPersistedHistory, persistedMessages, optimistic, introContent]);
+
 
   const quickQuestions = useMemo<string[]>(() => {
     const q = (k: string) => t(`plantAdvisor.chat.qq.${k}`);
