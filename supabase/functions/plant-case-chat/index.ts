@@ -495,13 +495,17 @@ ${assistantAnswer.slice(0, 4000)}`;
       console.error('[plant-case-chat] persist messages threw', (persistErr as Error).message);
     }
 
+    const suggestedFollowUps = await generateFollowUps(lastUser?.content ?? '', result.text!);
+
     return json({
       ok: true,
       reply: result.text,
+      suggestedFollowUps,
       modelUsed,
       usedFallback,
       ...savedIds,
     });
+
   } catch (e) {
     console.error('[plant-case-chat] fatal', (e as Error).message);
     return json({ error: 'internal_error' }, 500);
