@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
-        .select('id, rank, score, scientific_name, scientific_name_without_author, common_name, genus, family, provider, is_confirmed')
+        .select('id, rank, score, scientific_name, scientific_name_without_author, common_name, genus, family, provider, is_confirmed, gbif_id, powo_id')
         .eq('case_id', caseId)
         .order('rank', { ascending: true })
         .limit(10),
