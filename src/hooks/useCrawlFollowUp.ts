@@ -10,6 +10,7 @@ import {
   type CrawlExtractDepth,
   type CrawlPageItem,
 } from '@/services/tavily-crawl';
+import { localizePlantCaseContent } from '@/services/plant-case-localize';
 
 export type CrawlScope =
   | { kind: 'chat'; chatId: string }
@@ -200,15 +201,32 @@ export function useCrawlFollowUp(): UseCrawlFollowUpResult {
           if (insertError) throw insertError;
           qc.invalidateQueries({ queryKey: ['notebook-messages', scope.notebookId] });
         } else {
+          // Tavily can return source text in the original language — run a
+          // language-aware formatter so the saved answer matches the Plant
+          // Advisor identification language. Raw data stays in metadata.
+          const lang = scope.lang ?? 'en';
+          const localized = await localizePlantCaseContent({
+            content,
+            lang,
+            question: instructions,
+            mode: 'crawl',
+          });
+
           const { error: insertError } = await supabase.from('plant_case_chat_messages').insert({
             case_id: scope.caseId,
             user_id: user.id,
             role: 'assistant',
-            content,
+            content: localized.content ?? content,
             metadata: {
               kind: 'crawl',
-              model: modelId,
-              lang: scope.lang ?? 'en',
+              model: localized.model ? `${modelId}:localized:${localized.model}` : modelId,
+              lang,
+              localization: {
+                applied: Boolean(localized.content),
+                model: localized.model,
+                error: localized.error,
+                rawContent: localized.content ? content : null,
+              },
               sourceMessageId,
               sourcesUsed: persistedSources.items.map((it) => ({
                 id: it.id,
