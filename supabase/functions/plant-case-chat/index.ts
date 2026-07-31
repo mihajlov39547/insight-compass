@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
-        .select('id, rank, score, scientific_name, scientific_name_without_author, common_name, genus, family, provider, is_confirmed')
+        .select('id, rank, score, scientific_name, scientific_name_without_author, common_name, genus, family, provider, is_confirmed, gbif_id, powo_id')
         .eq('case_id', caseId)
         .order('rank', { ascending: true })
         .limit(10),
@@ -388,23 +388,146 @@ Formatting:
       snippet: string;
     }
 
-    const buildSourcesUsed = (question: string): UsedSource[] => {
-      const out: UsedSource[] = [];
-      const seen = new Set<string>();
-      const push = (s: UsedSource) => {
-        const key = s.url || `${s.provider}:${s.title}`;
-        if (seen.has(key)) return;
-        seen.add(key);
-        out.push(s);
+    const authorityWeight = (a?: string | null) =>
+      a === 'high' ? 0.9 : a === 'medium' ? 0.7 : a === 'low' ? 0.5 : 0.6;
+
+    /** Trefle species profile as a (non-URL) provider source. */
+    const trefleSource = (): UsedSource | null => {
+      if (!trefle) return null;
+      return {
+        id: 'provider-trefle-profile',
+        provider: 'trefle',
+        title: `Trefle — ${trefle.scientificName || trefle.commonName || pc.title}`,
+        url: null,
+        domain: 'trefle.io',
+        score: 0.8,
+        sourceType: 'plant_database',
+        authorityScore: 'high',
+        cardKey: null,
+        snippet: [trefle.commonName, trefle.family, trefle.genus].filter(Boolean).join(' · '),
       };
+    };
 
-      const authorityWeight = (a?: string | null) =>
-        a === 'high' ? 0.9 : a === 'medium' ? 0.7 : a === 'low' ? 0.5 : 0.6;
+    /** Identification rows → provider sources, with GBIF/POWO reference URLs when present. */
+    const identificationSources = (question: string): UsedSource[] => {
+      const out: UsedSource[] = [];
+      const mentions = (i: any) => {
+        const name = (i.scientific_name_without_author || i.scientific_name || i.common_name || '').toLowerCase();
+        return name.length > 3 && question.toLowerCase().includes(name.split(' ')[0]);
+      };
+      const rows: any[] = [];
+      if (confirmedIdent) rows.push(confirmedIdent);
+      for (const i of identRows) {
+        if (rows.includes(i)) continue;
+        // Top alternatives are included when there is no confirmation yet, or
+        // when the question references them explicitly.
+        if (!confirmedIdent || mentions(i)) rows.push(i);
+        if (rows.length >= 5) break;
+      }
+      for (const i of rows) {
+        const name = i.scientific_name_without_author || i.scientific_name || i.common_name;
+        if (!name) continue;
+        out.push({
+          id: `identification-${i.id}`,
+          provider: i.provider || 'plantnet',
+          title: i.is_confirmed ? `${name} (confirmed)` : name,
+          url: null,
+          domain: null,
+          score: typeof i.score === 'number' ? i.score : null,
+          sourceType: i.is_confirmed ? 'confirmed_identification' : 'identification_candidate',
+          authorityScore: null,
+          cardKey: null,
+          snippet: [i.common_name, i.family, i.genus].filter(Boolean).join(' · '),
+        });
+        if (i.gbif_id) {
+          out.push({
+            id: `identification-gbif-${i.id}`,
+            provider: 'gbif',
+            title: `GBIF — ${name}`,
+            url: `https://www.gbif.org/species/${i.gbif_id}`,
+            domain: 'gbif.org',
+            score: 0.85,
+            sourceType: 'taxonomy_reference',
+            authorityScore: 'high',
+            cardKey: null,
+            snippet: '',
+          });
+        }
+        if (i.powo_id) {
+          const powo = String(i.powo_id).replace(/^urn:lsid:ipni\.org:names:/, '');
+          out.push({
+            id: `identification-powo-${i.id}`,
+            provider: 'powo',
+            title: `Plants of the World Online — ${name}`,
+            url: `https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:${powo}`,
+            domain: 'powo.science.kew.org',
+            score: 0.85,
+            sourceType: 'taxonomy_reference',
+            authorityScore: 'high',
+            cardKey: null,
+            snippet: '',
+          });
+        }
+      }
+      return out;
+    };
 
+    /** Diagnosis candidates + AI interpretation provider context. */
+    const diagnosisSources = (): UsedSource[] => {
+      const out: UsedSource[] = [];
+      if (confirmedDiag?.name) {
+        out.push({
+          id: `diagnosis-${confirmedDiag.id}`,
+          provider: confirmedDiag.provider || 'plantnet',
+          title: `${confirmedDiag.name} (confirmed)`,
+          url: null,
+          domain: null,
+          score: typeof confirmedDiag.score === 'number' ? confirmedDiag.score : null,
+          sourceType: 'confirmed_diagnosis',
+          authorityScore: null,
+          cardKey: null,
+          snippet: typeof confirmedDiag.description === 'string' ? confirmedDiag.description.slice(0, 300) : '',
+        });
+      }
+      for (const d of diagRows.slice(0, 4)) {
+        if (!d?.name || d.is_confirmed) continue;
+        out.push({
+          id: `diagnosis-${d.id}`,
+          provider: d.provider || 'plantnet',
+          title: d.name,
+          url: null,
+          domain: null,
+          score: typeof d.score === 'number' ? d.score : null,
+          sourceType: 'diagnosis_candidate',
+          authorityScore: null,
+          cardKey: null,
+          snippet: typeof d.description === 'string' ? d.description.slice(0, 300) : '',
+        });
+      }
+      // AI interpretation is context that backed the answer — never treatment advice.
+      if (interp?.summary) {
+        out.push({
+          id: `interpretation-${interp.id}`,
+          provider: interp.provider || 'ai',
+          title: `AI interpretation${interp.model ? ` (${interp.model})` : ''}`,
+          url: null,
+          domain: null,
+          score: null,
+          sourceType: 'ai_interpretation',
+          authorityScore: null,
+          cardKey: null,
+          snippet: String(interp.summary).slice(0, 300),
+        });
+      }
+      return out;
+    };
+
+    /** Improve Growth: grounding card groups + structured provider rows. */
+    const growthSources = (question: string): UsedSource[] => {
+      const out: UsedSource[] = [];
       const groups = groundingRow?.normalized_summary?.sourceGroups ?? null;
       if (groups) {
         const detected = detectCards(question);
-        // Card-specific first, then overview, then remaining populated cards.
         const ordered = [
           ...detected.filter((c) => Array.isArray(groups[c]) && groups[c].length > 0),
           ...(Array.isArray(groups.overview) ? ['overview'] : []),
@@ -416,7 +539,7 @@ Formatting:
           const list = Array.isArray(groups[cardKey]) ? groups[cardKey] : [];
           for (const s of list.slice(0, 4)) {
             if (!s?.url && !s?.title) continue;
-            push({
+            out.push({
               id: `grounding-${cardKey}-${out.length}`,
               provider: s.provider || 'web',
               title: s.title || s.url,
@@ -432,12 +555,9 @@ Formatting:
           if (out.length >= 8) break;
         }
       }
-
-      // Structured provider sources (Trefle / Perenual) recorded on the grounding row.
       for (const s of (groundingRow?.sources ?? []) as any[]) {
-        if (out.length >= 10) break;
         if (!s || s.provider === 'web') continue;
-        push({
+        out.push({
           id: `provider-${s.provider}-${out.length}`,
           provider: s.provider,
           title: s.title || s.provider,
@@ -450,45 +570,56 @@ Formatting:
           snippet: typeof s.summary === 'string' ? s.summary.slice(0, 300) : '',
         });
       }
-
-      // Trefle species profile (used whenever care/botanical facts are answered).
-      if (trefle && out.length < 10) {
-        push({
-          id: 'provider-trefle-profile',
-          provider: 'trefle',
-          title: `Trefle — ${trefle.scientificName || trefle.commonName || pc.title}`,
-          url: null,
-          domain: 'trefle.io',
-          score: 0.8,
-          sourceType: 'plant_database',
-          authorityScore: 'high',
-          cardKey: null,
-          snippet: [trefle.commonName, trefle.family, trefle.genus].filter(Boolean).join(' · '),
-        });
-      }
-
-      // Diagnosis candidates as provider-backed context (diagnose cases).
-      if (pc.user_goal === 'diagnose') {
-        for (const d of diagRows.slice(0, 3)) {
-          if (out.length >= 10) break;
-          if (!d?.name) continue;
-          push({
-            id: `diagnosis-${d.id}`,
-            provider: d.provider || 'plantnet',
-            title: d.name,
-            url: null,
-            domain: null,
-            score: typeof d.score === 'number' ? d.score : null,
-            sourceType: 'diagnosis_candidate',
-            authorityScore: null,
-            cardKey: null,
-            snippet: typeof d.description === 'string' ? d.description.slice(0, 300) : '',
-          });
-        }
-      }
-
-      return out.slice(0, 10);
+      return out;
     };
+
+    /**
+     * Per-goal source collection. Only sources that exist in the loaded context
+     * are ever returned (never model-invented titles); goals without any
+     * source-backed data return an empty list.
+     */
+    const buildSourcesUsed = (question: string): UsedSource[] => {
+      const goal = pc.user_goal ?? null;
+      const collected: UsedSource[] = [];
+
+      if (goal === 'improve_growth') {
+        collected.push(...growthSources(question));
+        const tp = trefleSource();
+        if (tp) collected.push(tp);
+      } else if (goal === 'identify') {
+        collected.push(...identificationSources(question));
+        const tp = trefleSource();
+        if (tp) collected.push(tp);
+      } else if (goal === 'diagnose') {
+        // Confirmed plant context first, then problem candidates.
+        if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 3));
+        collected.push(...diagnosisSources());
+        const tp = trefleSource();
+        if (tp) collected.push(tp);
+      } else if (goal === 'increase_income') {
+        // No dedicated income grounding yet — surface only real context sources.
+        if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 1));
+        const tp = trefleSource();
+        if (tp) collected.push(tp);
+      } else {
+        if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 2));
+        const tp = trefleSource();
+        if (tp) collected.push(tp);
+      }
+
+      const seen = new Set<string>();
+      const out: UsedSource[] = [];
+      for (const s of collected) {
+        if (!s || (!s.url && !s.title)) continue;
+        const key = s.url || `${s.provider}:${s.title}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(s);
+        if (out.length >= 10) break;
+      }
+      return out;
+    };
+
 
 
     const generateFollowUps = async (
