@@ -10,6 +10,7 @@ import {
   type CrawlExtractDepth,
   type CrawlPageItem,
 } from '@/services/tavily-crawl';
+import { localizePlantCaseContent } from '@/services/plant-case-localize';
 
 export type CrawlScope =
   | { kind: 'chat'; chatId: string }
