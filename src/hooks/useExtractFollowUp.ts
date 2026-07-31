@@ -212,8 +212,14 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
             content: localized.content ?? content,
             metadata: {
               kind: 'extract',
-              model: modelId,
-              lang: scope.lang ?? 'en',
+              model: localized.model ? `${modelId}:localized:${localized.model}` : modelId,
+              lang,
+              localization: {
+                applied: Boolean(localized.content),
+                model: localized.model,
+                error: localized.error,
+                rawContent: localized.content ? content : null,
+              },
               sourceMessageId,
               sourcesUsed: persistedSources.items.map((it) => ({
                 id: it.id,
