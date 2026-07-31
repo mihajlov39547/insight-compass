@@ -12,6 +12,7 @@ import {
   type ExtractDepth,
 } from '@/services/tavily-extract';
 import type { ExtractSelection } from '@/components/chat/SourceAttribution';
+import { localizePlantCaseContent } from '@/services/plant-case-localize';
 
 export type ExtractScope =
   | { kind: 'chat'; chatId: string }
