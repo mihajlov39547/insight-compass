@@ -193,11 +193,22 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
           if (insertError) throw insertError;
           qc.invalidateQueries({ queryKey: ['notebook-messages', scope.notebookId] });
         } else {
+          // Tavily can return source text in the original language — run a
+          // language-aware formatter so the saved answer matches the Plant
+          // Advisor identification language. Raw data stays in metadata.
+          const lang = scope.lang ?? 'en';
+          const localized = await localizePlantCaseContent({
+            content,
+            lang,
+            question,
+            mode: 'extract',
+          });
+
           const { error: insertError } = await supabase.from('plant_case_chat_messages').insert({
             case_id: scope.caseId,
             user_id: user.id,
             role: 'assistant',
-            content,
+            content: localized.content ?? content,
             metadata: {
               kind: 'extract',
               model: modelId,
