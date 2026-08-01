@@ -493,21 +493,27 @@ Formatting:
           snippet: typeof confirmedDiag.description === 'string' ? confirmedDiag.description.slice(0, 300) : '',
         });
       }
+      // Provider candidates are diagnostic CONTEXT only — never treatment proof.
+      const CANDIDATE_LABEL = lang === 'sr'
+        ? 'Kandidat pružaoca (dijagnostički kontekst, nije dokaz o lečenju)'
+        : 'Provider candidate (diagnosis context, not treatment proof)';
       for (const d of diagRows.slice(0, 4)) {
         if (!d?.name || d.is_confirmed) continue;
+        const desc = typeof d.description === 'string' ? d.description.slice(0, 240) : '';
         out.push({
           id: `diagnosis-${d.id}`,
           provider: d.provider || 'plantnet',
-          title: d.name,
+          title: `${d.name} — ${CANDIDATE_LABEL}`,
           url: null,
           domain: null,
           score: typeof d.score === 'number' ? d.score : null,
           sourceType: 'diagnosis_candidate',
           authorityScore: null,
           cardKey: null,
-          snippet: typeof d.description === 'string' ? d.description.slice(0, 300) : '',
+          snippet: desc ? `${CANDIDATE_LABEL}. ${desc}` : CANDIDATE_LABEL,
         });
       }
+
       // AI interpretation is context that backed the answer — never treatment advice.
       if (interp?.summary) {
         out.push({
