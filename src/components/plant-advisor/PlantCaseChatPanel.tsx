@@ -129,7 +129,7 @@ function formatPlantName(i: NameableIdent | null | undefined): string {
 }
 
 export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
   const { data: idents = [] } = usePlantIdentifications(plantCase.id);
   const { data: diagnoses = [] } = usePlantDiagnoses(plantCase.id);
