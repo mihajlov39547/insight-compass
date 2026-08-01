@@ -129,7 +129,7 @@ function formatPlantName(i: NameableIdent | null | undefined): string {
 }
 
 export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
   const { data: idents = [] } = usePlantIdentifications(plantCase.id);
   const { data: diagnoses = [] } = usePlantDiagnoses(plantCase.id);
@@ -315,7 +315,11 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     ];
   }, [t, isIdentify, isDiagnose, goal, confirmedIdent, confirmedDiag, diagnoses.length, hasGrowthGrounding]);
 
-  const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
+  // AI-generated content (answers + rolling follow-ups) follows the Plant
+  // Advisor "Identification language" setting, not the global UI language.
+  // Static labels keep using normal app i18n.
+  const langCode = advisorLang;
+
 
   // When the user runs Extract/Crawl without typing instructions, steer the
   // summary toward what this goal actually needs.
