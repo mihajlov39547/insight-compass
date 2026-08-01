@@ -1891,7 +1891,6 @@
       "inputPh": "Pitajte o ovom slučaju…",
       "thinking": "Razmišljam…",
       "suggestedFollowUps": "Predložena dodatna pitanja",
-
       "assistantTitle": {
         "default": "Asistent za slučaj biljke",
         "identify": "Asistent za identifikaciju biljke",
@@ -2001,7 +2000,16 @@
         "growthSafestLowConf": "Koje mere su najbezbednije s obzirom na nisku pouzdanost identifikacije?",
         "growthPruneStructure": "Kako da orežem biljku za bolju strukturu?",
         "growthMonitorPests": "Šta da pratim od štetočina ili bolesti?",
-        "growthLocalRelevance": "Koje smernice su najvažnije za moju lokaciju?"
+        "growthLocalRelevance": "Koje smernice su najvažnije za moju lokaciju?",
+        "identifyFeaturesConfirm": "Koje osobine potvrđuju ovu biljku?",
+        "identifyDiffFromAlternative": "Po čemu se razlikuje od najbliže alternative?",
+        "identifyPhotosToAdd": "Koje fotografije treba da dodam?",
+        "identifyCouldBeSimilarSpecies": "Da li ovo može biti slična vrsta?",
+        "diagnoseSymptomsNext": "Koje simptome sledeće da proverim?",
+        "diagnoseWhichCandidateLikely": "Koji kandidat je najverovatniji?",
+        "diagnosePestOrStress": "Da li ovo može biti štetočina ili stres?",
+        "diagnosePhotosImproveDiagnosis": "Koje fotografije bi poboljšale dijagnozu?",
+        "diagnoseAvoidNow": "Šta sada ne bi trebalo raditi?"
       },
       "errors": {
         "generic": "Razgovor nije uspeo. Pokušajte ponovo.",
@@ -2017,7 +2025,11 @@
         "improve_growth_with_grounding": "Pitajte o prikupljenim karticama za rast, npr. zalivanje, zemljište, rezidba, štetočine ili kako podstaći viši rast.",
         "improve_growth_no_grounding": "Za bolje odgovore, prvo prikupite smernice za rast."
       },
-      "inputPh_improve_growth": "Pitajte o rastu, zalivanju, zemljištu, rezidbi, štetočinama ili berbi…"
+      "inputPh_improve_growth": "Pitajte o rastu, zalivanju, zemljištu, rezidbi, štetočinama ili berbi…",
+      "extractFocus": {
+        "identify": "Sažmi taksonomiju, karakteristične osobine, stanište, slične vrste i kako proveriti ovu identifikaciju.",
+        "diagnose": "Sažmi simptome, biljke domaćine, vizuelne znake, uslove koji pogoduju problemu, prevenciju i sanitaciju, i kada tražiti pomoć stručnjaka. Izostavi hemijske proizvode, doze i raspored prskanja."
+      }
     },
     "diagnose": {
       "sectionTitle": "Dijagnoza biljke",
