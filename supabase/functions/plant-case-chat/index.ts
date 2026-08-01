@@ -633,19 +633,60 @@ Formatting:
 
 
 
+    // Deterministic per-goal fallbacks used when the model returns nothing.
+    const FALLBACK_FOLLOW_UPS: Record<string, Record<'en' | 'sr', string[]>> = {
+      identify: {
+        en: [
+          'Which features confirm this plant?',
+          'How is it different from the top alternative?',
+          'What photos should I add?',
+          'Could this be a similar species?',
+        ],
+        sr: [
+          'Koje osobine potvrđuju ovu biljku?',
+          'Po čemu se razlikuje od najbliže alternative?',
+          'Koje fotografije treba da dodam?',
+          'Da li ovo može biti slična vrsta?',
+        ],
+      },
+      diagnose: {
+        en: [
+          'What symptoms should I check next?',
+          'Which candidate is most likely?',
+          'Could this be pest damage or stress?',
+          'What photos would improve diagnosis?',
+        ],
+        sr: [
+          'Koje simptome sledeće da proverim?',
+          'Koji kandidat je najverovatniji?',
+          'Da li ovo može biti štetočina ili stres?',
+          'Koje fotografije bi poboljšale dijagnozu?',
+        ],
+      },
+    };
+
     const generateFollowUps = async (
       lastUserQuestion: string,
       assistantAnswer: string,
     ): Promise<string[]> => {
       const langLine = lang === 'sr' ? 'Serbian (Latin script)' : 'English';
-      const cardLine =
-        pc.user_goal === 'improve_growth'
-          ? `This is an Improve Growth case. Prefer follow-ups tied to these care areas: ${
+      const goalLine = (() => {
+        switch (pc.user_goal) {
+          case 'improve_growth':
+            return `This is an Improve Growth case. Prefer follow-ups tied to these care areas: ${
               availableCards.length
                 ? availableCards.join(', ')
                 : 'watering, sunlight, soil, pruning, hardiness/climate, growth rate/maintenance, pests and disease, fruiting/harvest, local conditions'
-            }.`
-          : '';
+            }.`;
+          case 'identify':
+            return 'This is an Identify case. Focus follow-ups on confirming the identification (which features confirm it), comparing the top alternatives / similar species, taxonomy, habitat, and requesting better or additional photos. NEVER suggest questions about disease, pests, or treatment.';
+          case 'diagnose':
+            return 'This is a Diagnose case. Focus follow-ups on symptoms to check next, which candidate is most likely, remaining uncertainty, pest vs disease vs stress, which next photos would help, prevention/sanitation, and safe next steps (including when to seek local expert help). NEVER suggest treatment products or chemical steps.';
+          default:
+            return '';
+        }
+      })();
+
       const prompt = `Based on the conversation below, propose up to 4 short follow-up questions the USER could ask next.
 
 Rules:
