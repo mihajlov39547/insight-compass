@@ -36,6 +36,8 @@ serve(async (req) => {
     const lang = body?.lang === "sr" ? "sr" : "en";
     const question = typeof body?.question === "string" ? body.question.trim() : "";
     const mode = body?.mode === "crawl" ? "crawl" : "extract";
+    const goal = typeof body?.goal === "string" ? body.goal : "";
+
 
     if (!content) {
       return new Response(JSON.stringify({ error: "Invalid input: content is required" }), {
