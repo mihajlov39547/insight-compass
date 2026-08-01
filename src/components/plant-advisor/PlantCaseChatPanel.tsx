@@ -241,6 +241,8 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     const q = (k: string) => t(`plantAdvisor.chat.qq.${k}`);
     if (isIdentify) {
       return [
+        q('identifyFeaturesConfirm'),
+        q('identifyDiffFromAlternative'),
         q('identifyWhyUncertain'),
         q('identifyCheckDetails'),
         q('identifyPhotosToImprove'),
@@ -274,6 +276,9 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         ];
       }
       return [
+        q('diagnoseWhichCandidateLikely'),
+        q('diagnoseSymptomsNext'),
+        q('diagnosePestOrStress'),
         q('diagnoseMostLikely'),
         q('diagnoseCouldBeDiseasePestStress'),
         q('diagnoseCouldBeDeficiency'),
@@ -311,6 +316,14 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   }, [t, isIdentify, isDiagnose, goal, confirmedIdent, confirmedDiag, diagnoses.length, hasGrowthGrounding]);
 
   const langCode = (i18n.language || 'en').toLowerCase().startsWith('sr') ? 'sr' : 'en';
+
+  // When the user runs Extract/Crawl without typing instructions, steer the
+  // summary toward what this goal actually needs.
+  const defaultSourceFocus = useMemo<string | null>(() => {
+    if (isIdentify) return t('plantAdvisor.chat.extractFocus.identify');
+    if (isDiagnose) return t('plantAdvisor.chat.extractFocus.diagnose');
+    return null;
+  }, [t, isIdentify, isDiagnose]);
 
   // Suggestions shown right now: backend follow-ups once a turn exists,
   // starter questions only for an empty chat. Never repeat asked questions.
@@ -685,19 +698,19 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
                     context="project"
                     onExtract={(sels, q) =>
                       runExtract(
-                        { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang },
+                        { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang, goal },
                         msgId,
                         sels,
-                        q,
+                        q?.trim() ? q : defaultSourceFocus,
                       )
                     }
                     isExtracting={isExtracting && extractingMessageId === msgId}
                     onCrawl={(sel, instructions) =>
                       runCrawl(
-                        { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang },
+                        { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang, goal },
                         msgId,
                         sel,
-                        instructions,
+                        instructions?.trim() ? instructions : defaultSourceFocus,
                       )
                     }
                     isCrawling={isCrawling && crawlingMessageId === msgId}
