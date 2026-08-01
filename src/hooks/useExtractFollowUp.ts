@@ -19,7 +19,7 @@ export type ExtractScope =
   | { kind: 'notebook'; notebookId: string }
   // Plant Advisor: saves the extracted content into the plant case chat so it
   // stays linked to the user + case + source URL.
-  | { kind: 'plant_case'; caseId: string; lang?: 'en' | 'sr' };
+  | { kind: 'plant_case'; caseId: string; lang?: 'en' | 'sr'; goal?: string | null };
 
 
 interface UseExtractFollowUpResult {
@@ -203,6 +203,7 @@ export function useExtractFollowUp(): UseExtractFollowUpResult {
             lang,
             question,
             mode: 'extract',
+            goal: scope.goal ?? null,
           });
 
           const { error: insertError } = await supabase.from('plant_case_chat_messages').insert({

@@ -36,6 +36,8 @@ serve(async (req) => {
     const lang = body?.lang === "sr" ? "sr" : "en";
     const question = typeof body?.question === "string" ? body.question.trim() : "";
     const mode = body?.mode === "crawl" ? "crawl" : "extract";
+    const goal = typeof body?.goal === "string" ? body.goal : "";
+
 
     if (!content) {
       return new Response(JSON.stringify({ error: "Invalid input: content is required" }), {
@@ -58,16 +60,27 @@ serve(async (req) => {
         ? "Serbian written in Latin script (srpski, latinica)"
         : "English";
 
+    // Goal-specific extraction focus. Improve Growth keeps the previous
+    // generic behaviour.
+    const goalFocus =
+      goal === "identify"
+        ? "FOCUS on identification-relevant content: taxonomy (family, genus, species, synonyms), distinguishing morphological features, habitat and distribution, similar or confusable species, and how to verify the identification. Do NOT include disease, pest or treatment content — omit it entirely."
+        : goal === "diagnose"
+          ? "FOCUS on safe diagnostic reference content: symptoms and visual signs, affected plant parts, host range, disease/pest life cycle and favourable environmental conditions, look-alike causes (pest damage vs disease vs abiotic stress), prevention, sanitation and cultural practices, and when to seek expert help. Present it as reference context, not as a confirmed diagnosis or treatment plan."
+          : "";
+
     const systemPrompt = [
       `You reformat web ${mode} results for a plant care assistant.`,
       `Write the ENTIRE output in ${targetLanguage}. Translate source text if it is in another language.`,
       "Use ONLY the provided extracted content. Never invent facts, numbers, or sources.",
       "Remove raw HTML, navigation menus, cookie/consent notices, ads, boilerplate and irrelevant fragments.",
       "Preserve scientific/botanical names (Latin binomials) exactly as written, unchanged.",
-      "SAFETY: never include chemical pesticide/fungicide/herbicide product names, active ingredients, dosages, mixing ratios or application rates. If the source contains such details, omit them and, where useful, note that a local expert should be consulted.",
+      goalFocus,
+      "SAFETY: never include chemical pesticide/fungicide/herbicide/insecticide product names, active ingredients, dosages, mixing ratios, application rates, spray schedules or chemical treatment instructions. If the source contains such details, omit them and, where useful, note that a local expert should be consulted.",
       "Do NOT add a 'References' or 'Sources' section and do not list URLs — sources are rendered separately in the UI.",
       "Output clean Markdown with short headings and bullet points. No preamble about what you are doing.",
-    ].join(" ");
+    ].filter(Boolean).join(" ");
+
 
     const userPrompt =
       (question ? `User question: ${question}\n\n` : "") +

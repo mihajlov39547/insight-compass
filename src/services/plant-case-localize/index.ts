@@ -10,6 +10,8 @@ export interface LocalizePlantCaseContentInput {
   lang: 'en' | 'sr';
   question?: string | null;
   mode: 'extract' | 'crawl';
+  /** Plant case goal — drives what the formatter focuses on / omits. */
+  goal?: string | null;
 }
 
 export interface LocalizePlantCaseContentResult {
@@ -35,6 +37,7 @@ export async function localizePlantCaseContent(
         lang: input.lang,
         question: input.question ?? null,
         mode: input.mode,
+        goal: input.goal ?? null,
       }),
     });
 

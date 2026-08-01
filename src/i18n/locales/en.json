@@ -1875,7 +1875,6 @@
       "inputPh": "Ask about this plant case…",
       "thinking": "Thinking…",
       "suggestedFollowUps": "Suggested follow-ups",
-
       "assistantTitle": {
         "default": "Plant case assistant",
         "identify": "Plant identification assistant",
@@ -1985,7 +1984,16 @@
         "growthSafestLowConf": "What care steps are safest given the low identification confidence?",
         "growthPruneStructure": "How should I prune it for better structure?",
         "growthMonitorPests": "What should I monitor for pests or disease?",
-        "growthLocalRelevance": "Which guidance is most relevant for my location?"
+        "growthLocalRelevance": "Which guidance is most relevant for my location?",
+        "identifyFeaturesConfirm": "Which features confirm this plant?",
+        "identifyDiffFromAlternative": "How is it different from the top alternative?",
+        "identifyPhotosToAdd": "What photos should I add?",
+        "identifyCouldBeSimilarSpecies": "Could this be a similar species?",
+        "diagnoseSymptomsNext": "What symptoms should I check next?",
+        "diagnoseWhichCandidateLikely": "Which candidate is most likely?",
+        "diagnosePestOrStress": "Could this be pest damage or stress?",
+        "diagnosePhotosImproveDiagnosis": "What photos would improve diagnosis?",
+        "diagnoseAvoidNow": "What should I avoid doing now?"
       },
       "errors": {
         "generic": "Chat failed. Please try again.",
@@ -2001,7 +2009,11 @@
         "improve_growth_with_grounding": "Ask about the gathered growth cards, e.g. watering, soil, pruning, pests, or how to encourage taller growth.",
         "improve_growth_no_grounding": "For better answers, gather growth guidance first."
       },
-      "inputPh_improve_growth": "Ask about growth, watering, soil, pruning, pests, or harvest…"
+      "inputPh_improve_growth": "Ask about growth, watering, soil, pruning, pests, or harvest…",
+      "extractFocus": {
+        "identify": "Summarize taxonomy, distinguishing features, habitat, similar species, and how to verify this identification.",
+        "diagnose": "Summarize symptoms, host range, visual signs, favourable environmental conditions, prevention and sanitation, and when to seek expert help. Exclude chemical products, doses and spray schedules."
+      }
     },
     "diagnose": {
       "sectionTitle": "Plant diagnosis",

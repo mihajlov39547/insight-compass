@@ -253,9 +253,10 @@ Deno.serve(async (req: Request) => {
     const goalDirective = (() => {
       switch (pc.user_goal) {
         case 'identify':
-          return 'This is an IDENTIFICATION case. Focus on the plant identification: confirmed plant, confidence, alternatives, and what additional photos would help. Do not answer disease, pest, treatment, or remediation questions inside an identify-only case. Redirect the user to create/open a diagnosis or treatment workflow after plant confirmation. If the user asks about disease, pests, or treatment, say this case is configured for identification only and suggest creating or opening a diagnosis case after the plant is confirmed.';
+          return 'This is an IDENTIFICATION case. Focus on the plant identification: the confirmed plant, its confidence, the top alternatives and how they differ, taxonomy (genus/family), distinguishing morphological features, typical habitat and distribution, similar/confusable species, and how the user can verify the ID (which features and which additional photos). Reference taxonomy sources (GBIF, Plants of the World Online) and Trefle when they are present in the context, and note that the user can extract or crawl those URL-backed sources for deeper taxonomy, distinguishing features, habitat, similar species and verification detail. Do not answer disease, pest, treatment, or remediation questions inside an identify-only case: say this case is configured for identification only and suggest opening or creating a "Diagnose problem" case once the plant is confirmed.';
         case 'diagnose':
-          return 'This is a DIAGNOSIS case. Focus on the confirmed plant and disease/pest candidates, their relevance to the confirmed plant, uncertainty, and visual checks. If no plant is confirmed yet, explain that the plant must be confirmed before diagnosis is meaningful.';
+          return 'This is a DIAGNOSIS case. Focus on the confirmed plant and the disease/pest candidates, their relevance to the confirmed plant, uncertainty, and the visual checks that would separate them. Provider candidates are diagnostic CONTEXT only — never treatment proof; always describe them as candidates. Cover symptoms to check, host range, visual signs, environmental/cultural conditions that favour the problem, whether it could be pest damage, disease, or abiotic stress, prevention and sanitation, and when to seek local expert help. Do NOT give pesticide/fungicide/herbicide/insecticide product names, active ingredients, doses, mixing rates, spray schedules, or chemical treatment instructions — decline those specifics briefly and continue with safe diagnostic and preventive guidance. If no plant is confirmed yet, explain that the plant must be confirmed before diagnosis is meaningful.';
+
         case 'improve_growth':
           return 'This is an IMPROVE-GROWTH case. Prioritize the confirmed plant, user location, crop context, Trefle profile, and growthGrounding (Perenual + web sources). growthGrounding.overview gives general plant context (habitat, habit, broad care). growthGrounding.normalizedCare has one summary per care card (watering, sunlight, soil, pruning, hardinessClimate, growthRateMaintenance, pestsDisease, fruitingHarvest); growthGrounding.sourceGroups holds the web sources grouped by that same card. When answering a category-specific question, prefer that card\'s summary and its own sourceGroups entry — do not mix sources from other cards. IMPORTANT: If growthGrounding is present in the context (not null), NEVER say growth guidance has not been gathered. If only some cards are populated, name which areas are available and which are limited, and answer from the populated cards plus Trefle. Only when growthGrounding is null (notes.noGrowthGrounding is set) should you tell the user that dedicated growth guidance has not been gathered yet and suggest running "Gather growth guidance"; even then, still answer generally from the confirmed plant and Trefle. For practical "how do I improve growth / what should I use" questions, DIRECTLY answer the goal first, then use the relevant cards (Sunlight for light, Soil for soil/organic matter, Watering for moisture, Pruning for structure, Growth rate / maintenance for pace, Pests and disease for monitoring). You may recommend SAFE CATEGORIES of intervention — watering and moisture management, sunlight and site selection, soil structure and organic matter, mulch, pruning and structural training, monitoring for pests and disease, and seeking local expert advice — without naming commercial products, chemical products, fertilizers, doses, mixing rates, or application schedules. Do not refuse the question; only decline the prohibited specifics (product names, doses, schedules) with a short explanation, then continue with the safe categories. For pest/disease questions in Improve Growth, use the pestsDisease card: cover common risks for this plant, symptoms/signs to monitor, prevention, sanitation, and cultural care, and suggest seeking local expert help when appropriate — do NOT diagnose the user\'s specific plant from images or descriptions, and do NOT recommend pesticide/fungicide/herbicide/insecticide product names, doses, mixing rates, spray schedules, or chemical treatment instructions. When growthGrounding IS present, cite source names ("according to Perenual", "per Trefle", or the web source title) when giving care advice, and prefer sources with authorityScore "high" (university extensions, botanical gardens, government agriculture pages). Distinguish structured database facts (Trefle, Perenual) from web-sourced guidance. If sources conflict, say so and prefer the higher-authority / more local source. Do NOT invent missing values. If plant identification confidence is low, warn that species-specific advice applies only if the plant is correctly identified. Do NOT diagnose disease.';
         case 'increase_income':
@@ -417,13 +418,17 @@ Formatting:
       };
       const rows: any[] = [];
       if (confirmedIdent) rows.push(confirmedIdent);
-      for (const i of identRows) {
-        if (rows.includes(i)) continue;
-        // Top alternatives are included when there is no confirmation yet, or
-        // when the question references them explicitly.
-        if (!confirmedIdent || mentions(i)) rows.push(i);
+      // Alternatives are always useful context for Identify cases (comparison,
+      // similar species). Questions that explicitly name an alternative pull it
+      // to the front.
+      const alternatives = identRows
+        .filter((i) => !rows.includes(i))
+        .sort((a, b) => (mentions(b) ? 1 : 0) - (mentions(a) ? 1 : 0));
+      for (const i of alternatives) {
+        rows.push(i);
         if (rows.length >= 5) break;
       }
+
       for (const i of rows) {
         const name = i.scientific_name_without_author || i.scientific_name || i.common_name;
         if (!name) continue;
@@ -489,21 +494,27 @@ Formatting:
           snippet: typeof confirmedDiag.description === 'string' ? confirmedDiag.description.slice(0, 300) : '',
         });
       }
+      // Provider candidates are diagnostic CONTEXT only — never treatment proof.
+      const CANDIDATE_LABEL = lang === 'sr'
+        ? 'Kandidat pružaoca (dijagnostički kontekst, nije dokaz o lečenju)'
+        : 'Provider candidate (diagnosis context, not treatment proof)';
       for (const d of diagRows.slice(0, 4)) {
         if (!d?.name || d.is_confirmed) continue;
+        const desc = typeof d.description === 'string' ? d.description.slice(0, 240) : '';
         out.push({
           id: `diagnosis-${d.id}`,
           provider: d.provider || 'plantnet',
-          title: d.name,
+          title: `${d.name} — ${CANDIDATE_LABEL}`,
           url: null,
           domain: null,
           score: typeof d.score === 'number' ? d.score : null,
           sourceType: 'diagnosis_candidate',
           authorityScore: null,
           cardKey: null,
-          snippet: typeof d.description === 'string' ? d.description.slice(0, 300) : '',
+          snippet: desc ? `${CANDIDATE_LABEL}. ${desc}` : CANDIDATE_LABEL,
         });
       }
+
       // AI interpretation is context that backed the answer — never treatment advice.
       if (interp?.summary) {
         out.push({
@@ -622,19 +633,60 @@ Formatting:
 
 
 
+    // Deterministic per-goal fallbacks used when the model returns nothing.
+    const FALLBACK_FOLLOW_UPS: Record<string, Record<'en' | 'sr', string[]>> = {
+      identify: {
+        en: [
+          'Which features confirm this plant?',
+          'How is it different from the top alternative?',
+          'What photos should I add?',
+          'Could this be a similar species?',
+        ],
+        sr: [
+          'Koje osobine potvrđuju ovu biljku?',
+          'Po čemu se razlikuje od najbliže alternative?',
+          'Koje fotografije treba da dodam?',
+          'Da li ovo može biti slična vrsta?',
+        ],
+      },
+      diagnose: {
+        en: [
+          'What symptoms should I check next?',
+          'Which candidate is most likely?',
+          'Could this be pest damage or stress?',
+          'What photos would improve diagnosis?',
+        ],
+        sr: [
+          'Koje simptome sledeće da proverim?',
+          'Koji kandidat je najverovatniji?',
+          'Da li ovo može biti štetočina ili stres?',
+          'Koje fotografije bi poboljšale dijagnozu?',
+        ],
+      },
+    };
+
     const generateFollowUps = async (
       lastUserQuestion: string,
       assistantAnswer: string,
     ): Promise<string[]> => {
       const langLine = lang === 'sr' ? 'Serbian (Latin script)' : 'English';
-      const cardLine =
-        pc.user_goal === 'improve_growth'
-          ? `This is an Improve Growth case. Prefer follow-ups tied to these care areas: ${
+      const goalLine = (() => {
+        switch (pc.user_goal) {
+          case 'improve_growth':
+            return `This is an Improve Growth case. Prefer follow-ups tied to these care areas: ${
               availableCards.length
                 ? availableCards.join(', ')
                 : 'watering, sunlight, soil, pruning, hardiness/climate, growth rate/maintenance, pests and disease, fruiting/harvest, local conditions'
-            }.`
-          : '';
+            }.`;
+          case 'identify':
+            return 'This is an Identify case. Focus follow-ups on confirming the identification (which features confirm it), comparing the top alternatives / similar species, taxonomy, habitat, and requesting better or additional photos. NEVER suggest questions about disease, pests, or treatment.';
+          case 'diagnose':
+            return 'This is a Diagnose case. Focus follow-ups on symptoms to check next, which candidate is most likely, remaining uncertainty, pest vs disease vs stress, which next photos would help, prevention/sanitation, and safe next steps (including when to seek local expert help). NEVER suggest treatment products or chemical steps.';
+          default:
+            return '';
+        }
+      })();
+
       const prompt = `Based on the conversation below, propose up to 4 short follow-up questions the USER could ask next.
 
 Rules:
@@ -643,7 +695,7 @@ Rules:
 - Do NOT repeat or rephrase the user's last question.
 - Must stay within the case goal: ${pc.user_goal ?? 'unspecified'}.
 - NEVER suggest questions about pesticide/fungicide/herbicide/fertilizer product names, doses, mixing rates, spray schedules, or chemical treatments.
-- ${cardLine}
+- ${goalLine}
 - Return ONLY a JSON array of strings, nothing else.
 
 USER'S LAST QUESTION:
@@ -651,6 +703,11 @@ ${lastUserQuestion || '(none)'}
 
 ASSISTANT ANSWER:
 ${assistantAnswer.slice(0, 4000)}`;
+
+      const fallback = (): string[] => {
+        const byGoal = FALLBACK_FOLLOW_UPS[pc.user_goal ?? ''];
+        return byGoal ? byGoal[lang].slice(0, 4) : [];
+      };
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
@@ -667,25 +724,27 @@ ${assistantAnswer.slice(0, 4000)}`;
             ],
           }),
         });
-        if (!resp.ok) return [];
+        if (!resp.ok) return fallback();
         const b = await resp.json().catch(() => null);
         const raw = b?.choices?.[0]?.message?.content;
-        if (typeof raw !== 'string') return [];
+        if (typeof raw !== 'string') return fallback();
         const match = raw.match(/\[[\s\S]*\]/);
-        if (!match) return [];
+        if (!match) return fallback();
         const parsed = JSON.parse(match[0]);
-        if (!Array.isArray(parsed)) return [];
-        return parsed
+        if (!Array.isArray(parsed)) return fallback();
+        const cleaned = parsed
           .filter((s: unknown) => typeof s === 'string' && s.trim().length > 0)
           .map((s: string) => s.trim())
           .filter((s: string) => !/pesticid|fungicid|herbicid|insekticid|pesticide|fungicide|herbicide|insecticide|fertiliz|đubriv|dubriv|dose|doza|spray|prskan/i.test(s))
           .slice(0, 4);
+        return cleaned.length > 0 ? cleaned : fallback();
       } catch {
-        return [];
+        return fallback();
       } finally {
         clearTimeout(timeout);
       }
     };
+
 
     if (followUpsOnly) {
       const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');

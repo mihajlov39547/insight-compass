@@ -17,7 +17,7 @@ export type CrawlScope =
   | { kind: 'notebook'; notebookId: string }
   // Plant Advisor: saves the crawled content into the plant case chat so it
   // stays linked to the user + case + source URL.
-  | { kind: 'plant_case'; caseId: string; lang?: 'en' | 'sr' };
+  | { kind: 'plant_case'; caseId: string; lang?: 'en' | 'sr'; goal?: string | null };
 
 
 export interface CrawlSelection {
@@ -210,6 +210,7 @@ export function useCrawlFollowUp(): UseCrawlFollowUpResult {
             lang,
             question: instructions,
             mode: 'crawl',
+            goal: scope.goal ?? null,
           });
 
           const { error: insertError } = await supabase.from('plant_case_chat_messages').insert({
