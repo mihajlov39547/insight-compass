@@ -417,13 +417,17 @@ Formatting:
       };
       const rows: any[] = [];
       if (confirmedIdent) rows.push(confirmedIdent);
-      for (const i of identRows) {
-        if (rows.includes(i)) continue;
-        // Top alternatives are included when there is no confirmation yet, or
-        // when the question references them explicitly.
-        if (!confirmedIdent || mentions(i)) rows.push(i);
+      // Alternatives are always useful context for Identify cases (comparison,
+      // similar species). Questions that explicitly name an alternative pull it
+      // to the front.
+      const alternatives = identRows
+        .filter((i) => !rows.includes(i))
+        .sort((a, b) => (mentions(b) ? 1 : 0) - (mentions(a) ? 1 : 0));
+      for (const i of alternatives) {
+        rows.push(i);
         if (rows.length >= 5) break;
       }
+
       for (const i of rows) {
         const name = i.scientific_name_without_author || i.scientific_name || i.common_name;
         if (!name) continue;
