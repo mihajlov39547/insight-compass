@@ -695,7 +695,7 @@ Rules:
 - Do NOT repeat or rephrase the user's last question.
 - Must stay within the case goal: ${pc.user_goal ?? 'unspecified'}.
 - NEVER suggest questions about pesticide/fungicide/herbicide/fertilizer product names, doses, mixing rates, spray schedules, or chemical treatments.
-- ${cardLine}
+- ${goalLine}
 - Return ONLY a JSON array of strings, nothing else.
 
 USER'S LAST QUESTION:
@@ -703,6 +703,11 @@ ${lastUserQuestion || '(none)'}
 
 ASSISTANT ANSWER:
 ${assistantAnswer.slice(0, 4000)}`;
+
+      const fallback = (): string[] => {
+        const byGoal = FALLBACK_FOLLOW_UPS[pc.user_goal ?? ''];
+        return byGoal ? byGoal[lang].slice(0, 4) : [];
+      };
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
@@ -719,25 +724,27 @@ ${assistantAnswer.slice(0, 4000)}`;
             ],
           }),
         });
-        if (!resp.ok) return [];
+        if (!resp.ok) return fallback();
         const b = await resp.json().catch(() => null);
         const raw = b?.choices?.[0]?.message?.content;
-        if (typeof raw !== 'string') return [];
+        if (typeof raw !== 'string') return fallback();
         const match = raw.match(/\[[\s\S]*\]/);
-        if (!match) return [];
+        if (!match) return fallback();
         const parsed = JSON.parse(match[0]);
-        if (!Array.isArray(parsed)) return [];
-        return parsed
+        if (!Array.isArray(parsed)) return fallback();
+        const cleaned = parsed
           .filter((s: unknown) => typeof s === 'string' && s.trim().length > 0)
           .map((s: string) => s.trim())
           .filter((s: string) => !/pesticid|fungicid|herbicid|insekticid|pesticide|fungicide|herbicide|insecticide|fertiliz|đubriv|dubriv|dose|doza|spray|prskan/i.test(s))
           .slice(0, 4);
+        return cleaned.length > 0 ? cleaned : fallback();
       } catch {
-        return [];
+        return fallback();
       } finally {
         clearTimeout(timeout);
       }
     };
+
 
     if (followUpsOnly) {
       const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
