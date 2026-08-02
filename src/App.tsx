@@ -19,12 +19,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter
-          future={{
-            v7_relativeSplatPath: true,
-            v7_startTransition: true,
-          }}
-        >
+        <BrowserRouter>
           <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/profile-settings" element={<ProfileSettings />} />

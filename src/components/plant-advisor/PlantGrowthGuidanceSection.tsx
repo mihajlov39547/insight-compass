@@ -15,6 +15,8 @@ import {
 interface Props {
   caseId: string;
   hasConfirmedIdentification: boolean;
+  /** Optional helper-text variant for Identify cases. */
+  helperKey?: string;
 }
 
 const CARE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -164,7 +166,7 @@ function OverviewCard({ data, sources }: { data: CareCategory; sources: CardSour
   );
 }
 
-export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification }: Props) {
+export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification, helperKey }: Props) {
   const { t } = useTranslation();
   const { data: grounding, isLoading } = usePlantCaseGrounding(caseId);
   const gather = useGatherGrowthGuidance();
@@ -204,7 +206,7 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification 
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('plantAdvisor.growth.helper')}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t(helperKey ?? 'plantAdvisor.growth.helper')}</p>
         </div>
       </div>
 

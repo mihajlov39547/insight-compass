@@ -323,7 +323,12 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
-    if (pc.user_goal !== 'improve_growth') return json({ error: 'wrong_goal' }, 400);
+    // Growth guidance is shared by Improve Growth and Identify cases. Identify
+    // cases reuse the same normalized growth schema and the same stored row
+    // (goal = 'improve_growth') so no duplicate records are created.
+    if (pc.user_goal !== 'improve_growth' && pc.user_goal !== 'identify') {
+      return json({ error: 'wrong_goal' }, 400);
+    }
 
     // Cache check
     if (!force) {

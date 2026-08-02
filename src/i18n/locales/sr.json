@@ -2129,6 +2129,7 @@
     "growth": {
       "title": "Smernice za rast",
       "helper": "Pronađi smernice za negu iz biljnih baza i pouzdanih web izvora pre razgovora sa asistentom.",
+      "helperIdentify": "Nakon identifikacije biljke, prikupite smernice za negu i rast kao dodatni kontekst.",
       "gather": "Prikupi smernice za rast",
       "refresh": "Osveži smernice za rast",
       "matched": "Pronađena biljka",
