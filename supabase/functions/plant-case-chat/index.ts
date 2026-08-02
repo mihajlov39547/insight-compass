@@ -366,6 +366,13 @@ Formatting:
       fruitingHarvest: /fruit|harvest|yield|berry|bloom|flower|crop|plod|rod\b|berb|prinos|cvet|cvjet/i,
     };
 
+    /** General care/growth intent (not tied to one specific card). */
+    const GENERAL_CARE_RE =
+      /\bcare\b|caring|\bgrow\b|growing|\bgrew\b|cultivat|\bneeds?\b|condition|requirement|maintain|look after|neg(a|u|o|uj|ova|ovanje)|rast|uzgoj|gajenje|uslov|zahtev|održav|odrzav/i;
+
+    const isGeneralCareQuestion = (question: string): boolean =>
+      GENERAL_CARE_RE.test(question);
+
     const detectCards = (question: string): string[] => {
       const hits = Object.keys(CARD_KEYWORDS).filter((k) => CARD_KEYWORDS[k].test(question));
       return hits.length > 0 ? hits : [];
@@ -601,7 +608,7 @@ Formatting:
         collected.push(...identificationSources(question));
         // Identify cases may also reuse the shared growth guidance when the
         // user asks a care/growth question.
-        if (groundingRow && detectCards(question).length > 0) {
+        if (groundingRow && (detectCards(question).length > 0 || isGeneralCareQuestion(question))) {
           collected.push(...growthSources(question));
         }
         const tp = trefleSource();
