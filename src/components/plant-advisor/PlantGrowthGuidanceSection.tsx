@@ -206,7 +206,7 @@ export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification,
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('plantAdvisor.growth.helper')}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t(helperKey ?? 'plantAdvisor.growth.helper')}</p>
         </div>
       </div>
 
