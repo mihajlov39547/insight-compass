@@ -124,6 +124,13 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             caseId={plantCase.id}
             hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
           />
+          {plantCase.user_goal === 'identify' && (
+            <PlantGrowthGuidanceSection
+              caseId={plantCase.id}
+              hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+              helperKey="plantAdvisor.growth.helperIdentify"
+            />
+          )}
         </>
       )}
 
