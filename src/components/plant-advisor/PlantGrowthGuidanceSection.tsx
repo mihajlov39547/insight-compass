@@ -166,7 +166,7 @@ function OverviewCard({ data, sources }: { data: CareCategory; sources: CardSour
   );
 }
 
-export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification }: Props) {
+export function PlantGrowthGuidanceSection({ caseId, hasConfirmedIdentification, helperKey }: Props) {
   const { t } = useTranslation();
   const { data: grounding, isLoading } = usePlantCaseGrounding(caseId);
   const gather = useGatherGrowthGuidance();
