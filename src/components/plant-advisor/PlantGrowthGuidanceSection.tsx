@@ -15,6 +15,8 @@ import {
 interface Props {
   caseId: string;
   hasConfirmedIdentification: boolean;
+  /** Optional helper-text variant for Identify cases. */
+  helperKey?: string;
 }
 
 const CARE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
