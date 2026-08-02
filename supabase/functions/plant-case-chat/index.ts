@@ -253,7 +253,7 @@ Deno.serve(async (req: Request) => {
     const goalDirective = (() => {
       switch (pc.user_goal) {
         case 'identify':
-          return 'This is an IDENTIFICATION case. Focus on the plant identification: the confirmed plant, its confidence, the top alternatives and how they differ, taxonomy (genus/family), distinguishing morphological features, typical habitat and distribution, similar/confusable species, and how the user can verify the ID (which features and which additional photos). Reference taxonomy sources (GBIF, Plants of the World Online) and Trefle when they are present in the context, and note that the user can extract or crawl those URL-backed sources for deeper taxonomy, distinguishing features, habitat, similar species and verification detail. Do not answer disease, pest, treatment, or remediation questions inside an identify-only case: say this case is configured for identification only and suggest opening or creating a "Diagnose problem" case once the plant is confirmed.';
+          return 'This is an IDENTIFICATION case. Focus on the plant identification: the confirmed plant, its confidence, the top alternatives and how they differ, taxonomy (genus/family), distinguishing morphological features, typical habitat and distribution, similar/confusable species, and how the user can verify the ID (which features and which additional photos). Reference taxonomy sources (GBIF, Plants of the World Online) and Trefle when they are present in the context, and note that the user can extract or crawl those URL-backed sources for deeper taxonomy, distinguishing features, habitat, similar species and verification detail. Do not answer disease, pest, treatment, or remediation questions inside an identify-only case: say this case is configured for identification only and suggest opening or creating a "Diagnose problem" case once the plant is confirmed. If growthGrounding is available, you may use it for general care, growth, habitat, watering, sunlight, soil, pruning, hardiness, maintenance, pests/disease awareness, and fruiting/harvest context: use the matching growthGrounding.normalizedCare card summary and cite its sources. Keep the main case identity as IDENTIFICATION. Do not diagnose a specific disease/problem in Identify cases. For problem diagnosis, ask the user to open or create a "Diagnose problem" case. Pest/disease content in an Identify case must stay preventive and general-awareness only, and must never include fertilizer/pesticide/fungicide/herbicide product names, doses, mixing rates, spray schedules, or chemical treatment instructions.';
         case 'diagnose':
           return 'This is a DIAGNOSIS case. Focus on the confirmed plant and the disease/pest candidates, their relevance to the confirmed plant, uncertainty, and the visual checks that would separate them. Provider candidates are diagnostic CONTEXT only — never treatment proof; always describe them as candidates. Cover symptoms to check, host range, visual signs, environmental/cultural conditions that favour the problem, whether it could be pest damage, disease, or abiotic stress, prevention and sanitation, and when to seek local expert help. Do NOT give pesticide/fungicide/herbicide/insecticide product names, active ingredients, doses, mixing rates, spray schedules, or chemical treatment instructions — decline those specifics briefly and continue with safe diagnostic and preventive guidance. If no plant is confirmed yet, explain that the plant must be confirmed before diagnosis is meaningful.';
 
@@ -599,6 +599,11 @@ Formatting:
         if (tp) collected.push(tp);
       } else if (goal === 'identify') {
         collected.push(...identificationSources(question));
+        // Identify cases may also reuse the shared growth guidance when the
+        // user asks a care/growth question.
+        if (groundingRow && detectCards(question).length > 0) {
+          collected.push(...growthSources(question));
+        }
         const tp = trefleSource();
         if (tp) collected.push(tp);
       } else if (goal === 'diagnose') {
