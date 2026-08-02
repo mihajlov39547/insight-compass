@@ -2113,6 +2113,7 @@
     "growth": {
       "title": "Growth guidance",
       "helper": "Find care guidance from plant databases and trusted web sources before asking chat.",
+      "helperIdentify": "After identifying the plant, gather care and growth guidance for context.",
       "gather": "Gather growth guidance",
       "refresh": "Refresh growth guidance",
       "matched": "Matched plant",
