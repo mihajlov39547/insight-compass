@@ -423,7 +423,11 @@ Formatting:
     };
 
     /** Identification rows → provider sources, with GBIF/POWO reference URLs when present. */
-    const identificationSources = (question: string): UsedSource[] => {
+    const identificationSources = (
+      question: string,
+      opts?: { includeAlternatives?: boolean },
+    ): UsedSource[] => {
+      const includeAlternatives = opts?.includeAlternatives !== false;
       const out: UsedSource[] = [];
       const mentions = (i: any) => {
         const name = (i.scientific_name_without_author || i.scientific_name || i.common_name || '').toLowerCase();
@@ -431,16 +435,17 @@ Formatting:
       };
       const rows: any[] = [];
       if (confirmedIdent) rows.push(confirmedIdent);
-      // Alternatives are always useful context for Identify cases (comparison,
-      // similar species). Questions that explicitly name an alternative pull it
-      // to the front.
+      // Alternatives are only surfaced when the answer actually compares
+      // candidates / similar species (or when there is no confirmed row).
       const alternatives = identRows
         .filter((i) => !rows.includes(i))
         .sort((a, b) => (mentions(b) ? 1 : 0) - (mentions(a) ? 1 : 0));
+      const altLimit = includeAlternatives ? 5 : (rows.length === 0 ? 1 : 0);
       for (const i of alternatives) {
+        if (rows.length >= altLimit) break;
         rows.push(i);
-        if (rows.length >= 5) break;
       }
+
 
       for (const i of rows) {
         const name = i.scientific_name_without_author || i.scientific_name || i.common_name;
