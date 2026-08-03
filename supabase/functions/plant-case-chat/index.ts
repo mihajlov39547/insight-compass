@@ -616,12 +616,18 @@ Formatting:
         const tp = trefleSource();
         if (tp) collected.push(tp);
       } else if (goal === 'identify') {
-        collected.push(...identificationSources(question));
-        // Identify cases may also reuse the shared growth guidance when the
-        // user asks a care/growth question.
-        if (groundingRow && (detectCards(question).length > 0 || isGeneralCareQuestion(question))) {
-          collected.push(...growthSources(question));
-        }
+        // Identify cases reuse the shared growth guidance when the user asks a
+        // care/growth (incl. general pests & disease awareness) question. When
+        // they do, the growth card sources come FIRST, then identification.
+        const usesGrowth =
+          !!groundingRow && (detectCards(question).length > 0 || isGeneralCareQuestion(question));
+        if (usesGrowth) collected.push(...growthSources(question));
+        collected.push(
+          ...identificationSources(question, {
+            includeAlternatives: isComparisonQuestion(question) || !usesGrowth,
+          }),
+        );
+
         const tp = trefleSource();
         if (tp) collected.push(tp);
       } else if (goal === 'diagnose') {
