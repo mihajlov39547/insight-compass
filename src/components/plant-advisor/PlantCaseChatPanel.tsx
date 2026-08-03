@@ -238,7 +238,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           role: m.role,
           content: m.content,
           sourcesUsed: m.role === 'assistant' ? m.metadata?.sourcesUsed : undefined,
+          researchTrace:
+            m.role === 'assistant'
+              ? ((m.metadata?.research as { trace?: ResearchTraceState } | undefined)?.trace ?? null)
+              : null,
+          isResearch: m.role === 'assistant' && m.metadata?.kind === 'research',
         } as Msg)),
+
         ...optimistic,
       ];
     }
