@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, MessageSquare, Send, Loader2, AlertTriangle, Info, Camera, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Send, Loader2, AlertTriangle, Info, Camera, ShieldAlert, Telescope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
+import { ResearchTrace } from '@/components/chat/ResearchTrace';
 import { SourceAttribution, type SourceItem } from '@/components/chat/SourceAttribution';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,6 +16,13 @@ import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
+import { useAuth } from '@/contexts/useAuth';
+import {
+  runTavilyResearch,
+  researchSourcesToUnified,
+  type ResearchTraceState,
+} from '@/services/research/tavilyResearch';
+import { buildIdentifyResearchInput, scrubTreatmentGuidance } from '@/lib/plantResearchSafety';
 import {
   usePlantCaseChatMessages,
   useInvalidatePlantCaseChatMessages,
@@ -32,7 +40,10 @@ interface Msg {
   role: 'user' | 'assistant';
   content: string;
   sourcesUsed?: PlantChatUsedSource[];
+  researchTrace?: ResearchTraceState | null;
+  isResearch?: boolean;
 }
+
 
 /** Map persisted plant-chat sources onto the shared Project Chat source model. */
 function toSourceItems(list: PlantChatUsedSource[] | undefined): SourceItem[] {
