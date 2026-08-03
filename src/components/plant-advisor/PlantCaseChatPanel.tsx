@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, MessageSquare, Send, Loader2, AlertTriangle, Info, Camera, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Send, Loader2, AlertTriangle, Info, Camera, ShieldAlert, Telescope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
+import { ResearchTrace } from '@/components/chat/ResearchTrace';
 import { SourceAttribution, type SourceItem } from '@/components/chat/SourceAttribution';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,6 +16,13 @@ import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
+import { useAuth } from '@/contexts/useAuth';
+import {
+  runTavilyResearch,
+  researchSourcesToUnified,
+  type ResearchTraceState,
+} from '@/services/research/tavilyResearch';
+import { buildIdentifyResearchInput, scrubTreatmentGuidance } from '@/lib/plantResearchSafety';
 import {
   usePlantCaseChatMessages,
   useInvalidatePlantCaseChatMessages,
@@ -32,7 +40,10 @@ interface Msg {
   role: 'user' | 'assistant';
   content: string;
   sourcesUsed?: PlantChatUsedSource[];
+  researchTrace?: ResearchTraceState | null;
+  isResearch?: boolean;
 }
+
 
 /** Map persisted plant-chat sources onto the shared Project Chat source model. */
 function toSourceItems(list: PlantChatUsedSource[] | undefined): SourceItem[] {
@@ -227,7 +238,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           role: m.role,
           content: m.content,
           sourcesUsed: m.role === 'assistant' ? m.metadata?.sourcesUsed : undefined,
+          researchTrace:
+            m.role === 'assistant'
+              ? ((m.metadata?.research as { trace?: ResearchTraceState } | undefined)?.trace ?? null)
+              : null,
+          isResearch: m.role === 'assistant' && m.metadata?.kind === 'research',
         } as Msg)),
+
         ...optimistic,
       ];
     }
@@ -360,6 +377,81 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     return () => { cancelled = true; };
   }, [hasPersistedHistory, followUps, persistedMessages, plantCase.id, langCode]);
 
+  // ---------------------------------------------------------------------------
+  // Deep research (Tavily) — reuses the Project/Notebook chat research flow.
+  // Enabled for Identify cases with a confirmed identification.
+  // ---------------------------------------------------------------------------
+  const { user } = useAuth();
+  const [researching, setResearching] = useState(false);
+  const [liveTrace, setLiveTrace] = useState<ResearchTraceState | null>(null);
+
+  const researchEnabled = isIdentify;
+  const canResearch = researchEnabled && !!confirmedIdent && !pending && !researching;
+  const researchTooltip = !confirmedIdent
+    ? t('plantAdvisor.chat.research.needsConfirmed')
+    : t('plantAdvisor.chat.research.tooltip');
+
+  const runResearch = async () => {
+    if (!canResearch || !confirmedIdent || !user) return;
+    setResearching(true);
+    setLiveTrace(null);
+    try {
+      const scientific =
+        confirmedIdent.scientific_name_without_author || confirmedIdent.scientific_name || null;
+      const researchInput = buildIdentifyResearchInput(
+        confirmedIdent.common_name,
+        scientific,
+        advisorLang,
+      );
+      const result = await runTavilyResearch({
+        input: researchInput,
+        model: 'auto',
+        responseLanguage: advisorLang,
+        onTrace: (state) => setLiveTrace(state),
+      });
+      const answer = scrubTreatmentGuidance(result.finalText || '');
+      if (!answer.trim()) throw new Error(result.errorMessage || 'empty_reply');
+
+      const sourcesUsed: PlantChatUsedSource[] = researchSourcesToUnified(result.sources).map(
+        (s, i) => ({
+          id: s.id || `research-${i}`,
+          provider: 'tavily-research',
+          title: s.title,
+          url: s.url,
+          domain: s.snippet || null,
+          score: s.relevance,
+          snippet: s.snippet || null,
+        }),
+      );
+
+      const { error } = await supabase.from('plant_case_chat_messages').insert({
+        user_id: user.id,
+        case_id: plantCase.id,
+        role: 'assistant',
+        content: answer,
+        metadata: {
+          kind: 'research',
+          goal: goal ?? null,
+          model: 'tavily-research:auto',
+          responseLanguage: advisorLang,
+          sourcesUsed,
+          research: { trace: result.trace, raw: result.finalText },
+        } as unknown as Record<string, never>,
+
+      });
+      if (error) throw error;
+      await invalidateChatMessages(plantCase.id);
+      setLiveTrace(null);
+    } catch (e) {
+      toast.error(
+        t('plantAdvisor.chat.research.failed', {
+          defaultValue: (e as Error).message,
+        }),
+      );
+    } finally {
+      setResearching(false);
+    }
+  };
 
 
   const send = async (textOverride?: string) => {
@@ -450,7 +542,26 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
             {t(cfg.assistantTitleKey)}
           </div>
         </div>
+        {researchEnabled && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-shrink-0 gap-1.5"
+            onClick={runResearch}
+            disabled={!canResearch}
+            title={researchTooltip}
+            aria-label={t('plantAdvisor.chat.research.label')}
+          >
+            {researching ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Telescope className="h-3.5 w-3.5" />
+            )}
+            <span className="hidden sm:inline text-xs">{t('plantAdvisor.chat.research.label')}</span>
+          </Button>
+        )}
       </div>
+
 
       {/* Uncertainty banners */}
       {isIdentify && identUncertain && (
@@ -692,9 +803,15 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           return (
             <div key={msgId} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
               <div className="max-w-[80%] space-y-2">
+                {m.researchTrace && <ResearchTrace trace={m.researchTrace} />}
                 <div className={`rounded-lg px-3 py-2 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'}`}>
                   {m.role === 'user' ? m.content : <MarkdownContent content={m.content} />}
                 </div>
+                {m.isResearch && (
+                  <div className="text-[10px] text-muted-foreground">
+                    {t('plantAdvisor.chat.research.byline')}
+                  </div>
+                )}
                 {items.length > 0 && (
                   <SourceAttribution
                     sources={items}
@@ -726,6 +843,18 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           );
         })}
 
+        {researching && (
+          <div className="flex justify-start">
+            <div className="max-w-[80%] space-y-2">
+              {liveTrace && <ResearchTrace trace={liveTrace} isLive />}
+              <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {t('plantAdvisor.chat.research.running')}
+              </div>
+            </div>
+          </div>
+        )}
+
         {pending && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
@@ -734,6 +863,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
             </div>
           </div>
         )}
+
       </div>
 
       {visibleSuggestions.length > 0 && (

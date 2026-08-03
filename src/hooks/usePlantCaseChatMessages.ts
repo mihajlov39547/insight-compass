@@ -22,7 +22,7 @@ export interface PlantChatMessageMetadata {
   model?: string | null;
   usedFallback?: boolean;
   usedGrowthGrounding?: boolean;
-  kind?: 'extract' | 'crawl' | null;
+  kind?: 'extract' | 'crawl' | 'research' | null;
   sourcesUsed?: PlantChatUsedSource[];
   [key: string]: unknown;
 }

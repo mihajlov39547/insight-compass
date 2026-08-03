@@ -2013,6 +2013,14 @@
       "extractFocus": {
         "identify": "Summarize taxonomy, distinguishing features, habitat, similar species, and how to verify this identification.",
         "diagnose": "Summarize symptoms, host range, visual signs, favourable environmental conditions, prevention and sanitation, and when to seek expert help. Exclude chemical products, doses and spray schedules."
+      },
+      "research": {
+        "label": "Research",
+        "tooltip": "Run deep web research about this plant.",
+        "needsConfirmed": "Confirm a plant identification before running research.",
+        "running": "Researching this plant…",
+        "failed": "Research failed. Please try again.",
+        "byline": "AI-generated · tavily-research:auto"
       }
     },
     "diagnose": {
