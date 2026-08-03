@@ -377,6 +377,80 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     return () => { cancelled = true; };
   }, [hasPersistedHistory, followUps, persistedMessages, plantCase.id, langCode]);
 
+  // ---------------------------------------------------------------------------
+  // Deep research (Tavily) — reuses the Project/Notebook chat research flow.
+  // Enabled for Identify cases with a confirmed identification.
+  // ---------------------------------------------------------------------------
+  const { user } = useAuth();
+  const [researching, setResearching] = useState(false);
+  const [liveTrace, setLiveTrace] = useState<ResearchTraceState | null>(null);
+
+  const researchEnabled = isIdentify;
+  const canResearch = researchEnabled && !!confirmedIdent && !pending && !researching;
+  const researchTooltip = !confirmedIdent
+    ? t('plantAdvisor.chat.research.needsConfirmed')
+    : t('plantAdvisor.chat.research.tooltip');
+
+  const runResearch = async () => {
+    if (!canResearch || !confirmedIdent || !user) return;
+    setResearching(true);
+    setLiveTrace(null);
+    try {
+      const scientific =
+        confirmedIdent.scientific_name_without_author || confirmedIdent.scientific_name || null;
+      const researchInput = buildIdentifyResearchInput(
+        confirmedIdent.common_name,
+        scientific,
+        advisorLang,
+      );
+      const result = await runTavilyResearch({
+        input: researchInput,
+        model: 'auto',
+        responseLanguage: advisorLang,
+        onTrace: (state) => setLiveTrace(state),
+      });
+      const answer = scrubTreatmentGuidance(result.finalText || '');
+      if (!answer.trim()) throw new Error(result.errorMessage || 'empty_reply');
+
+      const sourcesUsed: PlantChatUsedSource[] = researchSourcesToUnified(result.sources).map(
+        (s, i) => ({
+          id: s.id || `research-${i}`,
+          provider: 'tavily-research',
+          title: s.title,
+          url: s.url,
+          domain: s.snippet || null,
+          score: s.relevance,
+          snippet: s.snippet || null,
+        }),
+      );
+
+      const { error } = await supabase.from('plant_case_chat_messages').insert({
+        user_id: user.id,
+        case_id: plantCase.id,
+        role: 'assistant',
+        content: answer,
+        metadata: {
+          kind: 'research',
+          goal: goal ?? null,
+          model: 'tavily-research:auto',
+          responseLanguage: advisorLang,
+          sourcesUsed,
+          research: { trace: result.trace, raw: result.finalText },
+        },
+      });
+      if (error) throw error;
+      await invalidateChatMessages(plantCase.id);
+      setLiveTrace(null);
+    } catch (e) {
+      toast.error(
+        t('plantAdvisor.chat.research.failed', {
+          defaultValue: (e as Error).message,
+        }),
+      );
+    } finally {
+      setResearching(false);
+    }
+  };
 
 
   const send = async (textOverride?: string) => {
