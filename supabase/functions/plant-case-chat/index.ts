@@ -378,6 +378,12 @@ Formatting:
       return hits.length > 0 ? hits : [];
     };
 
+    /** Does the question actually compare candidates / similar species? */
+    const COMPARISON_RE =
+      /alternativ|differ|different|distinguish|similar|confus|versus|\bvs\b|compare|which one|razlik|slično|slicn|slične|slicne|umesto|poredi|uporedi|koja je razlika/i;
+    const isComparisonQuestion = (question: string): boolean => COMPARISON_RE.test(question);
+
+
     const domainOf = (url: string | null | undefined): string | null => {
       if (!url) return null;
       try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return null; }
