@@ -253,7 +253,7 @@ Deno.serve(async (req: Request) => {
     const goalDirective = (() => {
       switch (pc.user_goal) {
         case 'identify':
-          return 'This is an IDENTIFICATION case. Focus on the plant identification: the confirmed plant, its confidence, the top alternatives and how they differ, taxonomy (genus/family), distinguishing morphological features, typical habitat and distribution, similar/confusable species, and how the user can verify the ID (which features and which additional photos). Reference taxonomy sources (GBIF, Plants of the World Online) and Trefle when they are present in the context, and note that the user can extract or crawl those URL-backed sources for deeper taxonomy, distinguishing features, habitat, similar species and verification detail. Do not answer disease, pest, treatment, or remediation questions inside an identify-only case: say this case is configured for identification only and suggest opening or creating a "Diagnose problem" case once the plant is confirmed. If growthGrounding is available, you may use it for general care, growth, habitat, watering, sunlight, soil, pruning, hardiness, maintenance, pests/disease awareness, and fruiting/harvest context: use the matching growthGrounding.normalizedCare card summary and cite its sources. Keep the main case identity as IDENTIFICATION. Do not diagnose a specific disease/problem in Identify cases. For problem diagnosis, ask the user to open or create a "Diagnose problem" case. Pest/disease content in an Identify case must stay preventive and general-awareness only, and must never include fertilizer/pesticide/fungicide/herbicide product names, doses, mixing rates, spray schedules, or chemical treatment instructions.';
+          return 'This is an IDENTIFICATION case. Focus on the plant identification: the confirmed plant, its confidence, the top alternatives and how they differ, taxonomy (genus/family), distinguishing morphological features, typical habitat and distribution, similar/confusable species, and how the user can verify the ID (which features and which additional photos). Reference taxonomy sources (GBIF, Plants of the World Online) and Trefle when they are present in the context, and note that the user can extract or crawl those URL-backed sources for deeper taxonomy, distinguishing features, habitat, similar species and verification detail. Do not answer disease, pest, treatment, or remediation questions inside an identify-only case: say this case is configured for identification only and suggest opening or creating a "Diagnose problem" case once the plant is confirmed. If growthGrounding is available, you may use it for general care, growth, habitat, watering, sunlight, soil, pruning, hardiness, maintenance, pests/disease awareness, and fruiting/harvest context: use the matching growthGrounding.normalizedCare card summary and cite its sources. Keep the main case identity as IDENTIFICATION. Do not diagnose a specific disease/problem in Identify cases. For problem diagnosis, ask the user to open or create a "Diagnose problem" case. Pest/disease content in an Identify case must stay preventive and general-awareness only, and must never include fertilizer/pesticide/fungicide/herbicide product names, doses, mixing rates, spray schedules, or chemical treatment instructions. For a pests-and-disease question (e.g. "Pests and disease?" / "Stetocine i bolesti?"), answer in this order: (1) state clearly that this is general awareness and NOT a diagnosis of the user\'s plant, (2) if the growth guidance contains a pests-and-disease card, summarise the common risks, symptoms to watch for, prevention, sanitation and cultural care from it, (3) tell the user to open or create a "Diagnose problem" case for specific symptoms or an active problem. Never name chemical products, doses or spray schedules.';
         case 'diagnose':
           return 'This is a DIAGNOSIS case. Focus on the confirmed plant and the disease/pest candidates, their relevance to the confirmed plant, uncertainty, and the visual checks that would separate them. Provider candidates are diagnostic CONTEXT only — never treatment proof; always describe them as candidates. Cover symptoms to check, host range, visual signs, environmental/cultural conditions that favour the problem, whether it could be pest damage, disease, or abiotic stress, prevention and sanitation, and when to seek local expert help. Do NOT give pesticide/fungicide/herbicide/insecticide product names, active ingredients, doses, mixing rates, spray schedules, or chemical treatment instructions — decline those specifics briefly and continue with safe diagnostic and preventive guidance. If no plant is confirmed yet, explain that the plant must be confirmed before diagnosis is meaningful.';
 
@@ -283,6 +283,8 @@ Rules:
 - If evidence is weak or missing, ask the user for clearer photos of the affected parts.
 - You are NOT looking at the images directly. You only see image counts and roles. If the user asks what you see in the photo, say you cannot inspect the images directly in this chat and rely on metadata, provider results, and notes.
 - When explaining low-confidence identification, describe it in RELATIVE terms: the confirmed plant has a low score AND the nearest alternative has a very similar score, so the system did not clearly separate several similar candidates. Do NOT quote universal thresholds (e.g. "below 30-40% is unreliable") — use the actual scores and the closeness of alternatives.
+- NEVER expose internal context field names to the user (growthGrounding, normalizedCare, sourceGroups, aiInterpretation, speciesProfile, providerCandidates, caseContext, pestsDisease...). Refer to them in natural language instead: English "according to the gathered growth guidance" / "according to the collected plant-care sources"; Serbian (Latin) "Prema prikupljenim smernicama za rast" / "Prema prikupljenim izvorima za negu biljke". Named databases (Trefle, Perenual, GBIF, Plants of the World Online) and web source titles may be cited by name.
+
 
 You MUST NOT:
 - Pretend a disease is certain when it is only a provider candidate.
@@ -378,6 +380,12 @@ Formatting:
       return hits.length > 0 ? hits : [];
     };
 
+    /** Does the question actually compare candidates / similar species? */
+    const COMPARISON_RE =
+      /alternativ|differ|different|distinguish|similar|confus|versus|\bvs\b|compare|which one|razlik|slično|slicn|slične|slicne|umesto|poredi|uporedi|koja je razlika/i;
+    const isComparisonQuestion = (question: string): boolean => COMPARISON_RE.test(question);
+
+
     const domainOf = (url: string | null | undefined): string | null => {
       if (!url) return null;
       try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return null; }
@@ -417,7 +425,11 @@ Formatting:
     };
 
     /** Identification rows → provider sources, with GBIF/POWO reference URLs when present. */
-    const identificationSources = (question: string): UsedSource[] => {
+    const identificationSources = (
+      question: string,
+      opts?: { includeAlternatives?: boolean },
+    ): UsedSource[] => {
+      const includeAlternatives = opts?.includeAlternatives !== false;
       const out: UsedSource[] = [];
       const mentions = (i: any) => {
         const name = (i.scientific_name_without_author || i.scientific_name || i.common_name || '').toLowerCase();
@@ -425,16 +437,17 @@ Formatting:
       };
       const rows: any[] = [];
       if (confirmedIdent) rows.push(confirmedIdent);
-      // Alternatives are always useful context for Identify cases (comparison,
-      // similar species). Questions that explicitly name an alternative pull it
-      // to the front.
+      // Alternatives are only surfaced when the answer actually compares
+      // candidates / similar species (or when there is no confirmed row).
       const alternatives = identRows
         .filter((i) => !rows.includes(i))
         .sort((a, b) => (mentions(b) ? 1 : 0) - (mentions(a) ? 1 : 0));
+      const altLimit = includeAlternatives ? 5 : (rows.length === 0 ? 1 : 0);
       for (const i of alternatives) {
+        if (rows.length >= altLimit) break;
         rows.push(i);
-        if (rows.length >= 5) break;
       }
+
 
       for (const i of rows) {
         const name = i.scientific_name_without_author || i.scientific_name || i.common_name;
@@ -605,12 +618,18 @@ Formatting:
         const tp = trefleSource();
         if (tp) collected.push(tp);
       } else if (goal === 'identify') {
-        collected.push(...identificationSources(question));
-        // Identify cases may also reuse the shared growth guidance when the
-        // user asks a care/growth question.
-        if (groundingRow && (detectCards(question).length > 0 || isGeneralCareQuestion(question))) {
-          collected.push(...growthSources(question));
-        }
+        // Identify cases reuse the shared growth guidance when the user asks a
+        // care/growth (incl. general pests & disease awareness) question. When
+        // they do, the growth card sources come FIRST, then identification.
+        const usesGrowth =
+          !!groundingRow && (detectCards(question).length > 0 || isGeneralCareQuestion(question));
+        if (usesGrowth) collected.push(...growthSources(question));
+        collected.push(
+          ...identificationSources(question, {
+            includeAlternatives: isComparisonQuestion(question) || !usesGrowth,
+          }),
+        );
+
         const tp = trefleSource();
         if (tp) collected.push(tp);
       } else if (goal === 'diagnose') {
