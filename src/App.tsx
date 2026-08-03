@@ -19,7 +19,8 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+        {/* v7_relativeSplatPath / v7_startTransition are default in React Router v7 (prop removed) */}
+        <BrowserRouter>
           <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/profile-settings" element={<ProfileSettings />} />
