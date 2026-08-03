@@ -803,9 +803,15 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           return (
             <div key={msgId} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
               <div className="max-w-[80%] space-y-2">
+                {m.researchTrace && <ResearchTrace trace={m.researchTrace} />}
                 <div className={`rounded-lg px-3 py-2 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'}`}>
                   {m.role === 'user' ? m.content : <MarkdownContent content={m.content} />}
                 </div>
+                {m.isResearch && (
+                  <div className="text-[10px] text-muted-foreground">
+                    {t('plantAdvisor.chat.research.byline')}
+                  </div>
+                )}
                 {items.length > 0 && (
                   <SourceAttribution
                     sources={items}
@@ -837,6 +843,18 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           );
         })}
 
+        {researching && (
+          <div className="flex justify-start">
+            <div className="max-w-[80%] space-y-2">
+              {liveTrace && <ResearchTrace trace={liveTrace} isLive />}
+              <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {t('plantAdvisor.chat.research.running')}
+              </div>
+            </div>
+          </div>
+        )}
+
         {pending && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
@@ -845,6 +863,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
             </div>
           </div>
         )}
+
       </div>
 
       {visibleSuggestions.length > 0 && (
