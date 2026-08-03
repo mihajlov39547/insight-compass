@@ -542,7 +542,26 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
             {t(cfg.assistantTitleKey)}
           </div>
         </div>
+        {researchEnabled && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-shrink-0 gap-1.5"
+            onClick={runResearch}
+            disabled={!canResearch}
+            title={researchTooltip}
+            aria-label={t('plantAdvisor.chat.research.label')}
+          >
+            {researching ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Telescope className="h-3.5 w-3.5" />
+            )}
+            <span className="hidden sm:inline text-xs">{t('plantAdvisor.chat.research.label')}</span>
+          </Button>
+        )}
       </div>
+
 
       {/* Uncertainty banners */}
       {isIdentify && identUncertain && (
