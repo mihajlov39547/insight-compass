@@ -436,7 +436,8 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           responseLanguage: advisorLang,
           sourcesUsed,
           research: { trace: result.trace, raw: result.finalText },
-        },
+        } as unknown as Record<string, never>,
+
       });
       if (error) throw error;
       await invalidateChatMessages(plantCase.id);
