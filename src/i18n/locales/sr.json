@@ -2029,6 +2029,14 @@
       "extractFocus": {
         "identify": "Sažmi taksonomiju, karakteristične osobine, stanište, slične vrste i kako proveriti ovu identifikaciju.",
         "diagnose": "Sažmi simptome, biljke domaćine, vizuelne znake, uslove koji pogoduju problemu, prevenciju i sanitaciju, i kada tražiti pomoć stručnjaka. Izostavi hemijske proizvode, doze i raspored prskanja."
+      },
+      "research": {
+        "label": "Istraživanje",
+        "tooltip": "Pokreni detaljno web istraživanje o ovoj biljci.",
+        "needsConfirmed": "Potvrdite identifikaciju biljke pre pokretanja istraživanja.",
+        "running": "Istražujem ovu biljku…",
+        "failed": "Istraživanje nije uspelo. Pokušajte ponovo.",
+        "byline": "AI-generisano · tavily-research:auto"
       }
     },
     "diagnose": {
