@@ -867,6 +867,88 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           </section>
         </div>
 
+        {/* Pinned plant research area — always above the chat for Identify cases. */}
+        {researchEnabled && (
+          <div className="rounded-md border border-border bg-card p-3 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
+              <Telescope className="h-3.5 w-3.5 text-primary" />
+              {t('plantAdvisor.chat.research.placeholderTitle')}
+            </div>
+
+            {researching ? (
+              <div className="space-y-2">
+                {liveTrace && <ResearchTrace trace={liveTrace} isLive />}
+                <div className="text-sm flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {t('plantAdvisor.chat.research.running')}
+                </div>
+              </div>
+            ) : pinnedResearch ? (
+              <div className="space-y-2">
+                {pinnedResearch.researchTrace && (
+                  <ResearchTrace trace={pinnedResearch.researchTrace} />
+                )}
+                <div className="text-sm">
+                  <MarkdownContent content={pinnedResearch.content} />
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {t('plantAdvisor.chat.research.byline')}
+                </div>
+                {(() => {
+                  const items = toSourceItems(pinnedResearch.sourcesUsed);
+                  const msgId = pinnedResearch.id ?? 'pinned-research';
+                  if (items.length === 0) return null;
+                  return (
+                    <SourceAttribution
+                      sources={items}
+                      messageId={msgId}
+                      context="project"
+                      onExtract={(sels, q) =>
+                        runExtract(
+                          { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang, goal },
+                          msgId,
+                          sels,
+                          q?.trim() ? q : defaultSourceFocus,
+                        )
+                      }
+                      isExtracting={isExtracting && extractingMessageId === msgId}
+                      onCrawl={(sel, instructions) =>
+                        runCrawl(
+                          { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang, goal },
+                          msgId,
+                          sel,
+                          instructions?.trim() ? instructions : defaultSourceFocus,
+                        )
+                      }
+                      isCrawling={isCrawling && crawlingMessageId === msgId}
+                      crawlingUrl={crawlingMessageId === msgId ? null : undefined}
+                    />
+                  );
+                })()}
+                <div className="text-[11px] text-muted-foreground">{placeholderQuotaLabel}</div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-xs text-muted-foreground">
+                  {t('plantAdvisor.chat.research.placeholderText')}
+                </div>
+                <div className="text-[11px] text-muted-foreground">{placeholderQuotaLabel}</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={runResearch}
+                  disabled={!canResearch}
+                  title={researchTooltip}
+                >
+                  <Telescope className="h-3.5 w-3.5" />
+                  <span className="text-xs">{t('plantAdvisor.chat.research.label')}</span>
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         {messagesLoading && !hasPersistedHistory && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
