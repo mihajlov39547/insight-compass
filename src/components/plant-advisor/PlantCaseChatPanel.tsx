@@ -18,6 +18,11 @@ import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
 import { useAuth } from '@/contexts/useAuth';
 import {
+  usePlantCaseResearchQuota,
+  useReservePlantResearchRun,
+} from '@/hooks/usePlantCaseResearchQuota';
+
+import {
   runTavilyResearch,
   researchSourcesToUnified,
   type ResearchTraceState,
