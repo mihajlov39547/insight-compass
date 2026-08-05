@@ -242,7 +242,11 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         ...persistedMessages.map((m) => ({
           id: m.id,
           role: m.role,
-          content: m.content,
+          // Older research rows may still contain prompt framing / raw [n] markers.
+          content:
+            m.role === 'assistant' && m.metadata?.kind === 'research'
+              ? polishIdentifyResearchAnswer(m.content)
+              : m.content,
           sourcesUsed: m.role === 'assistant' ? m.metadata?.sourcesUsed : undefined,
           researchTrace:
             m.role === 'assistant'
@@ -250,6 +254,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
               : null,
           isResearch: m.role === 'assistant' && m.metadata?.kind === 'research',
         } as Msg)),
+
 
         ...optimistic,
       ];
