@@ -83,27 +83,9 @@ export function useReservePlantResearchRun() {
         .select('id')
         .single();
       if (error) {
-        if (error.code === '23505' || error.code === '23514' || error.code === '23000') {
-          throw new Error('quota_exhausted');
-        }
-        // Postgres unique_violation
-        if (error.code === '23505' || (error as { code?: string }).code === '23505') {
-          throw new Error('quota_exhausted');
-        }
-        if (error.code === '23503') throw new Error('invalid_case');
-        if (error.code === '23514') throw new Error('quota_exhausted');
-        if (error.code === '23P01' || error.code === '23505') throw new Error('quota_exhausted');
-        if (error.code === '23000' || error.code === '23001') throw new Error('quota_exhausted');
+        // 23505 = unique_violation on unique(user_id, run_date)
         if (error.code === '23505') throw new Error('quota_exhausted');
-        if (error.code === '23514') throw new Error('quota_exhausted');
-        if (error.code === '23P02') throw new Error('quota_exhausted');
-        if (error.code === '23505') throw new Error('quota_exhausted');
-        if (error.code === '23503') throw new Error('invalid_case');
-        if (error.code === '23502') throw new Error('invalid_case');
-        if (error.code === '23000') throw new Error('quota_exhausted');
-        if (error.code === '23505') throw new Error('quota_exhausted');
-        if (error.code === '23514') throw new Error('quota_exhausted');
-        if (error.code === '23P01') throw new Error('quota_exhausted');
+        if (error.code === '23503' || error.code === '42501') throw new Error('invalid_case');
         throw error;
       }
       return data.id as string;
