@@ -22,7 +22,13 @@ import {
   researchSourcesToUnified,
   type ResearchTraceState,
 } from '@/services/research/tavilyResearch';
-import { buildIdentifyResearchInput, scrubTreatmentGuidance } from '@/lib/plantResearchSafety';
+import {
+  buildIdentifyResearchInput,
+  polishIdentifyResearchAnswer,
+  rankIdentifyResearchSources,
+  researchSourceDomain,
+} from '@/lib/plantResearchSafety';
+
 import {
   usePlantCaseChatMessages,
   useInvalidatePlantCaseChatMessages,
@@ -236,7 +242,11 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         ...persistedMessages.map((m) => ({
           id: m.id,
           role: m.role,
-          content: m.content,
+          // Older research rows may still contain prompt framing / raw [n] markers.
+          content:
+            m.role === 'assistant' && m.metadata?.kind === 'research'
+              ? polishIdentifyResearchAnswer(m.content)
+              : m.content,
           sourcesUsed: m.role === 'assistant' ? m.metadata?.sourcesUsed : undefined,
           researchTrace:
             m.role === 'assistant'
@@ -244,6 +254,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
               : null,
           isResearch: m.role === 'assistant' && m.metadata?.kind === 'research',
         } as Msg)),
+
 
         ...optimistic,
       ];
@@ -409,20 +420,23 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         responseLanguage: advisorLang,
         onTrace: (state) => setLiveTrace(state),
       });
-      const answer = scrubTreatmentGuidance(result.finalText || '');
+      const answer = polishIdentifyResearchAnswer(result.finalText || '');
       if (!answer.trim()) throw new Error(result.errorMessage || 'empty_reply');
 
-      const sourcesUsed: PlantChatUsedSource[] = researchSourcesToUnified(result.sources).map(
-        (s, i) => ({
-          id: s.id || `research-${i}`,
-          provider: 'tavily-research',
-          title: s.title,
-          url: s.url,
-          domain: s.snippet || null,
-          score: s.relevance,
-          snippet: s.snippet || null,
-        }),
-      );
+      // Authoritative botanical/taxonomic sources first, generic gardening/video last.
+      const sourcesUsed: PlantChatUsedSource[] = rankIdentifyResearchSources(
+        researchSourcesToUnified(result.sources),
+      ).map((s, i) => ({
+        id: s.id || `research-${i}`,
+        provider: 'tavily-research',
+        title: s.title,
+        url: s.url,
+        domain: s.url ? researchSourceDomain(s.url) : null,
+        score: s.relevance,
+        snippet: s.snippet || null,
+        authorityScore: String(s.authorityScore),
+      }));
+
 
       const { error } = await supabase.from('plant_case_chat_messages').insert({
         user_id: user.id,
