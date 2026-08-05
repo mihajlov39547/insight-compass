@@ -1255,6 +1255,7 @@ export type Database = {
           id: string
           metadata: Json
           role: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1264,6 +1265,7 @@ export type Database = {
           id?: string
           metadata?: Json
           role: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1273,6 +1275,7 @@ export type Database = {
           id?: string
           metadata?: Json
           role?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1435,6 +1438,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "plant_case_images_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plant_case_research_runs: {
+        Row: {
+          case_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          run_date: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          run_date?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          run_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_case_research_runs_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "plant_cases"

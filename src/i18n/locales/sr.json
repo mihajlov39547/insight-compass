@@ -2036,7 +2036,14 @@
         "needsConfirmed": "Potvrdite identifikaciju biljke pre pokretanja istraživanja.",
         "running": "Istražujem ovu biljku…",
         "failed": "Istraživanje nije uspelo. Pokušajte ponovo.",
-        "byline": "AI-generisano · tavily-research:auto"
+        "byline": "AI-generisano · tavily-research:auto",
+        "quotaAvailable": "Istraživanje dostupno {{used}}/{{limit}} iskorišćeno",
+        "quotaUsed": "Istraživanje je iskorišćeno danas. Pokušajte ponovo sutra.",
+        "quotaTooltipUsed": "Iskoristili ste današnje istraživanje biljke. Pokušajte ponovo sutra.",
+        "placeholderTitle": "Istraživanje biljke",
+        "placeholderText": "Pokrenite detaljno web istraživanje za potvrđenu biljku. Rezultat će biti prikazan ovde i ostati iznad razgovora.",
+        "placeholderQuotaAvailable": "Istraživanje dostupno danas: {{used}}/{{limit}} iskorišćeno",
+        "placeholderQuotaUsed": "Istraživanje iskorišćeno danas: {{used}}/{{limit}}. Pokušajte ponovo sutra."
       }
     },
     "diagnose": {

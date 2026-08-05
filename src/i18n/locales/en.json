@@ -2020,7 +2020,14 @@
         "needsConfirmed": "Confirm a plant identification before running research.",
         "running": "Researching this plant…",
         "failed": "Research failed. Please try again.",
-        "byline": "AI-generated · tavily-research:auto"
+        "byline": "AI-generated · tavily-research:auto",
+        "quotaAvailable": "Research available {{used}}/{{limit}} used",
+        "quotaUsed": "Research used today. Come back tomorrow.",
+        "quotaTooltipUsed": "You've used today's plant research. Come back tomorrow.",
+        "placeholderTitle": "Plant research",
+        "placeholderText": "Run deep web research for the confirmed plant. The result will appear here and stay pinned above the chat.",
+        "placeholderQuotaAvailable": "Research available today: {{used}}/{{limit}} used",
+        "placeholderQuotaUsed": "Research used today: {{used}}/{{limit}}. Come back tomorrow."
       }
     },
     "diagnose": {

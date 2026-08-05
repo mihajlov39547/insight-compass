@@ -18,6 +18,11 @@ import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
 import { useAuth } from '@/contexts/useAuth';
 import {
+  usePlantCaseResearchQuota,
+  useReservePlantResearchRun,
+} from '@/hooks/usePlantCaseResearchQuota';
+
+import {
   runTavilyResearch,
   researchSourcesToUnified,
   type ResearchTraceState,
@@ -236,33 +241,48 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const hasPersistedHistory = persistedMessages.length > 0;
 
 
+  /** Latest non-superseded research answer — rendered pinned above the chat. */
+  const pinnedResearch = useMemo<Msg | null>(() => {
+    const rows = persistedMessages.filter(
+      (m) =>
+        m.role === 'assistant' &&
+        m.metadata?.kind === 'research' &&
+        !m.metadata?.superseded,
+    );
+    const latest = rows[rows.length - 1];
+    if (!latest) return null;
+    return {
+      id: latest.id,
+      role: 'assistant',
+      content: polishIdentifyResearchAnswer(latest.content),
+      sourcesUsed: latest.metadata?.sourcesUsed,
+      researchTrace:
+        (latest.metadata?.research as { trace?: ResearchTraceState } | undefined)?.trace ?? null,
+      isResearch: true,
+    };
+  }, [persistedMessages]);
+
   const displayMessages = useMemo<Msg[]>(() => {
-    if (hasPersistedHistory) {
+    // Research answers are pinned at the top, never mixed into the chat flow.
+    const conversation = persistedMessages.filter((m) => m.metadata?.kind !== 'research');
+    if (conversation.length > 0) {
       return [
-        ...persistedMessages.map((m) => ({
+        ...conversation.map((m) => ({
           id: m.id,
           role: m.role,
-          // Older research rows may still contain prompt framing / raw [n] markers.
-          content:
-            m.role === 'assistant' && m.metadata?.kind === 'research'
-              ? polishIdentifyResearchAnswer(m.content)
-              : m.content,
+          content: m.content,
           sourcesUsed: m.role === 'assistant' ? m.metadata?.sourcesUsed : undefined,
-          researchTrace:
-            m.role === 'assistant'
-              ? ((m.metadata?.research as { trace?: ResearchTraceState } | undefined)?.trace ?? null)
-              : null,
-          isResearch: m.role === 'assistant' && m.metadata?.kind === 'research',
+          researchTrace: null,
+          isResearch: false,
         } as Msg)),
-
-
         ...optimistic,
       ];
     }
     // No persisted history yet — show the grounding-aware intro.
     // Do NOT persist the intro; it's derived and re-renders with grounding data.
     return [{ role: 'assistant', content: introContent }, ...optimistic];
-  }, [hasPersistedHistory, persistedMessages, optimistic, introContent]);
+  }, [persistedMessages, optimistic, introContent]);
+
 
 
   const quickQuestions = useMemo<string[]>(() => {
@@ -395,18 +415,42 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const { user } = useAuth();
   const [researching, setResearching] = useState(false);
   const [liveTrace, setLiveTrace] = useState<ResearchTraceState | null>(null);
+  const { quota: researchQuota } = usePlantCaseResearchQuota();
+  const reserveResearchRun = useReservePlantResearchRun();
 
   const researchEnabled = isIdentify;
-  const canResearch = researchEnabled && !!confirmedIdent && !pending && !researching;
+  const quotaExhausted = researchQuota.exhausted;
+  const canResearch =
+    researchEnabled && !!confirmedIdent && !quotaExhausted && !pending && !researching;
   const researchTooltip = !confirmedIdent
     ? t('plantAdvisor.chat.research.needsConfirmed')
-    : t('plantAdvisor.chat.research.tooltip');
+    : quotaExhausted
+      ? t('plantAdvisor.chat.research.quotaTooltipUsed')
+      : t('plantAdvisor.chat.research.tooltip');
+  const quotaLabel = quotaExhausted
+    ? t('plantAdvisor.chat.research.quotaUsed')
+    : t('plantAdvisor.chat.research.quotaAvailable', {
+        used: researchQuota.used,
+        limit: researchQuota.limit,
+      });
+  const placeholderQuotaLabel = quotaExhausted
+    ? t('plantAdvisor.chat.research.placeholderQuotaUsed', {
+        used: researchQuota.used,
+        limit: researchQuota.limit,
+      })
+    : t('plantAdvisor.chat.research.placeholderQuotaAvailable', {
+        used: researchQuota.used,
+        limit: researchQuota.limit,
+      });
 
   const runResearch = async () => {
     if (!canResearch || !confirmedIdent || !user) return;
     setResearching(true);
     setLiveTrace(null);
     try {
+      // Atomic daily gate: unique(user_id, run_date) rejects a second run.
+      await reserveResearchRun.mutateAsync({ caseId: plantCase.id });
+
       const scientific =
         confirmedIdent.scientific_name_without_author || confirmedIdent.scientific_name || null;
       const researchInput = buildIdentifyResearchInput(
@@ -437,35 +481,49 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         authorityScore: String(s.authorityScore),
       }));
 
+      const metadata = {
+        kind: 'research',
+        goal: goal ?? null,
+        model: 'tavily-research:auto',
+        responseLanguage: advisorLang,
+        sourcesUsed,
+        research: { trace: result.trace, raw: result.finalText },
+      } as unknown as Record<string, never>;
 
-      const { error } = await supabase.from('plant_case_chat_messages').insert({
-        user_id: user.id,
-        case_id: plantCase.id,
-        role: 'assistant',
-        content: answer,
-        metadata: {
-          kind: 'research',
-          goal: goal ?? null,
-          model: 'tavily-research:auto',
-          responseLanguage: advisorLang,
-          sourcesUsed,
-          research: { trace: result.trace, raw: result.finalText },
-        } as unknown as Record<string, never>,
-
-      });
-      if (error) throw error;
+      // Replace the existing pinned research answer instead of appending a
+      // second one, so the chat only ever shows the newest research result.
+      const existingId = pinnedResearch?.id ?? null;
+      if (existingId) {
+        const { error } = await supabase
+          .from('plant_case_chat_messages')
+          .update({ content: answer, metadata })
+          .eq('id', existingId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('plant_case_chat_messages').insert({
+          user_id: user.id,
+          case_id: plantCase.id,
+          role: 'assistant',
+          content: answer,
+          metadata,
+        });
+        if (error) throw error;
+      }
       await invalidateChatMessages(plantCase.id);
       setLiveTrace(null);
     } catch (e) {
+      const msg = (e as Error).message;
       toast.error(
-        t('plantAdvisor.chat.research.failed', {
-          defaultValue: (e as Error).message,
-        }),
+        msg === 'quota_exhausted'
+          ? t('plantAdvisor.chat.research.quotaUsed')
+          : t('plantAdvisor.chat.research.failed', { defaultValue: msg }),
       );
     } finally {
       setResearching(false);
     }
   };
+
 
 
   const send = async (textOverride?: string) => {
@@ -557,23 +615,29 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           </div>
         </div>
         {researchEnabled && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-shrink-0 gap-1.5"
-            onClick={runResearch}
-            disabled={!canResearch}
-            title={researchTooltip}
-            aria-label={t('plantAdvisor.chat.research.label')}
-          >
-            {researching ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Telescope className="h-3.5 w-3.5" />
-            )}
-            <span className="hidden sm:inline text-xs">{t('plantAdvisor.chat.research.label')}</span>
-          </Button>
+          <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={runResearch}
+              disabled={!canResearch}
+              title={researchTooltip}
+              aria-label={t('plantAdvisor.chat.research.label')}
+            >
+              {researching ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Telescope className="h-3.5 w-3.5" />
+              )}
+              <span className="hidden sm:inline text-xs">{t('plantAdvisor.chat.research.label')}</span>
+            </Button>
+            <span className="text-[10px] text-muted-foreground text-right max-w-[180px]">
+              {quotaLabel}
+            </span>
+          </div>
         )}
+
       </div>
 
 
@@ -803,6 +867,88 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           </section>
         </div>
 
+        {/* Pinned plant research area — always above the chat for Identify cases. */}
+        {researchEnabled && (
+          <div className="rounded-md border border-border bg-card p-3 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
+              <Telescope className="h-3.5 w-3.5 text-primary" />
+              {t('plantAdvisor.chat.research.placeholderTitle')}
+            </div>
+
+            {researching ? (
+              <div className="space-y-2">
+                {liveTrace && <ResearchTrace trace={liveTrace} isLive />}
+                <div className="text-sm flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {t('plantAdvisor.chat.research.running')}
+                </div>
+              </div>
+            ) : pinnedResearch ? (
+              <div className="space-y-2">
+                {pinnedResearch.researchTrace && (
+                  <ResearchTrace trace={pinnedResearch.researchTrace} />
+                )}
+                <div className="text-sm">
+                  <MarkdownContent content={pinnedResearch.content} />
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {t('plantAdvisor.chat.research.byline')}
+                </div>
+                {(() => {
+                  const items = toSourceItems(pinnedResearch.sourcesUsed);
+                  const msgId = pinnedResearch.id ?? 'pinned-research';
+                  if (items.length === 0) return null;
+                  return (
+                    <SourceAttribution
+                      sources={items}
+                      messageId={msgId}
+                      context="project"
+                      onExtract={(sels, q) =>
+                        runExtract(
+                          { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang, goal },
+                          msgId,
+                          sels,
+                          q?.trim() ? q : defaultSourceFocus,
+                        )
+                      }
+                      isExtracting={isExtracting && extractingMessageId === msgId}
+                      onCrawl={(sel, instructions) =>
+                        runCrawl(
+                          { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang, goal },
+                          msgId,
+                          sel,
+                          instructions?.trim() ? instructions : defaultSourceFocus,
+                        )
+                      }
+                      isCrawling={isCrawling && crawlingMessageId === msgId}
+                      crawlingUrl={crawlingMessageId === msgId ? null : undefined}
+                    />
+                  );
+                })()}
+                <div className="text-[11px] text-muted-foreground">{placeholderQuotaLabel}</div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-xs text-muted-foreground">
+                  {t('plantAdvisor.chat.research.placeholderText')}
+                </div>
+                <div className="text-[11px] text-muted-foreground">{placeholderQuotaLabel}</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={runResearch}
+                  disabled={!canResearch}
+                  title={researchTooltip}
+                >
+                  <Telescope className="h-3.5 w-3.5" />
+                  <span className="text-xs">{t('plantAdvisor.chat.research.label')}</span>
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         {messagesLoading && !hasPersistedHistory && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
@@ -856,18 +1002,6 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
             </div>
           );
         })}
-
-        {researching && (
-          <div className="flex justify-start">
-            <div className="max-w-[80%] space-y-2">
-              {liveTrace && <ResearchTrace trace={liveTrace} isLive />}
-              <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {t('plantAdvisor.chat.research.running')}
-              </div>
-            </div>
-          </div>
-        )}
 
         {pending && (
           <div className="flex justify-start">
