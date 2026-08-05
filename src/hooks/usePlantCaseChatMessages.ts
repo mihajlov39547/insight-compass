@@ -24,6 +24,9 @@ export interface PlantChatMessageMetadata {
   usedGrowthGrounding?: boolean;
   kind?: 'extract' | 'crawl' | 'research' | null;
   sourcesUsed?: PlantChatUsedSource[];
+  responseLanguage?: string | null;
+  /** Older research answers replaced by a newer run are hidden from the UI. */
+  superseded?: boolean;
   [key: string]: unknown;
 }
 
@@ -35,6 +38,7 @@ export interface PlantCaseChatMessage {
   content: string;
   metadata: PlantChatMessageMetadata | null;
   created_at: string;
+  updated_at?: string | null;
 }
 
 
