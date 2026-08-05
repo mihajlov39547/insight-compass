@@ -76,3 +76,176 @@ export function buildIdentifyResearchInput(
   }
   return `Research the plant ${label} for identification purposes. Focus on taxonomy, accepted names, distinguishing features, similar/confusable species, native range, habitat, distribution, uses/cautions, ecology, and verification tips. Treat cultivation/growth only as secondary information. Do not diagnose a plant disease and do not provide treatment instructions, chemical product names, doses, or spray schedules.`;
 }
+
+// ---------------------------------------------------------------------------
+// Prompt-framing cleanup
+//
+// Tavily Research sometimes echoes our internal instruction framing at the top
+// of the report ("Istraživačko pitanje (prvo lice, srpski, Latinica): …",
+// "Research question: …", "Task: …"). None of that is user-facing content.
+// ---------------------------------------------------------------------------
+
+const FRAMING_LABELS =
+  '(?:research\\s+question|user\\s+question|question|prompt|task|instructions?|istraživačko\\s+pitanje|pitanje\\s+korisnika|pitanje|zadatak|uputstv[oa]|nalog)';
+
+// "Research question: ..." / "**Task**: ..." / "## Istraživačko pitanje (…): …"
+const FRAMING_LINE = new RegExp(
+  `^\\s*(?:#{1,6}\\s*)?(?:[*_]{1,2})?\\s*${FRAMING_LABELS}\\b[^\\n:]*(?:[*_]{1,2})?\\s*:?\\s*.*$`,
+  'i',
+);
+
+// Meta comments about language / person / formatting.
+const META_LINE =
+  /^\s*(?:#{1,6}\s*)?(?:[*_]{1,2})?\s*(?:(?:response\s+)?language|jezik(?:\s+odgovora)?|write\s+(?:the\s+)?(?:final\s+)?answer|answer\s+in\s+|odgovor(?:i)?\s+na\s+|first[- ]person|prvo\s+lice|use\s+(?:serbian|english|latin)|koristi\s+(?:srpski|latinicu)|format(?:ting)?\s*(?:instructions?)?|markdown)\b.*$/i;
+
+/**
+ * Strip internal prompt/task framing and language meta comments from a
+ * research report, keeping the actual report content.
+ * Only cleans the leading preamble (before real content begins).
+ */
+export function stripResearchPromptFraming(markdown: string): string {
+  if (!markdown) return markdown;
+  const lines = markdown.split('\n');
+  let i = 0;
+  let removedAny = false;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
+    if (FRAMING_LINE.test(line) || META_LINE.test(line)) {
+      removedAny = true;
+      i++;
+      // Drop any indented/continuation lines that belong to the framing block.
+      while (i < lines.length && /^\s*(?:>|[-*]\s|\s{2,}\S)/.test(lines[i])) {
+        i++;
+      }
+      continue;
+    }
+    break;
+  }
+
+  const rest = lines.slice(i).join('\n').replace(/^\s+/, '');
+  return removedAny ? rest : markdown;
+}
+
+/**
+ * Remove standalone numeric citation markers ([1], [2][3], [1, 2]) when the
+ * report has no rendered numbered bibliography — the "Sources used" UI is the
+ * authoritative citation surface. Markdown links like [1](https://…) are kept.
+ */
+export function normalizeResearchCitations(markdown: string): string {
+  if (!markdown) return markdown;
+  const hasNumberedBibliography =
+    /^\s*\[?\d+\]?[.)]?\s+https?:\/\//m.test(markdown) ||
+    /^\s*\[\d+\]\s+\S+\s+—\s+https?:\/\//m.test(markdown);
+  if (hasNumberedBibliography) return markdown;
+
+  return markdown
+    .replace(/\[\s*\d+(?:\s*[,–-]\s*\d+)*\s*\](?!\()/g, '')
+    .replace(/[ \t]+([.,;:!?])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/** Full post-processing pipeline for Identify research output. */
+export function polishIdentifyResearchAnswer(markdown: string): string {
+  return normalizeResearchCitations(
+    stripResearchPromptFraming(scrubTreatmentGuidance(markdown || '')),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Source authority ranking for Identify research
+// ---------------------------------------------------------------------------
+
+const AUTHORITY_TIERS: Array<{ score: number; patterns: RegExp[] }> = [
+  {
+    // Core taxonomic / flora authorities
+    score: 100,
+    patterns: [
+      /(^|\.)powo\.science\.kew\.org$/i,
+      /kew\.org$/i,
+      /gbif\.org$/i,
+      /ipni\.org$/i,
+      /worldfloraonline\.org$/i,
+      /tropicos\.org$/i,
+      /theplantlist\.org$/i,
+      /catalogueoflife\.org$/i,
+      /efloras\.org$/i,
+      /floraofserbia|floraweb|euroflora|flora\w*\.(org|net|info)$/i,
+      /plantsoftheworldonline/i,
+    ],
+  },
+  {
+    // Government, conservation & botanical institutions
+    score: 80,
+    patterns: [
+      /(\.|^)gov(\.[a-z]{2})?$/i,
+      /(\.|^)gov\./i,
+      /iucnredlist\.org$/i,
+      /eunis\.eea\.europa\.eu$/i,
+      /europa\.eu$/i,
+      /usda\.gov$/i,
+      /botanicgardens?|botanicalgarden|missouribotanicalgarden|rbge\.org\.uk|nybg\.org|bgci\.org/i,
+    ],
+  },
+  {
+    // Universities & extension services
+    score: 65,
+    patterns: [/(\.|^)edu(\.[a-z]{2})?$/i, /(\.|^)ac\.[a-z]{2}$/i, /extension\./i, /\.uni-/i],
+  },
+  {
+    // Curated reference / encyclopedic
+    score: 45,
+    patterns: [/wikipedia\.org$/i, /wikispecies|inaturalist\.org$|plantnet|tela-botanica/i],
+  },
+];
+
+const DOWNRANK_PATTERNS: RegExp[] = [
+  /youtube\.com$|youtu\.be$|vimeo\.com$|tiktok\.com$/i,
+  /pinterest\.|facebook\.com$|instagram\.com$|reddit\.com$|quora\.com$/i,
+  /gardening|gardener|garden(?:ia|ing)?\w*\.(com|net)$/i,
+  /shop|store|nursery|seeds?\.(com|net)$/i,
+  /blogspot\.|medium\.com$|wordpress\.com$/i,
+];
+
+export function researchSourceDomain(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+}
+
+/** 0–100 authority score for an Identify-research source URL. */
+export function identifyAuthorityScore(url: string): number {
+  const host = researchSourceDomain(url);
+  if (!host) return 10;
+  for (const tier of AUTHORITY_TIERS) {
+    if (tier.patterns.some((re) => re.test(host))) return tier.score;
+  }
+  if (DOWNRANK_PATTERNS.some((re) => re.test(host))) return 5;
+  return 25;
+}
+
+/**
+ * Sort research sources so authoritative botanical/taxonomic references appear
+ * first; generic gardening/video/SEO pages fall to the bottom. Stable within
+ * the same authority tier (preserves Tavily relevance order).
+ */
+export function rankIdentifyResearchSources<T extends { url?: string | null }>(
+  sources: T[],
+): Array<T & { authorityScore: number }> {
+  return sources
+    .map((s, index) => ({
+      ...s,
+      authorityScore: identifyAuthorityScore(s.url ?? ''),
+      index,
+    }))
+    .sort((a, b) => b.authorityScore - a.authorityScore || a.index - b.index)
+    .map(({ index: _index, ...rest }) => rest as T & { authorityScore: number });
+}
