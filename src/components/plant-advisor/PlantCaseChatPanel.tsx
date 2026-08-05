@@ -615,23 +615,29 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           </div>
         </div>
         {researchEnabled && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-shrink-0 gap-1.5"
-            onClick={runResearch}
-            disabled={!canResearch}
-            title={researchTooltip}
-            aria-label={t('plantAdvisor.chat.research.label')}
-          >
-            {researching ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Telescope className="h-3.5 w-3.5" />
-            )}
-            <span className="hidden sm:inline text-xs">{t('plantAdvisor.chat.research.label')}</span>
-          </Button>
+          <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={runResearch}
+              disabled={!canResearch}
+              title={researchTooltip}
+              aria-label={t('plantAdvisor.chat.research.label')}
+            >
+              {researching ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Telescope className="h-3.5 w-3.5" />
+              )}
+              <span className="hidden sm:inline text-xs">{t('plantAdvisor.chat.research.label')}</span>
+            </Button>
+            <span className="text-[10px] text-muted-foreground text-right max-w-[180px]">
+              {quotaLabel}
+            </span>
+          </div>
         )}
+
       </div>
 
 
