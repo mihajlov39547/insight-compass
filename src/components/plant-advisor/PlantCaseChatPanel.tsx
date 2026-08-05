@@ -410,18 +410,42 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const { user } = useAuth();
   const [researching, setResearching] = useState(false);
   const [liveTrace, setLiveTrace] = useState<ResearchTraceState | null>(null);
+  const { quota: researchQuota } = usePlantCaseResearchQuota();
+  const reserveResearchRun = useReservePlantResearchRun();
 
   const researchEnabled = isIdentify;
-  const canResearch = researchEnabled && !!confirmedIdent && !pending && !researching;
+  const quotaExhausted = researchQuota.exhausted;
+  const canResearch =
+    researchEnabled && !!confirmedIdent && !quotaExhausted && !pending && !researching;
   const researchTooltip = !confirmedIdent
     ? t('plantAdvisor.chat.research.needsConfirmed')
-    : t('plantAdvisor.chat.research.tooltip');
+    : quotaExhausted
+      ? t('plantAdvisor.chat.research.quotaTooltipUsed')
+      : t('plantAdvisor.chat.research.tooltip');
+  const quotaLabel = quotaExhausted
+    ? t('plantAdvisor.chat.research.quotaUsed')
+    : t('plantAdvisor.chat.research.quotaAvailable', {
+        used: researchQuota.used,
+        limit: researchQuota.limit,
+      });
+  const placeholderQuotaLabel = quotaExhausted
+    ? t('plantAdvisor.chat.research.placeholderQuotaUsed', {
+        used: researchQuota.used,
+        limit: researchQuota.limit,
+      })
+    : t('plantAdvisor.chat.research.placeholderQuotaAvailable', {
+        used: researchQuota.used,
+        limit: researchQuota.limit,
+      });
 
   const runResearch = async () => {
     if (!canResearch || !confirmedIdent || !user) return;
     setResearching(true);
     setLiveTrace(null);
     try {
+      // Atomic daily gate: unique(user_id, run_date) rejects a second run.
+      await reserveResearchRun.mutateAsync({ caseId: plantCase.id });
+
       const scientific =
         confirmedIdent.scientific_name_without_author || confirmedIdent.scientific_name || null;
       const researchInput = buildIdentifyResearchInput(
@@ -452,35 +476,49 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         authorityScore: String(s.authorityScore),
       }));
 
+      const metadata = {
+        kind: 'research',
+        goal: goal ?? null,
+        model: 'tavily-research:auto',
+        responseLanguage: advisorLang,
+        sourcesUsed,
+        research: { trace: result.trace, raw: result.finalText },
+      } as unknown as Record<string, never>;
 
-      const { error } = await supabase.from('plant_case_chat_messages').insert({
-        user_id: user.id,
-        case_id: plantCase.id,
-        role: 'assistant',
-        content: answer,
-        metadata: {
-          kind: 'research',
-          goal: goal ?? null,
-          model: 'tavily-research:auto',
-          responseLanguage: advisorLang,
-          sourcesUsed,
-          research: { trace: result.trace, raw: result.finalText },
-        } as unknown as Record<string, never>,
-
-      });
-      if (error) throw error;
+      // Replace the existing pinned research answer instead of appending a
+      // second one, so the chat only ever shows the newest research result.
+      const existingId = pinnedResearch?.id ?? null;
+      if (existingId) {
+        const { error } = await supabase
+          .from('plant_case_chat_messages')
+          .update({ content: answer, metadata })
+          .eq('id', existingId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('plant_case_chat_messages').insert({
+          user_id: user.id,
+          case_id: plantCase.id,
+          role: 'assistant',
+          content: answer,
+          metadata,
+        });
+        if (error) throw error;
+      }
       await invalidateChatMessages(plantCase.id);
       setLiveTrace(null);
     } catch (e) {
+      const msg = (e as Error).message;
       toast.error(
-        t('plantAdvisor.chat.research.failed', {
-          defaultValue: (e as Error).message,
-        }),
+        msg === 'quota_exhausted'
+          ? t('plantAdvisor.chat.research.quotaUsed')
+          : t('plantAdvisor.chat.research.failed', { defaultValue: msg }),
       );
     } finally {
       setResearching(false);
     }
   };
+
 
 
   const send = async (textOverride?: string) => {
