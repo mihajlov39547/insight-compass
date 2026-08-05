@@ -22,7 +22,13 @@ import {
   researchSourcesToUnified,
   type ResearchTraceState,
 } from '@/services/research/tavilyResearch';
-import { buildIdentifyResearchInput, scrubTreatmentGuidance } from '@/lib/plantResearchSafety';
+import {
+  buildIdentifyResearchInput,
+  polishIdentifyResearchAnswer,
+  rankIdentifyResearchSources,
+  researchSourceDomain,
+} from '@/lib/plantResearchSafety';
+
 import {
   usePlantCaseChatMessages,
   useInvalidatePlantCaseChatMessages,
