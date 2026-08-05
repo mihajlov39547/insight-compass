@@ -1003,18 +1003,6 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           );
         })}
 
-        {researching && (
-          <div className="flex justify-start">
-            <div className="max-w-[80%] space-y-2">
-              {liveTrace && <ResearchTrace trace={liveTrace} isLive />}
-              <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {t('plantAdvisor.chat.research.running')}
-              </div>
-            </div>
-          </div>
-        )}
-
         {pending && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
