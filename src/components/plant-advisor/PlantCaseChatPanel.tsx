@@ -236,33 +236,48 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const hasPersistedHistory = persistedMessages.length > 0;
 
 
+  /** Latest non-superseded research answer — rendered pinned above the chat. */
+  const pinnedResearch = useMemo<Msg | null>(() => {
+    const rows = persistedMessages.filter(
+      (m) =>
+        m.role === 'assistant' &&
+        m.metadata?.kind === 'research' &&
+        !m.metadata?.superseded,
+    );
+    const latest = rows[rows.length - 1];
+    if (!latest) return null;
+    return {
+      id: latest.id,
+      role: 'assistant',
+      content: polishIdentifyResearchAnswer(latest.content),
+      sourcesUsed: latest.metadata?.sourcesUsed,
+      researchTrace:
+        (latest.metadata?.research as { trace?: ResearchTraceState } | undefined)?.trace ?? null,
+      isResearch: true,
+    };
+  }, [persistedMessages]);
+
   const displayMessages = useMemo<Msg[]>(() => {
-    if (hasPersistedHistory) {
+    // Research answers are pinned at the top, never mixed into the chat flow.
+    const conversation = persistedMessages.filter((m) => m.metadata?.kind !== 'research');
+    if (conversation.length > 0) {
       return [
-        ...persistedMessages.map((m) => ({
+        ...conversation.map((m) => ({
           id: m.id,
           role: m.role,
-          // Older research rows may still contain prompt framing / raw [n] markers.
-          content:
-            m.role === 'assistant' && m.metadata?.kind === 'research'
-              ? polishIdentifyResearchAnswer(m.content)
-              : m.content,
+          content: m.content,
           sourcesUsed: m.role === 'assistant' ? m.metadata?.sourcesUsed : undefined,
-          researchTrace:
-            m.role === 'assistant'
-              ? ((m.metadata?.research as { trace?: ResearchTraceState } | undefined)?.trace ?? null)
-              : null,
-          isResearch: m.role === 'assistant' && m.metadata?.kind === 'research',
+          researchTrace: null,
+          isResearch: false,
         } as Msg)),
-
-
         ...optimistic,
       ];
     }
     // No persisted history yet — show the grounding-aware intro.
     // Do NOT persist the intro; it's derived and re-renders with grounding data.
     return [{ role: 'assistant', content: introContent }, ...optimistic];
-  }, [hasPersistedHistory, persistedMessages, optimistic, introContent]);
+  }, [persistedMessages, optimistic, introContent]);
+
 
 
   const quickQuestions = useMemo<string[]>(() => {
