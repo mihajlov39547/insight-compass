@@ -2043,7 +2043,10 @@
         "placeholderTitle": "Istraživanje biljke",
         "placeholderText": "Pokrenite detaljno web istraživanje za potvrđenu biljku. Rezultat će biti prikazan ovde i ostati iznad razgovora.",
         "placeholderQuotaAvailable": "Istraživanje dostupno danas: {{used}}/{{limit}} iskorišćeno",
-        "placeholderQuotaUsed": "Istraživanje iskorišćeno danas: {{used}}/{{limit}}. Pokušajte ponovo sutra."
+        "placeholderQuotaUsed": "Istraživanje iskorišćeno danas: {{used}}/{{limit}}. Pokušajte ponovo sutra.",
+        "quotaRetry": "Poslednje istraživanje nije uspelo — pokušaj je dostupan danas",
+        "quotaRetryTooltip": "Poslednji pokušaj istraživanja nije uspeo, pa je današnje istraživanje još dostupno.",
+        "failedRetry": "Istraživanje nije uspelo. Vaše dnevno istraživanje je još dostupno — pokušajte ponovo."
       }
     },
     "diagnose": {
