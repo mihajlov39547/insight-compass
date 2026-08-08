@@ -420,31 +420,42 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const [liveTrace, setLiveTrace] = useState<ResearchTraceState | null>(null);
   const { quota: researchQuota } = usePlantCaseResearchQuota();
   const reserveResearchRun = useReservePlantResearchRun();
+  const completeResearchRun = useCompletePlantResearchRun();
+  const failResearchRun = useFailPlantResearchRun();
 
   const researchEnabled = isIdentify;
   const quotaExhausted = researchQuota.exhausted;
+  // Today's only run failed — the daily slot was released, retry is allowed.
+  const retryAvailable = researchQuota.retryAvailable;
   const canResearch =
     researchEnabled && !!confirmedIdent && !quotaExhausted && !pending && !researching;
   const researchTooltip = !confirmedIdent
     ? t('plantAdvisor.chat.research.needsConfirmed')
     : quotaExhausted
       ? t('plantAdvisor.chat.research.quotaTooltipUsed')
-      : t('plantAdvisor.chat.research.tooltip');
+      : retryAvailable
+        ? t('plantAdvisor.chat.research.quotaRetryTooltip')
+        : t('plantAdvisor.chat.research.tooltip');
   const quotaLabel = quotaExhausted
     ? t('plantAdvisor.chat.research.quotaUsed')
-    : t('plantAdvisor.chat.research.quotaAvailable', {
-        used: researchQuota.used,
-        limit: researchQuota.limit,
-      });
+    : retryAvailable
+      ? t('plantAdvisor.chat.research.quotaRetry')
+      : t('plantAdvisor.chat.research.quotaAvailable', {
+          used: researchQuota.used,
+          limit: researchQuota.limit,
+        });
   const placeholderQuotaLabel = quotaExhausted
     ? t('plantAdvisor.chat.research.placeholderQuotaUsed', {
         used: researchQuota.used,
         limit: researchQuota.limit,
       })
-    : t('plantAdvisor.chat.research.placeholderQuotaAvailable', {
-        used: researchQuota.used,
-        limit: researchQuota.limit,
-      });
+    : retryAvailable
+      ? t('plantAdvisor.chat.research.quotaRetry')
+      : t('plantAdvisor.chat.research.placeholderQuotaAvailable', {
+          used: researchQuota.used,
+          limit: researchQuota.limit,
+        });
+
 
   const runResearch = async () => {
     if (!canResearch || !confirmedIdent || !user) return;
