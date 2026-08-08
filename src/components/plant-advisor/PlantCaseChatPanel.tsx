@@ -20,7 +20,10 @@ import { useAuth } from '@/contexts/useAuth';
 import {
   usePlantCaseResearchQuota,
   useReservePlantResearchRun,
+  useCompletePlantResearchRun,
+  useFailPlantResearchRun,
 } from '@/hooks/usePlantCaseResearchQuota';
+
 
 import {
   runTavilyResearch,
@@ -417,39 +420,52 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const [liveTrace, setLiveTrace] = useState<ResearchTraceState | null>(null);
   const { quota: researchQuota } = usePlantCaseResearchQuota();
   const reserveResearchRun = useReservePlantResearchRun();
+  const completeResearchRun = useCompletePlantResearchRun();
+  const failResearchRun = useFailPlantResearchRun();
 
   const researchEnabled = isIdentify;
   const quotaExhausted = researchQuota.exhausted;
+  // Today's only run failed — the daily slot was released, retry is allowed.
+  const retryAvailable = researchQuota.retryAvailable;
   const canResearch =
     researchEnabled && !!confirmedIdent && !quotaExhausted && !pending && !researching;
   const researchTooltip = !confirmedIdent
     ? t('plantAdvisor.chat.research.needsConfirmed')
     : quotaExhausted
       ? t('plantAdvisor.chat.research.quotaTooltipUsed')
-      : t('plantAdvisor.chat.research.tooltip');
+      : retryAvailable
+        ? t('plantAdvisor.chat.research.quotaRetryTooltip')
+        : t('plantAdvisor.chat.research.tooltip');
   const quotaLabel = quotaExhausted
     ? t('plantAdvisor.chat.research.quotaUsed')
-    : t('plantAdvisor.chat.research.quotaAvailable', {
-        used: researchQuota.used,
-        limit: researchQuota.limit,
-      });
+    : retryAvailable
+      ? t('plantAdvisor.chat.research.quotaRetry')
+      : t('plantAdvisor.chat.research.quotaAvailable', {
+          used: researchQuota.used,
+          limit: researchQuota.limit,
+        });
   const placeholderQuotaLabel = quotaExhausted
     ? t('plantAdvisor.chat.research.placeholderQuotaUsed', {
         used: researchQuota.used,
         limit: researchQuota.limit,
       })
-    : t('plantAdvisor.chat.research.placeholderQuotaAvailable', {
-        used: researchQuota.used,
-        limit: researchQuota.limit,
-      });
+    : retryAvailable
+      ? t('plantAdvisor.chat.research.quotaRetry')
+      : t('plantAdvisor.chat.research.placeholderQuotaAvailable', {
+          used: researchQuota.used,
+          limit: researchQuota.limit,
+        });
+
 
   const runResearch = async () => {
     if (!canResearch || !confirmedIdent || !user) return;
     setResearching(true);
     setLiveTrace(null);
+    // Server-side daily gate. Returns a runId that is required to persist the
+    // answer, so the quota cannot be bypassed from the client.
+    let runId: string | null = null;
     try {
-      // Atomic daily gate: unique(user_id, run_date) rejects a second run.
-      await reserveResearchRun.mutateAsync({ caseId: plantCase.id });
+      runId = await reserveResearchRun.mutateAsync({ caseId: plantCase.id });
 
       const scientific =
         confirmedIdent.scientific_name_without_author || confirmedIdent.scientific_name || null;
@@ -481,48 +497,47 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         authorityScore: String(s.authorityScore),
       }));
 
-      const metadata = {
+      const metadata: Record<string, unknown> = {
         kind: 'research',
         goal: goal ?? null,
         model: 'tavily-research:auto',
         responseLanguage: advisorLang,
         sourcesUsed,
         research: { trace: result.trace, raw: result.finalText },
-      } as unknown as Record<string, never>;
+      };
 
-      // Replace the existing pinned research answer instead of appending a
-      // second one, so the chat only ever shows the newest research result.
-      const existingId = pinnedResearch?.id ?? null;
-      if (existingId) {
-        const { error } = await supabase
-          .from('plant_case_chat_messages')
-          .update({ content: answer, metadata })
-          .eq('id', existingId)
-          .eq('user_id', user.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('plant_case_chat_messages').insert({
-          user_id: user.id,
-          case_id: plantCase.id,
-          role: 'assistant',
-          content: answer,
-          metadata,
-        });
-        if (error) throw error;
-      }
+      // The edge function replaces the existing pinned research answer instead
+      // of appending a second one, and marks the run completed.
+      await completeResearchRun.mutateAsync({
+        runId,
+        caseId: plantCase.id,
+        content: answer,
+        metadata,
+      });
       await invalidateChatMessages(plantCase.id);
       setLiveTrace(null);
     } catch (e) {
       const msg = (e as Error).message;
+      // Release the reserved slot so a failed run does not consume the day.
+      if (runId && msg !== 'quota_exhausted') {
+        try {
+          await failResearchRun.mutateAsync({ runId, reason: msg });
+        } catch {
+          /* best effort — a stale run is auto-released server-side */
+        }
+      }
       toast.error(
         msg === 'quota_exhausted'
           ? t('plantAdvisor.chat.research.quotaUsed')
-          : t('plantAdvisor.chat.research.failed', { defaultValue: msg }),
+          : msg === 'needs_confirmed_plant'
+            ? t('plantAdvisor.chat.research.needsConfirmed')
+            : t('plantAdvisor.chat.research.failedRetry', { defaultValue: msg }),
       );
     } finally {
       setResearching(false);
     }
   };
+
 
 
 

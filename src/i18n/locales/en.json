@@ -2027,7 +2027,10 @@
         "placeholderTitle": "Plant research",
         "placeholderText": "Run deep web research for the confirmed plant. The result will appear here and stay pinned above the chat.",
         "placeholderQuotaAvailable": "Research available today: {{used}}/{{limit}} used",
-        "placeholderQuotaUsed": "Research used today: {{used}}/{{limit}}. Come back tomorrow."
+        "placeholderQuotaUsed": "Research used today: {{used}}/{{limit}}. Come back tomorrow.",
+        "quotaRetry": "Last research failed — retry available today",
+        "quotaRetryTooltip": "Your last research attempt failed, so today's run is still available.",
+        "failedRetry": "Research failed. Your daily research run is still available — please try again."
       }
     },
     "diagnose": {
