@@ -20,7 +20,10 @@ import { useAuth } from '@/contexts/useAuth';
 import {
   usePlantCaseResearchQuota,
   useReservePlantResearchRun,
+  useCompletePlantResearchRun,
+  useFailPlantResearchRun,
 } from '@/hooks/usePlantCaseResearchQuota';
+
 
 import {
   runTavilyResearch,
