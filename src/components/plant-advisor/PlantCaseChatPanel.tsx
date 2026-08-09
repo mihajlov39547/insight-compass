@@ -208,6 +208,12 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     isDiagnose && !!confirmedIdent && diagnoses.length > 0 &&
     (diagBucket === 'low' || diagLowRelevance || needsMoreEvidence);
 
+  const {
+    data: persistedMessages = [],
+    isLoading: messagesLoading,
+  } = usePlantCaseChatMessages(plantCase.id);
+  const invalidateChatMessages = useInvalidatePlantCaseChatMessages();
+
   const hasIncomeResearch = useMemo(
     () =>
       persistedMessages.some(
@@ -235,12 +241,6 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     return t(cfg.introKey, { title: plantCase.title });
   }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding, goal, hasIncomeResearch]);
 
-
-  const {
-    data: persistedMessages = [],
-    isLoading: messagesLoading,
-  } = usePlantCaseChatMessages(plantCase.id);
-  const invalidateChatMessages = useInvalidatePlantCaseChatMessages();
 
   // Plant Advisor identification language drives AI-generated source summaries.
   const { identificationLanguage } = usePlantAdvisorSettings();
