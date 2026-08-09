@@ -208,6 +208,17 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     isDiagnose && !!confirmedIdent && diagnoses.length > 0 &&
     (diagBucket === 'low' || diagLowRelevance || needsMoreEvidence);
 
+  const hasIncomeResearch = useMemo(
+    () =>
+      persistedMessages.some(
+        (m) =>
+          m.role === 'assistant' &&
+          m.metadata?.kind === 'income_research' &&
+          !m.metadata?.superseded,
+      ),
+    [persistedMessages],
+  );
+
   const introContent = useMemo(() => {
     if (isImproveGrowth) {
       const key = hasGrowthGrounding
@@ -215,8 +226,15 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         : 'plantAdvisor.chat.intro.improve_growth_no_grounding';
       return t(key, { title: plantCase.title });
     }
+    if (goal === 'increase_income') {
+      const key = hasIncomeResearch
+        ? 'plantAdvisor.chat.intro.increase_income_with_research'
+        : 'plantAdvisor.chat.intro.increase_income_no_research';
+      return t(key, { title: plantCase.title });
+    }
     return t(cfg.introKey, { title: plantCase.title });
-  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding]);
+  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding, goal, hasIncomeResearch]);
+
 
   const {
     data: persistedMessages = [],
