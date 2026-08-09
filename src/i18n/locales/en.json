@@ -1896,7 +1896,9 @@
         "improve_growth": "I have your growth case \"{{title}}\" loaded. I can suggest general care checks based on the case context and confirmed plant profile if available. I do not provide fertilizer product names or doses.",
         "increase_income": "I have your yield planning case \"{{title}}\" loaded. I can discuss general considerations based on the confirmed plant and case context.",
         "improve_growth_with_grounding": "I have this Improve Growth case loaded, including the gathered growth guidance cards. I can answer using the Overview, Watering, Sunlight, Soil, Pruning, Hardiness / climate, Growth rate / maintenance, Pests and disease, and Fruiting / harvest sections. Because the plant identification confidence is low, treat species-specific advice as provisional.",
-        "improve_growth_no_grounding": "Dedicated growth guidance has not been gathered yet. Run 'Gather growth guidance' first for species-specific care cards, or ask a general question based on the confirmed plant and case notes."
+        "improve_growth_no_grounding": "Dedicated growth guidance has not been gathered yet. Run 'Gather growth guidance' first for species-specific care cards, or ask a general question based on the confirmed plant and case notes.",
+        "increase_income_with_research": "I have this Increase Income case loaded, including the income research from the case dashboard.",
+        "increase_income_no_research": "Income research has not been gathered yet. For better answers, run Income Research on the case dashboard first."
       },
       "sections": {
         "caseSummary": "Case summary",
@@ -2434,6 +2436,23 @@
         "fruitMonths": "Fruit months",
         "duration": "Duration"
       }
+    },
+    "income": {
+      "title": "Income research",
+      "helper": "Research practical ways to increase income from the confirmed plant before asking the chat.",
+      "run": "Research income",
+      "refresh": "Refresh income research",
+      "placeholderText": "Run market and production research for the confirmed plant. The result will be saved here and used as context when you ask the chat.",
+      "requireConfirmation": "Confirm a plant identification before running income research.",
+      "running": "Researching income opportunities…",
+      "byline": "AI-generated · tavily-research:auto",
+      "doneToast": "Income research saved.",
+      "failedRetry": "Income research failed — you can retry today.",
+      "extractFocus": "Summarize the income-relevant details: revenue paths, yield and quality factors, harvest and post-harvest handling, value-added products, market channels, and risks. No chemical treatment instructions.",
+      "disclaimer": "Guidance only — no profit guarantee. Verify prices, yields, and buyers locally.",
+      "quotaAvailable": "Research available today: {{used}}/{{limit}} used",
+      "quotaUsed": "Research used today: {{used}}/{{limit}}. Come back tomorrow.",
+      "quotaRetry": "Last research failed — retry available today."
     }
   }
 }
