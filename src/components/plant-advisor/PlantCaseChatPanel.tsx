@@ -208,6 +208,23 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     isDiagnose && !!confirmedIdent && diagnoses.length > 0 &&
     (diagBucket === 'low' || diagLowRelevance || needsMoreEvidence);
 
+  const {
+    data: persistedMessages = [],
+    isLoading: messagesLoading,
+  } = usePlantCaseChatMessages(plantCase.id);
+  const invalidateChatMessages = useInvalidatePlantCaseChatMessages();
+
+  const hasIncomeResearch = useMemo(
+    () =>
+      persistedMessages.some(
+        (m) =>
+          m.role === 'assistant' &&
+          m.metadata?.kind === 'income_research' &&
+          !m.metadata?.superseded,
+      ),
+    [persistedMessages],
+  );
+
   const introContent = useMemo(() => {
     if (isImproveGrowth) {
       const key = hasGrowthGrounding
@@ -215,14 +232,15 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         : 'plantAdvisor.chat.intro.improve_growth_no_grounding';
       return t(key, { title: plantCase.title });
     }
+    if (goal === 'increase_income') {
+      const key = hasIncomeResearch
+        ? 'plantAdvisor.chat.intro.increase_income_with_research'
+        : 'plantAdvisor.chat.intro.increase_income_no_research';
+      return t(key, { title: plantCase.title });
+    }
     return t(cfg.introKey, { title: plantCase.title });
-  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding]);
+  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding, goal, hasIncomeResearch]);
 
-  const {
-    data: persistedMessages = [],
-    isLoading: messagesLoading,
-  } = usePlantCaseChatMessages(plantCase.id);
-  const invalidateChatMessages = useInvalidatePlantCaseChatMessages();
 
   // Plant Advisor identification language drives AI-generated source summaries.
   const { identificationLanguage } = usePlantAdvisorSettings();
@@ -266,9 +284,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   }, [persistedMessages]);
 
   const displayMessages = useMemo<Msg[]>(() => {
-    // Research answers are pinned at the top, never mixed into the chat flow.
-    const conversation = persistedMessages.filter((m) => m.metadata?.kind !== 'research');
+    // Research answers (plant + income) are dashboard/pinned artifacts and are
+    // never mixed into the chat flow.
+    const conversation = persistedMessages.filter(
+      (m) => m.metadata?.kind !== 'research' && m.metadata?.kind !== 'income_research',
+    );
     if (conversation.length > 0) {
+
       return [
         ...conversation.map((m) => ({
           id: m.id,

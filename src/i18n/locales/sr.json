@@ -1912,7 +1912,9 @@
         "improve_growth": "Učitao sam slučaj rasta \"{{title}}\". Mogu da predložim opšte provere nege na osnovu konteksta slučaja i profila potvrđene biljke ako je dostupan. Ne dajem imena đubriva niti doze.",
         "increase_income": "Učitao sam slučaj planiranja prinosa \"{{title}}\". Mogu da razgovaram o opštim razmatranjima na osnovu potvrđene biljke i konteksta slučaja.",
         "improve_growth_with_grounding": "Učitao sam ovaj slučaj za unapređenje rasta, uključujući prikupljene kartice sa smernicama za rast. Mogu da odgovorim koristeći Pregled, Zalivanje, Osvetljenje, Zemljište, Rezidbu, Otpornost / klimu, Brzinu rasta / održavanje, Štetočine i bolesti i Plodonošenje / berbu. Pošto je pouzdanost identifikacije niska, smernice specifične za vrstu treba tretirati kao privremene.",
-        "improve_growth_no_grounding": "Namenske smernice za rast još nisu prikupljene. Prvo pokrenite 'Prikupi smernice za rast' za kartice nege specifične za vrstu, ili postavite opšte pitanje na osnovu potvrđene biljke i beleški slučaja."
+        "improve_growth_no_grounding": "Namenske smernice za rast još nisu prikupljene. Prvo pokrenite 'Prikupi smernice za rast' za kartice nege specifične za vrstu, ili postavite opšte pitanje na osnovu potvrđene biljke i beleški slučaja.",
+        "increase_income_with_research": "Učitao sam ovaj slučaj za povećanje prihoda, uključujući istraživanje prihoda sa stranice slučaja.",
+        "increase_income_no_research": "Istraživanje prihoda još nije prikupljeno. Za bolje odgovore, prvo pokrenite Istraživanje prihoda na stranici slučaja."
       },
       "sections": {
         "caseSummary": "Rezime slučaja",
@@ -2450,6 +2452,23 @@
         "fruitMonths": "Meseci plodova",
         "duration": "Trajanje"
       }
+    },
+    "income": {
+      "title": "Istraživanje prihoda",
+      "helper": "Istražite praktične načine za povećanje prihoda od potvrđene biljke pre razgovora sa asistentom.",
+      "run": "Istraži prihod",
+      "refresh": "Osveži istraživanje prihoda",
+      "placeholderText": "Pokrenite istraživanje tržišta i proizvodnje za potvrđenu biljku. Rezultat će biti sačuvan ovde i korišćen kao kontekst kada pitate asistenta.",
+      "requireConfirmation": "Potvrdite identifikaciju biljke pre pokretanja istraživanja prihoda.",
+      "running": "Istražujem mogućnosti zarade…",
+      "byline": "AI-generisano · tavily-research:auto",
+      "doneToast": "Istraživanje prihoda je sačuvano.",
+      "failedRetry": "Istraživanje prihoda nije uspelo — možete pokušati ponovo danas.",
+      "extractFocus": "Sumiraj detalje važne za prihod: pravce zarade, faktore prinosa i kvaliteta, berbu i rukovanje posle berbe, proizvode sa dodatom vrednošću, kanale prodaje i rizike. Bez hemijskih uputstava za tretman.",
+      "disclaimer": "Samo smernice — bez garancije profita. Proverite cene, prinose i kupce lokalno.",
+      "quotaAvailable": "Istraživanje dostupno danas: {{used}}/{{limit}} iskorišćeno",
+      "quotaUsed": "Istraživanje iskorišćeno danas: {{used}}/{{limit}}. Pokušajte ponovo sutra.",
+      "quotaRetry": "Poslednje istraživanje nije uspelo — pokušaj je dostupan danas."
     }
   }
 }

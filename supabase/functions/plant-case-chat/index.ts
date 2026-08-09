@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
-    const [imgs, idents, diags, interps, profiles, groundings] = await Promise.all([
+    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch] = await Promise.all([
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
@@ -110,6 +110,16 @@ Deno.serve(async (req: Request) => {
         .in('status', ['success', 'partial'])
         .order('fetched_at', { ascending: false })
         .limit(1),
+      // Income Research is a dashboard artifact stored as a pinned assistant
+      // message; it is primary context for Increase Income questions.
+      admin
+        .from('plant_case_chat_messages')
+        .select('id, content, metadata, created_at')
+        .eq('case_id', caseId)
+        .eq('role', 'assistant')
+        .eq('metadata->>kind', 'income_research')
+        .order('created_at', { ascending: false })
+        .limit(1),
     ]);
 
     const imageRows = (imgs.data as { image_role: string | null }[] | null) ?? [];
@@ -119,6 +129,9 @@ Deno.serve(async (req: Request) => {
     const profileRow = (profiles.data as any[] | null)?.[0] ?? null;
     const trefle = profileRow?.profile ?? null;
     const groundingRow = (groundings.data as any[] | null)?.[0] ?? null;
+    const incomeResearchRow = (incomeResearch.data as any[] | null)?.[0] ?? null;
+    const incomeResearchSources = (incomeResearchRow?.metadata?.sourcesUsed ?? []) as any[];
+
 
     const confirmedIdent = identRows.find((i) => i.is_confirmed) ?? null;
     const confirmedDiag = diagRows.find((d) => d.is_confirmed) ?? null;
@@ -240,13 +253,29 @@ Deno.serve(async (req: Request) => {
             })),
           }
         : null,
+      incomeResearch: incomeResearchRow
+        ? {
+            fetchedAt: incomeResearchRow.created_at,
+            answer: String(incomeResearchRow.content ?? '').slice(0, 20000),
+            sources: incomeResearchSources.map((s: any) => ({
+              title: s?.title ?? null,
+              url: s?.url ?? null,
+              domain: s?.domain ?? null,
+              authorityScore: s?.authorityScore ?? null,
+            })),
+          }
+        : null,
       notes: {
         noConfirmedDiagnosis: !confirmedDiag ? 'No diagnosis has been confirmed yet.' : null,
         noAiInterpretation: !interp ? 'No AI interpretation is available yet.' : null,
         noSpeciesProfile: !trefle ? 'No Trefle plant profile is available yet.' : null,
         noGrowthGrounding: !groundingRow ? 'No growth grounding has been gathered yet.' : null,
+        noIncomeResearch: !incomeResearchRow
+          ? 'No income research has been run on the case dashboard yet.'
+          : null,
       },
     };
+
 
     const langInstruction = lang === 'sr' ? 'Respond in Serbian (Latin script).' : 'Respond in English.';
 
@@ -260,7 +289,8 @@ Deno.serve(async (req: Request) => {
         case 'improve_growth':
           return 'This is an IMPROVE-GROWTH case. Prioritize the confirmed plant, user location, crop context, Trefle profile, and growthGrounding (Perenual + web sources). growthGrounding.overview gives general plant context (habitat, habit, broad care). growthGrounding.normalizedCare has one summary per care card (watering, sunlight, soil, pruning, hardinessClimate, growthRateMaintenance, pestsDisease, fruitingHarvest); growthGrounding.sourceGroups holds the web sources grouped by that same card. When answering a category-specific question, prefer that card\'s summary and its own sourceGroups entry — do not mix sources from other cards. IMPORTANT: If growthGrounding is present in the context (not null), NEVER say growth guidance has not been gathered. If only some cards are populated, name which areas are available and which are limited, and answer from the populated cards plus Trefle. Only when growthGrounding is null (notes.noGrowthGrounding is set) should you tell the user that dedicated growth guidance has not been gathered yet and suggest running "Gather growth guidance"; even then, still answer generally from the confirmed plant and Trefle. For practical "how do I improve growth / what should I use" questions, DIRECTLY answer the goal first, then use the relevant cards (Sunlight for light, Soil for soil/organic matter, Watering for moisture, Pruning for structure, Growth rate / maintenance for pace, Pests and disease for monitoring). You may recommend SAFE CATEGORIES of intervention — watering and moisture management, sunlight and site selection, soil structure and organic matter, mulch, pruning and structural training, monitoring for pests and disease, and seeking local expert advice — without naming commercial products, chemical products, fertilizers, doses, mixing rates, or application schedules. Do not refuse the question; only decline the prohibited specifics (product names, doses, schedules) with a short explanation, then continue with the safe categories. For pest/disease questions in Improve Growth, use the pestsDisease card: cover common risks for this plant, symptoms/signs to monitor, prevention, sanitation, and cultural care, and suggest seeking local expert help when appropriate — do NOT diagnose the user\'s specific plant from images or descriptions, and do NOT recommend pesticide/fungicide/herbicide/insecticide product names, doses, mixing rates, spray schedules, or chemical treatment instructions. When growthGrounding IS present, cite source names ("according to Perenual", "per Trefle", or the web source title) when giving care advice, and prefer sources with authorityScore "high" (university extensions, botanical gardens, government agriculture pages). Distinguish structured database facts (Trefle, Perenual) from web-sourced guidance. If sources conflict, say so and prefer the higher-authority / more local source. Do NOT invent missing values. If plant identification confidence is low, warn that species-specific advice applies only if the plant is correctly identified. Do NOT diagnose disease.';
         case 'increase_income':
-          return 'This is a YIELD/MARKET planning case. Discuss general considerations tied to the confirmed plant. Do not invent market prices or yield numbers not in the context.';
+          return 'This is an INCREASE-INCOME (yield/market planning) case. If incomeResearch is present, treat it as the PRIMARY context for income, market, pricing, yield, harvest, post-harvest, value-added, buyer-channel and risk questions: summarise and build on it, and cite its web sources by title or domain. If incomeResearch is null (notes.noIncomeResearch is set), tell the user that income research has not been run yet and suggest running "Income research" on the case dashboard, then still answer generally from the confirmed plant and Trefle. Cover realistic revenue paths, yield and quality levers, harvest timing, post-harvest handling, value-added products, market positioning and buyer channels, pricing considerations, production risks, and practical next steps for small growers. NEVER guarantee profit, and never invent local market prices or yield figures that are not in the context — instead give market-validation steps (contact local buyers, check regional market reports, talk to extension services and local agronomists). Do NOT recommend pesticide/fungicide/herbicide product names, doses, mixing rates, spray schedules, or chemical treatment instructions. Do not diagnose plant problems here.';
+
         default:
           return 'Focus on the case context provided. If the case goal is not set, ask the user to clarify what they want to achieve.';
       }
@@ -639,10 +669,25 @@ Formatting:
         const tp = trefleSource();
         if (tp) collected.push(tp);
       } else if (goal === 'increase_income') {
-        // No dedicated income grounding yet — surface only real context sources.
+        // Income Research (dashboard artifact) is the primary source set here.
+        for (const s of incomeResearchSources.slice(0, 8)) {
+          if (!s?.title && !s?.url) continue;
+          collected.push({
+            id: s.id ?? `income-research-${collected.length}`,
+            provider: 'tavily-research',
+            title: s.title ?? s.url,
+            url: s.url ?? null,
+            domain: s.domain ?? null,
+            score: typeof s.score === 'number' ? s.score : null,
+            sourceType: 'income_research',
+            authorityScore: s.authorityScore ?? null,
+            snippet: s.snippet ?? null,
+          } as UsedSource);
+        }
         if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 1));
         const tp = trefleSource();
         if (tp) collected.push(tp);
+
       } else {
         if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 2));
         const tp = trefleSource();

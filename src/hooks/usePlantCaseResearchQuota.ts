@@ -95,6 +95,12 @@ async function callResearchGate<T>(payload: Record<string, unknown>): Promise<T>
 }
 
 /**
+ * Which Plant Advisor research flow a run belongs to. Both share the same
+ * daily quota; the type decides which pinned artifact is written.
+ */
+export type PlantResearchType = 'plant_research' | 'income_research';
+
+/**
  * Reserve today's research slot server-side. The edge function owns the quota
  * (clients cannot write `plant_case_research_runs`), so this is the only gate.
  */
@@ -102,10 +108,17 @@ export function useReservePlantResearchRun() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ caseId }: { caseId: string }) => {
+    mutationFn: async ({
+      caseId,
+      researchType = 'plant_research',
+    }: {
+      caseId: string;
+      researchType?: PlantResearchType;
+    }) => {
       const data = await callResearchGate<{ runId: string; runDate: string }>({
         action: 'reserve',
         caseId,
+        researchType,
         runDate: localRunDate(),
       });
       return data.runId;
@@ -125,12 +138,14 @@ export function useCompletePlantResearchRun() {
       caseId: string;
       content: string;
       metadata: Record<string, unknown>;
+      researchType?: PlantResearchType;
     }) => callResearchGate<{ message: unknown }>({ action: 'complete', ...args }),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ['plant-case-research-quota'] });
     },
   });
 }
+
 
 /** Mark a run failed so the user keeps today's research attempt. */
 export function useFailPlantResearchRun() {

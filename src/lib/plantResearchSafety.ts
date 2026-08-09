@@ -250,3 +250,139 @@ export function rankIdentifyResearchSources<T extends { url?: string | null }>(
     .sort((a, b) => b.authorityScore - a.authorityScore || a.index - b.index)
     .map(({ index: _index, ...rest }) => rest as T & { authorityScore: number });
 }
+
+// ---------------------------------------------------------------------------
+// Income research (Increase Income cases)
+//
+// Income research must never guarantee profit, invent local prices/yields, or
+// slip into chemical treatment guidance. The chemical scrubbing pipeline above
+// is reused as-is; source ranking prefers extension/government/market sources.
+// ---------------------------------------------------------------------------
+
+export interface IncomeResearchContext {
+  location?: string | null;
+  cropContext?: string | null;
+  notes?: string | null;
+  family?: string | null;
+  genus?: string | null;
+}
+
+/** Build the Tavily Research input for an Increase Income plant case. */
+export function buildIncomeResearchInput(
+  commonName: string | null | undefined,
+  scientificName: string | null | undefined,
+  lang: 'en' | 'sr',
+  ctx: IncomeResearchContext = {},
+): string {
+  const common = commonName?.trim() || scientificName?.trim() || '';
+  const scientific = scientificName?.trim() || common;
+  const taxon = [ctx.genus?.trim(), ctx.family?.trim()].filter(Boolean).join(', ');
+  const location = ctx.location?.trim();
+  const crop = ctx.cropContext?.trim();
+  const notes = ctx.notes?.trim();
+
+  if (lang === 'sr') {
+    const extra = [
+      taxon ? `Taksonomija: ${taxon}.` : '',
+      location ? `Lokacija: ${location}.` : '',
+      crop ? `Kontekst gajenja: ${crop}.` : '',
+      notes ? `Napomene korisnika: ${notes}.` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    return `Istraži kako se može povećati prihod od biljke ${common} (${scientific}). Fokusiraj se na praktične mogućnosti zarade, povećanje prinosa, vreme berbe, rukovanje posle berbe, proizvode sa dodatom vrednošću, pozicioniranje na tržištu, kanale prodaje, cenovne faktore, proizvodne rizike i realne sledeće korake za male proizvođače. Koristi samo potvrđenu biljku. Ako su dostupni lokacija ili kontekst gajenja, prilagodi smernice tom kontekstu. Ne navodi pesticide, fungicide, herbicide, doze, mešanje, raspored prskanja ili hemijska uputstva za tretman. Ne garantuj profit.${extra ? ` ${extra}` : ''} Ne izmišljaj lokalne cene ni prinose; ako podaci nisu dostupni, navedi to kao nedostatak podataka i predloži kako da se provere lokalno. Prioritet daj univerzitetskim savetodavnim službama, ministarstvima poljoprivrede i državnim izvorima, hortikulturnim i agronomskim institucijama, tržišnim izveštajima, asocijacijama proizvođača, izvorima o rukovanju posle berbe i pouzdanim vodičima za proizvodnju; izbegavaj opšte blogove, SEO baštenske stranice, prodajne stranice, forume i društvene mreže. Struktuiraj odgovor tačno ovim naslovima: 1. Kratak pregled mogućnosti zarade, 2. Potvrđena biljka i proizvodni kontekst, 3. Glavni pravci prihoda, 4. Faktori prinosa i kvaliteta, 5. Berba i rukovanje posle berbe, 6. Proizvodi sa dodatom vrednošću, 7. Tržište i kanali prodaje, 8. Rizici i ograničenja, 9. Praktični sledeći koraci, 10. Nedostaci u dostupnim podacima. Počni odgovor direktno naslovom izveštaja — bez ponavljanja pitanja, zadatka ili napomena o jeziku i formatu.`;
+  }
+
+  const extra = [
+    taxon ? `Taxonomy: ${taxon}.` : '',
+    location ? `Location: ${location}.` : '',
+    crop ? `Crop context: ${crop}.` : '',
+    notes ? `User notes: ${notes}.` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  return `Research how income can be increased from ${common} (${scientific}). Focus on practical revenue opportunities, yield improvement, harvest timing, post-harvest handling, value-added products, market positioning, buyer channels, pricing considerations, production risks, and realistic next steps for small growers. Use the confirmed plant only. If location or crop context is available, adapt recommendations to that context. Do not provide pesticide/fungicide/herbicide product names, doses, mixing rates, spray schedules, or chemical treatment instructions. Do not guarantee profit.${extra ? ` ${extra}` : ''} Do not invent local prices or yield figures; when data is unavailable, list it as an evidence gap and explain how the grower can verify it locally. Prioritize university extension services, agriculture ministries and government agriculture sources, horticulture and agronomy institutions, market reports, grower associations, post-harvest and food-processing sources, and reputable crop production guides; avoid generic blogs, SEO gardening pages, ecommerce/product sales pages, forums, and social media. Structure the report with exactly these sections: 1. Income opportunity summary, 2. Confirmed plant and production context, 3. Main revenue paths, 4. Yield and quality levers, 5. Harvest and post-harvest handling, 6. Value-added products, 7. Market and buyer channels, 8. Risks and constraints, 9. Practical next steps, 10. Evidence gaps. Start the answer directly with the report title — do not restate the question, the task, or notes about language or formatting.`;
+}
+
+/** Remove profit guarantees from an income research answer. */
+const PROFIT_GUARANTEE_PATTERNS: RegExp[] = [
+  /\b(guaranteed|guarantees?|guarantee)\s+(profit|income|revenue|return)/i,
+  /\bgarantovan\w*\s+(profit|prihod|zarad)/i,
+  /\bsigurna\s+zarada\b/i,
+];
+
+export function scrubProfitGuarantees(markdown: string): string {
+  if (!markdown) return markdown;
+  return markdown
+    .split('\n')
+    .filter((line) => !(line.trim() && PROFIT_GUARANTEE_PATTERNS.some((re) => re.test(line))))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/** Full post-processing pipeline for Income research output. */
+export function polishIncomeResearchAnswer(markdown: string): string {
+  return normalizeResearchCitations(
+    stripResearchPromptFraming(scrubProfitGuarantees(scrubTreatmentGuidance(markdown || ''))),
+  );
+}
+
+const INCOME_AUTHORITY_TIERS: Array<{ score: number; patterns: RegExp[] }> = [
+  {
+    // University extension services
+    score: 100,
+    patterns: [/extension\./i, /\.extension\./i, /(\.|^)edu(\.[a-z]{2})?$/i, /(\.|^)ac\.[a-z]{2}$/i, /\.uni-/i],
+  },
+  {
+    // Governments / agriculture ministries / intergovernmental bodies
+    score: 90,
+    patterns: [
+      /(\.|^)gov(\.[a-z]{2})?$/i,
+      /(\.|^)gov\./i,
+      /usda\.gov$/i,
+      /fao\.org$/i,
+      /europa\.eu$/i,
+      /minpolj|poljoprivreda/i,
+    ],
+  },
+  {
+    // Agronomy / horticulture institutes, market reports, grower associations
+    score: 70,
+    patterns: [
+      /(^|\.)(ahdb|agmrc|rhs|cabi|icar|inra|inrae|wur|nifa)\./i,
+      /research|institut|agronom|horticultur|postharvest|post-harvest/i,
+      /market(?:s|report|data|news)|agrimarket|statist/i,
+      /associat|coopera|growers?/i,
+    ],
+  },
+];
+
+const INCOME_DOWNRANK_PATTERNS: RegExp[] = [
+  /youtube\.com$|youtu\.be$|vimeo\.com$|tiktok\.com$/i,
+  /pinterest\.|facebook\.com$|instagram\.com$|reddit\.com$|quora\.com$|forum/i,
+  /amazon\.|ebay\.|etsy\.|alibaba\.|shop|store|seeds?\.(com|net)$|nursery/i,
+  /blogspot\.|medium\.com$|wordpress\.com$/i,
+  /gardening|gardener|garden(?:ia|ing)?\w*\.(com|net)$/i,
+];
+
+/** 0–100 authority score for an income-research source URL. */
+export function incomeAuthorityScore(url: string): number {
+  const host = researchSourceDomain(url);
+  if (!host) return 10;
+  for (const tier of INCOME_AUTHORITY_TIERS) {
+    if (tier.patterns.some((re) => re.test(host))) return tier.score;
+  }
+  if (INCOME_DOWNRANK_PATTERNS.some((re) => re.test(host))) return 5;
+  return 30;
+}
+
+/** Sort income-research sources so extension/government/market sources lead. */
+export function rankIncomeResearchSources<T extends { url?: string | null }>(
+  sources: T[],
+): Array<T & { authorityScore: number }> {
+  return sources
+    .map((s, index) => ({ ...s, authorityScore: incomeAuthorityScore(s.url ?? ''), index }))
+    .sort((a, b) => b.authorityScore - a.authorityScore || a.index - b.index)
+    .map(({ index: _index, ...rest }) => rest as T & { authorityScore: number });
+}

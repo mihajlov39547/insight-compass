@@ -84,6 +84,17 @@ serve(async (req) => {
 
   const action = typeof body.action === "string" ? body.action : "";
 
+  // Which Plant Advisor research flow this run belongs to. Both share one daily
+  // quota; the type decides the required case goal and the pinned message kind.
+  const RESEARCH_TYPES = {
+    plant_research: { goal: "identify", messageKind: "research" },
+    income_research: { goal: "increase_income", messageKind: "income_research" },
+  } as const;
+  type ResearchTypeKey = keyof typeof RESEARCH_TYPES;
+  const researchType: ResearchTypeKey =
+    body.researchType === "income_research" ? "income_research" : "plant_research";
+  const researchConfig = RESEARCH_TYPES[researchType];
+
   // -------------------------------------------------------------------------
   // reserve
   // -------------------------------------------------------------------------
@@ -99,7 +110,9 @@ serve(async (req) => {
       .maybeSingle();
     if (caseErr) return json({ error: caseErr.message }, 500);
     if (!plantCase || plantCase.user_id !== userId) return json({ error: "case_not_found" }, 404);
-    if (plantCase.user_goal !== "identify") return json({ error: "research_not_available" }, 400);
+    if (plantCase.user_goal !== researchConfig.goal) {
+      return json({ error: "research_not_available" }, 400);
+    }
 
     const { data: confirmed, error: identErr } = await admin
       .from("plant_identifications")
@@ -121,7 +134,13 @@ serve(async (req) => {
 
     const { data: run, error: insertErr } = await admin
       .from("plant_case_research_runs")
-      .insert({ user_id: userId, case_id: caseId, run_date: runDate, status: "started" })
+      .insert({
+        user_id: userId,
+        case_id: caseId,
+        run_date: runDate,
+        status: "started",
+        metadata: { researchType },
+      })
       .select("id, run_date, status")
       .single();
 
@@ -132,6 +151,7 @@ serve(async (req) => {
     }
     return json({ runId: run.id, runDate: run.run_date });
   }
+
 
   // -------------------------------------------------------------------------
   // complete — persist (or replace) the pinned research message
@@ -159,19 +179,21 @@ serve(async (req) => {
     }
     if (run.status !== "started") return json({ error: "run_not_open" }, 409);
 
-    const safeMetadata = { ...metadata, kind: "research" };
+    const messageKind = researchConfig.messageKind;
+    const safeMetadata = { ...metadata, kind: messageKind, researchType };
 
-    // Replace the existing pinned research answer for this case rather than
-    // appending a second one.
+    // Replace the existing pinned research answer of the SAME kind for this
+    // case rather than appending a second one.
     const { data: existing, error: existingErr } = await admin
       .from("plant_case_chat_messages")
       .select("id")
       .eq("case_id", caseId)
       .eq("user_id", userId)
       .eq("role", "assistant")
-      .eq("metadata->>kind", "research")
+      .eq("metadata->>kind", messageKind)
       .order("created_at", { ascending: false });
     if (existingErr) return json({ error: existingErr.message }, 500);
+
 
     let message: unknown = null;
     const keepId = existing?.[0]?.id ?? null;
