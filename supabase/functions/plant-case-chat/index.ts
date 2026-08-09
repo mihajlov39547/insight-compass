@@ -669,10 +669,25 @@ Formatting:
         const tp = trefleSource();
         if (tp) collected.push(tp);
       } else if (goal === 'increase_income') {
-        // No dedicated income grounding yet — surface only real context sources.
+        // Income Research (dashboard artifact) is the primary source set here.
+        for (const s of incomeResearchSources.slice(0, 8)) {
+          if (!s?.title && !s?.url) continue;
+          collected.push({
+            id: s.id ?? `income-research-${collected.length}`,
+            provider: 'tavily-research',
+            title: s.title ?? s.url,
+            url: s.url ?? null,
+            domain: s.domain ?? null,
+            score: typeof s.score === 'number' ? s.score : null,
+            sourceType: 'income_research',
+            authorityScore: s.authorityScore ?? null,
+            snippet: s.snippet ?? null,
+          } as UsedSource);
+        }
         if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 1));
         const tp = trefleSource();
         if (tp) collected.push(tp);
+
       } else {
         if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 2));
         const tp = trefleSource();
