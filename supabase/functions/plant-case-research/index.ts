@@ -179,19 +179,21 @@ serve(async (req) => {
     }
     if (run.status !== "started") return json({ error: "run_not_open" }, 409);
 
-    const safeMetadata = { ...metadata, kind: "research" };
+    const messageKind = researchConfig.messageKind;
+    const safeMetadata = { ...metadata, kind: messageKind, researchType };
 
-    // Replace the existing pinned research answer for this case rather than
-    // appending a second one.
+    // Replace the existing pinned research answer of the SAME kind for this
+    // case rather than appending a second one.
     const { data: existing, error: existingErr } = await admin
       .from("plant_case_chat_messages")
       .select("id")
       .eq("case_id", caseId)
       .eq("user_id", userId)
       .eq("role", "assistant")
-      .eq("metadata->>kind", "research")
+      .eq("metadata->>kind", messageKind)
       .order("created_at", { ascending: false });
     if (existingErr) return json({ error: existingErr.message }, 500);
+
 
     let message: unknown = null;
     const keepId = existing?.[0]?.id ?? null;
