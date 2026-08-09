@@ -253,13 +253,29 @@ Deno.serve(async (req: Request) => {
             })),
           }
         : null,
+      incomeResearch: incomeResearchRow
+        ? {
+            fetchedAt: incomeResearchRow.created_at,
+            answer: String(incomeResearchRow.content ?? '').slice(0, 20000),
+            sources: incomeResearchSources.map((s: any) => ({
+              title: s?.title ?? null,
+              url: s?.url ?? null,
+              domain: s?.domain ?? null,
+              authorityScore: s?.authorityScore ?? null,
+            })),
+          }
+        : null,
       notes: {
         noConfirmedDiagnosis: !confirmedDiag ? 'No diagnosis has been confirmed yet.' : null,
         noAiInterpretation: !interp ? 'No AI interpretation is available yet.' : null,
         noSpeciesProfile: !trefle ? 'No Trefle plant profile is available yet.' : null,
         noGrowthGrounding: !groundingRow ? 'No growth grounding has been gathered yet.' : null,
+        noIncomeResearch: !incomeResearchRow
+          ? 'No income research has been run on the case dashboard yet.'
+          : null,
       },
     };
+
 
     const langInstruction = lang === 'sr' ? 'Respond in Serbian (Latin script).' : 'Respond in English.';
 
