@@ -266,9 +266,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   }, [persistedMessages]);
 
   const displayMessages = useMemo<Msg[]>(() => {
-    // Research answers are pinned at the top, never mixed into the chat flow.
-    const conversation = persistedMessages.filter((m) => m.metadata?.kind !== 'research');
+    // Research answers (plant + income) are dashboard/pinned artifacts and are
+    // never mixed into the chat flow.
+    const conversation = persistedMessages.filter(
+      (m) => m.metadata?.kind !== 'research' && m.metadata?.kind !== 'income_research',
+    );
     if (conversation.length > 0) {
+
       return [
         ...conversation.map((m) => ({
           id: m.id,
