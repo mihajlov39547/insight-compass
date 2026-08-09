@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
-    const [imgs, idents, diags, interps, profiles, groundings] = await Promise.all([
+    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch] = await Promise.all([
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
@@ -110,6 +110,16 @@ Deno.serve(async (req: Request) => {
         .in('status', ['success', 'partial'])
         .order('fetched_at', { ascending: false })
         .limit(1),
+      // Income Research is a dashboard artifact stored as a pinned assistant
+      // message; it is primary context for Increase Income questions.
+      admin
+        .from('plant_case_chat_messages')
+        .select('id, content, metadata, created_at')
+        .eq('case_id', caseId)
+        .eq('role', 'assistant')
+        .eq('metadata->>kind', 'income_research')
+        .order('created_at', { ascending: false })
+        .limit(1),
     ]);
 
     const imageRows = (imgs.data as { image_role: string | null }[] | null) ?? [];
@@ -119,6 +129,9 @@ Deno.serve(async (req: Request) => {
     const profileRow = (profiles.data as any[] | null)?.[0] ?? null;
     const trefle = profileRow?.profile ?? null;
     const groundingRow = (groundings.data as any[] | null)?.[0] ?? null;
+    const incomeResearchRow = (incomeResearch.data as any[] | null)?.[0] ?? null;
+    const incomeResearchSources = (incomeResearchRow?.metadata?.sourcesUsed ?? []) as any[];
+
 
     const confirmedIdent = identRows.find((i) => i.is_confirmed) ?? null;
     const confirmedDiag = diagRows.find((d) => d.is_confirmed) ?? null;
