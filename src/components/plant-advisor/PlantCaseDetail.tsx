@@ -127,12 +127,19 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
           />
           {plantCase.user_goal === 'identify' && (
-            <PlantGrowthGuidanceSection
-              caseId={plantCase.id}
-              hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-              helperKey="plantAdvisor.growth.helperIdentify"
-            />
+            <>
+              <PlantGrowthGuidanceSection
+                caseId={plantCase.id}
+                hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+                helperKey="plantAdvisor.growth.helperIdentify"
+              />
+              <PlantResearchSection
+                plantCase={plantCase}
+                hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+              />
+            </>
           )}
+
           {plantCase.user_goal === 'increase_income' && (
             <PlantIncomeResearchSection
               plantCase={plantCase}
