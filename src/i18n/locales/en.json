@@ -2032,7 +2032,8 @@
         "placeholderQuotaUsed": "Research used today: {{used}}/{{limit}}. Come back tomorrow.",
         "quotaRetry": "Last research failed — retry available today",
         "quotaRetryTooltip": "Your last research attempt failed, so today's run is still available.",
-        "failedRetry": "Research failed. Your daily research run is still available — please try again."
+        "failedRetry": "Research failed. Your daily research run is still available — please try again.",
+        "quotaShared": "You have one Plant Case Research run per day. It can be used for plant research or income research."
       }
     },
     "diagnose": {
@@ -2452,7 +2453,9 @@
       "disclaimer": "Guidance only — no profit guarantee. Verify prices, yields, and buyers locally.",
       "quotaAvailable": "Research available today: {{used}}/{{limit}} used",
       "quotaUsed": "Research used today: {{used}}/{{limit}}. Come back tomorrow.",
-      "quotaRetry": "Last research failed — retry available today."
+      "quotaRetry": "Last research failed — retry available today.",
+      "quotaTooltip": "You have one Plant Case Research run per day. It can be used for plant research or income research.",
+      "lowConfidence": "Identification confidence is low. Income suggestions depend on the confirmed plant being correct."
     }
   }
 }
