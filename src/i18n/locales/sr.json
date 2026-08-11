@@ -1914,7 +1914,9 @@
         "improve_growth_with_grounding": "Učitao sam ovaj slučaj za unapređenje rasta, uključujući prikupljene kartice sa smernicama za rast. Mogu da odgovorim koristeći Pregled, Zalivanje, Osvetljenje, Zemljište, Rezidbu, Otpornost / klimu, Brzinu rasta / održavanje, Štetočine i bolesti i Plodonošenje / berbu. Pošto je pouzdanost identifikacije niska, smernice specifične za vrstu treba tretirati kao privremene.",
         "improve_growth_no_grounding": "Namenske smernice za rast još nisu prikupljene. Prvo pokrenite 'Prikupi smernice za rast' za kartice nege specifične za vrstu, ili postavite opšte pitanje na osnovu potvrđene biljke i beleški slučaja.",
         "increase_income_with_research": "Učitao sam ovaj slučaj za povećanje prihoda, uključujući istraživanje prihoda sa stranice slučaja.",
-        "increase_income_no_research": "Istraživanje prihoda još nije prikupljeno. Za bolje odgovore, prvo pokrenite Istraživanje prihoda na stranici slučaja."
+        "increase_income_no_research": "Istraživanje prihoda još nije prikupljeno. Za bolje odgovore, prvo pokrenite Istraživanje prihoda na stranici slučaja.",
+        "identify_with_research": "Učitao sam ovaj slučaj identifikacije, uključujući istraživanje biljke sa stranice slučaja.",
+        "identify_no_research": "Istraživanje biljke još nije prikupljeno. Za detaljnije odgovore o taksonomiji, sličnim vrstama, staništu i proveri identifikacije, prvo pokrenite Istraživanje biljke na stranici slučaja."
       },
       "sections": {
         "caseSummary": "Rezime slučaja",
@@ -2472,6 +2474,24 @@
       "quotaRetry": "Poslednje istraživanje nije uspelo — pokušaj je dostupan danas.",
       "quotaTooltip": "Imate jedno istraživanje slučaja biljke dnevno. Može se koristiti za istraživanje biljke ili istraživanje prihoda.",
       "lowConfidence": "Pouzdanost identifikacije je niska. Smernice za prihod zavise od toga da li je potvrđena biljka tačna."
+    },
+    "plantResearch": {
+      "title": "Istraživanje biljke",
+      "helper": "Istražite taksonomiju, karakteristične osobine, slične vrste, stanište, rasprostranjenje, upotrebu i savete za proveru potvrđene biljke pre razgovora sa asistentom.",
+      "run": "Istraži biljku",
+      "refresh": "Osveži istraživanje biljke",
+      "placeholderText": "Pokrenite istraživanje za potvrđenu biljku. Rezultat će biti sačuvan ovde i korišćen kao kontekst kada pitate asistenta.",
+      "requireConfirmation": "Potvrdite identifikaciju biljke pre pokretanja istraživanja biljke.",
+      "running": "Istražujem potvrđenu biljku…",
+      "byline": "AI-generisano · tavily-research:auto",
+      "doneToast": "Istraživanje biljke je sačuvano.",
+      "failedRetry": "Istraživanje biljke nije uspelo — možete pokušati ponovo danas.",
+      "extractFocus": "Sumiraj taksonomiju i prihvaćena imena, karakteristične osobine, slične vrste, prirodno rasprostranjenje, stanište, upotrebu i mere predostrožnosti, kao i savete za proveru. Bez dijagnoze bolesti i bez hemijskih uputstava za tretman.",
+      "quotaAvailable": "Istraživanje dostupno danas: {{used}}/{{limit}} iskorišćeno",
+      "quotaUsed": "Istraživanje iskorišćeno danas: {{used}}/{{limit}}. Pokušajte ponovo sutra.",
+      "quotaRetry": "Poslednje istraživanje nije uspelo — pokušaj je dostupan danas.",
+      "quotaTooltip": "Imate jedno istraživanje slučaja biljke dnevno. Može se koristiti za istraživanje biljke ili istraživanje prihoda.",
+      "lowConfidence": "Pouzdanost identifikacije je niska. Nalazi istraživanja zavise od toga da li je potvrđena biljka tačna."
     }
   }
 }

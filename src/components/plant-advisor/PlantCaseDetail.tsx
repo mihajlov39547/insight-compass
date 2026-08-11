@@ -12,6 +12,8 @@ import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
 import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
 import { PlantIncomeResearchSection } from './PlantIncomeResearchSection';
+import { PlantResearchSection } from './PlantResearchSection';
+
 
 import { toast } from 'sonner';
 
@@ -127,12 +129,19 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
           />
           {plantCase.user_goal === 'identify' && (
-            <PlantGrowthGuidanceSection
-              caseId={plantCase.id}
-              hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-              helperKey="plantAdvisor.growth.helperIdentify"
-            />
+            <>
+              <PlantGrowthGuidanceSection
+                caseId={plantCase.id}
+                hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+                helperKey="plantAdvisor.growth.helperIdentify"
+              />
+              <PlantResearchSection
+                plantCase={plantCase}
+                hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+              />
+            </>
           )}
+
           {plantCase.user_goal === 'increase_income' && (
             <PlantIncomeResearchSection
               plantCase={plantCase}

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, MessageSquare, Send, Loader2, AlertTriangle, Info, Camera, ShieldAlert, Telescope } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Send, Loader2, AlertTriangle, Info, Camera, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -16,26 +16,7 @@ import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
-import { useAuth } from '@/contexts/useAuth';
-import {
-  usePlantCaseResearchQuota,
-  useReservePlantResearchRun,
-  useCompletePlantResearchRun,
-  useFailPlantResearchRun,
-} from '@/hooks/usePlantCaseResearchQuota';
-
-
-import {
-  runTavilyResearch,
-  researchSourcesToUnified,
-  type ResearchTraceState,
-} from '@/services/research/tavilyResearch';
-import {
-  buildIdentifyResearchInput,
-  polishIdentifyResearchAnswer,
-  rankIdentifyResearchSources,
-  researchSourceDomain,
-} from '@/lib/plantResearchSafety';
+import { type ResearchTraceState } from '@/services/research/tavilyResearch';
 
 import {
   usePlantCaseChatMessages,
@@ -225,6 +206,17 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     [persistedMessages],
   );
 
+  const hasPlantResearch = useMemo(
+    () =>
+      persistedMessages.some(
+        (m) =>
+          m.role === 'assistant' &&
+          m.metadata?.kind === 'research' &&
+          !m.metadata?.superseded,
+      ),
+    [persistedMessages],
+  );
+
   const introContent = useMemo(() => {
     if (isImproveGrowth) {
       const key = hasGrowthGrounding
@@ -238,8 +230,14 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         : 'plantAdvisor.chat.intro.increase_income_no_research';
       return t(key, { title: plantCase.title });
     }
+    if (isIdentify) {
+      const key = hasPlantResearch
+        ? 'plantAdvisor.chat.intro.identify_with_research'
+        : 'plantAdvisor.chat.intro.identify_no_research';
+      return `${t('plantAdvisor.chat.intro.identify', { title: plantCase.title })}\n\n${t(key)}`;
+    }
     return t(cfg.introKey, { title: plantCase.title });
-  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding, goal, hasIncomeResearch]);
+  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding, goal, hasIncomeResearch, isIdentify, hasPlantResearch]);
 
 
   // Plant Advisor identification language drives AI-generated source summaries.
@@ -261,27 +259,6 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
 
   const hasPersistedHistory = persistedMessages.length > 0;
 
-
-  /** Latest non-superseded research answer — rendered pinned above the chat. */
-  const pinnedResearch = useMemo<Msg | null>(() => {
-    const rows = persistedMessages.filter(
-      (m) =>
-        m.role === 'assistant' &&
-        m.metadata?.kind === 'research' &&
-        !m.metadata?.superseded,
-    );
-    const latest = rows[rows.length - 1];
-    if (!latest) return null;
-    return {
-      id: latest.id,
-      role: 'assistant',
-      content: polishIdentifyResearchAnswer(latest.content),
-      sourcesUsed: latest.metadata?.sourcesUsed,
-      researchTrace:
-        (latest.metadata?.research as { trace?: ResearchTraceState } | undefined)?.trace ?? null,
-      isResearch: true,
-    };
-  }, [persistedMessages]);
 
   const displayMessages = useMemo<Msg[]>(() => {
     // Research answers (plant + income) are dashboard/pinned artifacts and are
@@ -433,136 +410,6 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     return () => { cancelled = true; };
   }, [hasPersistedHistory, followUps, persistedMessages, plantCase.id, langCode]);
 
-  // ---------------------------------------------------------------------------
-  // Deep research (Tavily) — reuses the Project/Notebook chat research flow.
-  // Enabled for Identify cases with a confirmed identification.
-  // ---------------------------------------------------------------------------
-  const { user } = useAuth();
-  const [researching, setResearching] = useState(false);
-  const [liveTrace, setLiveTrace] = useState<ResearchTraceState | null>(null);
-  const { quota: researchQuota } = usePlantCaseResearchQuota();
-  const reserveResearchRun = useReservePlantResearchRun();
-  const completeResearchRun = useCompletePlantResearchRun();
-  const failResearchRun = useFailPlantResearchRun();
-
-  const researchEnabled = isIdentify;
-  const quotaExhausted = researchQuota.exhausted;
-  // Today's only run failed — the daily slot was released, retry is allowed.
-  const retryAvailable = researchQuota.retryAvailable;
-  const canResearch =
-    researchEnabled && !!confirmedIdent && !quotaExhausted && !pending && !researching;
-  const researchTooltip = !confirmedIdent
-    ? t('plantAdvisor.chat.research.needsConfirmed')
-    : quotaExhausted
-      ? t('plantAdvisor.chat.research.quotaTooltipUsed')
-      : retryAvailable
-        ? t('plantAdvisor.chat.research.quotaRetryTooltip')
-        : t('plantAdvisor.chat.research.tooltip');
-  const quotaLabel = quotaExhausted
-    ? t('plantAdvisor.chat.research.quotaUsed')
-    : retryAvailable
-      ? t('plantAdvisor.chat.research.quotaRetry')
-      : t('plantAdvisor.chat.research.quotaAvailable', {
-          used: researchQuota.used,
-          limit: researchQuota.limit,
-        });
-  const placeholderQuotaLabel = quotaExhausted
-    ? t('plantAdvisor.chat.research.placeholderQuotaUsed', {
-        used: researchQuota.used,
-        limit: researchQuota.limit,
-      })
-    : retryAvailable
-      ? t('plantAdvisor.chat.research.quotaRetry')
-      : t('plantAdvisor.chat.research.placeholderQuotaAvailable', {
-          used: researchQuota.used,
-          limit: researchQuota.limit,
-        });
-
-
-  const runResearch = async () => {
-    if (!canResearch || !confirmedIdent || !user) return;
-    setResearching(true);
-    setLiveTrace(null);
-    // Server-side daily gate. Returns a runId that is required to persist the
-    // answer, so the quota cannot be bypassed from the client.
-    let runId: string | null = null;
-    try {
-      runId = await reserveResearchRun.mutateAsync({ caseId: plantCase.id });
-
-      const scientific =
-        confirmedIdent.scientific_name_without_author || confirmedIdent.scientific_name || null;
-      const researchInput = buildIdentifyResearchInput(
-        confirmedIdent.common_name,
-        scientific,
-        advisorLang,
-      );
-      const result = await runTavilyResearch({
-        input: researchInput,
-        model: 'auto',
-        responseLanguage: advisorLang,
-        onTrace: (state) => setLiveTrace(state),
-      });
-      const answer = polishIdentifyResearchAnswer(result.finalText || '');
-      if (!answer.trim()) throw new Error(result.errorMessage || 'empty_reply');
-
-      // Authoritative botanical/taxonomic sources first, generic gardening/video last.
-      const sourcesUsed: PlantChatUsedSource[] = rankIdentifyResearchSources(
-        researchSourcesToUnified(result.sources),
-      ).map((s, i) => ({
-        id: s.id || `research-${i}`,
-        provider: 'tavily-research',
-        title: s.title,
-        url: s.url,
-        domain: s.url ? researchSourceDomain(s.url) : null,
-        score: s.relevance,
-        snippet: s.snippet || null,
-        authorityScore: String(s.authorityScore),
-      }));
-
-      const metadata: Record<string, unknown> = {
-        kind: 'research',
-        goal: goal ?? null,
-        model: 'tavily-research:auto',
-        responseLanguage: advisorLang,
-        sourcesUsed,
-        research: { trace: result.trace, raw: result.finalText },
-      };
-
-      // The edge function replaces the existing pinned research answer instead
-      // of appending a second one, and marks the run completed.
-      await completeResearchRun.mutateAsync({
-        runId,
-        caseId: plantCase.id,
-        content: answer,
-        metadata,
-      });
-      await invalidateChatMessages(plantCase.id);
-      setLiveTrace(null);
-    } catch (e) {
-      const msg = (e as Error).message;
-      // Release the reserved slot so a failed run does not consume the day.
-      if (runId && msg !== 'quota_exhausted') {
-        try {
-          await failResearchRun.mutateAsync({ runId, reason: msg });
-        } catch {
-          /* best effort — a stale run is auto-released server-side */
-        }
-      }
-      toast.error(
-        msg === 'quota_exhausted'
-          ? t('plantAdvisor.chat.research.quotaUsed')
-          : msg === 'needs_confirmed_plant'
-            ? t('plantAdvisor.chat.research.needsConfirmed')
-            : t('plantAdvisor.chat.research.failedRetry', { defaultValue: msg }),
-      );
-    } finally {
-      setResearching(false);
-    }
-  };
-
-
-
-
   const send = async (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
     if (!text || pending) return;
@@ -651,33 +498,6 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
             {t(cfg.assistantTitleKey)}
           </div>
         </div>
-        {researchEnabled && (
-          <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={runResearch}
-              disabled={!canResearch}
-              title={researchTooltip}
-              aria-label={t('plantAdvisor.chat.research.label')}
-            >
-              {researching ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Telescope className="h-3.5 w-3.5" />
-              )}
-              <span className="hidden sm:inline text-xs">{t('plantAdvisor.chat.research.label')}</span>
-            </Button>
-            <span
-              className="text-[10px] text-muted-foreground text-right max-w-[180px]"
-              title={t('plantAdvisor.chat.research.quotaShared')}
-            >
-              {quotaLabel}
-            </span>
-          </div>
-        )}
-
       </div>
 
 
@@ -906,88 +726,6 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
             {t('plantAdvisor.chat.disclaimers.noImageInspection')}
           </section>
         </div>
-
-        {/* Pinned plant research area — always above the chat for Identify cases. */}
-        {researchEnabled && (
-          <div className="rounded-md border border-border bg-card p-3 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
-              <Telescope className="h-3.5 w-3.5 text-primary" />
-              {t('plantAdvisor.chat.research.placeholderTitle')}
-            </div>
-
-            {researching ? (
-              <div className="space-y-2">
-                {liveTrace && <ResearchTrace trace={liveTrace} isLive />}
-                <div className="text-sm flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {t('plantAdvisor.chat.research.running')}
-                </div>
-              </div>
-            ) : pinnedResearch ? (
-              <div className="space-y-2">
-                {pinnedResearch.researchTrace && (
-                  <ResearchTrace trace={pinnedResearch.researchTrace} />
-                )}
-                <div className="text-sm">
-                  <MarkdownContent content={pinnedResearch.content} />
-                </div>
-                <div className="text-[10px] text-muted-foreground">
-                  {t('plantAdvisor.chat.research.byline')}
-                </div>
-                {(() => {
-                  const items = toSourceItems(pinnedResearch.sourcesUsed);
-                  const msgId = pinnedResearch.id ?? 'pinned-research';
-                  if (items.length === 0) return null;
-                  return (
-                    <SourceAttribution
-                      sources={items}
-                      messageId={msgId}
-                      context="project"
-                      onExtract={(sels, q) =>
-                        runExtract(
-                          { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang, goal },
-                          msgId,
-                          sels,
-                          q?.trim() ? q : defaultSourceFocus,
-                        )
-                      }
-                      isExtracting={isExtracting && extractingMessageId === msgId}
-                      onCrawl={(sel, instructions) =>
-                        runCrawl(
-                          { kind: 'plant_case', caseId: plantCase.id, lang: advisorLang, goal },
-                          msgId,
-                          sel,
-                          instructions?.trim() ? instructions : defaultSourceFocus,
-                        )
-                      }
-                      isCrawling={isCrawling && crawlingMessageId === msgId}
-                      crawlingUrl={crawlingMessageId === msgId ? null : undefined}
-                    />
-                  );
-                })()}
-                <div className="text-[11px] text-muted-foreground">{placeholderQuotaLabel}</div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="text-xs text-muted-foreground">
-                  {t('plantAdvisor.chat.research.placeholderText')}
-                </div>
-                <div className="text-[11px] text-muted-foreground">{placeholderQuotaLabel}</div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={runResearch}
-                  disabled={!canResearch}
-                  title={researchTooltip}
-                >
-                  <Telescope className="h-3.5 w-3.5" />
-                  <span className="text-xs">{t('plantAdvisor.chat.research.label')}</span>
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
 
         {messagesLoading && !hasPersistedHistory && (
           <div className="flex justify-start">
