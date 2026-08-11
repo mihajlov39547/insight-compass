@@ -702,6 +702,27 @@ Formatting:
         const usesGrowth =
           !!groundingRow && (detectCards(question).length > 0 || isGeneralCareQuestion(question));
         if (usesGrowth) collected.push(...growthSources(question));
+        // Plant Research (dashboard artifact) backs taxonomy / verification /
+        // similar species / habitat / distribution / uses questions.
+        const RESEARCH_RE =
+          /taxonom|famil|genus|species|verif|confirm|identif|habitat|distribut|native|range|use[sd]?\b|edible|toxic|caution|similar|confus|taksonom|famili|rod\b|vrst|potvr|identifik|stanist|staništ|rasprostran|upotreb|jestiv|otrov|slicn|sličn/i;
+        if (plantResearchSources.length > 0 && (RESEARCH_RE.test(question) || !usesGrowth)) {
+          for (const s of plantResearchSources.slice(0, 6)) {
+            if (!s?.title && !s?.url) continue;
+            collected.push({
+              id: s.id ?? `plant-research-${collected.length}`,
+              provider: 'tavily-research',
+              title: s.title ?? s.url,
+              url: s.url ?? null,
+              domain: s.domain ?? null,
+              score: typeof s.score === 'number' ? s.score : null,
+              sourceType: s.sourceType ?? 'plant_research',
+              authorityScore: s.authorityScore ?? null,
+              cardKey: null,
+              snippet: s.snippet ?? '',
+            } as UsedSource);
+          }
+        }
         collected.push(
           ...identificationSources(question, {
             includeAlternatives: isComparisonQuestion(question) || !usesGrowth,
