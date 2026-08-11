@@ -114,10 +114,22 @@ Deno.serve(async (req: Request) => {
       // message; it is primary context for Increase Income questions.
       admin
         .from('plant_case_chat_messages')
-        .select('id, content, metadata, created_at')
+        .select('id, content, metadata, created_at, updated_at')
         .eq('case_id', caseId)
         .eq('role', 'assistant')
         .eq('metadata->>kind', 'income_research')
+        .or('metadata->>superseded.is.null,metadata->>superseded.eq.false')
+        .order('created_at', { ascending: false })
+        .limit(1),
+      // Identify Plant Research is also a pinned dashboard artifact; it grounds
+      // taxonomy / verification / habitat / uses questions in Identify cases.
+      admin
+        .from('plant_case_chat_messages')
+        .select('id, content, metadata, created_at, updated_at')
+        .eq('case_id', caseId)
+        .eq('role', 'assistant')
+        .eq('metadata->>kind', 'research')
+        .or('metadata->>superseded.is.null,metadata->>superseded.eq.false')
         .order('created_at', { ascending: false })
         .limit(1),
     ]);
