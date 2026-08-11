@@ -143,6 +143,8 @@ Deno.serve(async (req: Request) => {
     const groundingRow = (groundings.data as any[] | null)?.[0] ?? null;
     const incomeResearchRow = (incomeResearch.data as any[] | null)?.[0] ?? null;
     const incomeResearchSources = (incomeResearchRow?.metadata?.sourcesUsed ?? []) as any[];
+    const plantResearchRow = (plantResearch.data as any[] | null)?.[0] ?? null;
+    const plantResearchSources = (plantResearchRow?.metadata?.sourcesUsed ?? []) as any[];
 
 
     const confirmedIdent = identRows.find((i) => i.is_confirmed) ?? null;
