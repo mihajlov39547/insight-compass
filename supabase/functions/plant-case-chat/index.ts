@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
-    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch] = await Promise.all([
+    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch, plantResearch] = await Promise.all([
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
