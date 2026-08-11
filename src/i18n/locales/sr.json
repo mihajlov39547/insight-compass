@@ -2048,7 +2048,8 @@
         "placeholderQuotaUsed": "Istraživanje iskorišćeno danas: {{used}}/{{limit}}. Pokušajte ponovo sutra.",
         "quotaRetry": "Poslednje istraživanje nije uspelo — pokušaj je dostupan danas",
         "quotaRetryTooltip": "Poslednji pokušaj istraživanja nije uspeo, pa je današnje istraživanje još dostupno.",
-        "failedRetry": "Istraživanje nije uspelo. Vaše dnevno istraživanje je još dostupno — pokušajte ponovo."
+        "failedRetry": "Istraživanje nije uspelo. Vaše dnevno istraživanje je još dostupno — pokušajte ponovo.",
+        "quotaShared": "Imate jedno istraživanje slučaja biljke dnevno. Može se koristiti za istraživanje biljke ili istraživanje prihoda."
       }
     },
     "diagnose": {
@@ -2468,7 +2469,9 @@
       "disclaimer": "Samo smernice — bez garancije profita. Proverite cene, prinose i kupce lokalno.",
       "quotaAvailable": "Istraživanje dostupno danas: {{used}}/{{limit}} iskorišćeno",
       "quotaUsed": "Istraživanje iskorišćeno danas: {{used}}/{{limit}}. Pokušajte ponovo sutra.",
-      "quotaRetry": "Poslednje istraživanje nije uspelo — pokušaj je dostupan danas."
+      "quotaRetry": "Poslednje istraživanje nije uspelo — pokušaj je dostupan danas.",
+      "quotaTooltip": "Imate jedno istraživanje slučaja biljke dnevno. Može se koristiti za istraživanje biljke ili istraživanje prihoda.",
+      "lowConfidence": "Pouzdanost identifikacije je niska. Smernice za prihod zavise od toga da li je potvrđena biljka tačna."
     }
   }
 }

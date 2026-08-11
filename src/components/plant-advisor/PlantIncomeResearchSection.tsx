@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Coins, Loader2, RefreshCw, Telescope } from 'lucide-react';
+import { AlertTriangle, Coins, Loader2, RefreshCw, Telescope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { ResearchTrace } from '@/components/chat/ResearchTrace';
 import { SourceAttribution, type SourceItem } from '@/components/chat/SourceAttribution';
-import { usePlantIdentifications } from '@/hooks/usePlantIdentifications';
+import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
@@ -101,6 +101,8 @@ export function PlantIncomeResearchSection({ plantCase, hasConfirmedIdentificati
         (latest.metadata?.research as { trace?: ResearchTraceState } | undefined)?.trace ?? null,
     };
   }, [messages]);
+
+  const lowConfidence = confidenceBucket(confirmedIdent?.score) === 'low';
 
   const canRun =
     hasConfirmedIdentification && !!confirmedIdent && !quota.exhausted && !running;
@@ -220,7 +222,15 @@ export function PlantIncomeResearchSection({ plantCase, hasConfirmedIdentificati
         <div className="rounded-md border border-dashed border-border bg-background p-3 text-xs text-muted-foreground">
           {t('plantAdvisor.income.requireConfirmation')}
         </div>
-      ) : running ? (
+      ) : (
+        <>
+          {lowConfidence && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+              <span>{t('plantAdvisor.income.lowConfidence')}</span>
+            </div>
+          )}
+          {running ? (
         <div className="space-y-2">
           {liveTrace && <ResearchTrace trace={liveTrace} isLive />}
           <div className="text-sm flex items-center gap-2 text-muted-foreground">
@@ -263,7 +273,9 @@ export function PlantIncomeResearchSection({ plantCase, hasConfirmedIdentificati
               crawlingUrl={crawlingMessageId === msgId ? null : undefined}
             />
           )}
-          <div className="text-[11px] text-muted-foreground">{quotaLabel}</div>
+          <div className="text-[11px] text-muted-foreground" title={t('plantAdvisor.income.quotaTooltip')}>
+            {quotaLabel}
+          </div>
           <p className="text-[11px] italic text-muted-foreground">
             {t('plantAdvisor.income.disclaimer')}
           </p>
@@ -273,12 +285,16 @@ export function PlantIncomeResearchSection({ plantCase, hasConfirmedIdentificati
           <div className="text-xs text-muted-foreground">
             {t('plantAdvisor.income.placeholderText')}
           </div>
-          <div className="text-[11px] text-muted-foreground">{quotaLabel}</div>
+          <div className="text-[11px] text-muted-foreground" title={t('plantAdvisor.income.quotaTooltip')}>
+            {quotaLabel}
+          </div>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={run} disabled={!canRun}>
             <Telescope className="h-3.5 w-3.5" />
             <span className="text-xs">{t('plantAdvisor.income.run')}</span>
           </Button>
         </div>
+          )}
+        </>
       )}
     </div>
   );
