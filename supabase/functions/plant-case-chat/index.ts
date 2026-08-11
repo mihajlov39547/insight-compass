@@ -174,11 +174,15 @@ Deno.serve(async (req: Request) => {
       identification: {
         confirmedPlant: confirmedIdent
           ? {
+              identificationId: confirmedIdent.id,
               scientificName: confirmedIdent.scientific_name_without_author || confirmedIdent.scientific_name,
+              scientificNameFull: confirmedIdent.scientific_name,
               commonName: confirmedIdent.common_name,
               genus: confirmedIdent.genus,
               family: confirmedIdent.family,
+              rank: confirmedIdent.rank ?? null,
               confidence: confirmedIdent.score,
+              confidenceBucket: confidenceBucket(confirmedIdent.score),
               provider: confirmedIdent.provider,
             }
           : null,
