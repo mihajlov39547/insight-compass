@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: pc, error: pcErr } = await admin
       .from('plant_cases')
-      .select('id, user_id, title, user_goal, location_text, crop_context, notes, status, confirmed_identification_id')
+      .select('id, user_id, title, user_goal, location_text, crop_context, notes, status, created_at, updated_at, confirmed_identification_id')
       .eq('id', caseId)
       .maybeSingle();
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
