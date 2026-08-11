@@ -12,6 +12,8 @@ import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
 import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
 import { PlantIncomeResearchSection } from './PlantIncomeResearchSection';
+import { PlantResearchSection } from './PlantResearchSection';
+
 
 import { toast } from 'sonner';
 
