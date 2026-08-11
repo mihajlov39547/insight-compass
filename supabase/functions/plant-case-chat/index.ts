@@ -349,7 +349,7 @@ Deno.serve(async (req: Request) => {
 GOAL DIRECTIVE: ${goalDirective}
 
 Rules:
-- Answer using ONLY the provided case context (caseContext, identification, diagnosis, aiInterpretation, speciesProfile).
+- Answer using ONLY the provided case context (caseContext, identification, diagnosis, aiInterpretation, speciesProfile, growthGrounding, incomeResearch, plantResearch).
 - Clearly distinguish CONFIRMED facts (confirmedPlant, confirmedDiagnosis) from CANDIDATES (providerCandidates, alternatives).
 - When provider confidence is low or plantRelevance is not "high", explicitly mention the uncertainty.
 - Prefer the confirmed plant and confirmed diagnosis when available.
