@@ -286,6 +286,19 @@ Deno.serve(async (req: Request) => {
             })),
           }
         : null,
+      plantResearch: plantResearchRow
+        ? {
+            fetchedAt: plantResearchRow.updated_at ?? plantResearchRow.created_at,
+            responseLanguage: plantResearchRow.metadata?.responseLanguage ?? null,
+            answer: String(plantResearchRow.content ?? '').slice(0, 20000),
+            sources: plantResearchSources.map((s: any) => ({
+              title: s?.title ?? null,
+              url: s?.url ?? null,
+              domain: s?.domain ?? null,
+              authorityScore: s?.authorityScore ?? null,
+            })),
+          }
+        : null,
       notes: {
         noConfirmedDiagnosis: !confirmedDiag ? 'No diagnosis has been confirmed yet.' : null,
         noAiInterpretation: !interp ? 'No AI interpretation is available yet.' : null,
@@ -294,8 +307,22 @@ Deno.serve(async (req: Request) => {
         noIncomeResearch: !incomeResearchRow
           ? 'No income research has been run on the case dashboard yet.'
           : null,
+        noPlantResearch: !plantResearchRow
+          ? 'No plant research has been run on the case dashboard yet.'
+          : null,
       },
     };
+
+    // Dev diagnostics: availability booleans only — never user content.
+    console.log('[plant-case-chat] context availability', {
+      goal: pc.user_goal ?? null,
+      hasConfirmedIdent: !!confirmedIdent,
+      hasTrefleProfile: !!trefle,
+      hasGrowthGrounding: !!groundingRow,
+      hasIncomeResearch: !!incomeResearchRow,
+      hasPlantResearch: !!plantResearchRow,
+      hasDiagnosisCandidates: diagRows.length > 0,
+    });
 
 
     const langInstruction = lang === 'sr' ? 'Respond in Serbian (Latin script).' : 'Respond in English.';
