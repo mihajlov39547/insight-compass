@@ -669,7 +669,10 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
               )}
               <span className="hidden sm:inline text-xs">{t('plantAdvisor.chat.research.label')}</span>
             </Button>
-            <span className="text-[10px] text-muted-foreground text-right max-w-[180px]">
+            <span
+              className="text-[10px] text-muted-foreground text-right max-w-[180px]"
+              title={t('plantAdvisor.chat.research.quotaShared')}
+            >
               {quotaLabel}
             </span>
           </div>
