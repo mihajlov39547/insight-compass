@@ -70,13 +70,13 @@ Deno.serve(async (req: Request) => {
 
     const { data: pc, error: pcErr } = await admin
       .from('plant_cases')
-      .select('id, user_id, title, user_goal, location_text, crop_context, notes, status, confirmed_identification_id')
+      .select('id, user_id, title, user_goal, location_text, crop_context, notes, status, created_at, updated_at, confirmed_identification_id')
       .eq('id', caseId)
       .maybeSingle();
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
-    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch] = await Promise.all([
+    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch, plantResearch] = await Promise.all([
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
@@ -114,10 +114,22 @@ Deno.serve(async (req: Request) => {
       // message; it is primary context for Increase Income questions.
       admin
         .from('plant_case_chat_messages')
-        .select('id, content, metadata, created_at')
+        .select('id, content, metadata, created_at, updated_at')
         .eq('case_id', caseId)
         .eq('role', 'assistant')
         .eq('metadata->>kind', 'income_research')
+        .or('metadata->>superseded.is.null,metadata->>superseded.eq.false')
+        .order('created_at', { ascending: false })
+        .limit(1),
+      // Identify Plant Research is also a pinned dashboard artifact; it grounds
+      // taxonomy / verification / habitat / uses questions in Identify cases.
+      admin
+        .from('plant_case_chat_messages')
+        .select('id, content, metadata, created_at, updated_at')
+        .eq('case_id', caseId)
+        .eq('role', 'assistant')
+        .eq('metadata->>kind', 'research')
+        .or('metadata->>superseded.is.null,metadata->>superseded.eq.false')
         .order('created_at', { ascending: false })
         .limit(1),
     ]);
@@ -131,6 +143,8 @@ Deno.serve(async (req: Request) => {
     const groundingRow = (groundings.data as any[] | null)?.[0] ?? null;
     const incomeResearchRow = (incomeResearch.data as any[] | null)?.[0] ?? null;
     const incomeResearchSources = (incomeResearchRow?.metadata?.sourcesUsed ?? []) as any[];
+    const plantResearchRow = (plantResearch.data as any[] | null)?.[0] ?? null;
+    const plantResearchSources = (plantResearchRow?.metadata?.sourcesUsed ?? []) as any[];
 
 
     const confirmedIdent = identRows.find((i) => i.is_confirmed) ?? null;
@@ -148,6 +162,9 @@ Deno.serve(async (req: Request) => {
         caseId: pc.id,
         title: pc.title,
         userGoal: pc.user_goal,
+        status: pc.status ?? null,
+        createdAt: (pc as any).created_at ?? null,
+        updatedAt: (pc as any).updated_at ?? null,
         location: pc.location_text,
         cropContext: pc.crop_context,
         notes: pc.notes,
@@ -157,11 +174,15 @@ Deno.serve(async (req: Request) => {
       identification: {
         confirmedPlant: confirmedIdent
           ? {
+              identificationId: confirmedIdent.id,
               scientificName: confirmedIdent.scientific_name_without_author || confirmedIdent.scientific_name,
+              scientificNameFull: confirmedIdent.scientific_name,
               commonName: confirmedIdent.common_name,
               genus: confirmedIdent.genus,
               family: confirmedIdent.family,
+              rank: confirmedIdent.rank ?? null,
               confidence: confirmedIdent.score,
+              confidenceBucket: confidenceBucket(confirmedIdent.score),
               provider: confirmedIdent.provider,
             }
           : null,
@@ -265,6 +286,19 @@ Deno.serve(async (req: Request) => {
             })),
           }
         : null,
+      plantResearch: plantResearchRow
+        ? {
+            fetchedAt: plantResearchRow.updated_at ?? plantResearchRow.created_at,
+            responseLanguage: plantResearchRow.metadata?.responseLanguage ?? null,
+            answer: String(plantResearchRow.content ?? '').slice(0, 20000),
+            sources: plantResearchSources.map((s: any) => ({
+              title: s?.title ?? null,
+              url: s?.url ?? null,
+              domain: s?.domain ?? null,
+              authorityScore: s?.authorityScore ?? null,
+            })),
+          }
+        : null,
       notes: {
         noConfirmedDiagnosis: !confirmedDiag ? 'No diagnosis has been confirmed yet.' : null,
         noAiInterpretation: !interp ? 'No AI interpretation is available yet.' : null,
@@ -273,8 +307,22 @@ Deno.serve(async (req: Request) => {
         noIncomeResearch: !incomeResearchRow
           ? 'No income research has been run on the case dashboard yet.'
           : null,
+        noPlantResearch: !plantResearchRow
+          ? 'No plant research has been run on the case dashboard yet.'
+          : null,
       },
     };
+
+    // Dev diagnostics: availability booleans only — never user content.
+    console.log('[plant-case-chat] context availability', {
+      goal: pc.user_goal ?? null,
+      hasConfirmedIdent: !!confirmedIdent,
+      hasTrefleProfile: !!trefle,
+      hasGrowthGrounding: !!groundingRow,
+      hasIncomeResearch: !!incomeResearchRow,
+      hasPlantResearch: !!plantResearchRow,
+      hasDiagnosisCandidates: diagRows.length > 0,
+    });
 
 
     const langInstruction = lang === 'sr' ? 'Respond in Serbian (Latin script).' : 'Respond in English.';
@@ -282,7 +330,7 @@ Deno.serve(async (req: Request) => {
     const goalDirective = (() => {
       switch (pc.user_goal) {
         case 'identify':
-          return 'This is an IDENTIFICATION case. Focus on the plant identification: the confirmed plant, its confidence, the top alternatives and how they differ, taxonomy (genus/family), distinguishing morphological features, typical habitat and distribution, similar/confusable species, and how the user can verify the ID (which features and which additional photos). Reference taxonomy sources (GBIF, Plants of the World Online) and Trefle when they are present in the context, and note that the user can extract or crawl those URL-backed sources for deeper taxonomy, distinguishing features, habitat, similar species and verification detail. Do not answer disease, pest, treatment, or remediation questions inside an identify-only case: say this case is configured for identification only and suggest opening or creating a "Diagnose problem" case once the plant is confirmed. If growthGrounding is available, you may use it for general care, growth, habitat, watering, sunlight, soil, pruning, hardiness, maintenance, pests/disease awareness, and fruiting/harvest context: use the matching growthGrounding.normalizedCare card summary and cite its sources. Keep the main case identity as IDENTIFICATION. Do not diagnose a specific disease/problem in Identify cases. For problem diagnosis, ask the user to open or create a "Diagnose problem" case. Pest/disease content in an Identify case must stay preventive and general-awareness only, and must never include fertilizer/pesticide/fungicide/herbicide product names, doses, mixing rates, spray schedules, or chemical treatment instructions. For a pests-and-disease question (e.g. "Pests and disease?" / "Stetocine i bolesti?"), answer in this order: (1) state clearly that this is general awareness and NOT a diagnosis of the user\'s plant, (2) if the growth guidance contains a pests-and-disease card, summarise the common risks, symptoms to watch for, prevention, sanitation and cultural care from it, (3) tell the user to open or create a "Diagnose problem" case for specific symptoms or an active problem. Never name chemical products, doses or spray schedules.';
+          return 'This is an IDENTIFICATION case. If plantResearch is present, treat it as PRIMARY grounding for taxonomy, verification, distinguishing features, similar/confusable species, habitat, distribution, and uses/cautions questions: summarise and build on it and cite its web sources by title or domain. If plantResearch is null (notes.noPlantResearch is set), you may say deeper plant research has not been run yet and can be started with the Research button in the chat header, then still answer from the confirmed identification and Trefle. Focus on the plant identification: the confirmed plant, its confidence, the top alternatives and how they differ, taxonomy (genus/family), distinguishing morphological features, typical habitat and distribution, similar/confusable species, and how the user can verify the ID (which features and which additional photos). Reference taxonomy sources (GBIF, Plants of the World Online) and Trefle when they are present in the context, and note that the user can extract or crawl those URL-backed sources for deeper taxonomy, distinguishing features, habitat, similar species and verification detail. Do not answer disease, pest, treatment, or remediation questions inside an identify-only case: say this case is configured for identification only and suggest opening or creating a "Diagnose problem" case once the plant is confirmed. If growthGrounding is available, you may use it for general care, growth, habitat, watering, sunlight, soil, pruning, hardiness, maintenance, pests/disease awareness, and fruiting/harvest context: use the matching growthGrounding.normalizedCare card summary and cite its sources. Keep the main case identity as IDENTIFICATION. Do not diagnose a specific disease/problem in Identify cases. For problem diagnosis, ask the user to open or create a "Diagnose problem" case. Pest/disease content in an Identify case must stay preventive and general-awareness only, and must never include fertilizer/pesticide/fungicide/herbicide product names, doses, mixing rates, spray schedules, or chemical treatment instructions. For a pests-and-disease question (e.g. "Pests and disease?" / "Stetocine i bolesti?"), answer in this order: (1) state clearly that this is general awareness and NOT a diagnosis of the user\'s plant, (2) if the growth guidance contains a pests-and-disease card, summarise the common risks, symptoms to watch for, prevention, sanitation and cultural care from it, (3) tell the user to open or create a "Diagnose problem" case for specific symptoms or an active problem. Never name chemical products, doses or spray schedules.';
         case 'diagnose':
           return 'This is a DIAGNOSIS case. Focus on the confirmed plant and the disease/pest candidates, their relevance to the confirmed plant, uncertainty, and the visual checks that would separate them. Provider candidates are diagnostic CONTEXT only — never treatment proof; always describe them as candidates. Cover symptoms to check, host range, visual signs, environmental/cultural conditions that favour the problem, whether it could be pest damage, disease, or abiotic stress, prevention and sanitation, and when to seek local expert help. Do NOT give pesticide/fungicide/herbicide/insecticide product names, active ingredients, doses, mixing rates, spray schedules, or chemical treatment instructions — decline those specifics briefly and continue with safe diagnostic and preventive guidance. If no plant is confirmed yet, explain that the plant must be confirmed before diagnosis is meaningful.';
 
@@ -301,7 +349,7 @@ Deno.serve(async (req: Request) => {
 GOAL DIRECTIVE: ${goalDirective}
 
 Rules:
-- Answer using ONLY the provided case context (caseContext, identification, diagnosis, aiInterpretation, speciesProfile).
+- Answer using ONLY the provided case context (caseContext, identification, diagnosis, aiInterpretation, speciesProfile, growthGrounding, incomeResearch, plantResearch).
 - Clearly distinguish CONFIRMED facts (confirmedPlant, confirmedDiagnosis) from CANDIDATES (providerCandidates, alternatives).
 - When provider confidence is low or plantRelevance is not "high", explicitly mention the uncertainty.
 - Prefer the confirmed plant and confirmed diagnosis when available.
@@ -654,6 +702,27 @@ Formatting:
         const usesGrowth =
           !!groundingRow && (detectCards(question).length > 0 || isGeneralCareQuestion(question));
         if (usesGrowth) collected.push(...growthSources(question));
+        // Plant Research (dashboard artifact) backs taxonomy / verification /
+        // similar species / habitat / distribution / uses questions.
+        const RESEARCH_RE =
+          /taxonom|famil|genus|species|verif|confirm|identif|habitat|distribut|native|range|use[sd]?\b|edible|toxic|caution|similar|confus|taksonom|famili|rod\b|vrst|potvr|identifik|stanist|staništ|rasprostran|upotreb|jestiv|otrov|slicn|sličn/i;
+        if (plantResearchSources.length > 0 && (RESEARCH_RE.test(question) || !usesGrowth)) {
+          for (const s of plantResearchSources.slice(0, 6)) {
+            if (!s?.title && !s?.url) continue;
+            collected.push({
+              id: s.id ?? `plant-research-${collected.length}`,
+              provider: 'tavily-research',
+              title: s.title ?? s.url,
+              url: s.url ?? null,
+              domain: s.domain ?? null,
+              score: typeof s.score === 'number' ? s.score : null,
+              sourceType: s.sourceType ?? 'plant_research',
+              authorityScore: s.authorityScore ?? null,
+              cardKey: null,
+              snippet: s.snippet ?? '',
+            } as UsedSource);
+          }
+        }
         collected.push(
           ...identificationSources(question, {
             includeAlternatives: isComparisonQuestion(question) || !usesGrowth,
