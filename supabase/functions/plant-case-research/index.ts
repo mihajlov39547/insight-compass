@@ -137,6 +137,21 @@ serve(async (req) => {
     if (identErr) return json({ error: identErr.message }, 500);
     if (!confirmed || confirmed.length === 0) return json({ error: "needs_confirmed_plant" }, 409);
 
+    // Problem research is grounded in the CONFIRMED diagnosis only.
+    if (researchConfig.needsDiagnosis) {
+      const { data: confirmedDiag, error: diagErr } = await admin
+        .from("plant_diagnoses")
+        .select("id")
+        .eq("case_id", caseId)
+        .eq("is_confirmed", true)
+        .limit(1);
+      if (diagErr) return json({ error: diagErr.message }, 500);
+      if (!confirmedDiag || confirmedDiag.length === 0) {
+        return json({ error: "needs_confirmed_diagnosis" }, 409);
+      }
+    }
+
+
     // Release runs abandoned mid-flight (browser closed, network drop).
     const staleBefore = new Date(Date.now() - STALE_RUN_MINUTES * 60_000).toISOString();
     await admin
