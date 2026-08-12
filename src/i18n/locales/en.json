@@ -2481,7 +2481,7 @@
     },
     "problemResearch": {
       "title": "Problem research",
-      "helper": "Research the confirmed problem and safe treatment options before asking the chat.",
+      "helper": "Research the confirmed problem, prevention, monitoring, and safe treatment categories before asking the chat.",
       "run": "Research problem",
       "refresh": "Refresh problem research",
       "placeholderText": "Run research for the confirmed diagnosis. The result will be saved here and used as context when you ask the chat.",
