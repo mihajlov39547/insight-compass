@@ -283,7 +283,10 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     // Research answers (plant + income) are dashboard/pinned artifacts and are
     // never mixed into the chat flow.
     const conversation = persistedMessages.filter(
-      (m) => m.metadata?.kind !== 'research' && m.metadata?.kind !== 'income_research',
+      (m) =>
+        m.metadata?.kind !== 'research' &&
+        m.metadata?.kind !== 'income_research' &&
+        m.metadata?.kind !== 'problem_research',
     );
     if (conversation.length > 0) {
 
