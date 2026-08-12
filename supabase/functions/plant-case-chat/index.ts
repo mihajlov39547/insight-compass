@@ -312,6 +312,19 @@ Deno.serve(async (req: Request) => {
             })),
           }
         : null,
+      problemResearch: problemResearchRow
+        ? {
+            fetchedAt: problemResearchRow.updated_at ?? problemResearchRow.created_at,
+            responseLanguage: problemResearchRow.metadata?.responseLanguage ?? null,
+            answer: String(problemResearchRow.content ?? '').slice(0, 20000),
+            sources: problemResearchSources.map((s: any) => ({
+              title: s?.title ?? null,
+              url: s?.url ?? null,
+              domain: s?.domain ?? null,
+              authorityScore: s?.authorityScore ?? null,
+            })),
+          }
+        : null,
       notes: {
         noConfirmedDiagnosis: !confirmedDiag ? 'No diagnosis has been confirmed yet.' : null,
         noAiInterpretation: !interp ? 'No AI interpretation is available yet.' : null,
@@ -322,6 +335,9 @@ Deno.serve(async (req: Request) => {
           : null,
         noPlantResearch: !plantResearchRow
           ? 'No plant research has been run on the case dashboard yet.'
+          : null,
+        noProblemResearch: !problemResearchRow
+          ? 'No problem research has been run on the case dashboard yet.'
           : null,
       },
     };
@@ -334,6 +350,7 @@ Deno.serve(async (req: Request) => {
       hasGrowthGrounding: !!groundingRow,
       hasIncomeResearch: !!incomeResearchRow,
       hasPlantResearch: !!plantResearchRow,
+      hasProblemResearch: !!problemResearchRow,
       hasDiagnosisCandidates: diagRows.length > 0,
     });
 
