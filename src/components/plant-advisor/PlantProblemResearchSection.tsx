@@ -143,9 +143,7 @@ export function PlantProblemResearchSection({ plantCase, hasConfirmedIdentificat
         confirmedIdent.scientific_name_without_author || confirmedIdent.scientific_name || null;
       const input = buildProblemResearchInput(
         confirmedDiag.name,
-        confirmedDiag.plant_scientific_name && confirmedDiag.name !== confirmedDiag.name
-          ? confirmedDiag.plant_scientific_name
-          : null,
+        null,
         confirmedIdent.common_name,
         plantScientific,
         advisorLang,

@@ -98,7 +98,7 @@ async function callResearchGate<T>(payload: Record<string, unknown>): Promise<T>
  * Which Plant Advisor research flow a run belongs to. Both share the same
  * daily quota; the type decides which pinned artifact is written.
  */
-export type PlantResearchType = 'plant_research' | 'income_research';
+export type PlantResearchType = 'plant_research' | 'income_research' | 'problem_research';
 
 /**
  * Reserve today's research slot server-side. The edge function owns the quota
