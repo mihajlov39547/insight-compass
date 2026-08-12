@@ -13,6 +13,7 @@ import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
 import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
 import { PlantIncomeResearchSection } from './PlantIncomeResearchSection';
 import { PlantResearchSection } from './PlantResearchSection';
+import { PlantProblemResearchSection } from './PlantProblemResearchSection';
 
 
 import { toast } from 'sonner';
@@ -113,7 +114,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             plantCase={plantCase}
             hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
           />
-        </>t
+        </>
       ) : plantCase.user_goal === 'improve_growth' ? (
         <>
           <PlantIdentificationSection caseId={plantCase.id} images={images} />
