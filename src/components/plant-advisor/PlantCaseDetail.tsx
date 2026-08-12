@@ -108,7 +108,12 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
               {t('plantAdvisor.diagnoseFlow.step2Locked')}
             </div>
           )}
-        </>
+
+          <PlantProblemResearchSection
+            plantCase={plantCase}
+            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+          />
+        </>t
       ) : plantCase.user_goal === 'improve_growth' ? (
         <>
           <PlantIdentificationSection caseId={plantCase.id} images={images} />
