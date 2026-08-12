@@ -84,15 +84,29 @@ serve(async (req) => {
 
   const action = typeof body.action === "string" ? body.action : "";
 
-  // Which Plant Advisor research flow this run belongs to. Both share one daily
-  // quota; the type decides the required case goal and the pinned message kind.
+  // Which Plant Advisor research flow this run belongs to. All types share one
+  // daily quota; the type decides the required case goal and the pinned message
+  // kind, plus whether a confirmed diagnosis is also required.
   const RESEARCH_TYPES = {
-    plant_research: { goal: "identify", messageKind: "research" },
-    income_research: { goal: "increase_income", messageKind: "income_research" },
+    plant_research: { goal: "identify", messageKind: "research", needsDiagnosis: false },
+    income_research: {
+      goal: "increase_income",
+      messageKind: "income_research",
+      needsDiagnosis: false,
+    },
+    problem_research: {
+      goal: "diagnose",
+      messageKind: "problem_research",
+      needsDiagnosis: true,
+    },
   } as const;
   type ResearchTypeKey = keyof typeof RESEARCH_TYPES;
   const researchType: ResearchTypeKey =
-    body.researchType === "income_research" ? "income_research" : "plant_research";
+    body.researchType === "income_research"
+      ? "income_research"
+      : body.researchType === "problem_research"
+        ? "problem_research"
+        : "plant_research";
   const researchConfig = RESEARCH_TYPES[researchType];
 
   // -------------------------------------------------------------------------
