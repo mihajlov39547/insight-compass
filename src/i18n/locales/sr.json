@@ -2497,7 +2497,7 @@
     },
     "problemResearch": {
       "title": "Istraživanje problema",
-      "helper": "Istražite potvrđeni problem, prevenciju, praćenje i bezbedne kategorije tretmana pre razgovora sa asistentom."
+      "helper": "Istražite potvrđeni problem, prevenciju, praćenje i bezbedne kategorije tretmana pre razgovora sa asistentom.",
       "run": "Istraži problem",
       "refresh": "Osveži istraživanje problema",
       "placeholderText": "Pokrenite istraživanje za potvrđenu dijagnozu. Rezultat će biti sačuvan ovde i korišćen kao kontekst kada pitate asistenta.",
