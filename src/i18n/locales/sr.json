@@ -1916,7 +1916,9 @@
         "increase_income_with_research": "Učitao sam ovaj slučaj za povećanje prihoda, uključujući istraživanje prihoda sa stranice slučaja.",
         "increase_income_no_research": "Istraživanje prihoda još nije prikupljeno. Za bolje odgovore, prvo pokrenite Istraživanje prihoda na stranici slučaja.",
         "identify_with_research": "Učitao sam ovaj slučaj identifikacije, uključujući istraživanje biljke sa stranice slučaja.",
-        "identify_no_research": "Istraživanje biljke još nije prikupljeno. Za detaljnije odgovore o taksonomiji, sličnim vrstama, staništu i proveri identifikacije, prvo pokrenite Istraživanje biljke na stranici slučaja."
+        "identify_no_research": "Istraživanje biljke još nije prikupljeno. Za detaljnije odgovore o taksonomiji, sličnim vrstama, staništu i proveri identifikacije, prvo pokrenite Istraživanje biljke na stranici slučaja.",
+        "diagnose_with_research": "Učitao sam ovaj slučaj dijagnoze problema, uključujući istraživanje problema sa stranice slučaja.",
+        "diagnose_no_research": "Istraživanje problema još nije prikupljeno. Za detaljnije informacije o simptomima, proveri, prevenciji i kategorijama tretmana, prvo pokrenite Istraživanje problema na stranici slučaja."
       },
       "sections": {
         "caseSummary": "Rezime slučaja",
@@ -2492,6 +2494,27 @@
       "quotaRetry": "Poslednje istraživanje nije uspelo — pokušaj je dostupan danas.",
       "quotaTooltip": "Imate jedno istraživanje slučaja biljke dnevno. Može se koristiti za istraživanje biljke ili istraživanje prihoda.",
       "lowConfidence": "Pouzdanost identifikacije je niska. Nalazi istraživanja zavise od toga da li je potvrđena biljka tačna."
+    },
+    "problemResearch": {
+      "title": "Istraživanje problema",
+      "helper": "Istražite potvrđeni problem i bezbedne mogućnosti tretmana pre razgovora sa asistentom.",
+      "run": "Istraži problem",
+      "refresh": "Osveži istraživanje problema",
+      "placeholderText": "Pokrenite istraživanje za potvrđenu dijagnozu. Rezultat će biti sačuvan ovde i korišćen kao kontekst kada pitate asistenta.",
+      "requireConfirmation": "Potvrdite dijagnozu pre pokretanja istraživanja problema.",
+      "running": "Istražujem potvrđeni problem…",
+      "byline": "Generisano AI · tavily-research:auto",
+      "doneToast": "Istraživanje problema je sačuvano.",
+      "failedRetry": "Istraživanje problema nije uspelo — možete pokušati ponovo danas.",
+      "confidenceBadge": "pouzdanost: {{bucket}} · {{percent}}%",
+      "extractFocus": "Sažmi proveru dijagnoze, simptome, zahvaćene organe, relevantnost domaćina, uslove koji pogoduju problemu, praćenje, nehemijsku prevenciju, sanitaciju, kategorije tretmana i kada tražiti stručnu pomoć. Ne uključuj nazive proizvoda, aktivne materije, doze, mešanje ili raspored prskanja.",
+      "disclaimer": "Ovo je istraživački kontekst, a ne savet za tretman. Ne primenjujte regulisane hemikalije bez lokalnog stručnog saveta i poštovanja uputstava/propisâ.",
+      "quotaAvailable": "Istraživanja dostupna danas: iskorišćeno {{used}}/{{limit}}",
+      "quotaUsed": "Istraživanje iskorišćeno danas: {{used}}/{{limit}}. Vratite se sutra.",
+      "quotaRetry": "Poslednje istraživanje nije uspelo — ponovni pokušaj je dostupan danas.",
+      "quotaTooltip": "Imate jedno istraživanje slučaja biljke dnevno. Može se koristiti za istraživanje biljke, prihoda ili problema.",
+      "lowConfidence": "Pouzdanost dijagnoze je niska. Nalazi istraživanja zavise od toga da li je potvrđeni problem tačan.",
+      "unknownRelevance": "Relevantnost za biljku nije poznata. Proverite da li je ovaj problem moguć za potvrđenu biljku i lokaciju."
     }
   }
 }
