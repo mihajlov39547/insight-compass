@@ -386,3 +386,185 @@ export function rankIncomeResearchSources<T extends { url?: string | null }>(
     .sort((a, b) => b.authorityScore - a.authorityScore || a.index - b.index)
     .map(({ index: _index, ...rest }) => rest as T & { authorityScore: number });
 }
+
+// ---------------------------------------------------------------------------
+// Problem research (Diagnose problem cases)
+//
+// Problem research may cover safe, high-level treatment CATEGORIES (sanitation,
+// monitoring, cultural/mechanical controls, escalation to local professionals)
+// but never chemical specifics: product names, active ingredients, doses,
+// mixing rates, application rates, or spray schedules. It must also never
+// promise a cure.
+// ---------------------------------------------------------------------------
+
+export interface ProblemResearchContext {
+  problemType?: string | null;
+  provider?: string | null;
+  confidenceScore?: number | null;
+  confidenceBucket?: string | null;
+  plantRelevance?: string | null;
+  plantRelevanceReason?: string | null;
+  affectedOrgans?: string[] | null;
+  location?: string | null;
+  cropContext?: string | null;
+  notes?: string | null;
+}
+
+/** Build the Tavily Research input for a Diagnose problem plant case. */
+export function buildProblemResearchInput(
+  problemName: string | null | undefined,
+  scientificProblemName: string | null | undefined,
+  plantCommonName: string | null | undefined,
+  plantScientificName: string | null | undefined,
+  lang: 'en' | 'sr',
+  ctx: ProblemResearchContext = {},
+): string {
+  const problem = problemName?.trim() || scientificProblemName?.trim() || '';
+  const problemSci =
+    scientificProblemName?.trim() && scientificProblemName.trim() !== problem
+      ? scientificProblemName.trim()
+      : '';
+  const plantCommon = plantCommonName?.trim() || plantScientificName?.trim() || '';
+  const plantSci = plantScientificName?.trim() || plantCommon;
+  const organs = (ctx.affectedOrgans ?? []).filter(Boolean).join(', ');
+
+  if (lang === 'sr') {
+    const extra = [
+      ctx.problemType ? `Tip problema: ${ctx.problemType}.` : '',
+      ctx.provider ? `Izvor kandidata: ${ctx.provider}.` : '',
+      typeof ctx.confidenceScore === 'number'
+        ? `Pouzdanost: ${Math.round(ctx.confidenceScore * 100)}%${ctx.confidenceBucket ? ` (${ctx.confidenceBucket})` : ''}.`
+        : ctx.confidenceBucket
+          ? `Pouzdanost: ${ctx.confidenceBucket}.`
+          : '',
+      ctx.plantRelevance ? `Relevantnost za biljku: ${ctx.plantRelevance}.` : '',
+      ctx.plantRelevanceReason ? `Napomena o relevantnosti: ${ctx.plantRelevanceReason}.` : '',
+      organs ? `Zahvaćeni organi: ${organs}.` : '',
+      ctx.location ? `Lokacija: ${ctx.location}.` : '',
+      ctx.cropContext ? `Kontekst gajenja: ${ctx.cropContext}.` : '',
+      ctx.notes ? `Napomene korisnika: ${ctx.notes}.` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    return `Istraži potvrđeni problem biljke ${problem}${problemSci ? ` (${problemSci})` : ''} u vezi sa potvrđenom biljkom ${plantCommon} (${plantSci}). Fokusiraj se na proveru dijagnoze, tipične simptome, zahvaćene organe, relevantnost za biljku domaćina, životni ciklus ili uzročne faktore, uslove koji pogoduju problemu, nehemijsku prevenciju, sanitaciju, praćenje, agrotehničke mere, mehaničke/fizičke mere, biološke ili niskorizične opcije kada su potkrepljene izvorima, kada tražiti lokalnu stručnu pomoć i koje kategorije tretmana mogu doći u obzir. Ne navodi nazive pesticida, fungicida, herbicida, preporuke aktivnih materija, doze, mešanje, raspored prskanja ili hemijska uputstva za primenu. Ako izvori pominju hemijsku kontrolu, sažmi samo na visokom nivou kao: “regulisane hemijske opcije mogu postojati; konsultujte lokalnu savetodavnu službu ili licencirane stručnjake.” Ne predstavljaj tretman kao garantovan. Ako je pouzdanost dijagnoze niska ili je relevantnost za biljku nepoznata, jasno navedi da su smernice privremene i zahtevaju lokalnu proveru.${extra ? ` ${extra}` : ''} Prioritet daj univerzitetskim savetodavnim službama, državnim poljoprivrednim institucijama, izvorima o integralnoj zaštiti bilja (IPM), institutima za fitopatologiju i entomologiju, EPPO, CABI, USDA, FAO i nacionalnim organizacijama za zaštitu bilja; izbegavaj opšte blogove, SEO baštenske stranice, prodajne stranice, forume, društvene mreže i video sadržaj osim ako ne postoji bolji izvor. Struktuiraj odgovor tačno ovim naslovima: 1. Kratak pregled problema, 2. Pouzdanost dijagnoze i ograničenja dokaza, 3. Potvrđena biljka i relevantnost domaćina, 4. Simptomi i zahvaćeni organi, 5. Životni ciklus ili uzročni faktori, 6. Uslovi koji pogoduju problemu, 7. Praćenje i koraci za proveru, 8. Nehemijska prevencija i sanitacija, 9. Kategorije tretmana i eskalacija, 10. Kada tražiti lokalnu stručnu pomoć, 11. Nedostaci u dostupnim podacima. Počni odgovor direktno naslovom izveštaja — bez ponavljanja pitanja, zadatka ili napomena o jeziku i formatu.`;
+  }
+
+  const extra = [
+    ctx.problemType ? `Problem type: ${ctx.problemType}.` : '',
+    ctx.provider ? `Candidate provider: ${ctx.provider}.` : '',
+    typeof ctx.confidenceScore === 'number'
+      ? `Confidence: ${Math.round(ctx.confidenceScore * 100)}%${ctx.confidenceBucket ? ` (${ctx.confidenceBucket})` : ''}.`
+      : ctx.confidenceBucket
+        ? `Confidence: ${ctx.confidenceBucket}.`
+        : '',
+    ctx.plantRelevance ? `Plant relevance: ${ctx.plantRelevance}.` : '',
+    ctx.plantRelevanceReason ? `Relevance note: ${ctx.plantRelevanceReason}.` : '',
+    organs ? `Affected organs: ${organs}.` : '',
+    ctx.location ? `Location: ${ctx.location}.` : '',
+    ctx.cropContext ? `Crop context: ${ctx.cropContext}.` : '',
+    ctx.notes ? `User notes: ${ctx.notes}.` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  return `Research the confirmed plant problem ${problem}${problemSci ? ` (${problemSci})` : ''} in relation to the confirmed plant ${plantCommon} (${plantSci}). Focus on diagnosis verification, typical symptoms, affected organs, host relevance, life cycle or causal factors, conditions that favor the problem, non-chemical prevention, sanitation, monitoring, cultural controls, mechanical/physical controls, biological or low-risk options where supported, when to seek local expert help, and what treatment categories may be considered. Do not provide pesticide/fungicide/herbicide product names, active ingredient recommendations, doses, mixing rates, spray schedules, or chemical application instructions. If chemical control is commonly discussed by sources, summarize only at a high level as “regulated chemical options may exist; consult local extension or licensed professionals.” Do not present treatment as guaranteed. If diagnosis confidence is low or plant relevance is unknown, state that recommendations are provisional and require local confirmation.${extra ? ` ${extra}` : ''} Prioritize university extension services, government agriculture agencies, integrated pest management (IPM) programs, plant pathology and entomology institutions, EPPO, CABI, USDA, FAO, national plant protection organizations, and reputable horticulture/agronomy institutes; avoid generic blogs, SEO gardening pages, ecommerce or pesticide sales pages, forums, social media, and video pages unless no better source exists. Structure the report with exactly these sections: 1. Problem summary, 2. Diagnosis confidence and evidence limits, 3. Confirmed plant and host relevance, 4. Symptoms and affected organs, 5. Life cycle or causal factors, 6. Conditions that favor the problem, 7. Monitoring and verification steps, 8. Non-chemical prevention and sanitation, 9. Treatment categories and escalation, 10. When to seek local expert help, 11. Evidence gaps. Start the answer directly with the report title — do not restate the question, the task, or notes about language or formatting.`;
+}
+
+/** Chemical specifics and guaranteed-cure claims that must never be shown. */
+const CHEMICAL_SPECIFIC_PATTERNS: RegExp[] = [
+  /\b(active ingredient|a\.i\.)\b/i,
+  /\baktivn\w*\s+(materij|sastoj)/i,
+  /\b(application rate|rate of application|norma primene|norma\s+trošenja)/i,
+  /\b(spray\s*(interval|schedule|program|timing)|raspored\s+prskanja|interval\s+prskanja)/i,
+  /\b(mix(ing)?\s*(rate|ratio)|tank\s*mix|mešanje\s+rastvora)/i,
+  /\b\d+(?:[.,]\d+)?\s?(?:%|ml|l|g|kg|oz|lb)\s*(?:\/|per|na)\s*(?:l|liter|litre|litar|ha|acre|gal|gallon|100\s?l|m2|m²)\b/i,
+  /\b(apply|primeni|primenite|koristi(te)?)\b[^.]{0,60}\b(pesticid|fungicid|insekticid|herbicid|pesticide|fungicide|insecticide|herbicide)/i,
+  /\b(guaranteed|guarantees?)\s+(cure|control|eradicat|treatment)/i,
+  /\b(garantovan\w*)\s+(izlečenj|lečenj|kontrol|tretman|suzbijanj)/i,
+  /\bwill\s+(completely\s+)?(cure|eradicate)\b/i,
+  /\b(neem oil|copper fungicide|bordeaux|bordovska|sulfur spray|imidacloprid|carbaryl|spinosad|mancozeb|chlorothalonil|glyphosate|glifosat)\b/i,
+];
+
+/** Remove chemical specifics and guaranteed-cure claims line-by-line. */
+export function scrubChemicalSpecifics(markdown: string): string {
+  if (!markdown) return markdown;
+  return markdown
+    .split('\n')
+    .filter((line) => !(line.trim() && CHEMICAL_SPECIFIC_PATTERNS.some((re) => re.test(line))))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
+ * Post-processing for Problem research output.
+ *
+ * NOTE: unlike Identify/Income research, the broad `scrubTreatmentGuidance`
+ * section-dropping is intentionally NOT applied here — Diagnose research is
+ * allowed to discuss safe treatment CATEGORIES. Chemical specifics are removed
+ * by `scrubChemicalSpecifics` instead.
+ */
+export function polishProblemResearchAnswer(markdown: string): string {
+  return normalizeResearchCitations(
+    stripResearchPromptFraming(scrubChemicalSpecifics(markdown || '')),
+  );
+}
+
+const PROBLEM_AUTHORITY_TIERS: Array<{ score: number; patterns: RegExp[] }> = [
+  {
+    // University extension & IPM programs
+    score: 100,
+    patterns: [/extension\./i, /\bipm\b|ipm\./i, /(\.|^)edu(\.[a-z]{2})?$/i, /(\.|^)ac\.[a-z]{2}$/i, /\.uni-/i],
+  },
+  {
+    // Government agriculture, plant protection & intergovernmental bodies
+    score: 90,
+    patterns: [
+      /(\.|^)gov(\.[a-z]{2})?$/i,
+      /(\.|^)gov\./i,
+      /eppo\.int$|eppo\./i,
+      /cabi\.org$|cabidigitallibrary/i,
+      /usda\.gov$|aphis\.usda/i,
+      /fao\.org$/i,
+      /europa\.eu$|efsa\.europa/i,
+      /minpolj|zastitabilja|plantprotection|nppo/i,
+    ],
+  },
+  {
+    // Plant pathology / entomology / horticulture institutions & advisory bodies
+    score: 70,
+    patterns: [
+      /(^|\.)(apsnet|entsoc|rhs|ahdb|inrae|inra|wur|csiro|jki|adas)\./i,
+      /phytopath|patholog|entomolog|institut|research|horticultur|agronom/i,
+      /advisor|savetodav|agroservis/i,
+    ],
+  },
+];
+
+const PROBLEM_DOWNRANK_PATTERNS: RegExp[] = [
+  /youtube\.com$|youtu\.be$|vimeo\.com$|tiktok\.com$/i,
+  /pinterest\.|facebook\.com$|instagram\.com$|reddit\.com$|quora\.com$|forum/i,
+  /amazon\.|ebay\.|etsy\.|alibaba\.|shop|store|seeds?\.(com|net)$|nursery|pesticide|agrochem/i,
+  /blogspot\.|medium\.com$|wordpress\.com$/i,
+  /gardening|gardener|garden(?:ia|ing)?\w*\.(com|net)$/i,
+];
+
+/** 0–100 authority score for a problem-research source URL. */
+export function problemAuthorityScore(url: string): number {
+  const host = researchSourceDomain(url);
+  if (!host) return 10;
+  for (const tier of PROBLEM_AUTHORITY_TIERS) {
+    if (tier.patterns.some((re) => re.test(host))) return tier.score;
+  }
+  if (PROBLEM_DOWNRANK_PATTERNS.some((re) => re.test(host))) return 5;
+  return 30;
+}
+
+/** Sort problem-research sources so extension/government/IPM sources lead. */
+export function rankProblemResearchSources<T extends { url?: string | null }>(
+  sources: T[],
+): Array<T & { authorityScore: number }> {
+  return sources
+    .map((s, index) => ({ ...s, authorityScore: problemAuthorityScore(s.url ?? ''), index }))
+    .sort((a, b) => b.authorityScore - a.authorityScore || a.index - b.index)
+    .map(({ index: _index, ...rest }) => rest as T & { authorityScore: number });
+}
