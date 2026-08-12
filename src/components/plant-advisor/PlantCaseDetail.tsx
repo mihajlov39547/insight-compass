@@ -13,6 +13,7 @@ import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
 import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
 import { PlantIncomeResearchSection } from './PlantIncomeResearchSection';
 import { PlantResearchSection } from './PlantResearchSection';
+import { PlantProblemResearchSection } from './PlantProblemResearchSection';
 
 
 import { toast } from 'sonner';
@@ -108,6 +109,11 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
               {t('plantAdvisor.diagnoseFlow.step2Locked')}
             </div>
           )}
+
+          <PlantProblemResearchSection
+            plantCase={plantCase}
+            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+          />
         </>
       ) : plantCase.user_goal === 'improve_growth' ? (
         <>

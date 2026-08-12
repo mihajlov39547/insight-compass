@@ -22,7 +22,7 @@ export interface PlantChatMessageMetadata {
   model?: string | null;
   usedFallback?: boolean;
   usedGrowthGrounding?: boolean;
-  kind?: 'extract' | 'crawl' | 'research' | 'income_research' | null;
+  kind?: 'extract' | 'crawl' | 'research' | 'income_research' | 'problem_research' | null;
   sourcesUsed?: PlantChatUsedSource[];
   responseLanguage?: string | null;
   /** Older research answers replaced by a newer run are hidden from the UI. */

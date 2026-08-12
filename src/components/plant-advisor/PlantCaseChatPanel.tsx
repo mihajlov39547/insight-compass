@@ -217,6 +217,19 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     [persistedMessages],
   );
 
+  const hasProblemResearch = useMemo(
+    () =>
+      persistedMessages.some(
+        (m) =>
+          m.role === 'assistant' &&
+          (m.metadata?.kind === 'problem_research' ||
+            (m.metadata as Record<string, unknown> | undefined)?.researchType ===
+              'problem_research') &&
+          !m.metadata?.superseded,
+      ),
+    [persistedMessages],
+  );
+
   const introContent = useMemo(() => {
     if (isImproveGrowth) {
       const key = hasGrowthGrounding
@@ -236,8 +249,14 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
         : 'plantAdvisor.chat.intro.identify_no_research';
       return `${t('plantAdvisor.chat.intro.identify', { title: plantCase.title })}\n\n${t(key)}`;
     }
+    if (goal === 'diagnose') {
+      const key = hasProblemResearch
+        ? 'plantAdvisor.chat.intro.diagnose_with_research'
+        : 'plantAdvisor.chat.intro.diagnose_no_research';
+      return `${t('plantAdvisor.chat.intro.diagnose', { title: plantCase.title })}\n\n${t(key)}`;
+    }
     return t(cfg.introKey, { title: plantCase.title });
-  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding, goal, hasIncomeResearch, isIdentify, hasPlantResearch]);
+  }, [t, cfg.introKey, plantCase.title, isImproveGrowth, hasGrowthGrounding, goal, hasIncomeResearch, isIdentify, hasPlantResearch, hasProblemResearch]);
 
 
   // Plant Advisor identification language drives AI-generated source summaries.
@@ -264,7 +283,10 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
     // Research answers (plant + income) are dashboard/pinned artifacts and are
     // never mixed into the chat flow.
     const conversation = persistedMessages.filter(
-      (m) => m.metadata?.kind !== 'research' && m.metadata?.kind !== 'income_research',
+      (m) =>
+        m.metadata?.kind !== 'research' &&
+        m.metadata?.kind !== 'income_research' &&
+        m.metadata?.kind !== 'problem_research',
     );
     if (conversation.length > 0) {
 

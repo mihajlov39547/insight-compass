@@ -84,15 +84,29 @@ serve(async (req) => {
 
   const action = typeof body.action === "string" ? body.action : "";
 
-  // Which Plant Advisor research flow this run belongs to. Both share one daily
-  // quota; the type decides the required case goal and the pinned message kind.
+  // Which Plant Advisor research flow this run belongs to. All types share one
+  // daily quota; the type decides the required case goal and the pinned message
+  // kind, plus whether a confirmed diagnosis is also required.
   const RESEARCH_TYPES = {
-    plant_research: { goal: "identify", messageKind: "research" },
-    income_research: { goal: "increase_income", messageKind: "income_research" },
+    plant_research: { goal: "identify", messageKind: "research", needsDiagnosis: false },
+    income_research: {
+      goal: "increase_income",
+      messageKind: "income_research",
+      needsDiagnosis: false,
+    },
+    problem_research: {
+      goal: "diagnose",
+      messageKind: "problem_research",
+      needsDiagnosis: true,
+    },
   } as const;
   type ResearchTypeKey = keyof typeof RESEARCH_TYPES;
   const researchType: ResearchTypeKey =
-    body.researchType === "income_research" ? "income_research" : "plant_research";
+    body.researchType === "income_research"
+      ? "income_research"
+      : body.researchType === "problem_research"
+        ? "problem_research"
+        : "plant_research";
   const researchConfig = RESEARCH_TYPES[researchType];
 
   // -------------------------------------------------------------------------
@@ -122,6 +136,21 @@ serve(async (req) => {
       .limit(1);
     if (identErr) return json({ error: identErr.message }, 500);
     if (!confirmed || confirmed.length === 0) return json({ error: "needs_confirmed_plant" }, 409);
+
+    // Problem research is grounded in the CONFIRMED diagnosis only.
+    if (researchConfig.needsDiagnosis) {
+      const { data: confirmedDiag, error: diagErr } = await admin
+        .from("plant_diagnoses")
+        .select("id")
+        .eq("case_id", caseId)
+        .eq("is_confirmed", true)
+        .limit(1);
+      if (diagErr) return json({ error: diagErr.message }, 500);
+      if (!confirmedDiag || confirmedDiag.length === 0) {
+        return json({ error: "needs_confirmed_diagnosis" }, 409);
+      }
+    }
+
 
     // Release runs abandoned mid-flight (browser closed, network drop).
     const staleBefore = new Date(Date.now() - STALE_RUN_MINUTES * 60_000).toISOString();
