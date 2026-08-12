@@ -763,7 +763,26 @@ Formatting:
         const tp = trefleSource();
         if (tp) collected.push(tp);
       } else if (goal === 'diagnose') {
-        // Confirmed plant context first, then problem candidates.
+        // Problem Research (dashboard artifact) leads for problem / prevention /
+        // treatment-category questions; then confirmed plant, then candidates.
+        const PROBLEM_RE =
+          /problem|disease|pest|symptom|sign|treat|control|manage|prevent|sanitat|monitor|spread|infest|infect|damage|host|cure|bolest|stetoc|štetoč|simptom|znak|tretman|kontrol|suzbij|prevenc|sanitac|prati|širenj|sirenj|zaraz|štet|stet|domacin|domaćin/i;
+        if (problemResearchSources.length > 0 && (PROBLEM_RE.test(question) || !question.trim())) {
+          for (const s of problemResearchSources.slice(0, 8)) {
+            if (!s?.title && !s?.url) continue;
+            collected.push({
+              id: s.id ?? `problem-research-${collected.length}`,
+              provider: 'tavily-research',
+              title: s.title ?? s.url,
+              url: s.url ?? null,
+              domain: s.domain ?? null,
+              score: typeof s.score === 'number' ? s.score : null,
+              sourceType: 'problem_research',
+              authorityScore: s.authorityScore ?? null,
+              snippet: s.snippet ?? null,
+            } as UsedSource);
+          }
+        }
         if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 3));
         collected.push(...diagnosisSources());
         const tp = trefleSource();
