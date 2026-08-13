@@ -131,7 +131,10 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
         messageId: m.id,
         updatedAt: m.updated_at || m.created_at,
         sourceCount: Array.isArray(m.metadata?.sourcesUsed) ? m.metadata!.sourcesUsed!.length : 0,
-        previewBullets: deriveResearchPreview(m.content),
+        previewBullets:
+          kind === 'problem_research'
+            ? deriveProblemResearchPreview(m.content)
+            : deriveResearchPreview(m.content),
       };
     }
     return byKind;
