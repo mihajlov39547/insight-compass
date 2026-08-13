@@ -2582,6 +2582,24 @@
         "ctxInterpretation": "AI interpretation",
         "ctxGrowth": "growth guidance",
         "ctxResearch": "research"
+      },
+      "diag": {
+        "aiTriage": "AI triage",
+        "viewFullTriage": "View full AI triage",
+        "triageDetails": "AI triage details",
+        "providerCandidates": "Provider candidates",
+        "showCandidates": "Show provider candidates",
+        "showAllCandidates": "Show all candidates",
+        "candidatesAvailable": "{{count}} candidates available",
+        "confirmedDetails": "Confirmed diagnosis details",
+        "chipLowConfidence": "Low confidence",
+        "chipUnknownFit": "Unknown fit",
+        "researchReady": "Problem research is ready.",
+        "researchMissing": "Run Problem Research below.",
+        "considerAlternative": "Consider confirming a more relevant candidate before using problem research.",
+        "previewFallback1": "Verify the problem before acting because confidence is low.",
+        "previewFallback2": "Check symptoms and affected organs against the confirmed plant.",
+        "previewFallback3": "Use non-chemical prevention, monitoring, and local expert confirmation first."
       }
     }
   }

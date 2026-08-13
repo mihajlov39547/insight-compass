@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { useDeletePlantCase, type PlantCase } from '@/hooks/usePlantCases';
 import { PlantImageUploader } from './PlantImageUploader';
 import { PlantIdentificationSection } from './PlantIdentificationSection';
-import { PlantDiseaseDiagnosisSection } from './PlantDiseaseDiagnosisSection';
+import { PlantDiagnosisDashboardContent } from './dashboard/PlantDiagnosisDashboardContent';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
 import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
@@ -53,7 +53,16 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const expand = t('plantAdvisor.dashboard.expand');
   const collapse = t('plantAdvisor.dashboard.collapse');
 
-  const researchSectionProps = (artifact: ResearchArtifactSummary | null) => ({
+  const problemResearchFallback = [
+    t('plantAdvisor.dashboard.diag.previewFallback1'),
+    t('plantAdvisor.dashboard.diag.previewFallback2'),
+    t('plantAdvisor.dashboard.diag.previewFallback3'),
+  ];
+
+  const researchSectionProps = (
+    artifact: ResearchArtifactSummary | null,
+    fallbackPreview?: string[],
+  ) => ({
     statusLabel: artifact
       ? t('plantAdvisor.dashboard.researchReady')
       : t('plantAdvisor.dashboard.researchNotRun'),
@@ -64,11 +73,16 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           date: format(new Date(artifact.updatedAt), 'PP'),
         })
       : undefined,
-    preview: artifact?.previewBullets,
+    preview: artifact
+      ? artifact.previewBullets.length > 0
+        ? artifact.previewBullets
+        : fallbackPreview
+      : undefined,
     expandLabel: t('plantAdvisor.dashboard.sections.researchExpand'),
     collapseLabel: collapse,
     defaultOpen: false,
   });
+
 
   const identificationSection = (
     <PlantDashboardSection
@@ -216,16 +230,16 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             }
             expandLabel={expand}
             collapseLabel={collapse}
-            defaultOpen={!!plantCase.confirmed_identification_id && !data.hasConfirmedDiag}
+            defaultOpen={false}
           >
             {plantCase.confirmed_identification_id ? (
-              <div className={EMBED}>
-                <PlantDiseaseDiagnosisSection
-                  caseId={plantCase.id}
-                  images={images}
-                  hasConfirmedIdentification={true}
-                />
-              </div>
+              <PlantDiagnosisDashboardContent
+                caseId={plantCase.id}
+                images={images}
+                hasConfirmedIdentification={true}
+                problemResearchReady={!!data.research.problem_research}
+                whatToCheckNext={data.whatToCheckNext}
+              />
             ) : (
               <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
                 {t('plantAdvisor.diagnoseFlow.step2Locked')}
@@ -236,7 +250,10 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           <PlantDashboardSection
             icon={<Telescope className="h-4 w-4" />}
             title={t('plantAdvisor.problemResearch.title')}
-            {...researchSectionProps(data.research.problem_research ?? null)}
+            {...researchSectionProps(
+              data.research.problem_research ?? null,
+              problemResearchFallback,
+            )}
           >
             <div className={EMBED}>
               <PlantProblemResearchSection
