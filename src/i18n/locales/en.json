@@ -2499,6 +2499,90 @@
       "quotaTooltip": "You have one Plant Case Research run per day. It can be used for plant research, income research, or problem research.",
       "lowConfidence": "Diagnosis confidence is low. Research findings depend on the confirmed problem being correct.",
       "unknownRelevance": "Plant relevance is unknown. Verify that this problem is plausible for the confirmed plant and location."
+    },
+    "dashboard": {
+      "expand": "Show details",
+      "collapse": "Hide details",
+      "showMore": "Show more",
+      "showLess": "Show less",
+      "notConfirmed": "Not confirmed",
+      "notRun": "Not loaded",
+      "researchReady": "Research ready",
+      "researchNotRun": "Not run yet",
+      "relevance": {
+        "high": "Fits this plant",
+        "medium": "Partly fits",
+        "low": "Weak fit",
+        "unknown": "Unknown fit"
+      },
+      "status": {
+        "ready": "Ready",
+        "confirmed": "Confirmed",
+        "lowConfidence": "Low confidence",
+        "locked": "Locked"
+      },
+      "chips": {
+        "plant": "Plant",
+        "plantConfidence": "Plant confidence",
+        "problem": "Problem",
+        "diagnosisConfidence": "Diagnosis confidence",
+        "relevance": "Fit",
+        "research": "Research"
+      },
+      "facts": {
+        "plant": "Identified plant",
+        "plantEmpty": "No identification yet",
+        "problem": "Suspected problem",
+        "problemEmpty": "No diagnosis yet",
+        "profile": "Plant profile",
+        "profileEmpty": "No botanical profile yet",
+        "checkNext": "What to check next",
+        "checkNextEmpty": "Nothing flagged yet",
+        "research": "Research",
+        "researchEmpty": "No research run yet",
+        "researchMeta": "{{count}} sources · updated {{date}}"
+      },
+      "timeline": {
+        "aria": "Case progress",
+        "images": "Photos",
+        "identified": "Identified",
+        "diagnosed": "Diagnosed",
+        "growth": "Growth guidance",
+        "research": "Research",
+        "chat": "Chat"
+      },
+      "uncertainty": {
+        "headline": "Results are uncertain — treat them as a starting point",
+        "headlineBoth": "Both the plant and the problem are uncertain",
+        "lowIdent": "Plant identification confidence is low ({{percent}}%). Add clearer photos of leaves, stem, and whole plant.",
+        "lowDiagnosis": "Problem match confidence is low ({{percent}}%). Add close-ups of the affected area.",
+        "unknownRelevance": "The suggested problem may not apply to the confirmed plant."
+      },
+      "sections": {
+        "images": "Photos",
+        "imageCount": "{{count}} photo(s)",
+        "noImages": "No photos",
+        "imagesHelper": "Clear photos of leaves, stem, and the whole plant improve every result.",
+        "manageImages": "Manage photos",
+        "diagnosis": "Problem diagnosis",
+        "growth": "Growth guidance",
+        "growthHelper": "Care, watering, soil, and general pest awareness context.",
+        "altCount": "{{count}} alternative(s)",
+        "researchExpand": "Open research"
+      },
+      "cta": {
+        "ready": "Ask about this plant case",
+        "partial": "Ask about this plant case",
+        "askAnyway": "Ask anyway",
+        "willUse": "The chat will use: {{list}}.",
+        "noContext": "Add photos and confirm an identification for grounded answers.",
+        "ctxPlant": "confirmed plant",
+        "ctxDiagnosis": "confirmed problem",
+        "ctxProfile": "botanical profile",
+        "ctxInterpretation": "AI interpretation",
+        "ctxGrowth": "growth guidance",
+        "ctxResearch": "research"
+      }
     }
   }
 }
