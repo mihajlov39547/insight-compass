@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Bug, Eye, Leaf, Telescope, Sprout } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import type { PlantCaseDashboardData } from '@/hooks/usePlantCaseDashboard';
 
 interface Props {
