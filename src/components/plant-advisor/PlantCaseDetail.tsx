@@ -230,16 +230,16 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             }
             expandLabel={expand}
             collapseLabel={collapse}
-            defaultOpen={!!plantCase.confirmed_identification_id && !data.hasConfirmedDiag}
+            defaultOpen={false}
           >
             {plantCase.confirmed_identification_id ? (
-              <div className={EMBED}>
-                <PlantDiseaseDiagnosisSection
-                  caseId={plantCase.id}
-                  images={images}
-                  hasConfirmedIdentification={true}
-                />
-              </div>
+              <PlantDiagnosisDashboardContent
+                caseId={plantCase.id}
+                images={images}
+                hasConfirmedIdentification={true}
+                problemResearchReady={!!data.research.problem_research}
+                whatToCheckNext={data.whatToCheckNext}
+              />
             ) : (
               <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
                 {t('plantAdvisor.diagnoseFlow.step2Locked')}
@@ -250,7 +250,10 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           <PlantDashboardSection
             icon={<Telescope className="h-4 w-4" />}
             title={t('plantAdvisor.problemResearch.title')}
-            {...researchSectionProps(data.research.problem_research ?? null)}
+            {...researchSectionProps(
+              data.research.problem_research ?? null,
+              problemResearchFallback,
+            )}
           >
             <div className={EMBED}>
               <PlantProblemResearchSection
