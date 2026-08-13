@@ -17,6 +17,19 @@ export interface ResearchArtifactSummary {
   previewBullets: string[];
 }
 
+/** Rejects citation fragments, broken markdown and other unreadable snippets. */
+function isCleanPreviewLine(s: string): boolean {
+  if (s.length < 30) return false;
+  if (/^[\d\s,.;:%–—-]+$/.test(s)) return false; // "9,…" style citation fragments
+  if (/^(https?:\/\/|www\.)/i.test(s)) return false;
+  if (/^\[?\d+\]?[,.)]?\s*$/.test(s)) return false;
+  if (!/[a-zA-Z\u00C0-\u024F]{4,}/.test(s)) return false;
+  const letters = s.replace(/[^a-zA-Z\u00C0-\u024F]/g, '').length;
+  if (letters / s.length < 0.5) return false;
+  if (!/[.!?]$/.test(s) && s.split(/\s+/).length < 5) return false;
+  return true;
+}
+
 /** Pull up to 3 short preview bullets out of a long markdown research answer. */
 export function deriveResearchPreview(markdown: string | null | undefined): string[] {
   if (!markdown) return [];
@@ -25,15 +38,56 @@ export function deriveResearchPreview(markdown: string | null | undefined): stri
     .filter((l) => /^([-*•]|\d+[.)])\s+/.test(l))
     .map((l) => l.replace(/^([-*•]|\d+[.)])\s+/, ''))
     .map((l) => l.replace(/[*_`#>[\]]/g, '').trim())
-    .filter((l) => l.length > 20);
+    .filter(isCleanPreviewLine);
   if (bullets.length > 0) return bullets.slice(0, 3).map(truncate);
-  const paras = lines.filter((l) => l.length > 40 && !l.startsWith('#'));
-  return paras.slice(0, 2).map((p) => truncate(p.replace(/[*_`#>[\]]/g, '')));
+  const paras = lines
+    .filter((l) => !l.startsWith('#'))
+    .map((l) => l.replace(/[*_`#>[\]]/g, '').trim())
+    .filter((l) => l.length > 40 && isCleanPreviewLine(l));
+  return paras.slice(0, 2).map((p) => truncate(p));
+}
+
+const PROBLEM_PREVIEW_HINTS = [
+  /verif|confirm|potvrd|provere|proveri/i,
+  /host|relevance|fit|evidence|dokaz|domaćin|domacin/i,
+  /monitor|prevent|prat|prevenc|next step|korak/i,
+];
+
+/**
+ * Goal-aware preview for problem research: prefers verification, host relevance
+ * and safe next-step lines, with a deterministic non-chemical fallback.
+ */
+export function deriveProblemResearchPreview(
+  markdown: string | null | undefined,
+  fallback: string[] = [],
+): string[] {
+  const all = deriveResearchPreviewLines(markdown);
+  const picked: string[] = [];
+  for (const hint of PROBLEM_PREVIEW_HINTS) {
+    const hit = all.find((l) => hint.test(l) && !picked.includes(l));
+    if (hit) picked.push(hit);
+  }
+  for (const l of all) {
+    if (picked.length >= 3) break;
+    if (!picked.includes(l)) picked.push(l);
+  }
+  return picked.length > 0 ? picked.slice(0, 3).map((l) => truncate(l)) : fallback.slice(0, 3);
+}
+
+/** All clean candidate lines (bullets first, then paragraphs). */
+function deriveResearchPreviewLines(markdown: string | null | undefined): string[] {
+  if (!markdown) return [];
+  const lines = markdown.split(/\r?\n/).map((l) => l.trim());
+  const clean = (l: string) => l.replace(/^([-*•]|\d+[.)])\s+/, '').replace(/[*_`#>[\]]/g, '').trim();
+  const bullets = lines.filter((l) => /^([-*•]|\d+[.)])\s+/.test(l)).map(clean).filter(isCleanPreviewLine);
+  const paras = lines.filter((l) => !l.startsWith('#')).map(clean).filter(isCleanPreviewLine);
+  return [...bullets, ...paras];
 }
 
 function truncate(s: string, max = 180): string {
   return s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s;
 }
+
 
 function bucketOf(score: number | null | undefined): 'high' | 'medium' | 'low' {
   const v = score ?? 0;
