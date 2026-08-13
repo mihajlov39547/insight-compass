@@ -2515,6 +2515,90 @@
       "quotaTooltip": "Imate jedno istraživanje slučaja biljke dnevno. Može se koristiti za istraživanje biljke, prihoda ili problema.",
       "lowConfidence": "Pouzdanost dijagnoze je niska. Nalazi istraživanja zavise od toga da li je potvrđeni problem tačan.",
       "unknownRelevance": "Relevantnost za biljku nije poznata. Proverite da li je ovaj problem moguć za potvrđenu biljku i lokaciju."
+    },
+    "dashboard": {
+      "expand": "Prikaži detalje",
+      "collapse": "Sakrij detalje",
+      "showMore": "Prikaži više",
+      "showLess": "Prikaži manje",
+      "notConfirmed": "Nije potvrđeno",
+      "notRun": "Nije učitano",
+      "researchReady": "Istraživanje je spremno",
+      "researchNotRun": "Još nije pokrenuto",
+      "relevance": {
+        "high": "Odgovara ovoj biljci",
+        "medium": "Delimično odgovara",
+        "low": "Slabo odgovara",
+        "unknown": "Nepoznato poklapanje"
+      },
+      "status": {
+        "ready": "Spremno",
+        "confirmed": "Potvrđeno",
+        "lowConfidence": "Niska pouzdanost",
+        "locked": "Zaključano"
+      },
+      "chips": {
+        "plant": "Biljka",
+        "plantConfidence": "Pouzdanost biljke",
+        "problem": "Problem",
+        "diagnosisConfidence": "Pouzdanost dijagnoze",
+        "relevance": "Poklapanje",
+        "research": "Istraživanje"
+      },
+      "facts": {
+        "plant": "Identifikovana biljka",
+        "plantEmpty": "Još nema identifikacije",
+        "problem": "Pretpostavljeni problem",
+        "problemEmpty": "Još nema dijagnoze",
+        "profile": "Profil biljke",
+        "profileEmpty": "Još nema botaničkog profila",
+        "checkNext": "Šta dalje proveriti",
+        "checkNextEmpty": "Ništa još nije istaknuto",
+        "research": "Istraživanje",
+        "researchEmpty": "Istraživanje još nije pokrenuto",
+        "researchMeta": "{{count}} izvora · ažurirano {{date}}"
+      },
+      "timeline": {
+        "aria": "Napredak slučaja",
+        "images": "Fotografije",
+        "identified": "Identifikovano",
+        "diagnosed": "Dijagnostikovano",
+        "growth": "Smernice za rast",
+        "research": "Istraživanje",
+        "chat": "Razgovor"
+      },
+      "uncertainty": {
+        "headline": "Rezultati su nesigurni — koristite ih kao početnu tačku",
+        "headlineBoth": "I biljka i problem su nesigurni",
+        "lowIdent": "Pouzdanost identifikacije biljke je niska ({{percent}}%). Dodajte jasnije fotografije listova, stabla i cele biljke.",
+        "lowDiagnosis": "Pouzdanost poklapanja problema je niska ({{percent}}%). Dodajte krupne kadrove zahvaćenog dela.",
+        "unknownRelevance": "Predloženi problem možda ne odgovara potvrđenoj biljci."
+      },
+      "sections": {
+        "images": "Fotografije",
+        "imageCount": "{{count}} fotografija",
+        "noImages": "Nema fotografija",
+        "imagesHelper": "Jasne fotografije listova, stabla i cele biljke poboljšavaju sve rezultate.",
+        "manageImages": "Upravljaj fotografijama",
+        "diagnosis": "Dijagnoza problema",
+        "growth": "Smernice za rast",
+        "growthHelper": "Kontekst nege, zalivanja, zemljišta i opšte svesti o štetočinama.",
+        "altCount": "{{count}} alternativa",
+        "researchExpand": "Otvori istraživanje"
+      },
+      "cta": {
+        "ready": "Pitajte o ovom slučaju biljke",
+        "partial": "Pitajte o ovom slučaju biljke",
+        "askAnyway": "Ipak pitaj",
+        "willUse": "Razgovor će koristiti: {{list}}.",
+        "noContext": "Dodajte fotografije i potvrdite identifikaciju za utemeljene odgovore.",
+        "ctxPlant": "potvrđena biljka",
+        "ctxDiagnosis": "potvrđen problem",
+        "ctxProfile": "botanički profil",
+        "ctxInterpretation": "AI interpretacija",
+        "ctxGrowth": "smernice za rast",
+        "ctxResearch": "istraživanje"
+      }
     }
   }
 }
