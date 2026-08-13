@@ -223,11 +223,6 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
                       .join(' · ')
                   : t('plantAdvisor.dashboard.facts.problemEmpty')
             }
-            preview={
-              data.interpretation?.summary && !data.interpretation.summary.startsWith('#')
-                ? [data.interpretation.summary.slice(0, 220)]
-                : undefined
-            }
             expandLabel={expand}
             collapseLabel={collapse}
             defaultOpen={false}
