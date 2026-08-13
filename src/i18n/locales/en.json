@@ -2585,6 +2585,7 @@
       },
       "diag": {
         "aiTriage": "AI triage",
+        "aiTriageAvailable": "AI triage available",
         "viewFullTriage": "View full AI triage",
         "triageDetails": "AI triage details",
         "providerCandidates": "Provider candidates",
