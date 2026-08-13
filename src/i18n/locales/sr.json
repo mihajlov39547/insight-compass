@@ -2598,6 +2598,24 @@
         "ctxInterpretation": "AI interpretacija",
         "ctxGrowth": "smernice za rast",
         "ctxResearch": "istraživanje"
+      },
+      "diag": {
+        "aiTriage": "AI trijaža",
+        "viewFullTriage": "Prikaži punu AI trijažu",
+        "triageDetails": "Detalji AI trijaže",
+        "providerCandidates": "Kandidati provajdera",
+        "showCandidates": "Prikaži kandidate provajdera",
+        "showAllCandidates": "Prikaži sve kandidate",
+        "candidatesAvailable": "Dostupno kandidata: {{count}}",
+        "confirmedDetails": "Detalji potvrđene dijagnoze",
+        "chipLowConfidence": "Niska pouzdanost",
+        "chipUnknownFit": "Nepoznato poklapanje",
+        "researchReady": "Istraživanje problema je spremno.",
+        "researchMissing": "Pokrenite Istraživanje problema ispod.",
+        "considerAlternative": "Razmotrite potvrđivanje relevantnijeg kandidata pre istraživanja problema.",
+        "previewFallback1": "Proverite problem pre delovanja jer je pouzdanost niska.",
+        "previewFallback2": "Uporedite simptome i zahvaćene organe sa potvrđenom biljkom.",
+        "previewFallback3": "Prvo koristite nehemijsku prevenciju, praćenje i potvrdu lokalnog stručnjaka."
       }
     }
   }
