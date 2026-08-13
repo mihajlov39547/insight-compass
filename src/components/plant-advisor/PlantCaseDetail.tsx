@@ -1,8 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, MessageSquare, Trash2, Pencil, Leaf } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Bug, Images, Leaf, Sparkles, Sprout, Telescope } from 'lucide-react';
 import { format } from 'date-fns';
 import { useDeletePlantCase, type PlantCase } from '@/hooks/usePlantCases';
 import { PlantImageUploader } from './PlantImageUploader';
@@ -14,7 +12,13 @@ import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
 import { PlantIncomeResearchSection } from './PlantIncomeResearchSection';
 import { PlantResearchSection } from './PlantResearchSection';
 import { PlantProblemResearchSection } from './PlantProblemResearchSection';
-
+import { PlantCaseHero } from './dashboard/PlantCaseHero';
+import { PlantCaseUncertaintyBanner } from './dashboard/PlantCaseUncertaintyBanner';
+import { PlantCaseKeyFacts } from './dashboard/PlantCaseKeyFacts';
+import { PlantCaseProgressTimeline } from './dashboard/PlantCaseProgressTimeline';
+import { PlantCaseChatCta } from './dashboard/PlantCaseChatCta';
+import { PlantDashboardSection } from './dashboard/PlantDashboardSection';
+import { usePlantCaseDashboard, type ResearchArtifactSummary } from '@/hooks/usePlantCaseDashboard';
 
 import { toast } from 'sonner';
 
@@ -26,10 +30,14 @@ interface Props {
   onDeleted: () => void;
 }
 
+/** Strips the nested card chrome of legacy sections embedded in the new shells. */
+const EMBED = '[&>*]:border-0 [&>*]:bg-transparent [&>*]:p-0 [&>*]:shadow-none';
+
 export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDeleted }: Props) {
   const { t } = useTranslation();
   const del = useDeletePlantCase();
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
+  const data = usePlantCaseDashboard(plantCase);
 
   const handleDelete = async () => {
     if (!confirm(t('plantAdvisor.confirmDelete'))) return;
@@ -42,129 +50,289 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
     }
   };
 
+  const expand = t('plantAdvisor.dashboard.expand');
+  const collapse = t('plantAdvisor.dashboard.collapse');
+
+  const researchSectionProps = (artifact: ResearchArtifactSummary | null) => ({
+    statusLabel: artifact
+      ? t('plantAdvisor.dashboard.researchReady')
+      : t('plantAdvisor.dashboard.researchNotRun'),
+    statusTone: (artifact ? 'ready' : 'pending') as 'ready' | 'pending',
+    summary: artifact
+      ? t('plantAdvisor.dashboard.facts.researchMeta', {
+          count: artifact.sourceCount,
+          date: format(new Date(artifact.updatedAt), 'PP'),
+        })
+      : undefined,
+    preview: artifact?.previewBullets,
+    expandLabel: t('plantAdvisor.dashboard.sections.researchExpand'),
+    collapseLabel: collapse,
+    defaultOpen: false,
+  });
+
+  const identificationSection = (
+    <PlantDashboardSection
+      icon={<Sparkles className="h-4 w-4" />}
+      title={t('plantAdvisor.identify.sectionTitle')}
+      statusLabel={
+        data.hasConfirmedIdent
+          ? data.lowIdentConfidence
+            ? t('plantAdvisor.dashboard.status.lowConfidence')
+            : t('plantAdvisor.dashboard.status.confirmed')
+          : t('plantAdvisor.dashboard.notConfirmed')
+      }
+      statusTone={
+        data.hasConfirmedIdent ? (data.lowIdentConfidence ? 'warning' : 'ready') : 'pending'
+      }
+      summary={
+        data.topIdent
+          ? [
+              data.topIdent.common_name ||
+                data.topIdent.scientific_name_without_author ||
+                data.topIdent.scientific_name,
+              data.identBucket ? t(`plantAdvisor.identify.confidence.${data.identBucket}`) : null,
+              data.alternativesCount > 0
+                ? t('plantAdvisor.dashboard.sections.altCount', { count: data.alternativesCount })
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          : t('plantAdvisor.dashboard.facts.plantEmpty')
+      }
+      expandLabel={expand}
+      collapseLabel={collapse}
+      defaultOpen={!data.hasConfirmedIdent}
+    >
+      <div className={EMBED}>
+        <PlantIdentificationSection caseId={plantCase.id} images={images} />
+      </div>
+    </PlantDashboardSection>
+  );
+
+  const profileSection = (
+    <PlantDashboardSection
+      icon={<Sprout className="h-4 w-4" />}
+      title={t('plantAdvisor.trefle.sectionTitle', 'Plant profile')}
+      statusLabel={
+        data.profile ? t('plantAdvisor.dashboard.status.ready') : t('plantAdvisor.dashboard.notRun')
+      }
+      statusTone={data.profile ? 'ready' : 'pending'}
+      summary={
+        data.profile
+          ? [data.profile.scientific_name, data.profile.family, data.profile.genus, data.profile.rank]
+              .filter(Boolean)
+              .join(' · ')
+          : t('plantAdvisor.dashboard.facts.profileEmpty')
+      }
+      expandLabel={expand}
+      collapseLabel={collapse}
+    >
+      <div className={EMBED}>
+        <PlantSpeciesProfileSection
+          caseId={plantCase.id}
+          hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+        />
+      </div>
+    </PlantDashboardSection>
+  );
+
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="h-4 w-4" /></Button>
-        <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center">
-          <Leaf className="h-4 w-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-semibold truncate">{plantCase.title}</h2>
-          <p className="text-xs text-muted-foreground">{format(new Date(plantCase.created_at), 'PP')}</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={onEdit}><Pencil className="h-4 w-4 mr-1.5" />{t('common.edit', 'Edit')}</Button>
-        <Button variant="ghost" size="sm" onClick={handleDelete} className="text-destructive"><Trash2 className="h-4 w-4 mr-1.5" />{t('common.delete', 'Delete')}</Button>
-      </div>
+    <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-5">
+      <PlantCaseHero
+        plantCase={plantCase}
+        data={data}
+        onBack={onBack}
+        onEdit={onEdit}
+        onDelete={handleDelete}
+        onOpenChat={onOpenChat}
+      />
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <Badge variant="secondary">{t(`plantAdvisor.statuses.${plantCase.status}`)}</Badge>
-        {plantCase.user_goal && <Badge variant="outline">{t(`plantAdvisor.goals.${plantCase.user_goal}`)}</Badge>}
-      </div>
+      <PlantCaseUncertaintyBanner data={data} />
+      <PlantCaseKeyFacts data={data} />
+      <PlantCaseProgressTimeline data={data} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-        <div>
-          <div className="text-xs text-muted-foreground">{t('plantAdvisor.fields.location')}</div>
-          <div>{plantCase.location_text || '—'}</div>
+      <PlantDashboardSection
+        icon={<Images className="h-4 w-4" />}
+        title={t('plantAdvisor.dashboard.sections.images')}
+        statusLabel={
+          images.length > 0
+            ? t('plantAdvisor.dashboard.sections.imageCount', { count: images.length })
+            : t('plantAdvisor.dashboard.sections.noImages')
+        }
+        statusTone={images.length > 0 ? 'ready' : 'pending'}
+        summary={t('plantAdvisor.dashboard.sections.imagesHelper')}
+        expandLabel={t('plantAdvisor.dashboard.sections.manageImages')}
+        collapseLabel={collapse}
+        defaultOpen={images.length === 0}
+      >
+        <div className={EMBED}>
+          <PlantImageUploader caseId={plantCase.id} />
         </div>
-        <div>
-          <div className="text-xs text-muted-foreground">{t('plantAdvisor.fields.crop')}</div>
-          <div>{plantCase.crop_context || '—'}</div>
-        </div>
-        <div className="sm:col-span-2">
-          <div className="text-xs text-muted-foreground">{t('plantAdvisor.fields.notes')}</div>
-          <div className="whitespace-pre-wrap">{plantCase.notes || '—'}</div>
-        </div>
-      </div>
-
-      <PlantImageUploader caseId={plantCase.id} />
+      </PlantDashboardSection>
 
       {plantCase.user_goal === 'diagnose' ? (
         <>
-          <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{t('plantAdvisor.diagnoseFlow.step1')}</span>
-            {' — '}
-            {t('plantAdvisor.diagnoseFlow.identifyFirst')}
-          </div>
-          <PlantIdentificationSection caseId={plantCase.id} images={images} />
+          {identificationSection}
+          {profileSection}
 
-          <PlantSpeciesProfileSection
-            caseId={plantCase.id}
-            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-          />
+          <PlantDashboardSection
+            icon={<Bug className="h-4 w-4" />}
+            title={t('plantAdvisor.dashboard.sections.diagnosis')}
+            statusLabel={
+              !plantCase.confirmed_identification_id
+                ? t('plantAdvisor.dashboard.status.locked')
+                : data.hasConfirmedDiag
+                  ? data.lowDiagConfidence || data.unknownRelevance
+                    ? t('plantAdvisor.dashboard.status.lowConfidence')
+                    : t('plantAdvisor.dashboard.status.confirmed')
+                  : t('plantAdvisor.dashboard.notConfirmed')
+            }
+            statusTone={
+              !plantCase.confirmed_identification_id
+                ? 'pending'
+                : data.hasConfirmedDiag
+                  ? data.lowDiagConfidence || data.unknownRelevance
+                    ? 'warning'
+                    : 'ready'
+                  : 'pending'
+            }
+            summary={
+              !plantCase.confirmed_identification_id
+                ? t('plantAdvisor.diagnoseFlow.step2Locked')
+                : data.topDiag
+                  ? [
+                      data.topDiag.name,
+                      data.topDiag.problem_type,
+                      t(`plantAdvisor.dashboard.relevance.${data.relevance}`),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')
+                  : t('plantAdvisor.dashboard.facts.problemEmpty')
+            }
+            preview={
+              data.interpretation?.summary && !data.interpretation.summary.startsWith('#')
+                ? [data.interpretation.summary.slice(0, 220)]
+                : undefined
+            }
+            expandLabel={expand}
+            collapseLabel={collapse}
+            defaultOpen={!!plantCase.confirmed_identification_id && !data.hasConfirmedDiag}
+          >
+            {plantCase.confirmed_identification_id ? (
+              <div className={EMBED}>
+                <PlantDiseaseDiagnosisSection
+                  caseId={plantCase.id}
+                  images={images}
+                  hasConfirmedIdentification={true}
+                />
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+                {t('plantAdvisor.diagnoseFlow.step2Locked')}
+              </div>
+            )}
+          </PlantDashboardSection>
 
-          <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{t('plantAdvisor.diagnoseFlow.step2')}</span>
-            {' — '}
-            {t('plantAdvisor.diagnoseFlow.diagnoseDisease')}
-          </div>
-          {plantCase.confirmed_identification_id ? (
-            <PlantDiseaseDiagnosisSection
-              caseId={plantCase.id}
-              images={images}
-              hasConfirmedIdentification={true}
-            />
-          ) : (
-            <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-              {t('plantAdvisor.diagnoseFlow.step2Locked')}
-            </div>
-          )}
-
-          <PlantProblemResearchSection
-            plantCase={plantCase}
-            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-          />
-        </>
-      ) : plantCase.user_goal === 'improve_growth' ? (
-        <>
-          <PlantIdentificationSection caseId={plantCase.id} images={images} />
-          <PlantSpeciesProfileSection
-            caseId={plantCase.id}
-            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-          />
-          <PlantGrowthGuidanceSection
-            caseId={plantCase.id}
-            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-          />
-        </>
-      ) : (
-        <>
-          <PlantIdentificationSection caseId={plantCase.id} images={images} />
-          <PlantSpeciesProfileSection
-            caseId={plantCase.id}
-            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-          />
-          {plantCase.user_goal === 'identify' && (
-            <>
-              <PlantGrowthGuidanceSection
-                caseId={plantCase.id}
-                hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-                helperKey="plantAdvisor.growth.helperIdentify"
-              />
-              <PlantResearchSection
+          <PlantDashboardSection
+            icon={<Telescope className="h-4 w-4" />}
+            title={t('plantAdvisor.problemResearch.title')}
+            {...researchSectionProps(data.research.problem_research ?? null)}
+          >
+            <div className={EMBED}>
+              <PlantProblemResearchSection
                 plantCase={plantCase}
                 hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
               />
+            </div>
+          </PlantDashboardSection>
+        </>
+      ) : plantCase.user_goal === 'improve_growth' ? (
+        <>
+          {identificationSection}
+          {profileSection}
+          <PlantDashboardSection
+            icon={<Leaf className="h-4 w-4" />}
+            title={t('plantAdvisor.dashboard.sections.growth')}
+            statusLabel={
+              data.grounding
+                ? t('plantAdvisor.dashboard.status.ready')
+                : t('plantAdvisor.dashboard.notRun')
+            }
+            statusTone={data.grounding ? 'ready' : 'pending'}
+            summary={t('plantAdvisor.dashboard.sections.growthHelper')}
+            expandLabel={expand}
+            collapseLabel={collapse}
+            defaultOpen={!data.grounding}
+          >
+            <div className={EMBED}>
+              <PlantGrowthGuidanceSection
+                caseId={plantCase.id}
+                hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+              />
+            </div>
+          </PlantDashboardSection>
+        </>
+      ) : (
+        <>
+          {identificationSection}
+          {profileSection}
+          {plantCase.user_goal === 'identify' && (
+            <>
+              <PlantDashboardSection
+                icon={<Leaf className="h-4 w-4" />}
+                title={t('plantAdvisor.dashboard.sections.growth')}
+                statusLabel={
+                  data.grounding
+                    ? t('plantAdvisor.dashboard.status.ready')
+                    : t('plantAdvisor.dashboard.notRun')
+                }
+                statusTone={data.grounding ? 'ready' : 'pending'}
+                summary={t('plantAdvisor.dashboard.sections.growthHelper')}
+                expandLabel={expand}
+                collapseLabel={collapse}
+              >
+                <div className={EMBED}>
+                  <PlantGrowthGuidanceSection
+                    caseId={plantCase.id}
+                    hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+                    helperKey="plantAdvisor.growth.helperIdentify"
+                  />
+                </div>
+              </PlantDashboardSection>
+
+              <PlantDashboardSection
+                icon={<Telescope className="h-4 w-4" />}
+                title={t('plantAdvisor.plantResearch.title')}
+                {...researchSectionProps(data.research.research ?? null)}
+              >
+                <div className={EMBED}>
+                  <PlantResearchSection
+                    plantCase={plantCase}
+                    hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+                  />
+                </div>
+              </PlantDashboardSection>
             </>
           )}
 
           {plantCase.user_goal === 'increase_income' && (
-            <PlantIncomeResearchSection
-              plantCase={plantCase}
-              hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-            />
+            <PlantDashboardSection
+              icon={<Telescope className="h-4 w-4" />}
+              title={t('plantAdvisor.income.title')}
+              {...researchSectionProps(data.research.income_research ?? null)}
+            >
+              <div className={EMBED}>
+                <PlantIncomeResearchSection
+                  plantCase={plantCase}
+                  hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+                />
+              </div>
+            </PlantDashboardSection>
           )}
         </>
       )}
 
-
-
-      <div className="pt-4 border-t border-border">
-        <Button onClick={onOpenChat}>
-          <MessageSquare className="h-4 w-4 mr-1.5" />
-          {t('plantAdvisor.askAbout')}
-        </Button>
-      </div>
+      <PlantCaseChatCta data={data} onOpenChat={onOpenChat} />
     </div>
   );
 }
