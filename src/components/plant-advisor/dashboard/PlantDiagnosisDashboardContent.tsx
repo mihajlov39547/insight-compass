@@ -84,7 +84,6 @@ export function PlantDiagnosisDashboardContent({
   images,
   hasConfirmedIdentification,
   problemResearchReady = false,
-  whatToCheckNext = [],
 }: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -96,7 +95,6 @@ export function PlantDiagnosisDashboardContent({
   const usage = usePlantAiScanUsage();
 
   const [preparing, setPreparing] = useState(false);
-  const [confirmedOpen, setConfirmedOpen] = useState(true);
   const [triageOpen, setTriageOpen] = useState(false);
   const [candidatesOpen, setCandidatesOpen] = useState(false);
   const [allCandidates, setAllCandidates] = useState(false);
@@ -157,7 +155,6 @@ export function PlantDiagnosisDashboardContent({
   const interpretation = dbInterpretation?.interpretation ?? null;
   const triageConfidence = interpretation?.overallConfidence || 'low';
   const triageSummary = interpretation?.summary ? firstSentences(interpretation.summary, 2) : null;
-  const checks = whatToCheckNext.slice(0, 3);
 
   const problemTypeLabel = (pt: string | null | undefined) =>
     pt === 'pest'
@@ -172,6 +169,15 @@ export function PlantDiagnosisDashboardContent({
   const topBucket = top ? bucketOf(top.score) : 'low';
   const lowConfidence = !!top && topBucket === 'low';
   const unknownFit = !!top && relevanceOf(top) === 'unknown';
+
+  // Open confirmed details by default only when something important is missing or uncertain.
+  const hasImportantGaps =
+    !!top &&
+    (lowConfidence ||
+      unknownFit ||
+      !(top.affected_organs && top.affected_organs.length > 0) ||
+      !(top.plant_scientific_name || top.plant_common_name));
+  const [confirmedOpen, setConfirmedOpen] = useState(hasImportantGaps);
 
   return (
     <div className="space-y-3">
@@ -203,12 +209,6 @@ export function PlantDiagnosisDashboardContent({
         {alts.length > 0 && (
           <Button size="sm" variant="outline" onClick={() => setCandidatesOpen((o) => !o)}>
             {t('plantAdvisor.dashboard.diag.showCandidates')}
-          </Button>
-        )}
-        {interpretation && (
-          <Button size="sm" variant="outline" onClick={() => setTriageOpen((o) => !o)}>
-            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-            {t('plantAdvisor.dashboard.diag.viewFullTriage')}
           </Button>
         )}
         {!usage.loading && (
@@ -285,7 +285,7 @@ export function PlantDiagnosisDashboardContent({
             </Button>
           )}
 
-          {/* Confirmed diagnosis details (open by default) */}
+          {/* Confirmed diagnosis details (collapsed unless important gaps) */}
           <Collapsible open={confirmedOpen} onOpenChange={setConfirmedOpen}>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="h-7 px-2 -ml-2 text-xs text-muted-foreground">
@@ -314,107 +314,87 @@ export function PlantDiagnosisDashboardContent({
         </div>
       )}
 
-      {/* AI triage compact */}
+      {/* AI triage compact teaser row */}
       {interpretation && (
-        <div className="rounded-lg border border-primary/25 bg-primary/5 p-3 space-y-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-medium">{t('plantAdvisor.dashboard.diag.aiTriage')}</span>
-            <Badge variant="secondary" className="text-[10px]">
-              {confidenceLabel(triageConfidence)}
-            </Badge>
-          </div>
-          {triageSummary && <p className="text-xs text-foreground/90 line-clamp-2">{triageSummary}</p>}
+        <div className="flex items-center gap-2 flex-wrap rounded-lg border border-primary/25 bg-primary/5 px-3 py-2">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-medium">
+            {t('plantAdvisor.dashboard.diag.aiTriageAvailable')} · {confidenceLabel(triageConfidence)}
+          </span>
+          <Button size="sm" variant="outline" onClick={() => setTriageOpen((o) => !o)}>
+            {t('plantAdvisor.dashboard.diag.viewFullTriage')}
+          </Button>
+        </div>
+      )}
 
-          {checks.length > 0 && (
-            <div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {t('plantAdvisor.dashboard.facts.checkNext')}
-              </div>
-              <ul className="space-y-0.5 pt-0.5">
-                {checks.map((c, i) => (
-                  <li key={i} className="text-[11px] text-foreground/85 flex gap-1.5">
-                    <span className="text-muted-foreground">•</span>
-                    <span className="min-w-0">{c}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <Collapsible open={triageOpen} onOpenChange={setTriageOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 px-2 -ml-2 text-xs text-muted-foreground">
-                <ChevronDown className={`h-3.5 w-3.5 mr-1.5 transition-transform ${triageOpen ? 'rotate-180' : ''}`} />
-                {t('plantAdvisor.dashboard.diag.triageDetails')}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-1 space-y-2">
-              {interpretation.summary && (
-                <p className="text-xs whitespace-pre-wrap text-foreground/90">{interpretation.summary}</p>
-              )}
-              {interpretation.bestCandidates && interpretation.bestCandidates.length > 0 && (
-                <div className="space-y-1">
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    {t('plantAdvisor.diagnose.bestCandidatesTitle')}
-                  </div>
-                  {interpretation.bestCandidates.map((c, i) => (
-                    <div key={i} className="rounded border border-border/60 bg-background/60 p-2 space-y-0.5">
-                      <div className="text-[11px] font-medium">
-                        #{c.providerRank} · {c.name}
-                      </div>
-                      {c.reason && <div className="text-[11px] text-muted-foreground">{c.reason}</div>}
-                      {c.whatToCheckVisually && c.whatToCheckVisually.length > 0 && (
-                        <ul className="list-disc pl-4 text-[11px]">
-                          {c.whatToCheckVisually.map((v, j) => (
-                            <li key={j}>{v}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  ))}
+      {/* Full AI triage behind collapsible */}
+      {interpretation && (
+        <Collapsible open={triageOpen} onOpenChange={setTriageOpen}>
+          <CollapsibleContent className="space-y-3">
+            {triageSummary && (
+              <p className="text-xs whitespace-pre-wrap text-foreground/90">{triageSummary}</p>
+            )}
+            {interpretation.bestCandidates && interpretation.bestCandidates.length > 0 && (
+              <div className="space-y-1">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {t('plantAdvisor.diagnose.bestCandidatesTitle')}
                 </div>
-              )}
-              {interpretation.needsMoreEvidence && interpretation.needsMoreEvidence.length > 0 && (
-                <div>
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    {t('plantAdvisor.diagnose.needsMoreEvidence')}
+                {interpretation.bestCandidates.map((c, i) => (
+                  <div key={i} className="rounded border border-border/60 bg-background/60 p-2 space-y-0.5">
+                    <div className="text-[11px] font-medium">
+                      #{c.providerRank} · {c.name}
+                    </div>
+                    {c.reason && <div className="text-[11px] text-muted-foreground">{c.reason}</div>}
+                    {c.whatToCheckVisually && c.whatToCheckVisually.length > 0 && (
+                      <ul className="list-disc pl-4 text-[11px]">
+                        {c.whatToCheckVisually.map((v, j) => (
+                          <li key={j}>{v}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  <ul className="list-disc pl-4 text-[11px]">
-                    {interpretation.needsMoreEvidence.map((n, i) => (
-                      <li key={i}>{n}</li>
+                ))}
+              </div>
+            )}
+            {interpretation.needsMoreEvidence && interpretation.needsMoreEvidence.length > 0 && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {t('plantAdvisor.diagnose.needsMoreEvidence')}
+                </div>
+                <ul className="list-disc pl-4 text-[11px]">
+                  {interpretation.needsMoreEvidence.map((n, i) => (
+                    <li key={i}>{n}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {interpretation.unlikelyCandidates && interpretation.unlikelyCandidates.length > 0 && (
+              <Collapsible open={unlikelyOpen} onOpenChange={setUnlikelyOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 -ml-2 text-[11px] text-muted-foreground">
+                    <ChevronDown className={`h-3.5 w-3.5 mr-1 transition-transform ${unlikelyOpen ? 'rotate-180' : ''}`} />
+                    {t('plantAdvisor.diagnose.unlikelyCandidatesTitle')} ({interpretation.unlikelyCandidates.length})
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <ul className="space-y-0.5 pt-1">
+                    {interpretation.unlikelyCandidates.map((c, i) => (
+                      <li key={i} className="text-[11px] text-muted-foreground">
+                        <span className="font-medium">
+                          #{c.providerRank} · {c.name}
+                        </span>
+                        {c.reason ? ` — ${c.reason}` : ''}
+                      </li>
                     ))}
                   </ul>
-                </div>
-              )}
-              {interpretation.unlikelyCandidates && interpretation.unlikelyCandidates.length > 0 && (
-                <Collapsible open={unlikelyOpen} onOpenChange={setUnlikelyOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-7 px-2 -ml-2 text-[11px] text-muted-foreground">
-                      <ChevronDown className={`h-3.5 w-3.5 mr-1 transition-transform ${unlikelyOpen ? 'rotate-180' : ''}`} />
-                      {t('plantAdvisor.diagnose.unlikelyCandidatesTitle')} ({interpretation.unlikelyCandidates.length})
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <ul className="space-y-0.5 pt-1">
-                      {interpretation.unlikelyCandidates.map((c, i) => (
-                        <li key={i} className="text-[11px] text-muted-foreground">
-                          <span className="font-medium">
-                            #{c.providerRank} · {c.name}
-                          </span>
-                          {c.reason ? ` — ${c.reason}` : ''}
-                        </li>
-                      ))}
-                    </ul>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-              {interpretation.safetyNote && (
-                <div className="text-[10px] text-amber-700 dark:text-amber-300">{interpretation.safetyNote}</div>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+            {interpretation.safetyNote && (
+              <div className="text-[10px] text-amber-700 dark:text-amber-300">{interpretation.safetyNote}</div>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* Provider candidates, collapsed by default */}
@@ -476,7 +456,7 @@ export function PlantDiagnosisDashboardContent({
         </Collapsible>
       )}
 
-      {/* Next step pointer instead of the old disabled treatment button */}
+      {/* Next step pointer */}
       {top && (
         <div className="text-[11px] text-muted-foreground">
           {problemResearchReady

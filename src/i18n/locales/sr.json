@@ -2601,6 +2601,7 @@
       },
       "diag": {
         "aiTriage": "AI trijaža",
+        "aiTriageAvailable": "AI trijaža dostupna",
         "viewFullTriage": "Prikaži punu AI trijažu",
         "triageDetails": "Detalji AI trijaže",
         "providerCandidates": "Kandidati provajdera",
