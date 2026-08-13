@@ -53,7 +53,16 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const expand = t('plantAdvisor.dashboard.expand');
   const collapse = t('plantAdvisor.dashboard.collapse');
 
-  const researchSectionProps = (artifact: ResearchArtifactSummary | null) => ({
+  const problemResearchFallback = [
+    t('plantAdvisor.dashboard.diag.previewFallback1'),
+    t('plantAdvisor.dashboard.diag.previewFallback2'),
+    t('plantAdvisor.dashboard.diag.previewFallback3'),
+  ];
+
+  const researchSectionProps = (
+    artifact: ResearchArtifactSummary | null,
+    fallbackPreview?: string[],
+  ) => ({
     statusLabel: artifact
       ? t('plantAdvisor.dashboard.researchReady')
       : t('plantAdvisor.dashboard.researchNotRun'),
@@ -64,11 +73,16 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           date: format(new Date(artifact.updatedAt), 'PP'),
         })
       : undefined,
-    preview: artifact?.previewBullets,
+    preview: artifact
+      ? artifact.previewBullets.length > 0
+        ? artifact.previewBullets
+        : fallbackPreview
+      : undefined,
     expandLabel: t('plantAdvisor.dashboard.sections.researchExpand'),
     collapseLabel: collapse,
     defaultOpen: false,
   });
+
 
   const identificationSection = (
     <PlantDashboardSection
