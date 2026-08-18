@@ -54,10 +54,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const collapse = t('plantAdvisor.dashboard.collapse');
 
 
-  const researchSectionProps = (
-    artifact: ResearchArtifactSummary | null,
-    fallbackPreview?: string[],
-  ) => ({
+  const researchSectionProps = (artifact: ResearchArtifactSummary | null) => ({
     statusLabel: artifact
       ? t('plantAdvisor.dashboard.researchReady')
       : t('plantAdvisor.dashboard.researchNotRun'),
@@ -68,11 +65,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           date: format(new Date(artifact.updatedAt), 'PP'),
         })
       : undefined,
-    preview: artifact
-      ? artifact.previewBullets.length > 0
-        ? artifact.previewBullets
-        : fallbackPreview
-      : undefined,
+    preview: undefined,
     expandLabel: t('plantAdvisor.dashboard.sections.researchExpand'),
     collapseLabel: collapse,
     defaultOpen: false,
