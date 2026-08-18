@@ -16,17 +16,22 @@ interface Props {
 
 export function PlantCaseCard({ plantCase, onOpen, onDelete }: Props) {
   const { t } = useTranslation();
+  const theme = getPlantCaseGoalTheme(plantCase.user_goal);
+  const GoalIcon = theme.icon;
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen(); }}
-      className="group relative rounded-lg border border-border bg-card p-4 cursor-pointer hover:border-primary/40 hover:shadow-sm transition"
+      className={cn(
+        'group relative rounded-lg border border-border border-l-4 bg-card p-4 cursor-pointer hover:border-primary/40 hover:shadow-sm transition',
+        theme.accentClass,
+      )}
     >
       <div className="flex items-start gap-3">
-        <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-          <Leaf className="h-4 w-4" />
+        <div className={cn('h-9 w-9 rounded-md flex items-center justify-center flex-shrink-0', theme.iconBgClass)}>
+          <GoalIcon className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-medium text-sm truncate">{plantCase.title}</h3>
