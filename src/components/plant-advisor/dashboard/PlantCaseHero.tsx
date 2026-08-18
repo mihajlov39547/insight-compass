@@ -66,7 +66,7 @@ export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpe
   return (
     <header
       className={cn(
-        'rounded-2xl border border-border/60 border-l-4 bg-gradient-to-br p-5 space-y-4 shadow-sm',
+        'rounded-2xl border border-border/60 border-l-[6px] bg-gradient-to-br p-5 space-y-4 shadow-sm',
         theme.accentClass,
         theme.heroBgClass,
       )}
