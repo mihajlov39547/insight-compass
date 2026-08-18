@@ -157,12 +157,13 @@ export function PlantAdvisorDashboard({ onNewScan, onOpenCase }: Props) {
                   goalTheme.iconBgClass,
                 )}
               >
-                <Icon className="h-4.5 w-4.5" />
+                <Icon className="h-4 w-4" />
               </div>
               <div className="text-sm font-medium">{t(`plantAdvisor.goals.${key}`)}</div>
               <div className="text-xs text-muted-foreground mt-0.5">{t(`plantAdvisor.goalDescriptions.${key}`)}</div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <PlantAiScanHistory limit={10} />
