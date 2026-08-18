@@ -1,9 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Leaf, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { getPlantCaseGoalTheme } from '@/lib/plantCaseGoalTheme';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 interface Props {
