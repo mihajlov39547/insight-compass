@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Leaf, MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getPlantCaseGoalTheme } from '@/lib/plantCaseGoalTheme';
 import type { PlantCase } from '@/hooks/usePlantCases';
 import type { PlantCaseDashboardData } from '@/hooks/usePlantCaseDashboard';
 
@@ -48,7 +49,9 @@ export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpe
   const [showAllNotes, setShowAllNotes] = useState(false);
 
   const goalLabel = plantCase.user_goal ? t(`plantAdvisor.goals.${plantCase.user_goal}`) : null;
-  const subtitleParts = [goalLabel, plantCase.location_text, plantCase.crop_context].filter(Boolean);
+  const theme = getPlantCaseGoalTheme(plantCase.user_goal);
+  const GoalIcon = theme.icon;
+  const subtitleParts = [plantCase.location_text, plantCase.crop_context].filter(Boolean);
   const notes = plantCase.notes?.trim() || '';
   const notesLong = notes.length > 130;
   const notesPreview = notesLong && !showAllNotes ? `${notes.slice(0, 130).trimEnd()}…` : notes;
@@ -61,13 +64,19 @@ export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpe
   const pct = (s: number | null | undefined) => (s == null ? '—' : `${Math.round(s * 100)}%`);
 
   return (
-    <header className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-card p-5 space-y-4 shadow-sm">
+    <header
+      className={cn(
+        'rounded-2xl border border-border/60 border-l-4 bg-gradient-to-br p-5 space-y-4 shadow-sm',
+        theme.accentClass,
+        theme.heroBgClass,
+      )}
+    >
       <div className="flex items-start gap-3">
         <Button variant="ghost" size="icon" onClick={onBack} aria-label={t('common.back', 'Back')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-          <Leaf className="h-5 w-5" />
+        <div className={cn('h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0', theme.iconBgClass)}>
+          <GoalIcon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold truncate">{plantCase.title}</h1>
@@ -75,6 +84,11 @@ export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpe
             {subtitleParts.join(' · ')}
           </p>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {goalLabel && (
+              <Badge variant="outline" className={cn('text-xs', theme.badgeClass)}>
+                {goalLabel}
+              </Badge>
+            )}
             <Badge variant="secondary">{t(`plantAdvisor.statuses.${plantCase.status}`)}</Badge>
             <span className="text-xs text-muted-foreground">
               {format(new Date(plantCase.created_at), 'PP')}
