@@ -65,11 +65,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           date: format(new Date(artifact.updatedAt), 'PP'),
         })
       : undefined,
-    preview: artifact
-      ? artifact.previewBullets.length > 0
-        ? artifact.previewBullets
-        : fallbackPreview
-      : undefined,
+    preview: undefined,
     expandLabel: t('plantAdvisor.dashboard.sections.researchExpand'),
     collapseLabel: collapse,
     defaultOpen: false,
