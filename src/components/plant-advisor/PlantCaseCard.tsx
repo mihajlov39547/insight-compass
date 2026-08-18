@@ -1,9 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Leaf, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { getPlantCaseGoalTheme } from '@/lib/plantCaseGoalTheme';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 interface Props {
@@ -14,17 +16,22 @@ interface Props {
 
 export function PlantCaseCard({ plantCase, onOpen, onDelete }: Props) {
   const { t } = useTranslation();
+  const theme = getPlantCaseGoalTheme(plantCase.user_goal);
+  const GoalIcon = theme.icon;
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen(); }}
-      className="group relative rounded-lg border border-border bg-card p-4 cursor-pointer hover:border-primary/40 hover:shadow-sm transition"
+      className={cn(
+        'group relative rounded-lg border border-border border-l-4 bg-card p-4 cursor-pointer hover:shadow-md transition',
+        theme.accentClass,
+      )}
     >
       <div className="flex items-start gap-3">
-        <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-          <Leaf className="h-4 w-4" />
+        <div className={cn('h-9 w-9 rounded-md flex items-center justify-center flex-shrink-0', theme.iconBgClass)}>
+          <GoalIcon className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-medium text-sm truncate">{plantCase.title}</h3>
@@ -42,7 +49,7 @@ export function PlantCaseCard({ plantCase, onOpen, onDelete }: Props) {
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             <Badge variant="secondary" className="text-[10px]">{t(`plantAdvisor.statuses.${plantCase.status}`)}</Badge>
             {plantCase.user_goal && (
-              <Badge variant="outline" className="text-[10px]">{t(`plantAdvisor.goals.${plantCase.user_goal}`)}</Badge>
+              <Badge variant="outline" className={cn('text-[10px]', theme.badgeClass)}>{t(`plantAdvisor.goals.${plantCase.user_goal}`)}</Badge>
             )}
           </div>
         </div>
