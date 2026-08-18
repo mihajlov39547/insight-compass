@@ -75,7 +75,7 @@ export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpe
         <Button variant="ghost" size="icon" onClick={onBack} aria-label={t('common.back', 'Back')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className={cn('h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0', theme.iconBgClass)}>
+        <div className={cn('h-10 w-10 rounded-xl ring-1 flex items-center justify-center flex-shrink-0', theme.iconBgClass)}>
           <GoalIcon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
