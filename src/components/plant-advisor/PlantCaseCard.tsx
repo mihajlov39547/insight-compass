@@ -25,7 +25,7 @@ export function PlantCaseCard({ plantCase, onOpen, onDelete }: Props) {
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen(); }}
       className={cn(
-        'group relative rounded-lg border border-border border-l-4 bg-card p-4 cursor-pointer hover:border-primary/40 hover:shadow-sm transition',
+        'group relative rounded-lg border border-border border-l-4 bg-card p-4 cursor-pointer hover:shadow-md transition',
         theme.accentClass,
       )}
     >
@@ -49,7 +49,7 @@ export function PlantCaseCard({ plantCase, onOpen, onDelete }: Props) {
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             <Badge variant="secondary" className="text-[10px]">{t(`plantAdvisor.statuses.${plantCase.status}`)}</Badge>
             {plantCase.user_goal && (
-              <Badge variant="outline" className="text-[10px]">{t(`plantAdvisor.goals.${plantCase.user_goal}`)}</Badge>
+              <Badge variant="outline" className={cn('text-[10px]', theme.badgeClass)}>{t(`plantAdvisor.goals.${plantCase.user_goal}`)}</Badge>
             )}
           </div>
         </div>
