@@ -53,11 +53,6 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const expand = t('plantAdvisor.dashboard.expand');
   const collapse = t('plantAdvisor.dashboard.collapse');
 
-  const problemResearchFallback = [
-    t('plantAdvisor.dashboard.diag.previewFallback1'),
-    t('plantAdvisor.dashboard.diag.previewFallback2'),
-    t('plantAdvisor.dashboard.diag.previewFallback3'),
-  ];
 
   const researchSectionProps = (
     artifact: ResearchArtifactSummary | null,
@@ -245,10 +240,8 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           <PlantDashboardSection
             icon={<Telescope className="h-4 w-4" />}
             title={t('plantAdvisor.problemResearch.title')}
-            {...researchSectionProps(
-              data.research.problem_research ?? null,
-              problemResearchFallback,
-            )}
+            {...researchSectionProps(data.research.problem_research ?? null)}
+            preview={undefined}
           >
             <div className={EMBED}>
               <PlantProblemResearchSection
