@@ -25,13 +25,20 @@ export function PlantCaseCard({ plantCase, onOpen, onDelete }: Props) {
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen(); }}
       className={cn(
-        'group relative rounded-lg border border-border border-l-4 bg-card p-4 cursor-pointer hover:shadow-md transition',
+        'group relative rounded-xl border border-border border-l-[6px] p-4 cursor-pointer transition hover:shadow-md hover:-translate-y-0.5',
         theme.accentClass,
+        theme.hoverClass,
+        theme.tintClass,
       )}
     >
       <div className="flex items-start gap-3">
-        <div className={cn('h-9 w-9 rounded-md flex items-center justify-center flex-shrink-0', theme.iconBgClass)}>
-          <GoalIcon className="h-4 w-4" />
+        <div
+          className={cn(
+            'h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ring-1',
+            theme.iconBgClass,
+          )}
+        >
+          <GoalIcon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-medium text-sm truncate">{plantCase.title}</h3>
