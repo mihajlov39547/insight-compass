@@ -80,9 +80,11 @@ export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpe
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold truncate">{plantCase.title}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5 truncate">
-            {subtitleParts.join(' · ')}
-          </p>
+          {subtitleParts.length > 0 && (
+            <p className="text-sm text-muted-foreground mt-0.5 truncate">
+              {subtitleParts.join(' · ')}
+            </p>
+          )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {goalLabel && (
               <Badge variant="outline" className={cn('text-xs', theme.badgeClass)}>
