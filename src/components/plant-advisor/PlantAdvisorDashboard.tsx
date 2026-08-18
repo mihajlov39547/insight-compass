@@ -23,6 +23,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { usePlantCases, useDeletePlantCase, type PlantCase } from '@/hooks/usePlantCases';
+import { cn } from '@/lib/utils';
+import { getPlantCaseGoalTheme } from '@/lib/plantCaseGoalTheme';
 import { usePlantAdvisorUsage } from '@/hooks/usePlantAdvisorLimits';
 import { PlantCaseCard } from './PlantCaseCard';
 import { PlantAdvisorSettingsDialog } from './PlantAdvisorSettingsDialog';
