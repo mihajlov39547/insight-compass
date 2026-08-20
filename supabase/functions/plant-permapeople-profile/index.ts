@@ -259,7 +259,12 @@ Deno.serve(async (req: Request) => {
     for (const q of queries) {
       const res = await ppFetch('/search', creds, {
         method: 'POST',
-        body: { q, type: 'Plant', per_page: 10 },
+        body: { q },
+      });
+      console.log('[permapeople] search', {
+        status: res.status,
+        ok: res.ok,
+        results: Array.isArray(res.data?.plants) ? res.data.plants.length : null,
       });
       if (res.status === 401) {
         console.warn('[permapeople] auth rejected');
