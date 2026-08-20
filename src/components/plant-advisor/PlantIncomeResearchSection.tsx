@@ -28,6 +28,7 @@ import {
 } from '@/services/research/tavilyResearch';
 import {
   buildIncomeResearchInput,
+  buildPermapeopleContextLine,
   polishIncomeResearchAnswer,
   rankIncomeResearchSources,
   researchSourceDomain,
@@ -129,6 +130,7 @@ export function PlantIncomeResearchSection({ plantCase, hasConfirmedIdentificati
         notes: plantCase.notes,
         family: confirmedIdent.family,
         genus: confirmedIdent.genus,
+        permapeopleContext: buildPermapeopleContextLine(permapeople.data, advisorLang),
       });
 
       const result = await runTavilyResearch({

@@ -30,6 +30,7 @@ import {
 } from '@/services/research/tavilyResearch';
 import {
   buildProblemResearchInput,
+  buildPermapeopleContextLine,
   polishProblemResearchAnswer,
   rankProblemResearchSources,
   researchSourceDomain,
@@ -158,6 +159,7 @@ export function PlantProblemResearchSection({ plantCase, hasConfirmedIdentificat
           location: plantCase.location_text,
           cropContext: plantCase.crop_context,
           notes: plantCase.notes,
+          permapeopleContext: buildPermapeopleContextLine(permapeople.data, advisorLang),
         },
       );
 
