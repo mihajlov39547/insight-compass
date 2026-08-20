@@ -41,14 +41,17 @@ interface Msg {
 
 
 /** Map persisted plant-chat sources onto the shared Project Chat source model. */
-function toSourceItems(list: PlantChatUsedSource[] | undefined): SourceItem[] {
+function toSourceItems(
+  list: PlantChatUsedSource[] | undefined,
+  labelFor?: (s: PlantChatUsedSource) => string | null,
+): SourceItem[] {
   if (!Array.isArray(list)) return [];
   return list
     .filter((s) => s && (s.title || s.url))
     .map((s, i) => ({
       id: s.id || `plant-src-${i}`,
       type: s.url ? 'web' : 'document',
-      title: s.title || s.url || `Source ${i + 1}`,
+      title: labelFor?.(s) || s.title || s.url || `Source ${i + 1}`,
       snippet: s.snippet || '',
       relevance: typeof s.score === 'number' ? s.score : 0,
       score: typeof s.score === 'number' ? s.score : undefined,
