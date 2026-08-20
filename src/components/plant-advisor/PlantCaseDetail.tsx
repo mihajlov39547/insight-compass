@@ -120,25 +120,38 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
         data.profile ? t('plantAdvisor.dashboard.status.ready') : t('plantAdvisor.dashboard.notRun')
       }
       statusTone={data.profile ? 'ready' : 'pending'}
-      summary={
+      summary={[
         data.profile
-          ? [data.profile.scientific_name, data.profile.family, data.profile.genus, data.profile.rank]
-              .filter(Boolean)
-              .join(' · ')
-          : t('plantAdvisor.dashboard.facts.profileEmpty')
-      }
+          ? t('plantAdvisor.dashboard.profile.trefleReady')
+          : t('plantAdvisor.dashboard.profile.trefleNotLoaded'),
+        permaProfile
+          ? t('plantAdvisor.dashboard.profile.permapeopleReady')
+          : t('plantAdvisor.dashboard.profile.permapeopleNotFetched'),
+      ].join(' · ')}
       expandLabel={expand}
       collapseLabel={collapse}
     >
-      <div className={`${EMBED} space-y-3`}>
-        <PlantSpeciesProfileSection
-          caseId={plantCase.id}
-          hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-        />
-        <PermapeoplePlantProfileSection
-          caseId={plantCase.id}
-          hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
-        />
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t('plantAdvisor.dashboard.profile.botanicalGroup')}
+          </div>
+          <div className={EMBED}>
+            <PlantSpeciesProfileSection
+              caseId={plantCase.id}
+              hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+            />
+          </div>
+        </div>
+        <div className="space-y-2 border-t border-border/60 pt-4">
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t('plantAdvisor.dashboard.profile.permacultureGroup')}
+          </div>
+          <PermapeoplePlantProfileSection
+            caseId={plantCase.id}
+            hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+          />
+        </div>
       </div>
     </PlantDashboardSection>
   );
