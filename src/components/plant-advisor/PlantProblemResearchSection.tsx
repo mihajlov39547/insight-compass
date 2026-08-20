@@ -10,6 +10,7 @@ import { SourceAttribution, type SourceItem } from '@/components/chat/SourceAttr
 import { usePlantIdentifications } from '@/hooks/usePlantIdentifications';
 import { usePlantDiagnoses } from '@/hooks/usePlantDiagnoses';
 import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
+import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
 import {
@@ -78,6 +79,7 @@ export function PlantProblemResearchSection({ plantCase, hasConfirmedIdentificat
   const { t } = useTranslation();
   const caseId = plantCase.id;
   const { data: idents = [] } = usePlantIdentifications(caseId);
+  const permapeople = usePermapeopleProfile(caseId);
   const confirmedIdent = idents.find((i) => i.is_confirmed) || null;
   const { data: diagnoses = [] } = usePlantDiagnoses(caseId);
   const confirmedDiag = diagnoses.find((d) => d.is_confirmed) || null;

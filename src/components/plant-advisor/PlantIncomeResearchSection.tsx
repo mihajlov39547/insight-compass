@@ -8,6 +8,7 @@ import { ResearchTrace } from '@/components/chat/ResearchTrace';
 import { SourceAttribution, type SourceItem } from '@/components/chat/SourceAttribution';
 import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
+import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
 import {
@@ -67,6 +68,7 @@ export function PlantIncomeResearchSection({ plantCase, hasConfirmedIdentificati
   const { t } = useTranslation();
   const caseId = plantCase.id;
   const { data: idents = [] } = usePlantIdentifications(caseId);
+  const permapeople = usePermapeopleProfile(caseId);
   const confirmedIdent = idents.find((i) => i.is_confirmed) || null;
   const { data: messages = [] } = usePlantCaseChatMessages(caseId);
   const invalidateChatMessages = useInvalidatePlantCaseChatMessages();
