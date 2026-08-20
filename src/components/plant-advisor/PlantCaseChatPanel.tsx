@@ -761,7 +761,12 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           </div>
         )}
         {!messagesLoading && displayMessages.map((m, i) => {
-          const items = m.role === 'assistant' ? toSourceItems(m.sourcesUsed) : [];
+          const items =
+            m.role === 'assistant'
+              ? toSourceItems(m.sourcesUsed, (s) =>
+                  s.provider === 'permapeople' ? t('plantAdvisor.permapeople.sourceLabel') : null,
+                )
+              : [];
           const msgId = m.id ?? `local-${i}`;
           return (
             <div key={msgId} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
