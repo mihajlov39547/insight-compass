@@ -174,6 +174,16 @@ function buildNormalized(plant: PermaPlant) {
     layer: attrs['Layer'] ?? null,
     edible: attrs['Edible'] ?? null,
     edibleParts: attrs['Edible parts'] ?? null,
+    edibleUses: attrs['Edible uses'] ?? null,
+    lifeCycle: attrs['Life cycle'] ?? null,
+    daysToHarvest: attrs['Days to harvest'] ?? null,
+    propagationMethod: attrs['Propagation method'] ?? null,
+    soilPh: attrs['Soil pH'] ?? null,
+    spacing: attrs['Spacing'] ?? null,
+    height: attrs['Height'] ?? null,
+    width: attrs['Width'] ?? null,
+    utility: attrs['Utility'] ?? null,
+    nativeTo: attrs['Native to'] ?? null,
   };
 }
 
