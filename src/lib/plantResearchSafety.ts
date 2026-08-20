@@ -259,12 +259,67 @@ export function rankIdentifyResearchSources<T extends { url?: string | null }>(
 // is reused as-is; source ranking prefers extension/government/market sources.
 // ---------------------------------------------------------------------------
 
+/**
+ * Compact, human-readable summary of the Permapeople profile, used as extra
+ * grounding context inside research prompts. Permapeople is community data:
+ * it supports cultivation / use framing only, never diagnosis or chemicals.
+ */
+export function buildPermapeopleContextLine(
+  profile:
+    | {
+        scientific_name?: string | null;
+        common_name?: string | null;
+        family?: string | null;
+        match_confidence?: string | null;
+        normalized_data?: Record<string, any> | null;
+      }
+    | null
+    | undefined,
+  lang: 'en' | 'sr',
+): string | null {
+  if (!profile) return null;
+  const nd = profile.normalized_data ?? {};
+  const pairs: Array<[string, string, unknown]> = [
+    ['Water', 'Voda', nd.waterRequirement],
+    ['Light', 'Svetlo', nd.lightRequirement],
+    ['Soil', 'Zemljište', nd.soilType],
+    ['Hardiness', 'Zona otpornosti', nd.hardinessZone],
+    ['Growth', 'Rast', nd.growth],
+    ['Layer', 'Sloj', nd.layer],
+    ['Edible', 'Jestiva', nd.edible],
+    ['Edible parts', 'Jestivi delovi', nd.edibleParts],
+    ['Edible uses', 'Jestive upotrebe', nd.edibleUses],
+    ['Life cycle', 'Životni ciklus', nd.lifeCycle],
+    ['Days to harvest', 'Dana do berbe', nd.daysToHarvest],
+    ['Propagation', 'Razmnožavanje', nd.propagationMethod],
+    ['Soil pH', 'pH zemljišta', nd.soilPh],
+    ['Spacing', 'Rastojanje', nd.spacing],
+    ['Utility', 'Namena', nd.utility],
+  ];
+  const facts = pairs
+    .filter(([, , v]) => typeof v === 'string' && v.trim())
+    .map(([en, sr, v]) => `${lang === 'sr' ? sr : en}: ${String(v).trim()}`);
+  const name = [profile.common_name, profile.scientific_name].filter(Boolean).join(' / ');
+  if (!facts.length && !name) return null;
+  const approximate = profile.match_confidence && profile.match_confidence !== 'high';
+
+  if (lang === 'sr') {
+    return `Permapeople referentni podaci (zajednički doprinos korisnika, koristi samo kao sekundarni kontekst za gajenje i upotrebu, ne za dijagnozu)${
+      approximate ? ' — poklapanje je približno' : ''
+    }: ${[name, ...facts].filter(Boolean).join('; ')}.`;
+  }
+  return `Permapeople reference data (community-maintained; use only as secondary cultivation/use context, never for diagnosis)${
+    approximate ? ' — match is approximate' : ''
+  }: ${[name, ...facts].filter(Boolean).join('; ')}.`;
+}
+
 export interface IncomeResearchContext {
   location?: string | null;
   cropContext?: string | null;
   notes?: string | null;
   family?: string | null;
   genus?: string | null;
+  permapeopleContext?: string | null;
 }
 
 /** Build the Tavily Research input for an Increase Income plant case. */
@@ -287,6 +342,7 @@ export function buildIncomeResearchInput(
       location ? `Lokacija: ${location}.` : '',
       crop ? `Kontekst gajenja: ${crop}.` : '',
       notes ? `Napomene korisnika: ${notes}.` : '',
+      ctx.permapeopleContext?.trim() || '',
     ]
       .filter(Boolean)
       .join(' ');
@@ -298,6 +354,7 @@ export function buildIncomeResearchInput(
     location ? `Location: ${location}.` : '',
     crop ? `Crop context: ${crop}.` : '',
     notes ? `User notes: ${notes}.` : '',
+    ctx.permapeopleContext?.trim() || '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -408,6 +465,7 @@ export interface ProblemResearchContext {
   location?: string | null;
   cropContext?: string | null;
   notes?: string | null;
+  permapeopleContext?: string | null;
 }
 
 /** Build the Tavily Research input for a Diagnose problem plant case. */
@@ -443,6 +501,7 @@ export function buildProblemResearchInput(
       ctx.location ? `Lokacija: ${ctx.location}.` : '',
       ctx.cropContext ? `Kontekst gajenja: ${ctx.cropContext}.` : '',
       ctx.notes ? `Napomene korisnika: ${ctx.notes}.` : '',
+      ctx.permapeopleContext?.trim() || '',
     ]
       .filter(Boolean)
       .join(' ');
@@ -463,6 +522,7 @@ export function buildProblemResearchInput(
     ctx.location ? `Location: ${ctx.location}.` : '',
     ctx.cropContext ? `Crop context: ${ctx.cropContext}.` : '',
     ctx.notes ? `User notes: ${ctx.notes}.` : '',
+    ctx.permapeopleContext?.trim() || '',
   ]
     .filter(Boolean)
     .join(' ');

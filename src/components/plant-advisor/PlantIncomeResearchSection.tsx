@@ -8,6 +8,7 @@ import { ResearchTrace } from '@/components/chat/ResearchTrace';
 import { SourceAttribution, type SourceItem } from '@/components/chat/SourceAttribution';
 import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
+import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
 import {
@@ -28,6 +29,7 @@ import {
 } from '@/services/research/tavilyResearch';
 import {
   buildIncomeResearchInput,
+  buildPermapeopleContextLine,
   polishIncomeResearchAnswer,
   rankIncomeResearchSources,
   researchSourceDomain,
@@ -66,6 +68,7 @@ export function PlantIncomeResearchSection({ plantCase, hasConfirmedIdentificati
   const { t } = useTranslation();
   const caseId = plantCase.id;
   const { data: idents = [] } = usePlantIdentifications(caseId);
+  const permapeople = usePermapeopleProfile(caseId);
   const confirmedIdent = idents.find((i) => i.is_confirmed) || null;
   const { data: messages = [] } = usePlantCaseChatMessages(caseId);
   const invalidateChatMessages = useInvalidatePlantCaseChatMessages();
@@ -129,6 +132,7 @@ export function PlantIncomeResearchSection({ plantCase, hasConfirmedIdentificati
         notes: plantCase.notes,
         family: confirmedIdent.family,
         genus: confirmedIdent.genus,
+        permapeopleContext: buildPermapeopleContextLine(permapeople.data, advisorLang),
       });
 
       const result = await runTavilyResearch({

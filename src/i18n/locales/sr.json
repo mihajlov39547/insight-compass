@@ -2458,6 +2458,44 @@
         "duration": "Trajanje"
       }
     },
+    "permapeople": {
+      "title": "Permakulturni profil",
+      "fetch": "Preuzmi Permapeople profil",
+      "refresh": "Osveži Permapeople profil",
+      "fetchedToast": "Permapeople profil je ažuriran",
+      "fetchedAt": "Preuzeto {{date}}",
+      "loading": "Pretraga Permapeople baze…",
+      "notFetched": "Permapeople profil još nije preuzet. Preuzmite ga za praktične podatke o gajenju i upotrebi.",
+      "needsConfirmed": "Najpre potvrdite identifikaciju biljke da biste preuzeli Permapeople profil.",
+      "noProfileFound": "Nije nađena odgovarajuća biljka u Permapeople bazi.",
+      "approximateMatch": "Ovo Permapeople poklapanje je približno (na nivou roda ili narodnog imena). Podatke koristite samo kao opštu referencu.",
+      "sourceLink": "Prikaži na Permapeople",
+      "providerNote": "Praktični podaci o gajenju i upotrebi sa Permapeople servisa. Mogu biti nepotpuni i ne predstavljaju dijagnozu ni savet o lečenju.",
+      "fields": {
+        "family": "Familija",
+        "type": "Tip zapisa",
+        "water": "Potrebe za vodom",
+        "light": "Potrebe za svetlom",
+        "soil": "Tip zemljišta",
+        "hardiness": "USDA zona otpornosti",
+        "growth": "Rast",
+        "layer": "Sloj",
+        "edible": "Jestiva",
+        "edibleParts": "Jestivi delovi",
+        "edibleUses": "Jestive upotrebe",
+        "lifeCycle": "Životni ciklus",
+        "daysToHarvest": "Dana do berbe",
+        "propagation": "Razmnožavanje",
+        "soilPh": "pH zemljišta",
+        "spacing": "Rastojanje",
+        "utility": "Namena",
+        "nativeTo": "Poreklo"
+      },
+      "errors": {
+        "config": "Permapeople nije ispravno konfigurisan. Probajte ponovo kasnije.",
+        "generic": "Nije moguće učitati Permapeople profil."
+      }
+    },
     "income": {
       "title": "Istraživanje prihoda",
       "helper": "Istražite praktične načine za povećanje prihoda od potvrđene biljke pre razgovora sa asistentom.",

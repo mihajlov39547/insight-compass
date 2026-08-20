@@ -8,6 +8,7 @@ import { PlantIdentificationSection } from './PlantIdentificationSection';
 import { PlantDiagnosisDashboardContent } from './dashboard/PlantDiagnosisDashboardContent';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
+import { PermapeoplePlantProfileSection } from './PermapeoplePlantProfileSection';
 import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
 import { PlantIncomeResearchSection } from './PlantIncomeResearchSection';
 import { PlantResearchSection } from './PlantResearchSection';
@@ -129,8 +130,12 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
       expandLabel={expand}
       collapseLabel={collapse}
     >
-      <div className={EMBED}>
+      <div className={`${EMBED} space-y-3`}>
         <PlantSpeciesProfileSection
+          caseId={plantCase.id}
+          hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+        />
+        <PermapeoplePlantProfileSection
           caseId={plantCase.id}
           hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
         />

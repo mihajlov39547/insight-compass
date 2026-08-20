@@ -416,6 +416,60 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // 1b) Permapeople profile (secondary practical cultivation baseline)
+    const { data: permaRows } = await admin
+      .from('plant_case_external_profiles')
+      .select('*')
+      .eq('case_id', caseId)
+      .eq('provider', 'permapeople')
+      .order('fetched_at', { ascending: false })
+      .limit(1);
+    const permaProfile = (permaRows as any[] | null)?.[0] ?? null;
+    if (permaProfile) {
+      const pn = (permaProfile.normalized_data ?? {}) as Record<string, any>;
+      const permaSummaryParts: string[] = [];
+      if (permaProfile.profile_payload?.description) {
+        permaSummaryParts.push(String(permaProfile.profile_payload.description));
+      }
+      if (pn.waterRequirement) permaSummaryParts.push(`Water: ${pn.waterRequirement}`);
+      if (pn.lightRequirement) permaSummaryParts.push(`Light: ${pn.lightRequirement}`);
+      if (pn.soilType) permaSummaryParts.push(`Soil: ${pn.soilType}`);
+      if (pn.hardinessZone) permaSummaryParts.push(`Hardiness: ${pn.hardinessZone}`);
+      if (pn.layer) permaSummaryParts.push(`Layer: ${pn.layer}`);
+      sources.push({
+        provider: 'permapeople',
+        title: `Permapeople: ${permaProfile.common_name || permaProfile.scientific_name || primarySci || primaryCommon}`,
+        url: permaProfile.source_url ?? null,
+        fetchedAt: permaProfile.fetched_at,
+        summary:
+          scrubProductWords(permaSummaryParts.join('. ')).slice(0, 800) ||
+          'Permapeople community cultivation data.',
+        fields: {
+          scientificName: permaProfile.scientific_name,
+          commonName: permaProfile.common_name,
+          family: permaProfile.family,
+          genus: permaProfile.genus,
+          matchConfidence: permaProfile.match_confidence,
+          waterRequirement: pn.waterRequirement ?? null,
+          lightRequirement: pn.lightRequirement ?? null,
+          soilType: pn.soilType ?? null,
+          hardinessZone: pn.hardinessZone ?? null,
+          growth: pn.growth ?? null,
+          layer: pn.layer ?? null,
+          edible: pn.edible ?? null,
+          edibleParts: pn.edibleParts ?? null,
+          edibleUses: pn.edibleUses ?? null,
+          lifeCycle: pn.lifeCycle ?? null,
+          daysToHarvest: pn.daysToHarvest ?? null,
+          propagationMethod: pn.propagationMethod ?? null,
+          soilPh: pn.soilPh ?? null,
+          spacing: pn.spacing ?? null,
+          utility: pn.utility ?? null,
+        },
+      } as SourceEntry);
+    }
+
+
     // 2) Perenual
     let perenualDetails: any = null;
     let perenualCare: any[] = [];
