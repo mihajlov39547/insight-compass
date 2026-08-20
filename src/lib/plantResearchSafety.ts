@@ -335,6 +335,7 @@ export function buildIncomeResearchInput(
       location ? `Lokacija: ${location}.` : '',
       crop ? `Kontekst gajenja: ${crop}.` : '',
       notes ? `Napomene korisnika: ${notes}.` : '',
+      ctx.permapeopleContext?.trim() || '',
     ]
       .filter(Boolean)
       .join(' ');
@@ -346,6 +347,7 @@ export function buildIncomeResearchInput(
     location ? `Location: ${location}.` : '',
     crop ? `Crop context: ${crop}.` : '',
     notes ? `User notes: ${notes}.` : '',
+    ctx.permapeopleContext?.trim() || '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -456,6 +458,7 @@ export interface ProblemResearchContext {
   location?: string | null;
   cropContext?: string | null;
   notes?: string | null;
+  permapeopleContext?: string | null;
 }
 
 /** Build the Tavily Research input for a Diagnose problem plant case. */
@@ -491,6 +494,7 @@ export function buildProblemResearchInput(
       ctx.location ? `Lokacija: ${ctx.location}.` : '',
       ctx.cropContext ? `Kontekst gajenja: ${ctx.cropContext}.` : '',
       ctx.notes ? `Napomene korisnika: ${ctx.notes}.` : '',
+      ctx.permapeopleContext?.trim() || '',
     ]
       .filter(Boolean)
       .join(' ');
@@ -511,6 +515,7 @@ export function buildProblemResearchInput(
     ctx.location ? `Location: ${ctx.location}.` : '',
     ctx.cropContext ? `Crop context: ${ctx.cropContext}.` : '',
     ctx.notes ? `User notes: ${ctx.notes}.` : '',
+    ctx.permapeopleContext?.trim() || '',
   ]
     .filter(Boolean)
     .join(' ');
