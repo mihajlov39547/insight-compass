@@ -9,6 +9,7 @@ import { PlantDiagnosisDashboardContent } from './dashboard/PlantDiagnosisDashbo
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { PlantSpeciesProfileSection } from './PlantSpeciesProfileSection';
 import { PermapeoplePlantProfileSection } from './PermapeoplePlantProfileSection';
+import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
 import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
 import { PlantIncomeResearchSection } from './PlantIncomeResearchSection';
 import { PlantResearchSection } from './PlantResearchSection';
