@@ -38,6 +38,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const { t } = useTranslation();
   const del = useDeletePlantCase();
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
+  const { data: permaProfile } = usePermapeopleProfile(plantCase.id);
   const data = usePlantCaseDashboard(plantCase);
 
   const handleDelete = async () => {
