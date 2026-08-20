@@ -2478,7 +2478,8 @@
       "errors": {
         "config": "Permapeople is not configured correctly. Please try again later.",
         "generic": "Could not load the Permapeople profile."
-      }
+      },
+      "sourceLabel": "Permapeople · community cultivation data"
     },
     "income": {
       "title": "Income research",
@@ -2639,6 +2640,14 @@
         "previewFallback1": "Verify the problem before acting because confidence is low.",
         "previewFallback2": "Check symptoms and affected organs against the confirmed plant.",
         "previewFallback3": "Use non-chemical prevention, monitoring, and local expert confirmation first."
+      },
+      "profile": {
+        "trefleReady": "Trefle ready",
+        "trefleNotLoaded": "Trefle not loaded",
+        "permapeopleReady": "Permapeople ready",
+        "permapeopleNotFetched": "Permapeople not fetched",
+        "botanicalGroup": "Botanical profile · Trefle",
+        "permacultureGroup": "Permaculture profile · Permapeople"
       }
     }
   }

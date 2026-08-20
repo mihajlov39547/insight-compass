@@ -2494,7 +2494,8 @@
       "errors": {
         "config": "Permapeople nije ispravno konfigurisan. Probajte ponovo kasnije.",
         "generic": "Nije moguće učitati Permapeople profil."
-      }
+      },
+      "sourceLabel": "Permapeople · zajednički podaci o gajenju"
     },
     "income": {
       "title": "Istraživanje prihoda",
@@ -2655,6 +2656,14 @@
         "previewFallback1": "Proverite problem pre delovanja jer je pouzdanost niska.",
         "previewFallback2": "Uporedite simptome i zahvaćene organe sa potvrđenom biljkom.",
         "previewFallback3": "Prvo koristite nehemijsku prevenciju, praćenje i potvrdu lokalnog stručnjaka."
+      },
+      "profile": {
+        "trefleReady": "Trefle spreman",
+        "trefleNotLoaded": "Trefle nije učitan",
+        "permapeopleReady": "Permapeople spreman",
+        "permapeopleNotFetched": "Permapeople nije preuzet",
+        "botanicalGroup": "Botanički profil · Trefle",
+        "permacultureGroup": "Permakulturni profil · Permapeople"
       }
     }
   }
