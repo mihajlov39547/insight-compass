@@ -41,14 +41,17 @@ interface Msg {
 
 
 /** Map persisted plant-chat sources onto the shared Project Chat source model. */
-function toSourceItems(list: PlantChatUsedSource[] | undefined): SourceItem[] {
+function toSourceItems(
+  list: PlantChatUsedSource[] | undefined,
+  labelFor?: (s: PlantChatUsedSource) => string | null,
+): SourceItem[] {
   if (!Array.isArray(list)) return [];
   return list
     .filter((s) => s && (s.title || s.url))
     .map((s, i) => ({
       id: s.id || `plant-src-${i}`,
       type: s.url ? 'web' : 'document',
-      title: s.title || s.url || `Source ${i + 1}`,
+      title: labelFor?.(s) || s.title || s.url || `Source ${i + 1}`,
       snippet: s.snippet || '',
       relevance: typeof s.score === 'number' ? s.score : 0,
       score: typeof s.score === 'number' ? s.score : undefined,
@@ -758,7 +761,12 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
           </div>
         )}
         {!messagesLoading && displayMessages.map((m, i) => {
-          const items = m.role === 'assistant' ? toSourceItems(m.sourcesUsed) : [];
+          const items =
+            m.role === 'assistant'
+              ? toSourceItems(m.sourcesUsed, (s) =>
+                  s.provider === 'permapeople' ? t('plantAdvisor.permapeople.sourceLabel') : null,
+                )
+              : [];
           const msgId = m.id ?? `local-${i}`;
           return (
             <div key={msgId} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
