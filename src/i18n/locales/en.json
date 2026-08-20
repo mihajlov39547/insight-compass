@@ -2465,7 +2465,15 @@
         "growth": "Growth",
         "layer": "Layer",
         "edible": "Edible",
-        "edibleParts": "Edible parts"
+        "edibleParts": "Edible parts",
+        "edibleUses": "Edible uses",
+        "lifeCycle": "Life cycle",
+        "daysToHarvest": "Days to harvest",
+        "propagation": "Propagation",
+        "soilPh": "Soil pH",
+        "spacing": "Spacing",
+        "utility": "Utility",
+        "nativeTo": "Native to"
       },
       "errors": {
         "config": "Permapeople is not configured correctly. Please try again later.",

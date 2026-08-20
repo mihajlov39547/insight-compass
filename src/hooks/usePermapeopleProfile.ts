@@ -12,6 +12,16 @@ export interface PermapeopleNormalizedData {
   layer?: string | null;
   edible?: string | null;
   edibleParts?: string | null;
+  edibleUses?: string | null;
+  lifeCycle?: string | null;
+  daysToHarvest?: string | null;
+  propagationMethod?: string | null;
+  soilPh?: string | null;
+  spacing?: string | null;
+  height?: string | null;
+  width?: string | null;
+  utility?: string | null;
+  nativeTo?: string | null;
 }
 
 export interface ExternalPlantProfileRow {

@@ -288,6 +288,13 @@ export function buildPermapeopleContextLine(
     ['Layer', 'Sloj', nd.layer],
     ['Edible', 'Jestiva', nd.edible],
     ['Edible parts', 'Jestivi delovi', nd.edibleParts],
+    ['Edible uses', 'Jestive upotrebe', nd.edibleUses],
+    ['Life cycle', 'Životni ciklus', nd.lifeCycle],
+    ['Days to harvest', 'Dana do berbe', nd.daysToHarvest],
+    ['Propagation', 'Razmnožavanje', nd.propagationMethod],
+    ['Soil pH', 'pH zemljišta', nd.soilPh],
+    ['Spacing', 'Rastojanje', nd.spacing],
+    ['Utility', 'Namena', nd.utility],
   ];
   const facts = pairs
     .filter(([, , v]) => typeof v === 'string' && v.trim())

@@ -2481,7 +2481,15 @@
         "growth": "Rast",
         "layer": "Sloj",
         "edible": "Jestiva",
-        "edibleParts": "Jestivi delovi"
+        "edibleParts": "Jestivi delovi",
+        "edibleUses": "Jestive upotrebe",
+        "lifeCycle": "Životni ciklus",
+        "daysToHarvest": "Dana do berbe",
+        "propagation": "Razmnožavanje",
+        "soilPh": "pH zemljišta",
+        "spacing": "Rastojanje",
+        "utility": "Namena",
+        "nativeTo": "Poreklo"
       },
       "errors": {
         "config": "Permapeople nije ispravno konfigurisan. Probajte ponovo kasnije.",

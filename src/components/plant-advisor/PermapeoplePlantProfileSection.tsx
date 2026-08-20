@@ -152,6 +152,14 @@ export function PermapeoplePlantProfileSection({ caseId, hasConfirmedIdentificat
             <Row label={t('plantAdvisor.permapeople.fields.layer')} value={nd.layer} />
             <Row label={t('plantAdvisor.permapeople.fields.edible')} value={nd.edible} />
             <Row label={t('plantAdvisor.permapeople.fields.edibleParts')} value={nd.edibleParts} />
+            <Row label={t('plantAdvisor.permapeople.fields.edibleUses')} value={nd.edibleUses} />
+            <Row label={t('plantAdvisor.permapeople.fields.lifeCycle')} value={nd.lifeCycle} />
+            <Row label={t('plantAdvisor.permapeople.fields.daysToHarvest')} value={nd.daysToHarvest} />
+            <Row label={t('plantAdvisor.permapeople.fields.propagation')} value={nd.propagationMethod} />
+            <Row label={t('plantAdvisor.permapeople.fields.soilPh')} value={nd.soilPh} />
+            <Row label={t('plantAdvisor.permapeople.fields.spacing')} value={nd.spacing} />
+            <Row label={t('plantAdvisor.permapeople.fields.utility')} value={nd.utility} />
+            <Row label={t('plantAdvisor.permapeople.fields.nativeTo')} value={nd.nativeTo} />
           </div>
 
           {row.source_url && (

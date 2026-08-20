@@ -458,6 +458,13 @@ Deno.serve(async (req: Request) => {
           layer: pn.layer ?? null,
           edible: pn.edible ?? null,
           edibleParts: pn.edibleParts ?? null,
+          edibleUses: pn.edibleUses ?? null,
+          lifeCycle: pn.lifeCycle ?? null,
+          daysToHarvest: pn.daysToHarvest ?? null,
+          propagationMethod: pn.propagationMethod ?? null,
+          soilPh: pn.soilPh ?? null,
+          spacing: pn.spacing ?? null,
+          utility: pn.utility ?? null,
         },
       } as SourceEntry);
     }
