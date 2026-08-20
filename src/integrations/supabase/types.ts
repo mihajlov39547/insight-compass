@@ -1288,6 +1288,80 @@ export type Database = {
           },
         ]
       }
+      plant_case_external_profiles: {
+        Row: {
+          case_id: string
+          common_name: string | null
+          created_at: string
+          family: string | null
+          fetched_at: string
+          genus: string | null
+          id: string
+          image_thumb_url: string | null
+          image_title_url: string | null
+          match_confidence: string | null
+          normalized_data: Json
+          profile_payload: Json
+          provider: string
+          provider_plant_id: string | null
+          scientific_name: string | null
+          source_url: string | null
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          common_name?: string | null
+          created_at?: string
+          family?: string | null
+          fetched_at?: string
+          genus?: string | null
+          id?: string
+          image_thumb_url?: string | null
+          image_title_url?: string | null
+          match_confidence?: string | null
+          normalized_data?: Json
+          profile_payload?: Json
+          provider: string
+          provider_plant_id?: string | null
+          scientific_name?: string | null
+          source_url?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          common_name?: string | null
+          created_at?: string
+          family?: string | null
+          fetched_at?: string
+          genus?: string | null
+          id?: string
+          image_thumb_url?: string | null
+          image_title_url?: string | null
+          match_confidence?: string | null
+          normalized_data?: Json
+          profile_payload?: Json
+          provider?: string
+          provider_plant_id?: string | null
+          scientific_name?: string | null
+          source_url?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_case_external_profiles_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plant_case_grounding_contexts: {
         Row: {
           case_id: string

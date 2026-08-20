@@ -2442,6 +2442,36 @@
         "duration": "Duration"
       }
     },
+    "permapeople": {
+      "title": "Permaculture profile",
+      "fetch": "Fetch Permapeople profile",
+      "refresh": "Refresh Permapeople profile",
+      "fetchedToast": "Permapeople profile updated",
+      "fetchedAt": "Fetched {{date}}",
+      "loading": "Looking up Permapeople…",
+      "notFetched": "No Permapeople profile yet. Fetch it to add practical growing and use data.",
+      "needsConfirmed": "Confirm a plant identification first to fetch a Permapeople profile.",
+      "noProfileFound": "No matching Permapeople plant was found.",
+      "approximateMatch": "This Permapeople match is approximate (genus or common-name level). Treat the details as general reference only.",
+      "sourceLink": "View on Permapeople",
+      "providerNote": "Practical growing and use data from Permapeople. It may be incomplete and is not diagnosis or treatment advice.",
+      "fields": {
+        "family": "Family",
+        "type": "Record type",
+        "water": "Water requirement",
+        "light": "Light requirement",
+        "soil": "Soil type",
+        "hardiness": "USDA hardiness zone",
+        "growth": "Growth",
+        "layer": "Layer",
+        "edible": "Edible",
+        "edibleParts": "Edible parts"
+      },
+      "errors": {
+        "config": "Permapeople is not configured correctly. Please try again later.",
+        "generic": "Could not load the Permapeople profile."
+      }
+    },
     "income": {
       "title": "Income research",
       "helper": "Research practical ways to increase income from the confirmed plant before asking the chat.",

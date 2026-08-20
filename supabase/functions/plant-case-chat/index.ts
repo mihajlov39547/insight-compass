@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
-    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch, plantResearch, problemResearch] = await Promise.all([
+    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch, plantResearch, problemResearch, permaProfiles] = await Promise.all([
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
@@ -143,6 +143,14 @@ Deno.serve(async (req: Request) => {
         .or('metadata->>superseded.is.null,metadata->>superseded.eq.false')
         .order('created_at', { ascending: false })
         .limit(1),
+      // Permapeople is a secondary profile provider: practical growing / use data.
+      admin
+        .from('plant_case_external_profiles')
+        .select('*')
+        .eq('case_id', caseId)
+        .eq('provider', 'permapeople')
+        .order('fetched_at', { ascending: false })
+        .limit(1),
     ]);
 
     const imageRows = (imgs.data as { image_role: string | null }[] | null) ?? [];
@@ -158,6 +166,8 @@ Deno.serve(async (req: Request) => {
     const plantResearchSources = (plantResearchRow?.metadata?.sourcesUsed ?? []) as any[];
     const problemResearchRow = (problemResearch.data as any[] | null)?.[0] ?? null;
     const problemResearchSources = (problemResearchRow?.metadata?.sourcesUsed ?? []) as any[];
+    const permaRow = (permaProfiles.data as any[] | null)?.[0] ?? null;
+    const permaNorm = (permaRow?.normalized_data ?? null) as Record<string, any> | null;
 
 
     const confirmedIdent = identRows.find((i) => i.is_confirmed) ?? null;
@@ -266,6 +276,31 @@ Deno.serve(async (req: Request) => {
             sources: trefle.sources ?? null,
           }
         : null,
+      // Secondary profile provider. Practical cultivation / use data. Never
+      // treat it as diagnosis, and prefer Trefle for taxonomy.
+      permapeopleProfile: permaRow
+        ? {
+            provider: 'permapeople',
+            fetchedAt: permaRow.fetched_at,
+            matchConfidence: permaRow.match_confidence ?? null,
+            scientificName: permaRow.scientific_name ?? null,
+            commonName: permaRow.common_name ?? null,
+            family: permaRow.family ?? null,
+            genus: permaRow.genus ?? null,
+            recordType: permaRow.type ?? null,
+            description: permaRow.profile_payload?.description ?? null,
+            sourceUrl: permaRow.source_url ?? null,
+            waterRequirement: permaNorm?.waterRequirement ?? null,
+            lightRequirement: permaNorm?.lightRequirement ?? null,
+            soilType: permaNorm?.soilType ?? null,
+            hardinessZone: permaNorm?.hardinessZone ?? null,
+            growth: permaNorm?.growth ?? null,
+            layer: permaNorm?.layer ?? null,
+            edible: permaNorm?.edible ?? null,
+            edibleParts: permaNorm?.edibleParts ?? null,
+            attributes: permaNorm?.attributes ?? null,
+          }
+        : null,
       growthGrounding: groundingRow
         ? {
             fetchedAt: groundingRow.fetched_at,
@@ -339,6 +374,11 @@ Deno.serve(async (req: Request) => {
         noProblemResearch: !problemResearchRow
           ? 'No problem research has been run on the case dashboard yet.'
           : null,
+        noPermapeopleProfile: !permaRow
+          ? 'No Permapeople profile has been fetched yet.'
+          : null,
+        permapeopleUsage:
+          'Permapeople is community-maintained practical cultivation data. Use it as secondary support for growing, propagation, edibility and use questions. Prefer Trefle for taxonomy, and never use Permapeople to diagnose a problem or to recommend chemical treatments.',
       },
     };
 
@@ -347,6 +387,7 @@ Deno.serve(async (req: Request) => {
       goal: pc.user_goal ?? null,
       hasConfirmedIdent: !!confirmedIdent,
       hasTrefleProfile: !!trefle,
+      hasPermapeopleProfile: !!permaRow,
       hasGrowthGrounding: !!groundingRow,
       hasIncomeResearch: !!incomeResearchRow,
       hasPlantResearch: !!plantResearchRow,
@@ -530,6 +571,31 @@ Formatting:
         authorityScore: 'high',
         cardKey: null,
         snippet: [trefle.commonName, trefle.family, trefle.genus].filter(Boolean).join(' · '),
+      };
+    };
+
+    /** Permapeople profile as a secondary provider source. */
+    const permapeopleSource = (): UsedSource | null => {
+      if (!permaRow) return null;
+      const approximate = permaRow.match_confidence && permaRow.match_confidence !== 'high';
+      return {
+        id: 'provider-permapeople-profile',
+        provider: 'permapeople',
+        title: `Permapeople — ${permaRow.common_name || permaRow.scientific_name || pc.title}`,
+        url: permaRow.source_url ?? null,
+        domain: 'permapeople.org',
+        score: approximate ? 0.6 : 0.75,
+        sourceType: 'plant_database',
+        authorityScore: 'medium',
+        cardKey: null,
+        snippet: [
+          permaRow.scientific_name,
+          permaNorm?.waterRequirement ? `water: ${permaNorm.waterRequirement}` : null,
+          permaNorm?.lightRequirement ? `light: ${permaNorm.lightRequirement}` : null,
+          approximate ? 'approximate match' : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       };
     };
 
@@ -726,6 +792,8 @@ Formatting:
         collected.push(...growthSources(question));
         const tp = trefleSource();
         if (tp) collected.push(tp);
+        const pp = permapeopleSource();
+        if (pp) collected.push(pp);
       } else if (goal === 'identify') {
         // Identify cases reuse the shared growth guidance when the user asks a
         // care/growth (incl. general pests & disease awareness) question. When
@@ -762,6 +830,12 @@ Formatting:
 
         const tp = trefleSource();
         if (tp) collected.push(tp);
+        // Permapeople only supports care / growing / use questions, never
+        // identification or diagnosis claims.
+        if (usesGrowth || isGeneralCareQuestion(question)) {
+          const pp = permapeopleSource();
+          if (pp) collected.push(pp);
+        }
       } else if (goal === 'diagnose') {
         // Problem Research (dashboard artifact) leads for problem / prevention /
         // treatment-category questions; then confirmed plant, then candidates.
@@ -806,11 +880,15 @@ Formatting:
         if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 1));
         const tp = trefleSource();
         if (tp) collected.push(tp);
+        const pp = permapeopleSource();
+        if (pp) collected.push(pp);
 
       } else {
         if (confirmedIdent) collected.push(...identificationSources(question).slice(0, 2));
         const tp = trefleSource();
         if (tp) collected.push(tp);
+        const pp = permapeopleSource();
+        if (pp) collected.push(pp);
       }
 
       const seen = new Set<string>();
