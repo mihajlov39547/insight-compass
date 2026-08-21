@@ -21,7 +21,10 @@ export function PlantCaseChatCta({ data, onOpenChat }: Props) {
   if (data.grounding) ctx.push(t('plantAdvisor.dashboard.cta.ctxGrowth'));
   if (data.primaryResearch) ctx.push(t('plantAdvisor.dashboard.cta.ctxResearch'));
 
-  const ready = !!data.primaryResearch;
+  const ready = data.isChatReady;
+  const missing = data.chatMissingRequirements.map((k) =>
+    t(`plantAdvisor.dashboard.cta.missing.${k}`),
+  );
 
   return (
     <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 via-card to-card p-5 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm">
@@ -30,14 +33,21 @@ export function PlantCaseChatCta({ data, onOpenChat }: Props) {
           {ready ? t('plantAdvisor.dashboard.cta.ready') : t('plantAdvisor.dashboard.cta.partial')}
         </div>
         <p className="text-xs text-muted-foreground">
-          {ctx.length > 0
-            ? t('plantAdvisor.dashboard.cta.willUse', { list: ctx.join(', ') })
-            : t('plantAdvisor.dashboard.cta.noContext')}
+          {ready
+            ? ctx.length > 0
+              ? t('plantAdvisor.dashboard.cta.willUse', { list: ctx.join(', ') })
+              : t('plantAdvisor.dashboard.cta.noContext')
+            : t('plantAdvisor.dashboard.cta.blocked', { list: missing.join(', ') })}
         </p>
       </div>
-      <Button onClick={onOpenChat} className="flex-shrink-0">
+      <Button
+        onClick={onOpenChat}
+        disabled={!ready}
+        title={ready ? undefined : t('plantAdvisor.dashboard.cta.blocked', { list: missing.join(', ') })}
+        className="flex-shrink-0"
+      >
         <MessageSquare className="h-4 w-4 mr-1.5" />
-        {ready ? t('plantAdvisor.askAbout') : t('plantAdvisor.dashboard.cta.askAnyway')}
+        {ready ? t('plantAdvisor.askAbout') : t('plantAdvisor.dashboard.cta.notReady')}
       </Button>
     </div>
   );
