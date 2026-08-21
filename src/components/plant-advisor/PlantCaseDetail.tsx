@@ -122,14 +122,18 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
         data.profile ? t('plantAdvisor.dashboard.status.ready') : t('plantAdvisor.dashboard.notRun')
       }
       statusTone={data.profile ? 'ready' : 'pending'}
-      summary={[
-        data.profile
-          ? t('plantAdvisor.dashboard.profile.trefleReady')
-          : t('plantAdvisor.dashboard.profile.trefleNotLoaded'),
-        permaProfile
-          ? t('plantAdvisor.dashboard.profile.permapeopleReady')
-          : t('plantAdvisor.dashboard.profile.permapeopleNotFetched'),
-      ].join(' · ')}
+      summary={
+        !plantCase.confirmed_identification_id
+          ? t('plantAdvisor.dashboard.profile.confirmPlant')
+          : [
+              data.profile
+                ? t('plantAdvisor.dashboard.profile.trefleReady')
+                : t('plantAdvisor.dashboard.profile.trefleNotLoaded'),
+              permaProfile
+                ? t('plantAdvisor.dashboard.profile.permapeopleReady')
+                : t('plantAdvisor.dashboard.profile.permapeopleNotFetched'),
+            ].join(' · ')
+      }
       expandLabel={expand}
       collapseLabel={collapse}
     >
