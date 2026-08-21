@@ -108,6 +108,7 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
   const { data: interpretationRow } = usePlantDiagnosisInterpretations(caseId);
   const { data: profile } = usePlantSpeciesProfile(caseId);
   const { data: messages = [] } = usePlantCaseChatMessages(caseId);
+  const { data: permapeopleProfile } = usePermapeopleProfile(caseId);
   const grounding = usePlantCaseGrounding(caseId);
 
   const confirmedIdent = identifications.find((i) => i.is_confirmed) || null;
