@@ -1560,6 +1560,71 @@ export type Database = {
           },
         ]
       }
+      plant_case_visual_opinions: {
+        Row: {
+          case_id: string
+          country: string | null
+          created_at: string
+          fetched_at: string
+          id: string
+          image_ids: Json
+          language: string | null
+          mode: string
+          opinion_summary: string | null
+          provider: string
+          query: string
+          raw_payload: Json
+          status: string
+          structured_result: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          country?: string | null
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          image_ids?: Json
+          language?: string | null
+          mode: string
+          opinion_summary?: string | null
+          provider?: string
+          query: string
+          raw_payload?: Json
+          status?: string
+          structured_result?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          country?: string | null
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          image_ids?: Json
+          language?: string | null
+          mode?: string
+          opinion_summary?: string | null
+          provider?: string
+          query?: string
+          raw_payload?: Json
+          status?: string
+          structured_result?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_case_visual_opinions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plant_cases: {
         Row: {
           confirmed_at: string | null
@@ -2518,6 +2583,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      visual_second_opinion_runs: {
+        Row: {
+          case_id: string | null
+          created_at: string
+          error_code: string | null
+          id: string
+          mode: string
+          provider: string
+          run_month: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          case_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          mode: string
+          provider?: string
+          run_month?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          mode?: string
+          provider?: string
+          run_month?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visual_second_opinion_runs_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       web_search_responses: {
         Row: {
