@@ -2642,6 +2642,7 @@
         "previewFallback3": "Use non-chemical prevention, monitoring, and local expert confirmation first."
       },
       "profile": {
+        "confirmPlant": "Confirm a plant to load botanical and permaculture profiles",
         "trefleReady": "Trefle ready",
         "trefleNotLoaded": "Trefle not loaded",
         "permapeopleReady": "Permapeople ready",
