@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ interface Props {
   onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onOpenChat: () => void;
 }
 
 function Chip({
@@ -44,7 +43,7 @@ function Chip({
   );
 }
 
-export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpenChat }: Props) {
+export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete }: Props) {
   const { t } = useTranslation();
   const [showAllNotes, setShowAllNotes] = useState(false);
 
