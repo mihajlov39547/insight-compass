@@ -158,6 +158,35 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     return list.slice(0, 4);
   }, [interpretation]);
 
+  const hasImages = images.length > 0;
+  const hasConfirmedIdent = !!confirmedIdent;
+  const hasConfirmedDiag = !!confirmedDiag;
+  const hasTrefleProfile = !!profile;
+  const hasPermapeopleProfile = !!permapeopleProfile;
+  const hasAnyPlantProfile = hasTrefleProfile || hasPermapeopleProfile;
+  const permapeopleApproximate =
+    !hasTrefleProfile && hasPermapeopleProfile && permapeopleProfile?.match_confidence === 'low';
+  const hasPlantResearch = !!research.research;
+  const hasProblemResearch = !!research.problem_research;
+  const hasIncomeResearch = !!research.income_research;
+  const hasGrowthGuidance = !!grounding.data;
+
+  const chatMissingRequirements: string[] = [];
+  if (!hasImages) chatMissingRequirements.push('images');
+  if (!hasConfirmedIdent) chatMissingRequirements.push('identification');
+  if (!hasAnyPlantProfile) chatMissingRequirements.push('profile');
+  if (goal === 'diagnose') {
+    if (!hasConfirmedDiag) chatMissingRequirements.push('diagnosis');
+    if (!hasProblemResearch) chatMissingRequirements.push('problemResearch');
+  } else if (goal === 'increase_income') {
+    if (!hasIncomeResearch) chatMissingRequirements.push('incomeResearch');
+  } else if (goal === 'improve_growth') {
+    if (!hasGrowthGuidance) chatMissingRequirements.push('growthGuidance');
+  } else if (!hasPlantResearch) {
+    chatMissingRequirements.push('plantResearch');
+  }
+  const isChatReady = chatMissingRequirements.length === 0;
+
   return {
     caseId,
     goal,
