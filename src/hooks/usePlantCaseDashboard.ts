@@ -5,6 +5,7 @@ import { usePlantSpeciesProfile } from '@/hooks/usePlantSpeciesProfile';
 import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantCaseChatMessages } from '@/hooks/usePlantCaseChatMessages';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
+import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 export type ResearchKind = 'research' | 'income_research' | 'problem_research';
@@ -108,6 +109,7 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
   const { data: interpretationRow } = usePlantDiagnosisInterpretations(caseId);
   const { data: profile } = usePlantSpeciesProfile(caseId);
   const { data: messages = [] } = usePlantCaseChatMessages(caseId);
+  const { data: permapeopleProfile } = usePermapeopleProfile(caseId);
   const grounding = usePlantCaseGrounding(caseId);
 
   const confirmedIdent = identifications.find((i) => i.is_confirmed) || null;
@@ -156,6 +158,35 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     return list.slice(0, 4);
   }, [interpretation]);
 
+  const hasImages = images.length > 0;
+  const hasConfirmedIdent = !!confirmedIdent;
+  const hasConfirmedDiag = !!confirmedDiag;
+  const hasTrefleProfile = !!profile;
+  const hasPermapeopleProfile = !!permapeopleProfile;
+  const hasAnyPlantProfile = hasTrefleProfile || hasPermapeopleProfile;
+  const permapeopleApproximate =
+    !hasTrefleProfile && hasPermapeopleProfile && permapeopleProfile?.match_confidence === 'low';
+  const hasPlantResearch = !!research.research;
+  const hasProblemResearch = !!research.problem_research;
+  const hasIncomeResearch = !!research.income_research;
+  const hasGrowthGuidance = !!grounding.data;
+
+  const chatMissingRequirements: string[] = [];
+  if (!hasImages) chatMissingRequirements.push('images');
+  if (!hasConfirmedIdent) chatMissingRequirements.push('identification');
+  if (!hasAnyPlantProfile) chatMissingRequirements.push('profile');
+  if (goal === 'diagnose') {
+    if (!hasConfirmedDiag) chatMissingRequirements.push('diagnosis');
+    if (!hasProblemResearch) chatMissingRequirements.push('problemResearch');
+  } else if (goal === 'increase_income') {
+    if (!hasIncomeResearch) chatMissingRequirements.push('incomeResearch');
+  } else if (goal === 'improve_growth') {
+    if (!hasGrowthGuidance) chatMissingRequirements.push('growthGuidance');
+  } else if (!hasPlantResearch) {
+    chatMissingRequirements.push('plantResearch');
+  }
+  const isChatReady = chatMissingRequirements.length === 0;
+
   return {
     caseId,
     goal,
@@ -177,9 +208,20 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     research,
     primaryResearch,
     whatToCheckNext,
-    hasImages: images.length > 0,
-    hasConfirmedIdent: !!confirmedIdent,
-    hasConfirmedDiag: !!confirmedDiag,
+    permapeopleProfile: permapeopleProfile ?? null,
+    hasImages,
+    hasConfirmedIdent,
+    hasConfirmedDiag,
+    hasTrefleProfile,
+    hasPermapeopleProfile,
+    hasAnyPlantProfile,
+    permapeopleApproximate,
+    hasPlantResearch,
+    hasProblemResearch,
+    hasIncomeResearch,
+    hasGrowthGuidance,
+    isChatReady,
+    chatMissingRequirements,
     lowIdentConfidence: identBucket === 'low',
     lowDiagConfidence: diagBucket === 'low',
     unknownRelevance: !!topDiag && relevance === 'unknown',

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ interface Props {
   onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onOpenChat: () => void;
 }
 
 function Chip({
@@ -44,7 +43,7 @@ function Chip({
   );
 }
 
-export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpenChat }: Props) {
+export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete }: Props) {
   const { t } = useTranslation();
   const [showAllNotes, setShowAllNotes] = useState(false);
 
@@ -98,10 +97,6 @@ export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpe
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 flex-shrink-0">
-          <Button onClick={onOpenChat} size="sm">
-            <MessageSquare className="h-4 w-4 mr-1.5" />
-            {t('plantAdvisor.askAbout')}
-          </Button>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="sm" onClick={onEdit}>
               <Pencil className="h-3.5 w-3.5 mr-1.5" />

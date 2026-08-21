@@ -2588,7 +2588,11 @@
         "diagnosed": "Diagnosed",
         "growth": "Growth guidance",
         "research": "Research",
-        "chat": "Chat"
+        "chat": "Chat",
+        "profile": "Plant profile",
+        "plantResearch": "Plant research",
+        "problemResearch": "Problem research",
+        "incomeResearch": "Income research"
       },
       "uncertainty": {
         "headline": "Results are uncertain — treat them as a starting point",
@@ -2620,7 +2624,19 @@
         "ctxProfile": "botanical profile",
         "ctxInterpretation": "AI interpretation",
         "ctxGrowth": "growth guidance",
-        "ctxResearch": "research"
+        "ctxResearch": "research",
+        "notReady": "Chat not ready",
+        "blocked": "Complete the required steps before starting chat: {{list}}.",
+        "missing": {
+          "images": "photos",
+          "identification": "confirmed plant",
+          "profile": "plant profile",
+          "diagnosis": "confirmed problem",
+          "plantResearch": "plant research",
+          "problemResearch": "problem research",
+          "incomeResearch": "income research",
+          "growthGuidance": "growth guidance"
+        }
       },
       "diag": {
         "aiTriage": "AI triage",

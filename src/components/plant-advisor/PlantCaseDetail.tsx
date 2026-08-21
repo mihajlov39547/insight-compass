@@ -170,7 +170,6 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
         onBack={onBack}
         onEdit={onEdit}
         onDelete={handleDelete}
-        onOpenChat={onOpenChat}
       />
 
       <PlantCaseUncertaintyBanner data={data} />

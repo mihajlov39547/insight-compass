@@ -2604,7 +2604,11 @@
         "diagnosed": "Dijagnostikovano",
         "growth": "Smernice za rast",
         "research": "Istraživanje",
-        "chat": "Razgovor"
+        "chat": "Razgovor",
+        "profile": "Profil biljke",
+        "plantResearch": "Istraživanje biljke",
+        "problemResearch": "Istraživanje problema",
+        "incomeResearch": "Istraživanje prihoda"
       },
       "uncertainty": {
         "headline": "Rezultati su nesigurni — koristite ih kao početnu tačku",
@@ -2636,7 +2640,19 @@
         "ctxProfile": "botanički profil",
         "ctxInterpretation": "AI interpretacija",
         "ctxGrowth": "smernice za rast",
-        "ctxResearch": "istraživanje"
+        "ctxResearch": "istraživanje",
+        "notReady": "Razgovor nije spreman",
+        "blocked": "Završite obavezne korake pre razgovora: {{list}}.",
+        "missing": {
+          "images": "fotografije",
+          "identification": "potvrđena biljka",
+          "profile": "profil biljke",
+          "diagnosis": "potvrđen problem",
+          "plantResearch": "istraživanje biljke",
+          "problemResearch": "istraživanje problema",
+          "incomeResearch": "istraživanje prihoda",
+          "growthGuidance": "smernice za rast"
+        }
       },
       "diag": {
         "aiTriage": "AI trijaža",
