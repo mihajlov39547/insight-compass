@@ -98,10 +98,6 @@ export function PlantCaseHero({ plantCase, data, onBack, onEdit, onDelete, onOpe
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 flex-shrink-0">
-          <Button onClick={onOpenChat} size="sm">
-            <MessageSquare className="h-4 w-4 mr-1.5" />
-            {t('plantAdvisor.askAbout')}
-          </Button>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="sm" onClick={onEdit}>
               <Pencil className="h-3.5 w-3.5 mr-1.5" />
