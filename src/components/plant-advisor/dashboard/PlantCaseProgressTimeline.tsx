@@ -39,6 +39,15 @@ export function PlantCaseProgressTimeline({ data }: { data: PlantCaseDashboardDa
           : 'complete'
         : 'missing',
     },
+    {
+      key: 'profile',
+      label: t('plantAdvisor.dashboard.timeline.profile'),
+      state: data.hasAnyPlantProfile
+        ? data.permapeopleApproximate
+          ? 'warning'
+          : 'complete'
+        : 'missing',
+    },
   ];
 
   if (data.goal === 'diagnose') {
@@ -51,23 +60,35 @@ export function PlantCaseProgressTimeline({ data }: { data: PlantCaseDashboardDa
           : 'complete'
         : 'missing',
     });
+    steps.push({
+      key: 'problemResearch',
+      label: t('plantAdvisor.dashboard.timeline.problemResearch'),
+      state: data.hasProblemResearch ? 'complete' : 'missing',
+    });
   } else if (data.goal === 'improve_growth') {
     steps.push({
       key: 'growth',
       label: t('plantAdvisor.dashboard.timeline.growth'),
-      state: data.grounding ? 'complete' : 'missing',
+      state: data.hasGrowthGuidance ? 'complete' : 'missing',
+    });
+  } else if (data.goal === 'increase_income') {
+    steps.push({
+      key: 'incomeResearch',
+      label: t('plantAdvisor.dashboard.timeline.incomeResearch'),
+      state: data.hasIncomeResearch ? 'complete' : 'missing',
+    });
+  } else {
+    steps.push({
+      key: 'plantResearch',
+      label: t('plantAdvisor.dashboard.timeline.plantResearch'),
+      state: data.hasPlantResearch ? 'complete' : 'missing',
     });
   }
 
   steps.push({
-    key: 'research',
-    label: t('plantAdvisor.dashboard.timeline.research'),
-    state: data.primaryResearch ? 'complete' : 'missing',
-  });
-  steps.push({
     key: 'chat',
     label: t('plantAdvisor.dashboard.timeline.chat'),
-    state: 'complete',
+    state: data.isChatReady ? 'complete' : 'missing',
   });
 
   return (
