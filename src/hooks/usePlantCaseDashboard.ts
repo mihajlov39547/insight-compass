@@ -111,6 +111,8 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
   const { data: profile } = usePlantSpeciesProfile(caseId);
   const { data: messages = [] } = usePlantCaseChatMessages(caseId);
   const { data: permapeopleProfile } = usePermapeopleProfile(caseId);
+  const visualMode = plantCase.user_goal === 'diagnose' ? 'diagnose' : 'identify';
+  const { data: visualOpinion } = usePlantVisualOpinion(caseId, visualMode);
   const grounding = usePlantCaseGrounding(caseId);
 
   const confirmedIdent = identifications.find((i) => i.is_confirmed) || null;
