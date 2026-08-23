@@ -6,6 +6,7 @@ import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantCaseChatMessages } from '@/hooks/usePlantCaseChatMessages';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
+import { usePlantVisualOpinion } from '@/hooks/usePlantVisualOpinion';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 export type ResearchKind = 'research' | 'income_research' | 'problem_research';
@@ -110,6 +111,8 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
   const { data: profile } = usePlantSpeciesProfile(caseId);
   const { data: messages = [] } = usePlantCaseChatMessages(caseId);
   const { data: permapeopleProfile } = usePermapeopleProfile(caseId);
+  const visualMode = plantCase.user_goal === 'diagnose' ? 'diagnose' : 'identify';
+  const { data: visualOpinion } = usePlantVisualOpinion(caseId, visualMode);
   const grounding = usePlantCaseGrounding(caseId);
 
   const confirmedIdent = identifications.find((i) => i.is_confirmed) || null;
@@ -170,6 +173,12 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
   const hasProblemResearch = !!research.problem_research;
   const hasIncomeResearch = !!research.income_research;
   const hasGrowthGuidance = !!grounding.data;
+  // Advisory-only: the visual second opinion never gates chat.
+  const hasVisualOpinion = !!visualOpinion;
+  const visualOpinionSaysNotPlant = !!(
+    visualOpinion?.structured_result?.saysNotPlant ||
+    visualOpinion?.structured_result?.safetyFlags?.notAPlantImage
+  );
 
   const chatMissingRequirements: string[] = [];
   if (!hasImages) chatMissingRequirements.push('images');
@@ -220,6 +229,10 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     hasProblemResearch,
     hasIncomeResearch,
     hasGrowthGuidance,
+    visualOpinion: visualOpinion ?? null,
+    visualOpinionMode: visualMode as 'identify' | 'diagnose',
+    hasVisualOpinion,
+    visualOpinionSaysNotPlant,
     isChatReady,
     chatMissingRequirements,
     lowIdentConfidence: identBucket === 'low',

@@ -2608,7 +2608,9 @@
         "profile": "Profil biljke",
         "plantResearch": "Istraživanje biljke",
         "problemResearch": "Istraživanje problema",
-        "incomeResearch": "Istraživanje prihoda"
+        "incomeResearch": "Istraživanje prihoda",
+        "visualCheck": "Vizuelna provera",
+        "visualProblemCheck": "Vizuelna provera problema"
       },
       "uncertainty": {
         "headline": "Rezultati su nesigurni — koristite ih kao početnu tačku",
@@ -2681,6 +2683,48 @@
         "permapeopleNotFetched": "Permapeople nije preuzet",
         "botanicalGroup": "Botanički profil · Trefle",
         "permacultureGroup": "Permakulturni profil · Permapeople"
+      }
+    },
+    "visualOpinion": {
+      "providerLabel": "SerpAPI Google AI Mode · vizuelni kontekst",
+      "helper": "Opciono drugo mišljenje o vašoj fotografiji. Služi samo kao dodatni kontekst — Pl@ntNet ostaje primarni provajder.",
+      "notRun": "Još nije pokrenuto.",
+      "loading": "Provera fotografije…",
+      "doneToast": "Vizuelna provera je završena",
+      "fetchedAt": "Provereno {{date}}",
+      "symptoms": "Vidljivi simptomi",
+      "mentioned": "Pominje se",
+      "missingPhotos": "Fotografije koje bi pomogle",
+      "showDetails": "Prikaži pun vizuelni kontekst",
+      "disclaimer": "Samo vizuelni kontekst kao drugo mišljenje — nije potvrđena identifikacija ni dijagnoza i nije savet za tretman.",
+      "notPlantTitle": "Ova slika možda ne prikazuje biljku.",
+      "notPlantHint": "Slika ne deluje kao da prikazuje biljku. Dodajte jasne fotografije biljke.",
+      "conflictIdentify": "Drugo mišljenje ne potvrđuje jasno trenutnu identifikaciju.",
+      "conflictDiagnose": "Drugo mišljenje ne potvrđuje jasno trenutnu dijagnozu.",
+      "conflictHint": "Pregledajte kandidate ili dodajte bolje fotografije. Vaša potvrda nije promenjena.",
+      "status": {
+        "optional": "Opciono",
+        "notPlant": "Proverite sliku"
+      },
+      "identify": {
+        "title": "Vizuelno drugo mišljenje",
+        "run": "Pokreni vizuelnu proveru",
+        "refresh": "Osveži vizuelnu proveru"
+      },
+      "diagnose": {
+        "title": "Vizuelna provera problema",
+        "run": "Pokreni proveru problema",
+        "refresh": "Osveži proveru problema"
+      },
+      "errors": {
+        "config": "Vizuelno drugo mišljenje još nije podešeno.",
+        "noImage": "Prvo dodajte fotografiju biljke u ovaj slučaj.",
+        "needsConfirmed": "Prvo potvrdite biljku da biste pokrenuli vizuelnu proveru problema.",
+        "limit": "Dostigli ste mesečni limit vizuelnih provera za vaš plan.",
+        "provider": "Vizuelni provajder nije mogao da odgovori. Probajte kasnije.",
+        "network": "Vizuelni provajder je nedostupan. Probajte ponovo.",
+        "empty": "Nije vraćen koristan vizuelni odgovor.",
+        "generic": "Vizuelna provera nije uspela. Probajte ponovo."
       }
     }
   }

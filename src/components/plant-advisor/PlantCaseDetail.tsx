@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bug, Images, Leaf, Sparkles, Sprout, Telescope } from 'lucide-react';
+import { Bug, Images, Leaf, ScanEye, Sparkles, Sprout, Telescope } from 'lucide-react';
 import { format } from 'date-fns';
 import { useDeletePlantCase, type PlantCase } from '@/hooks/usePlantCases';
 import { PlantImageUploader } from './PlantImageUploader';
@@ -14,6 +14,7 @@ import { PlantGrowthGuidanceSection } from './PlantGrowthGuidanceSection';
 import { PlantIncomeResearchSection } from './PlantIncomeResearchSection';
 import { PlantResearchSection } from './PlantResearchSection';
 import { PlantProblemResearchSection } from './PlantProblemResearchSection';
+import { PlantVisualOpinionSection } from './PlantVisualOpinionSection';
 import { PlantCaseHero } from './dashboard/PlantCaseHero';
 import { PlantCaseUncertaintyBanner } from './dashboard/PlantCaseUncertaintyBanner';
 import { PlantCaseKeyFacts } from './dashboard/PlantCaseKeyFacts';
@@ -74,6 +75,39 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
     defaultOpen: false,
   });
 
+
+  const visualOpinionSection = (mode: 'identify' | 'diagnose', confirmedName: string | null) => (
+    <PlantDashboardSection
+      icon={<ScanEye className="h-4 w-4" />}
+      title={t(`plantAdvisor.visualOpinion.${mode}.title`)}
+      statusLabel={
+        data.visualOpinionSaysNotPlant
+          ? t('plantAdvisor.visualOpinion.status.notPlant')
+          : data.hasVisualOpinion
+            ? t('plantAdvisor.dashboard.status.ready')
+            : t('plantAdvisor.visualOpinion.status.optional')
+      }
+      statusTone={
+        data.visualOpinionSaysNotPlant ? 'warning' : data.hasVisualOpinion ? 'ready' : 'optional'
+      }
+      summary={
+        data.visualOpinionSaysNotPlant
+          ? t('plantAdvisor.visualOpinion.notPlantTitle')
+          : data.visualOpinion?.opinion_summary || t('plantAdvisor.visualOpinion.notRun')
+      }
+      expandLabel={expand}
+      collapseLabel={collapse}
+      defaultOpen={false}
+    >
+      <PlantVisualOpinionSection
+        caseId={plantCase.id}
+        mode={mode}
+        hasImages={images.length > 0}
+        hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
+        confirmedName={confirmedName}
+      />
+    </PlantDashboardSection>
+  );
 
   const identificationSection = (
     <PlantDashboardSection
@@ -253,6 +287,8 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             )}
           </PlantDashboardSection>
 
+          {visualOpinionSection('diagnose', data.confirmedDiag?.name ?? null)}
+
           <PlantDashboardSection
             icon={<Telescope className="h-4 w-4" />}
             title={t('plantAdvisor.problemResearch.title')}
@@ -320,6 +356,13 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
                   />
                 </div>
               </PlantDashboardSection>
+
+              {visualOpinionSection(
+                'identify',
+                data.confirmedIdent?.scientific_name_without_author ||
+                  data.confirmedIdent?.common_name ||
+                  null,
+              )}
 
               <PlantDashboardSection
                 icon={<Telescope className="h-4 w-4" />}

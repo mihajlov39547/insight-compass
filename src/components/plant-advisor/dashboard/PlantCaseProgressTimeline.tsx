@@ -50,6 +50,17 @@ export function PlantCaseProgressTimeline({ data }: { data: PlantCaseDashboardDa
     },
   ];
 
+  // Advisory-only visual second opinion (never blocks chat).
+  const visualStep = (key: string, labelKey: string): Step => ({
+    key,
+    label: t(labelKey),
+    state: data.visualOpinionSaysNotPlant
+      ? 'warning'
+      : data.hasVisualOpinion
+        ? 'complete'
+        : 'optional',
+  });
+
   if (data.goal === 'diagnose') {
     steps.push({
       key: 'diagnosed',
@@ -60,6 +71,7 @@ export function PlantCaseProgressTimeline({ data }: { data: PlantCaseDashboardDa
           : 'complete'
         : 'missing',
     });
+    steps.push(visualStep('visualProblemCheck', 'plantAdvisor.dashboard.timeline.visualProblemCheck'));
     steps.push({
       key: 'problemResearch',
       label: t('plantAdvisor.dashboard.timeline.problemResearch'),
@@ -78,6 +90,7 @@ export function PlantCaseProgressTimeline({ data }: { data: PlantCaseDashboardDa
       state: data.hasIncomeResearch ? 'complete' : 'missing',
     });
   } else {
+    steps.push(visualStep('visualCheck', 'plantAdvisor.dashboard.timeline.visualCheck'));
     steps.push({
       key: 'plantResearch',
       label: t('plantAdvisor.dashboard.timeline.plantResearch'),
