@@ -173,6 +173,12 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
   const hasProblemResearch = !!research.problem_research;
   const hasIncomeResearch = !!research.income_research;
   const hasGrowthGuidance = !!grounding.data;
+  // Advisory-only: the visual second opinion never gates chat.
+  const hasVisualOpinion = !!visualOpinion;
+  const visualOpinionSaysNotPlant = !!(
+    visualOpinion?.structured_result?.saysNotPlant ||
+    visualOpinion?.structured_result?.safetyFlags?.notAPlantImage
+  );
 
   const chatMissingRequirements: string[] = [];
   if (!hasImages) chatMissingRequirements.push('images');
