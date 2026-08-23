@@ -50,6 +50,17 @@ export function PlantCaseProgressTimeline({ data }: { data: PlantCaseDashboardDa
     },
   ];
 
+  // Advisory-only visual second opinion (never blocks chat).
+  const visualStep = (key: string, labelKey: string): Step => ({
+    key,
+    label: t(labelKey),
+    state: data.visualOpinionSaysNotPlant
+      ? 'warning'
+      : data.hasVisualOpinion
+        ? 'complete'
+        : 'optional',
+  });
+
   if (data.goal === 'diagnose') {
     steps.push({
       key: 'diagnosed',
