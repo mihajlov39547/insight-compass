@@ -6,6 +6,7 @@ import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantCaseChatMessages } from '@/hooks/usePlantCaseChatMessages';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
+import { usePlantVisualOpinion } from '@/hooks/usePlantVisualOpinion';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 export type ResearchKind = 'research' | 'income_research' | 'problem_research';
