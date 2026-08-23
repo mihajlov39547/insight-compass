@@ -71,6 +71,7 @@ export function PlantCaseProgressTimeline({ data }: { data: PlantCaseDashboardDa
           : 'complete'
         : 'missing',
     });
+    steps.push(visualStep('visualProblemCheck', 'plantAdvisor.dashboard.timeline.visualProblemCheck'));
     steps.push({
       key: 'problemResearch',
       label: t('plantAdvisor.dashboard.timeline.problemResearch'),
