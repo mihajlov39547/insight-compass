@@ -2592,7 +2592,9 @@
         "profile": "Plant profile",
         "plantResearch": "Plant research",
         "problemResearch": "Problem research",
-        "incomeResearch": "Income research"
+        "incomeResearch": "Income research",
+        "visualCheck": "Visual check",
+        "visualProblemCheck": "Visual problem check"
       },
       "uncertainty": {
         "headline": "Results are uncertain — treat them as a starting point",
@@ -2665,6 +2667,48 @@
         "permapeopleNotFetched": "Permapeople not fetched",
         "botanicalGroup": "Botanical profile · Trefle",
         "permacultureGroup": "Permaculture profile · Permapeople"
+      }
+    },
+    "visualOpinion": {
+      "providerLabel": "SerpAPI Google AI Mode · visual context",
+      "helper": "Optional second opinion on your photo. It is advisory context only — Pl@ntNet stays the primary provider.",
+      "notRun": "Not run yet.",
+      "loading": "Checking the photo…",
+      "doneToast": "Visual check complete",
+      "fetchedAt": "Checked {{date}}",
+      "symptoms": "Visible symptoms",
+      "mentioned": "Mentioned",
+      "missingPhotos": "Photos that would help",
+      "showDetails": "Show full visual context",
+      "disclaimer": "Second-opinion visual context only — not a confirmed identification or diagnosis, and not treatment advice.",
+      "notPlantTitle": "This image may not show a plant.",
+      "notPlantHint": "The image does not appear to show a plant. Upload clear photos of the plant instead.",
+      "conflictIdentify": "Second opinion does not clearly support the confirmed identification.",
+      "conflictDiagnose": "Second opinion does not clearly support the confirmed diagnosis.",
+      "conflictHint": "Review the candidates or add better photos. Your confirmation was not changed.",
+      "status": {
+        "optional": "Optional",
+        "notPlant": "Check photo"
+      },
+      "identify": {
+        "title": "Visual second opinion",
+        "run": "Run visual check",
+        "refresh": "Refresh visual check"
+      },
+      "diagnose": {
+        "title": "Visual problem check",
+        "run": "Run problem check",
+        "refresh": "Refresh problem check"
+      },
+      "errors": {
+        "config": "Visual second opinion is not configured yet.",
+        "noImage": "Add a plant photo to this case first.",
+        "needsConfirmed": "Confirm the plant first to run the visual problem check.",
+        "limit": "Monthly visual check limit reached for your plan.",
+        "provider": "The visual provider could not answer. Try again later.",
+        "network": "The visual provider is unreachable. Try again.",
+        "empty": "No useful visual answer was returned.",
+        "generic": "Visual check failed. Try again."
       }
     }
   }
