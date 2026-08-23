@@ -90,6 +90,7 @@ export function PlantCaseProgressTimeline({ data }: { data: PlantCaseDashboardDa
       state: data.hasIncomeResearch ? 'complete' : 'missing',
     });
   } else {
+    steps.push(visualStep('visualCheck', 'plantAdvisor.dashboard.timeline.visualCheck'));
     steps.push({
       key: 'plantResearch',
       label: t('plantAdvisor.dashboard.timeline.plantResearch'),
