@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
     if (pcErr) return json({ error: 'case_lookup_failed' }, 500);
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
-    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch, plantResearch, problemResearch, permaProfiles] = await Promise.all([
+    const [imgs, idents, diags, interps, profiles, groundings, incomeResearch, plantResearch, problemResearch, permaProfiles, visualOpinions] = await Promise.all([
       admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
       admin
         .from('plant_identifications')
@@ -151,6 +151,16 @@ Deno.serve(async (req: Request) => {
         .eq('provider', 'permapeople')
         .order('fetched_at', { ascending: false })
         .limit(1),
+      // SerpAPI Google AI Mode visual second opinion: advisory context only.
+      admin
+        .from('plant_case_visual_opinions')
+        .select('*')
+        .eq('case_id', caseId)
+        .eq('provider', 'serpapi_google_ai_mode')
+        .eq('mode', (pc.user_goal ?? 'identify') === 'diagnose' ? 'diagnose' : 'identify')
+        .eq('status', 'success')
+        .order('fetched_at', { ascending: false })
+        .limit(1),
     ]);
 
     const imageRows = (imgs.data as { image_role: string | null }[] | null) ?? [];
@@ -168,6 +178,11 @@ Deno.serve(async (req: Request) => {
     const problemResearchSources = (problemResearchRow?.metadata?.sourcesUsed ?? []) as any[];
     const permaRow = (permaProfiles.data as any[] | null)?.[0] ?? null;
     const permaNorm = (permaRow?.normalized_data ?? null) as Record<string, any> | null;
+    const visualRow = (visualOpinions.data as any[] | null)?.[0] ?? null;
+    const visualStructured = (visualRow?.structured_result ?? null) as Record<string, any> | null;
+    const visualSaysNotPlant = !!(
+      visualStructured?.saysNotPlant || visualStructured?.safetyFlags?.notAPlantImage
+    );
 
 
     const confirmedIdent = identRows.find((i) => i.is_confirmed) ?? null;
@@ -278,6 +293,25 @@ Deno.serve(async (req: Request) => {
         : null,
       // Secondary profile provider. Practical cultivation / use data. Never
       // treat it as diagnosis, and prefer Trefle for taxonomy.
+      // Visual SECOND OPINION only (SerpAPI Google AI Mode). Never a confirmed
+      // identification or diagnosis, and never a treatment source.
+      visualOpinion: visualRow
+        ? {
+            provider: 'serpapi_google_ai_mode',
+            mode: visualRow.mode,
+            opinionSummary: visualRow.opinion_summary ?? null,
+            structuredResult: {
+              saysNotPlant: visualSaysNotPlant,
+              saysWrongImage: visualStructured?.saysWrongImage ?? false,
+              confidenceSignal: visualStructured?.confidenceSignal ?? 'unknown',
+              possiblePlantNames: visualStructured?.possiblePlantNames ?? [],
+              possibleProblemNames: visualStructured?.possibleProblemNames ?? [],
+              visibleSymptoms: visualStructured?.visibleSymptoms ?? [],
+              missingPhotoSuggestions: visualStructured?.missingPhotoSuggestions ?? [],
+            },
+            fetchedAt: visualRow.fetched_at,
+          }
+        : null,
       permapeopleProfile: permaRow
         ? {
             provider: 'permapeople',
@@ -387,6 +421,12 @@ Deno.serve(async (req: Request) => {
           : null,
         permapeopleUsage:
           'Permapeople is community-maintained practical cultivation data. Use it as secondary support for growing, propagation, edibility and use questions. Prefer Trefle for taxonomy, and never use Permapeople to diagnose a problem or to recommend chemical treatments.',
+        visualOpinionUsage:
+          'visualOpinion is an unverified VISUAL SECOND OPINION from a general web AI. It is never authoritative: Pl@ntNet remains the identification provider and plantnet_disease the diagnosis provider. Use it only to describe what the photo shows, to flag an obviously wrong or non-plant image, to explain uncertainty, or to suggest missing photos. Never state a plant name or a problem name on its authority alone, never derive treatment or chemical advice from it, and never mention a person or celebrity identity. If it disagrees with the confirmed identification or diagnosis, say the visual check does not clearly support it and suggest better photos or reviewing candidates.',
+        visualOpinionNotPlant: visualSaysNotPlant
+          ? 'The visual check suggests this image may not show a plant. Ask the user for clear plant photos before making claims.'
+          : null,
+        noVisualOpinion: !visualRow ? 'No visual second opinion has been run yet (optional).' : null,
       },
     };
 
@@ -396,6 +436,7 @@ Deno.serve(async (req: Request) => {
       hasConfirmedIdent: !!confirmedIdent,
       hasTrefleProfile: !!trefle,
       hasPermapeopleProfile: !!permaRow,
+      hasVisualOpinion: !!visualRow,
       hasGrowthGrounding: !!groundingRow,
       hasIncomeResearch: !!incomeResearchRow,
       hasPlantResearch: !!plantResearchRow,
@@ -604,6 +645,25 @@ Formatting:
         ]
           .filter(Boolean)
           .join(' · '),
+      };
+    };
+
+    /** Visual second opinion as a non-URL, advisory provider source. */
+    const visualOpinionSource = (): UsedSource | null => {
+      if (!visualRow) return null;
+      return {
+        id: 'provider-serpapi-google-ai-mode',
+        provider: 'serpapi_google_ai_mode',
+        title: 'Google AI Mode visual context',
+        url: null,
+        domain: null,
+        score: 0.4,
+        sourceType: 'visual_second_opinion',
+        authorityScore: 'low',
+        cardKey: null,
+        snippet: visualSaysNotPlant
+          ? 'image may not show a plant'
+          : (visualRow.opinion_summary ?? '').slice(0, 200),
       };
     };
 
@@ -844,6 +904,8 @@ Formatting:
           const pp = permapeopleSource();
           if (pp) collected.push(pp);
         }
+        const vo = visualOpinionSource();
+        if (vo) collected.push(vo);
       } else if (goal === 'diagnose') {
         // Problem Research (dashboard artifact) leads for problem / prevention /
         // treatment-category questions; then confirmed plant, then candidates.
@@ -869,6 +931,8 @@ Formatting:
         collected.push(...diagnosisSources());
         const tp = trefleSource();
         if (tp) collected.push(tp);
+        const vo = visualOpinionSource();
+        if (vo) collected.push(vo);
       } else if (goal === 'increase_income') {
         // Income Research (dashboard artifact) is the primary source set here.
         for (const s of incomeResearchSources.slice(0, 8)) {
