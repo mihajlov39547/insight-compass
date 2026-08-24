@@ -154,6 +154,7 @@ Deno.serve(async (req) => {
     const plan = normalizePlan(profile?.plan);
 
     // Monthly usage allowance (separate from the Plant AI scan quota).
+    // Only completed runs count: failed runs stay for diagnostics but are free.
     const monthStart = new Date();
     monthStart.setUTCDate(1);
     monthStart.setUTCHours(0, 0, 0, 0);
@@ -161,7 +162,9 @@ Deno.serve(async (req) => {
       .from('visual_second_opinion_runs')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
+      .eq('status', 'completed')
       .gte('created_at', monthStart.toISOString());
+
     const limit = monthlyLimitForPlan(plan);
     if ((usedCount ?? 0) >= limit) {
       return json({ error: 'monthly_limit_reached', used: usedCount ?? 0, limit }, 429);
