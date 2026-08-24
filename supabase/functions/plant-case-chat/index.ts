@@ -421,6 +421,12 @@ Deno.serve(async (req: Request) => {
           : null,
         permapeopleUsage:
           'Permapeople is community-maintained practical cultivation data. Use it as secondary support for growing, propagation, edibility and use questions. Prefer Trefle for taxonomy, and never use Permapeople to diagnose a problem or to recommend chemical treatments.',
+        visualOpinionUsage:
+          'visualOpinion is an unverified VISUAL SECOND OPINION from a general web AI. It is never authoritative: Pl@ntNet remains the identification provider and plantnet_disease the diagnosis provider. Use it only to describe what the photo shows, to flag an obviously wrong or non-plant image, to explain uncertainty, or to suggest missing photos. Never state a plant name or a problem name on its authority alone, never derive treatment or chemical advice from it, and never mention a person or celebrity identity. If it disagrees with the confirmed identification or diagnosis, say the visual check does not clearly support it and suggest better photos or reviewing candidates.',
+        visualOpinionNotPlant: visualSaysNotPlant
+          ? 'The visual check suggests this image may not show a plant. Ask the user for clear plant photos before making claims.'
+          : null,
+        noVisualOpinion: !visualRow ? 'No visual second opinion has been run yet (optional).' : null,
       },
     };
 
@@ -430,6 +436,7 @@ Deno.serve(async (req: Request) => {
       hasConfirmedIdent: !!confirmedIdent,
       hasTrefleProfile: !!trefle,
       hasPermapeopleProfile: !!permaRow,
+      hasVisualOpinion: !!visualRow,
       hasGrowthGrounding: !!groundingRow,
       hasIncomeResearch: !!incomeResearchRow,
       hasPlantResearch: !!plantResearchRow,
