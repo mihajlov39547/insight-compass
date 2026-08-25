@@ -2725,6 +2725,77 @@
         "network": "Vizuelni provajder je nedostupan. Probajte ponovo.",
         "empty": "Nije vraćen koristan vizuelni odgovor.",
         "generic": "Vizuelna provera nije uspela. Probajte ponovo."
+      },
+      "why": "Zašto podržava ili osporava",
+      "advancedText": "Napredni tekst provajdera",
+      "support": {
+        "supports": {
+          "identify": "Vizuelna provera podržava potvrđenu biljku.",
+          "diagnose": "Vizuelna provera podržava trenutnu dijagnozu."
+        },
+        "conflicts": {
+          "identify": "Vizuelna provera predlaže drugu biljku. Pregledajte kandidate.",
+          "diagnose": "Vizuelna provera predlaže drugi problem. Pregledajte kandidate."
+        },
+        "inconclusive": {
+          "identify": "Vizuelna provera nije dovoljna. Dodajte bolje fotografije za proveru.",
+          "diagnose": "Simptomi nisu dovoljno vidljivi. Dodajte bolje fotografije."
+        },
+        "not_plant": {
+          "identify": "Ova slika možda ne prikazuje biljku.",
+          "diagnose": "Ova slika možda ne prikazuje biljku."
+        }
+      },
+      "badge": {
+        "supports": "Podržava identifikaciju",
+        "conflicts": "Konflikt",
+        "inconclusive": "Nije dovoljno jasno",
+        "not_plant": "Proverite sliku"
+      },
+      "confidence": {
+        "high": "Visoka",
+        "medium": "Srednja",
+        "low": "Niska",
+        "uncertain": "Neizvesna"
+      },
+      "adjustment": {
+        "increase": "veća posle provere",
+        "unchanged": "nepromenjena posle provere",
+        "decrease": "manja posle provere"
+      },
+      "result": {
+        "confirmedPlant": "Potvrđena biljka",
+        "confirmedDiagnosis": "Potvrđena dijagnoza",
+        "visualCandidate": "Vizuelni kandidat",
+        "plantnetConfidence": "Pl@ntNet pouzdanost",
+        "overallConfidence": "Ukupna pouzdanost",
+        "scoreUnchanged": "Pl@ntNet procenat se nikada ne menja — ukupna pouzdanost je posebna izvedena oznaka."
+      },
+      "candidates": {
+        "title": "Vizuelni kandidati",
+        "matches": "Odgovara potvrđenoj biljci",
+        "alternative": "Alternativa za upoređivanje",
+        "compare": "Uporedi sa potvrđenom biljkom",
+        "useAlternative": "Dodaj kao alternativnog kandidata",
+        "ignore": "Ignoriši",
+        "support": {
+          "strong": "Jaka podrška",
+          "moderate": "Umerena podrška",
+          "weak": "Slaba podrška"
+        },
+        "hint": "Dodavanje alternative je ne potvrđuje — vaša potvrđena biljka ostaje nepromenjena.",
+        "addedToast": "Dodato kao nepotvrđen vizuelni kandidat",
+        "addFailed": "Kandidat nije dodat. Probajte ponovo."
+      },
+      "problemCandidates": {
+        "title": "Vizuelni kandidati problema",
+        "matches": "Odgovara potvrđenoj dijagnozi"
+      },
+      "verificationLine": {
+        "supports": "Vizuelna provera podržava ovu identifikaciju.",
+        "conflicts": "Vizuelna provera ne potvrđuje jasno ovu identifikaciju.",
+        "inconclusive": "Vizuelnoj proveri su potrebne bolje fotografije.",
+        "not_plant": "Vizuelna provera nije prepoznala biljku."
       }
     }
   }

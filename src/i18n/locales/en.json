@@ -2709,6 +2709,77 @@
         "network": "The visual provider is unreachable. Try again.",
         "empty": "No useful visual answer was returned.",
         "generic": "Visual check failed. Try again."
+      },
+      "why": "Why it supports or conflicts",
+      "advancedText": "Advanced provider text",
+      "support": {
+        "supports": {
+          "identify": "Visual check supports the confirmed plant.",
+          "diagnose": "Visual check supports the current diagnosis."
+        },
+        "conflicts": {
+          "identify": "Visual check suggests a different plant. Review candidates.",
+          "diagnose": "Visual check suggests another problem. Review candidates."
+        },
+        "inconclusive": {
+          "identify": "Visual check is inconclusive. Add better verification photos.",
+          "diagnose": "Symptoms are not clearly visible. Add better photos."
+        },
+        "not_plant": {
+          "identify": "This image may not show a plant.",
+          "diagnose": "This image may not show a plant."
+        }
+      },
+      "badge": {
+        "supports": "Supports current ID",
+        "conflicts": "Conflict",
+        "inconclusive": "Inconclusive",
+        "not_plant": "Check photo"
+      },
+      "confidence": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+        "uncertain": "Uncertain"
+      },
+      "adjustment": {
+        "increase": "higher after verification",
+        "unchanged": "unchanged after verification",
+        "decrease": "lower after verification"
+      },
+      "result": {
+        "confirmedPlant": "Confirmed plant",
+        "confirmedDiagnosis": "Confirmed diagnosis",
+        "visualCandidate": "Visual candidate",
+        "plantnetConfidence": "Pl@ntNet confidence",
+        "overallConfidence": "Overall confidence",
+        "scoreUnchanged": "The Pl@ntNet score is never changed — overall confidence is a separate derived label."
+      },
+      "candidates": {
+        "title": "Visual candidates",
+        "matches": "Matches confirmed plant",
+        "alternative": "Alternative to compare",
+        "compare": "Compare with confirmed plant",
+        "useAlternative": "Use as alternative candidate",
+        "ignore": "Ignore",
+        "support": {
+          "strong": "Strong support",
+          "moderate": "Moderate support",
+          "weak": "Weak support"
+        },
+        "hint": "Adding an alternative never confirms it — your confirmed plant stays unchanged.",
+        "addedToast": "Added as an unconfirmed visual candidate",
+        "addFailed": "Could not add the candidate. Try again."
+      },
+      "problemCandidates": {
+        "title": "Visual problem candidates",
+        "matches": "Matches confirmed diagnosis"
+      },
+      "verificationLine": {
+        "supports": "Visual check supports this identification.",
+        "conflicts": "Visual check does not clearly support this identification.",
+        "inconclusive": "Visual check needs better photos.",
+        "not_plant": "Visual check could not see a plant."
       }
     }
   }
