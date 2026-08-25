@@ -304,6 +304,18 @@ Deno.serve(async (req: Request) => {
               saysNotPlant: visualSaysNotPlant,
               saysWrongImage: visualStructured?.saysWrongImage ?? false,
               confidenceSignal: visualStructured?.confidenceSignal ?? 'unknown',
+              // Structured verification layer (advisory, derived).
+              visualSupport: visualStructured?.visualSupport ?? 'inconclusive',
+              confidenceAdjustment: visualStructured?.confidenceAdjustment ?? 'unchanged',
+              overallConfidenceLabel: visualStructured?.overallConfidenceLabel ?? 'uncertain',
+              verificationSummary: visualStructured?.verificationSummary ?? null,
+              primaryVisualCandidate: visualStructured?.primaryVisualCandidate ?? null,
+              visualCandidates: visualStructured?.visualCandidates ?? [],
+              visualProblemCandidates: visualStructured?.visualProblemCandidates ?? [],
+              nextPhotoSuggestions:
+                visualStructured?.nextPhotoSuggestions ??
+                visualStructured?.missingPhotoSuggestions ??
+                [],
               possiblePlantNames: visualStructured?.possiblePlantNames ?? [],
               possibleProblemNames: visualStructured?.possibleProblemNames ?? [],
               visibleSymptoms: visualStructured?.visibleSymptoms ?? [],
