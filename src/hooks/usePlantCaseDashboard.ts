@@ -7,6 +7,7 @@ import { usePlantCaseChatMessages } from '@/hooks/usePlantCaseChatMessages';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
 import { usePlantVisualOpinion } from '@/hooks/usePlantVisualOpinion';
+import { getVisualVerification } from '@/lib/plantVisualVerification';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 export type ResearchKind = 'research' | 'income_research' | 'problem_research';
@@ -241,6 +242,8 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     visualOpinionMode: visualMode as 'identify' | 'diagnose',
     hasVisualOpinion,
     visualOpinionSaysNotPlant,
+    visualVerification,
+    confirmedIdentSci,
     isChatReady,
     chatMissingRequirements,
     lowIdentConfidence: identBucket === 'low',
