@@ -179,6 +179,14 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     visualOpinion?.structured_result?.saysNotPlant ||
     visualOpinion?.structured_result?.safetyFlags?.notAPlantImage
   );
+  const confirmedIdentSci =
+    confirmedIdent?.scientific_name_without_author || confirmedIdent?.scientific_name || null;
+  const visualVerification = getVisualVerification(visualOpinion ?? null, {
+    mode: visualMode,
+    confirmedScientificName: confirmedIdentSci,
+    confirmedDiagnosisName: confirmedDiag?.name ?? null,
+    identBucket: (identBucket ?? 'uncertain') as 'high' | 'medium' | 'low' | 'uncertain',
+  });
 
   const chatMissingRequirements: string[] = [];
   if (!hasImages) chatMissingRequirements.push('images');
