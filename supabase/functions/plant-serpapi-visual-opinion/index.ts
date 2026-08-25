@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
     const [{ data: idents }, { data: diags }] = await Promise.all([
       admin
         .from('plant_identifications')
-        .select('id, scientific_name, scientific_name_without_author, common_name, is_confirmed, rank')
+        .select('id, scientific_name, scientific_name_without_author, common_name, is_confirmed, rank, score')
         .eq('case_id', caseId)
         .order('rank', { ascending: true })
         .limit(10),
@@ -319,7 +319,21 @@ Deno.serve(async (req) => {
       return json({ error: 'provider_status_not_success', status }, 502);
     }
 
-    const { structured, summary } = normalizeSerpAiModeResult(payload, mode, lang);
+    const identScore = confirmedIdent?.score ?? (idents ?? [])[0]?.score ?? null;
+    const identBucket =
+      identScore == null
+        ? 'uncertain'
+        : identScore >= 0.7
+          ? 'high'
+          : identScore >= 0.4
+            ? 'medium'
+            : 'low';
+    const { structured, summary } = normalizeSerpAiModeResult(payload, mode, lang, {
+      confirmedScientificName: plantSci,
+      confirmedCommonName: plantCommon,
+      confirmedDiagnosisName: confirmedDiag?.name ?? null,
+      identBucket,
+    });
     const hasContent = !!(structured.markdown || structured.textBlocks.length > 0);
     if (!hasContent) {
       await failRun('empty_answer');

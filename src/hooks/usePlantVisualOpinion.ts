@@ -3,6 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type VisualOpinionMode = 'identify' | 'diagnose';
 
+export interface VisualOpinionCandidate {
+  name: string;
+  scientificName?: string | null;
+  commonName?: string | null;
+  reason?: string | null;
+  supportLevel: 'strong' | 'moderate' | 'weak';
+  matchesConfirmedPlant: boolean;
+}
+
+export interface VisualOpinionProblemCandidate {
+  name: string;
+  reason?: string | null;
+  supportLevel: 'strong' | 'moderate' | 'weak';
+  matchesConfirmedDiagnosis: boolean;
+}
+
 export interface VisualOpinionStructured {
   markdown?: string;
   firstParagraph?: string;
@@ -14,6 +30,17 @@ export interface VisualOpinionStructured {
   missingPhotoSuggestions?: string[];
   visibleSymptoms?: string[];
   confidenceSignal?: 'high' | 'medium' | 'low' | 'unknown';
+  /** Derived verification layer (see src/lib/plantVisualVerification.ts). */
+  visualSupport?: 'supports' | 'conflicts' | 'inconclusive' | 'not_plant';
+  confidenceAdjustment?: 'increase' | 'unchanged' | 'decrease';
+  overallConfidenceLabel?: 'high' | 'medium' | 'low' | 'uncertain';
+  primaryVisualCandidate?: VisualOpinionCandidate | null;
+  visualCandidates?: VisualOpinionCandidate[];
+  visualProblemCandidates?: VisualOpinionProblemCandidate[];
+  invalidCandidatesRemoved?: string[];
+  verificationSummary?: string;
+  nextPhotoSuggestions?: string[];
+  displayBullets?: string[];
   safetyFlags?: {
     containsTreatmentAdvice?: boolean;
     containsChemicalSpecifics?: boolean;
