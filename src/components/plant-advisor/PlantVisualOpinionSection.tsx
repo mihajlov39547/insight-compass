@@ -1,24 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Camera, Eye, RefreshCw, ScanEye } from 'lucide-react';
+import {
+  AlertTriangle,
+  Camera,
+  CheckCircle2,
+  Eye,
+  HelpCircle,
+  RefreshCw,
+  ScanEye,
+  ShieldQuestion,
+  Sparkles,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   usePlantVisualOpinion,
   useRunPlantVisualOpinion,
-  visualOpinionConflicts,
   type VisualOpinionMode,
 } from '@/hooks/usePlantVisualOpinion';
+import {
+  getVisualVerification,
+  type ConfidenceLabel,
+  type VisualCandidateView,
+  type VisualSupport,
+} from '@/lib/plantVisualVerification';
 
 interface Props {
   caseId: string;
   mode: VisualOpinionMode;
   hasImages: boolean;
   hasConfirmedIdentification: boolean;
-  /** Confirmed plant (identify) or confirmed diagnosis (diagnose) name, for conflict hints. */
+  /** Confirmed plant (identify) or confirmed diagnosis (diagnose) name, for verification. */
   confirmedName?: string | null;
+  /** Confirmed scientific name, used to compare visual candidates. */
+  confirmedScientificName?: string | null;
+  /** Pl@ntNet confidence bucket of the confirmed/top identification. */
+  identBucket?: ConfidenceLabel | null;
+  /** Raw Pl@ntNet score (0..1) of the confirmed/top identification, shown unchanged. */
+  identScore?: number | null;
 }
 
 const ERROR_KEY: Record<string, string> = {
@@ -34,21 +57,47 @@ const ERROR_KEY: Record<string, string> = {
   empty_answer: 'plantAdvisor.visualOpinion.errors.empty',
 };
 
+const SUPPORT_ICON: Record<VisualSupport, React.ReactNode> = {
+  supports: <CheckCircle2 className="h-4 w-4" />,
+  conflicts: <AlertTriangle className="h-4 w-4" />,
+  inconclusive: <ShieldQuestion className="h-4 w-4" />,
+  not_plant: <AlertTriangle className="h-4 w-4" />,
+};
+
+const SUPPORT_TONE: Record<VisualSupport, string> = {
+  supports: 'border-emerald-500/40 bg-emerald-500/10',
+  conflicts: 'border-amber-500/40 bg-amber-500/10',
+  inconclusive: 'border-border bg-muted/30',
+  not_plant: 'border-amber-500/40 bg-amber-500/10',
+};
+
 export function PlantVisualOpinionSection({
   caseId,
   mode,
   hasImages,
   hasConfirmedIdentification,
   confirmedName,
+  confirmedScientificName,
+  identBucket,
+  identScore,
 }: Props) {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const query = usePlantVisualOpinion(caseId, mode);
   const run = useRunPlantVisualOpinion();
+  const [ignored, setIgnored] = useState<string[]>([]);
+  const [compared, setCompared] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [showRaw, setShowRaw] = useState(false);
 
   const row = query.data ?? null;
-  const s = row?.structured_result ?? {};
-  const notPlant = !!(s.saysNotPlant || s.safetyFlags?.notAPlantImage);
-  const conflict = visualOpinionConflicts(row, confirmedName ?? null);
+  const verification = getVisualVerification(row, {
+    mode,
+    confirmedScientificName:
+      mode === 'identify' ? confirmedScientificName ?? confirmedName ?? null : confirmedScientificName ?? null,
+    confirmedDiagnosisName: mode === 'diagnose' ? confirmedName ?? null : null,
+    identBucket: identBucket ?? null,
+  });
   const blocked = mode === 'diagnose' && !hasConfirmedIdentification;
 
   const execute = async (force: boolean) => {
@@ -62,13 +111,58 @@ export function PlantVisualOpinionSection({
     }
   };
 
+  /** Adds a non-confirmed visual candidate so the user can compare it later. */
+  const useAsAlternative = async (candidate: VisualCandidateView) => {
+    setSaving(candidate.name);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth?.user?.id;
+      if (!userId) throw new Error('unauthorized');
+      const sci = candidate.scientificName || candidate.name;
+      const { error } = await supabase.from('plant_identifications').insert({
+        case_id: caseId,
+        user_id: userId,
+        provider: 'serpapi_google_ai_mode',
+        project: 'visual_second_opinion',
+        rank: 900,
+        score: null,
+        scientific_name: sci,
+        scientific_name_without_author: sci,
+        common_name: candidate.commonName ?? null,
+        genus: sci.split(/\s+/)[0] ?? null,
+        is_confirmed: false,
+        raw_result: {
+          source_type: 'visual_second_opinion',
+          support_level: candidate.supportLevel,
+          notes: candidate.reason ?? null,
+        },
+      });
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ['plant-identifications', caseId] });
+      toast.success(t('plantAdvisor.visualOpinion.candidates.addedToast'));
+    } catch {
+      toast.error(t('plantAdvisor.visualOpinion.candidates.addFailed'));
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const statusKey = verification ? `plantAdvisor.visualOpinion.support.${verification.visualSupport}` : null;
+  const badgeKey = verification ? `plantAdvisor.visualOpinion.badge.${verification.visualSupport}` : null;
+  const candidates = (verification?.visualCandidates ?? []).filter((c) => !ignored.includes(c.name));
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0 text-xs text-muted-foreground">
           {t('plantAdvisor.visualOpinion.helper')}
         </div>
-        <Button size="sm" variant="outline" onClick={() => execute(!!row)} disabled={run.isPending || blocked || !hasImages}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => execute(!!row)}
+          disabled={run.isPending || blocked || !hasImages}
+        >
           {row ? (
             <RefreshCw className={`h-4 w-4 mr-1.5 ${run.isPending ? 'animate-spin' : ''}`} />
           ) : (
@@ -104,101 +198,227 @@ export function PlantVisualOpinionSection({
         </div>
       )}
       {!blocked && hasImages && !row && !run.isPending && (
-        <div className="text-xs text-muted-foreground">
-          {t('plantAdvisor.visualOpinion.notRun')}
-        </div>
+        <div className="text-xs text-muted-foreground">{t('plantAdvisor.visualOpinion.notRun')}</div>
       )}
       {run.isPending && (
         <div className="text-xs text-muted-foreground">{t('plantAdvisor.visualOpinion.loading')}</div>
       )}
 
-      {row && notPlant && (
-        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs flex items-start gap-2">
-          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-          <div>
-            <div className="font-medium">{t('plantAdvisor.visualOpinion.notPlantTitle')}</div>
-            <div className="text-muted-foreground mt-0.5">
-              {t('plantAdvisor.visualOpinion.notPlantHint')}
+      {verification && (
+        <div className="space-y-4">
+          {/* 1. Verification result */}
+          <div className={`rounded-lg border px-3 py-2.5 text-xs space-y-2 ${SUPPORT_TONE[verification.visualSupport]}`}>
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 flex-shrink-0">{SUPPORT_ICON[verification.visualSupport]}</span>
+              <div className="min-w-0 space-y-1">
+                <div className="font-medium">{t(`${statusKey}.${mode}`)}</div>
+                {verification.verificationSummary && (
+                  <div className="text-muted-foreground">{verification.verificationSummary}</div>
+                )}
+              </div>
+              <Badge variant="outline" className="ml-auto text-[10px] flex-shrink-0">
+                {t(badgeKey!)}
+              </Badge>
+            </div>
+
+            <div className="grid gap-1 pt-1 sm:grid-cols-2">
+              {confirmedName && (
+                <div className="text-[11px]">
+                  <span className="text-muted-foreground">
+                    {mode === 'identify'
+                      ? t('plantAdvisor.visualOpinion.result.confirmedPlant')
+                      : t('plantAdvisor.visualOpinion.result.confirmedDiagnosis')}
+                    :{' '}
+                  </span>
+                  {confirmedName}
+                </div>
+              )}
+              {verification.primaryVisualCandidate && mode === 'identify' && (
+                <div className="text-[11px]">
+                  <span className="text-muted-foreground">
+                    {t('plantAdvisor.visualOpinion.result.visualCandidate')}:{' '}
+                  </span>
+                  {verification.primaryVisualCandidate.scientificName ||
+                    verification.primaryVisualCandidate.name}
+                </div>
+              )}
+              {identScore != null && (
+                <div className="text-[11px]">
+                  <span className="text-muted-foreground">
+                    {t('plantAdvisor.visualOpinion.result.plantnetConfidence')}:{' '}
+                  </span>
+                  {Math.round(identScore * 100)}%
+                </div>
+              )}
+              <div className="text-[11px]">
+                <span className="text-muted-foreground">
+                  {t('plantAdvisor.visualOpinion.result.overallConfidence')}:{' '}
+                </span>
+                {t(`plantAdvisor.visualOpinion.confidence.${verification.overallConfidenceLabel}`)}
+                {verification.confidenceAdjustment !== 'unchanged' && (
+                  <>
+                    {' · '}
+                    {t(`plantAdvisor.visualOpinion.adjustment.${verification.confidenceAdjustment}`)}
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              {t('plantAdvisor.visualOpinion.result.scoreUnchanged')}
             </div>
           </div>
-        </div>
-      )}
 
-      {row && !notPlant && conflict && (
-        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs flex items-start gap-2">
-          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-          <div>
-            {mode === 'identify'
-              ? t('plantAdvisor.visualOpinion.conflictIdentify')
-              : t('plantAdvisor.visualOpinion.conflictDiagnose')}
-            <div className="text-muted-foreground mt-0.5">
-              {t('plantAdvisor.visualOpinion.conflictHint')}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {row && !notPlant && (
-        <div className="space-y-3">
-          {row.opinion_summary && (
-            <div className="rounded-md border border-border bg-muted/20 p-3 text-xs leading-relaxed flex gap-2">
-              <Eye className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
-              <span>{row.opinion_summary}</span>
+          {/* 2. Visual candidates */}
+          {mode === 'identify' && candidates.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t('plantAdvisor.visualOpinion.candidates.title')}
+              </div>
+              {candidates.map((c) => (
+                <div key={c.name} className="rounded-md border border-border bg-card/60 p-2.5 space-y-1.5">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium truncate">
+                        {c.scientificName || c.name}
+                        {c.commonName ? ` · ${c.commonName}` : ''}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        <Badge variant="outline" className="text-[10px]">
+                          {t(`plantAdvisor.visualOpinion.candidates.support.${c.supportLevel}`)}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          {c.matchesConfirmedPlant
+                            ? t('plantAdvisor.visualOpinion.candidates.matches')
+                            : t('plantAdvisor.visualOpinion.candidates.alternative')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {compared === c.name && (
+                    <div className="rounded-sm bg-muted/40 px-2 py-1.5 text-[11px] space-y-0.5">
+                      <div>
+                        <span className="text-muted-foreground">
+                          {t('plantAdvisor.visualOpinion.result.confirmedPlant')}:{' '}
+                        </span>
+                        {confirmedScientificName || confirmedName || '—'}
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">
+                          {t('plantAdvisor.visualOpinion.result.visualCandidate')}:{' '}
+                        </span>
+                        {c.scientificName || c.name}
+                      </div>
+                      {c.reason && <div className="text-muted-foreground">{c.reason}</div>}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-[11px]"
+                      onClick={() => setCompared(compared === c.name ? null : c.name)}
+                    >
+                      {t('plantAdvisor.visualOpinion.candidates.compare')}
+                    </Button>
+                    {!c.matchesConfirmedPlant && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-[11px]"
+                        disabled={saving === c.name}
+                        onClick={() => useAsAlternative(c)}
+                      >
+                        {t('plantAdvisor.visualOpinion.candidates.useAlternative')}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-[11px] text-muted-foreground"
+                      onClick={() => setIgnored((p) => [...p, c.name])}
+                    >
+                      {t('plantAdvisor.visualOpinion.candidates.ignore')}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <div className="text-[10px] text-muted-foreground">
+                {t('plantAdvisor.visualOpinion.candidates.hint')}
+              </div>
             </div>
           )}
 
-          {(s.visibleSymptoms?.length ?? 0) > 0 && (
-            <div>
-              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
-                {t('plantAdvisor.visualOpinion.symptoms')}
+          {mode === 'diagnose' && verification.visualProblemCandidates.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t('plantAdvisor.visualOpinion.problemCandidates.title')}
               </div>
-              <ul className="list-disc pl-5 space-y-0.5 text-xs">
-                {s.visibleSymptoms!.slice(0, 5).map((x, i) => (
-                  <li key={i}>{x}</li>
+              <ul className="space-y-1">
+                {verification.visualProblemCandidates.slice(0, 4).map((p) => (
+                  <li key={p.name} className="flex items-center gap-2 text-xs">
+                    <span className="truncate">{p.name}</span>
+                    <Badge variant="outline" className="text-[10px]">
+                      {t(`plantAdvisor.visualOpinion.candidates.support.${p.supportLevel}`)}
+                    </Badge>
+                    {p.matchesConfirmedDiagnosis && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {t('plantAdvisor.visualOpinion.problemCandidates.matches')}
+                      </span>
+                    )}
+                  </li>
                 ))}
               </ul>
             </div>
           )}
 
-          {(s.possiblePlantNames?.length ?? 0) > 0 && mode === 'identify' && (
-            <div className="text-xs">
-              <span className="text-muted-foreground">
-                {t('plantAdvisor.visualOpinion.mentioned')}:{' '}
-              </span>
-              {s.possiblePlantNames!.slice(0, 4).join(', ')}
+          {/* 3. Why it supports / conflicts */}
+          {verification.displayBullets.length > 0 && (
+            <div>
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5">
+                <Eye className="h-3.5 w-3.5" />
+                {t('plantAdvisor.visualOpinion.why')}
+              </div>
+              <ul className="list-disc pl-5 space-y-0.5 text-xs">
+                {verification.displayBullets.map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
             </div>
           )}
 
-          {(s.possibleProblemNames?.length ?? 0) > 0 && mode === 'diagnose' && (
-            <div className="text-xs">
-              <span className="text-muted-foreground">
-                {t('plantAdvisor.visualOpinion.mentioned')}:{' '}
-              </span>
-              {s.possibleProblemNames!.slice(0, 4).join(', ')}
-            </div>
-          )}
-
-          {(s.missingPhotoSuggestions?.length ?? 0) > 0 && (
+          {/* 4. What to photograph next */}
+          {verification.nextPhotoSuggestions.length > 0 && (
             <div>
               <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5">
                 <Camera className="h-3.5 w-3.5" />
                 {t('plantAdvisor.visualOpinion.missingPhotos')}
               </div>
               <ul className="list-disc pl-5 space-y-0.5 text-xs">
-                {s.missingPhotoSuggestions!.slice(0, 4).map((x, i) => (
+                {verification.nextPhotoSuggestions.map((x, i) => (
                   <li key={i}>{x}</li>
                 ))}
               </ul>
             </div>
           )}
 
-          {s.markdown && (
-            <details className="text-xs">
-              <summary className="cursor-pointer text-muted-foreground">
-                {t('plantAdvisor.visualOpinion.showDetails')}
-              </summary>
-              <div className="mt-2 whitespace-pre-wrap leading-relaxed">{s.markdown}</div>
-            </details>
+          {/* Advanced: raw scrubbed provider text (debug only) */}
+          {verification.rawMarkdown && (
+            <div className="text-xs">
+              <button
+                type="button"
+                className="text-muted-foreground underline-offset-2 hover:underline flex items-center gap-1.5"
+                onClick={() => setShowRaw((v) => !v)}
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+                {t('plantAdvisor.visualOpinion.advancedText')}
+              </button>
+              {showRaw && (
+                <div className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-2 text-[11px] leading-relaxed text-muted-foreground">
+                  {verification.rawMarkdown}
+                </div>
+              )}
+            </div>
           )}
 
           <div className="text-[11px] text-muted-foreground">

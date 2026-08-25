@@ -7,6 +7,7 @@ import { usePlantCaseChatMessages } from '@/hooks/usePlantCaseChatMessages';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
 import { usePlantVisualOpinion } from '@/hooks/usePlantVisualOpinion';
+import { getVisualVerification } from '@/lib/plantVisualVerification';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 export type ResearchKind = 'research' | 'income_research' | 'problem_research';
@@ -179,6 +180,14 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     visualOpinion?.structured_result?.saysNotPlant ||
     visualOpinion?.structured_result?.safetyFlags?.notAPlantImage
   );
+  const confirmedIdentSci =
+    confirmedIdent?.scientific_name_without_author || confirmedIdent?.scientific_name || null;
+  const visualVerification = getVisualVerification(visualOpinion ?? null, {
+    mode: visualMode,
+    confirmedScientificName: confirmedIdentSci,
+    confirmedDiagnosisName: confirmedDiag?.name ?? null,
+    identBucket: (identBucket ?? 'uncertain') as 'high' | 'medium' | 'low' | 'uncertain',
+  });
 
   const chatMissingRequirements: string[] = [];
   if (!hasImages) chatMissingRequirements.push('images');
@@ -233,6 +242,8 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     visualOpinionMode: visualMode as 'identify' | 'diagnose',
     hasVisualOpinion,
     visualOpinionSaysNotPlant,
+    visualVerification,
+    confirmedIdentSci,
     isChatReady,
     chatMissingRequirements,
     lowIdentConfidence: identBucket === 'low',

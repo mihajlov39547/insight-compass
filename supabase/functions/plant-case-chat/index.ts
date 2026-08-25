@@ -304,6 +304,18 @@ Deno.serve(async (req: Request) => {
               saysNotPlant: visualSaysNotPlant,
               saysWrongImage: visualStructured?.saysWrongImage ?? false,
               confidenceSignal: visualStructured?.confidenceSignal ?? 'unknown',
+              // Structured verification layer (advisory, derived).
+              visualSupport: visualStructured?.visualSupport ?? 'inconclusive',
+              confidenceAdjustment: visualStructured?.confidenceAdjustment ?? 'unchanged',
+              overallConfidenceLabel: visualStructured?.overallConfidenceLabel ?? 'uncertain',
+              verificationSummary: visualStructured?.verificationSummary ?? null,
+              primaryVisualCandidate: visualStructured?.primaryVisualCandidate ?? null,
+              visualCandidates: visualStructured?.visualCandidates ?? [],
+              visualProblemCandidates: visualStructured?.visualProblemCandidates ?? [],
+              nextPhotoSuggestions:
+                visualStructured?.nextPhotoSuggestions ??
+                visualStructured?.missingPhotoSuggestions ??
+                [],
               possiblePlantNames: visualStructured?.possiblePlantNames ?? [],
               possibleProblemNames: visualStructured?.possibleProblemNames ?? [],
               visibleSymptoms: visualStructured?.visibleSymptoms ?? [],
@@ -422,7 +434,7 @@ Deno.serve(async (req: Request) => {
         permapeopleUsage:
           'Permapeople is community-maintained practical cultivation data. Use it as secondary support for growing, propagation, edibility and use questions. Prefer Trefle for taxonomy, and never use Permapeople to diagnose a problem or to recommend chemical treatments.',
         visualOpinionUsage:
-          'visualOpinion is an unverified VISUAL SECOND OPINION from a general web AI. It is never authoritative: Pl@ntNet remains the identification provider and plantnet_disease the diagnosis provider. Use it only to describe what the photo shows, to flag an obviously wrong or non-plant image, to explain uncertainty, or to suggest missing photos. Never state a plant name or a problem name on its authority alone, never derive treatment or chemical advice from it, and never mention a person or celebrity identity. If it disagrees with the confirmed identification or diagnosis, say the visual check does not clearly support it and suggest better photos or reviewing candidates.',
+          'visualOpinion is an unverified VISUAL SECOND OPINION from a general web AI. It is never authoritative: Pl@ntNet remains the identification provider and plantnet_disease the diagnosis provider. Use it only to describe what the photo shows, to flag an obviously wrong or non-plant image, to explain uncertainty, or to suggest missing photos. Never state a plant name or a problem name on its authority alone, never derive treatment or chemical advice from it, and never mention a person or celebrity identity. Prefer its STRUCTURED verification fields over its raw text: visualSupport (supports/conflicts/inconclusive/not_plant), verificationSummary, overallConfidenceLabel, confidenceAdjustment, visualCandidates and visualProblemCandidates, and nextPhotoSuggestions. When visualSupport is "supports", say the visual check supports the confirmed record and that overall confidence is higher, while keeping the Pl@ntNet percentage unchanged. When it is "conflicts", present the visual candidates as SECONDARY candidates to compare, never as a replacement for the confirmed plant or diagnosis. When it is "inconclusive" or "not_plant", ask for the specific photos in nextPhotoSuggestions.',
         visualOpinionNotPlant: visualSaysNotPlant
           ? 'The visual check suggests this image may not show a plant. Ask the user for clear plant photos before making claims.'
           : null,

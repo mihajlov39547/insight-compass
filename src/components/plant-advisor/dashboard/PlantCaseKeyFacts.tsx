@@ -68,6 +68,13 @@ export function PlantCaseKeyFacts({ data }: Props) {
             <div className="text-xs text-muted-foreground">
               {[ident.family, ident.genus].filter(Boolean).join(' · ') || '—'}
             </div>
+            {data.visualVerification && data.visualVerification.visualSupport !== 'not_plant' && (
+              <div className="text-[11px] text-muted-foreground">
+                {t(
+                  `plantAdvisor.visualOpinion.verificationLine.${data.visualVerification.visualSupport}`,
+                )}
+              </div>
+            )}
           </>
         ) : (
           <div className="text-xs text-muted-foreground">{t('plantAdvisor.dashboard.facts.plantEmpty')}</div>

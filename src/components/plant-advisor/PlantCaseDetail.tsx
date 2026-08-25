@@ -81,19 +81,23 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
       icon={<ScanEye className="h-4 w-4" />}
       title={t(`plantAdvisor.visualOpinion.${mode}.title`)}
       statusLabel={
-        data.visualOpinionSaysNotPlant
-          ? t('plantAdvisor.visualOpinion.status.notPlant')
-          : data.hasVisualOpinion
-            ? t('plantAdvisor.dashboard.status.ready')
-            : t('plantAdvisor.visualOpinion.status.optional')
+        data.visualVerification
+          ? t(`plantAdvisor.visualOpinion.badge.${data.visualVerification.visualSupport}`)
+          : t('plantAdvisor.visualOpinion.status.optional')
       }
       statusTone={
-        data.visualOpinionSaysNotPlant ? 'warning' : data.hasVisualOpinion ? 'ready' : 'optional'
+        !data.visualVerification
+          ? 'optional'
+          : data.visualVerification.visualSupport === 'supports'
+            ? 'ready'
+            : data.visualVerification.visualSupport === 'inconclusive'
+              ? 'pending'
+              : 'warning'
       }
       summary={
-        data.visualOpinionSaysNotPlant
-          ? t('plantAdvisor.visualOpinion.notPlantTitle')
-          : data.visualOpinion?.opinion_summary || t('plantAdvisor.visualOpinion.notRun')
+        data.visualVerification
+          ? t(`plantAdvisor.visualOpinion.support.${data.visualVerification.visualSupport}.${mode}`)
+          : t('plantAdvisor.visualOpinion.notRun')
       }
       expandLabel={expand}
       collapseLabel={collapse}
@@ -105,6 +109,9 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
         hasImages={images.length > 0}
         hasConfirmedIdentification={!!plantCase.confirmed_identification_id}
         confirmedName={confirmedName}
+        confirmedScientificName={data.confirmedIdentSci}
+        identBucket={(data.identBucket ?? 'uncertain') as 'high' | 'medium' | 'low' | 'uncertain'}
+        identScore={data.identScore}
       />
     </PlantDashboardSection>
   );
