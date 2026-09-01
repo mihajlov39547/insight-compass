@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/useAuth';
 import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
 import { usePlantAdvisorSettings, toPlantnetApiLang } from '@/hooks/usePlantAdvisorSettings';
 import { PlantIdentificationReviewPanel } from './PlantIdentificationReviewPanel';
+import type { VisualVerification } from '@/lib/plantVisualVerification';
 
 interface Props {
   caseId: string;
