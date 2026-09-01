@@ -325,10 +325,12 @@ export function PlantVisualOpinionSection({
                         size="sm"
                         variant="ghost"
                         className="h-6 px-2 text-[11px]"
-                        disabled={saving === c.name}
+                        disabled={saving === c.name || added.includes(c.name)}
                         onClick={() => useAsAlternative(c)}
                       >
-                        {t('plantAdvisor.visualOpinion.candidates.useAlternative')}
+                        {added.includes(c.name)
+                          ? t('plantAdvisor.visualOpinion.candidates.alreadyAdded')
+                          : t('plantAdvisor.visualOpinion.candidates.useAlternative')}
                       </Button>
                     )}
                     <Button
