@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchEdgeFunction } from '@/lib/edge/invokeWithAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   usePlantVisualOpinion,
