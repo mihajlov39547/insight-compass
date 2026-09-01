@@ -88,6 +88,7 @@ export function PlantVisualOpinionSection({
   const [ignored, setIgnored] = useState<string[]>([]);
   const [compared, setCompared] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [added, setAdded] = useState<string[]>([]);
   const [showRaw, setShowRaw] = useState(false);
 
   const row = query.data ?? null;
@@ -131,6 +132,7 @@ export function PlantVisualOpinionSection({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error('add_failed');
       await qc.invalidateQueries({ queryKey: ['plant-identifications', caseId] });
+      setAdded((p) => (p.includes(candidate.name) ? p : [...p, candidate.name]));
       if (data?.duplicate) {
         toast.info(t('plantAdvisor.visualOpinion.candidates.duplicateToast'));
       } else {
