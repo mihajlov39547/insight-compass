@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Leaf, RefreshCw, Sparkles } from 'lucide-react';
+import { AlertTriangle, Check, Leaf, RefreshCw, ScanEye, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -23,6 +23,8 @@ import { PlantIdentificationReviewPanel } from './PlantIdentificationReviewPanel
 interface Props {
   caseId: string;
   images: PlantCaseImage[];
+  /** Derived Visual Second Opinion verification (identify mode), display-only. */
+  visualVerification?: VisualVerification | null;
 }
 
 
