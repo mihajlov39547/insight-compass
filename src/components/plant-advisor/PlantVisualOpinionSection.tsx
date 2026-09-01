@@ -128,9 +128,14 @@ export function PlantVisualOpinionSection({
           reason: candidate.reason ?? null,
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error('add_failed');
       await qc.invalidateQueries({ queryKey: ['plant-identifications', caseId] });
-      toast.success(t('plantAdvisor.visualOpinion.candidates.addedToast'));
+      if (data?.duplicate) {
+        toast.info(t('plantAdvisor.visualOpinion.candidates.duplicateToast'));
+      } else {
+        toast.success(t('plantAdvisor.visualOpinion.candidates.addedToast'));
+      }
     } catch {
       toast.error(t('plantAdvisor.visualOpinion.candidates.addFailed'));
     } finally {

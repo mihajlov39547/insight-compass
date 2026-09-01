@@ -2769,6 +2769,7 @@
         },
         "hint": "Adding an alternative never confirms it — your confirmed plant stays unchanged.",
         "addedToast": "Added as an unconfirmed visual candidate",
+        "duplicateToast": "Candidate already exists",
         "addFailed": "Could not add the candidate. Try again."
       },
       "problemCandidates": {
