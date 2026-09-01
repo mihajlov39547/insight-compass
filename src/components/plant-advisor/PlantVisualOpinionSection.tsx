@@ -111,33 +111,24 @@ export function PlantVisualOpinionSection({
     }
   };
 
-  /** Adds a non-confirmed visual candidate so the user can compare it later. */
+  /** Adds a non-confirmed visual candidate (server-validated) so the user can compare it later. */
   const useAsAlternative = async (candidate: VisualCandidateView) => {
+    if (!row) return;
     setSaving(candidate.name);
     try {
-      const { data: auth } = await supabase.auth.getUser();
-      const userId = auth?.user?.id;
-      if (!userId) throw new Error('unauthorized');
-      const sci = candidate.scientificName || candidate.name;
-      const { error } = await supabase.from('plant_identifications').insert({
-        case_id: caseId,
-        user_id: userId,
-        provider: 'serpapi_google_ai_mode',
-        project: 'visual_second_opinion',
-        rank: 900,
-        score: null,
-        scientific_name: sci,
-        scientific_name_without_author: sci,
-        common_name: candidate.commonName ?? null,
-        genus: sci.split(/\s+/)[0] ?? null,
-        is_confirmed: false,
-        raw_result: {
-          source_type: 'visual_second_opinion',
-          support_level: candidate.supportLevel,
-          notes: candidate.reason ?? null,
-        },
+      const res = await fetchEdgeFunction('/functions/v1/plant-add-visual-candidate', {
+        method: 'POST',
+        body: JSON.stringify({
+          caseId,
+          visualOpinionId: row.id,
+          name: candidate.name,
+          scientificName: candidate.scientificName ?? null,
+          commonName: candidate.commonName ?? null,
+          supportLevel: candidate.supportLevel,
+          reason: candidate.reason ?? null,
+        }),
       });
-      if (error) throw error;
+      if (!res.ok) throw new Error('add_failed');
       await qc.invalidateQueries({ queryKey: ['plant-identifications', caseId] });
       toast.success(t('plantAdvisor.visualOpinion.candidates.addedToast'));
     } catch {
@@ -146,6 +137,7 @@ export function PlantVisualOpinionSection({
       setSaving(null);
     }
   };
+
 
   const statusKey = verification ? `plantAdvisor.visualOpinion.support.${verification.visualSupport}` : null;
   const badgeKey = verification ? `plantAdvisor.visualOpinion.badge.${verification.visualSupport}` : null;
