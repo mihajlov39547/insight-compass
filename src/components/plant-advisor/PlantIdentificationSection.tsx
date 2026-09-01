@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Leaf, RefreshCw, Sparkles } from 'lucide-react';
+import { AlertTriangle, Check, Leaf, RefreshCw, ScanEye, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -19,10 +19,13 @@ import { useAuth } from '@/contexts/useAuth';
 import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
 import { usePlantAdvisorSettings, toPlantnetApiLang } from '@/hooks/usePlantAdvisorSettings';
 import { PlantIdentificationReviewPanel } from './PlantIdentificationReviewPanel';
+import type { VisualVerification } from '@/lib/plantVisualVerification';
 
 interface Props {
   caseId: string;
   images: PlantCaseImage[];
+  /** Derived Visual Second Opinion verification (identify mode), display-only. */
+  visualVerification?: VisualVerification | null;
 }
 
 
@@ -56,7 +59,7 @@ function errorKey(code: string | undefined): string {
   }
 }
 
-export function PlantIdentificationSection({ caseId, images }: Props) {
+export function PlantIdentificationSection({ caseId, images, visualVerification }: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { data: identifications = [], isLoading } = usePlantIdentifications(caseId);
@@ -66,6 +69,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
   const settings = usePlantAdvisorSettings();
   const [preparing, setPreparing] = useState(false);
   const [latestReview, setLatestReview] = useState<PlantIdentificationReview | null>(null);
+  const altsRef = useRef<HTMLDivElement | null>(null);
 
   // Anything identifiable: JPEG/PNG go straight through; WebP is converted client-side.
   const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
@@ -266,6 +270,61 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
               {t('plantAdvisor.identify.uncertain')}
             </div>
           )}
+
+          {visualVerification && (
+            <div
+              className={`rounded-md border px-2.5 py-2 space-y-1.5 text-xs ${
+                visualVerification.visualSupport === 'supports'
+                  ? 'border-emerald-500/40 bg-emerald-500/10'
+                  : visualVerification.visualSupport === 'inconclusive'
+                    ? 'border-border bg-muted/40'
+                    : 'border-amber-500/40 bg-amber-500/10'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 flex-shrink-0 text-muted-foreground">
+                  {visualVerification.visualSupport === 'supports' ? (
+                    <ScanEye className="h-3.5 w-3.5" />
+                  ) : (
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                  )}
+                </span>
+                <div className="min-w-0 space-y-1">
+                  <div className="font-medium">
+                    {t('plantAdvisor.identify.visualCheck.compactLine', {
+                      pct: formatConfidence(top.score),
+                      status: t(
+                        `plantAdvisor.visualOpinion.verificationLine.${visualVerification.visualSupport}`,
+                      ),
+                      label: t(
+                        `plantAdvisor.visualOpinion.confidence.${visualVerification.overallConfidenceLabel}`,
+                      ),
+                    })}
+                  </div>
+                  <div className="text-muted-foreground">
+                    {t(`plantAdvisor.identify.visualCheck.${visualVerification.visualSupport}`)}
+                  </div>
+                  {bucket === 'low' && visualVerification.visualSupport === 'supports' && (
+                    <div className="text-muted-foreground">
+                      {t('plantAdvisor.identify.visualCheck.improved')}
+                    </div>
+                  )}
+                  {visualVerification.visualSupport === 'conflicts' && alts.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-[11px] mt-0.5"
+                      onClick={() =>
+                        altsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }
+                    >
+                      {t('plantAdvisor.identify.visualCheck.reviewAlternatives')}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {!top.is_confirmed && (
             <div>
               <Button
@@ -283,7 +342,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
       )}
 
       {alts.length > 0 && (
-        <div className="space-y-1.5">
+        <div ref={altsRef} className="space-y-1.5 scroll-mt-24">
           <div className="text-xs font-medium text-muted-foreground">
             {t('plantAdvisor.identify.alternatives')}
           </div>

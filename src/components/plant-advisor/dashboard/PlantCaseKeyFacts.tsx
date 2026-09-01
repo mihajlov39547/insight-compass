@@ -68,10 +68,15 @@ export function PlantCaseKeyFacts({ data }: Props) {
             <div className="text-xs text-muted-foreground">
               {[ident.family, ident.genus].filter(Boolean).join(' · ') || '—'}
             </div>
-            {data.visualVerification && data.visualVerification.visualSupport !== 'not_plant' && (
+            {data.visualVerification && (
               <div className="text-[11px] text-muted-foreground">
                 {t(
                   `plantAdvisor.visualOpinion.verificationLine.${data.visualVerification.visualSupport}`,
+                )}
+                {' · '}
+                {t('plantAdvisor.visualOpinion.result.overallConfidence')}:{' '}
+                {t(
+                  `plantAdvisor.visualOpinion.confidence.${data.visualVerification.overallConfidenceLabel}`,
                 )}
               </div>
             )}

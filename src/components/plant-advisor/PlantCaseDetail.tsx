@@ -150,7 +150,13 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
       defaultOpen={!data.hasConfirmedIdent}
     >
       <div className={EMBED}>
-        <PlantIdentificationSection caseId={plantCase.id} images={images} />
+        <PlantIdentificationSection
+          caseId={plantCase.id}
+          images={images}
+          visualVerification={
+            data.visualOpinionMode === 'identify' ? data.visualVerification : null
+          }
+        />
       </div>
     </PlantDashboardSection>
   );
