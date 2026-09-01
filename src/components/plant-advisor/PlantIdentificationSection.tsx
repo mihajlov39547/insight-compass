@@ -342,7 +342,7 @@ export function PlantIdentificationSection({ caseId, images, visualVerification 
       )}
 
       {alts.length > 0 && (
-        <div className="space-y-1.5">
+        <div ref={altsRef} className="space-y-1.5 scroll-mt-24">
           <div className="text-xs font-medium text-muted-foreground">
             {t('plantAdvisor.identify.alternatives')}
           </div>
