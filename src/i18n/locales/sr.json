@@ -2785,6 +2785,7 @@
         },
         "hint": "Dodavanje alternative je ne potvrđuje — vaša potvrđena biljka ostaje nepromenjena.",
         "addedToast": "Dodato kao nepotvrđen vizuelni kandidat",
+        "duplicateToast": "Kandidat već postoji",
         "addFailed": "Kandidat nije dodat. Probajte ponovo."
       },
       "problemCandidates": {
