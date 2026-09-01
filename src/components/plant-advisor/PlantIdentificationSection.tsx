@@ -270,6 +270,61 @@ export function PlantIdentificationSection({ caseId, images, visualVerification 
               {t('plantAdvisor.identify.uncertain')}
             </div>
           )}
+
+          {visualVerification && (
+            <div
+              className={`rounded-md border px-2.5 py-2 space-y-1.5 text-xs ${
+                visualVerification.visualSupport === 'supports'
+                  ? 'border-emerald-500/40 bg-emerald-500/10'
+                  : visualVerification.visualSupport === 'inconclusive'
+                    ? 'border-border bg-muted/40'
+                    : 'border-amber-500/40 bg-amber-500/10'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 flex-shrink-0 text-muted-foreground">
+                  {visualVerification.visualSupport === 'supports' ? (
+                    <ScanEye className="h-3.5 w-3.5" />
+                  ) : (
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                  )}
+                </span>
+                <div className="min-w-0 space-y-1">
+                  <div className="font-medium">
+                    {t('plantAdvisor.identify.visualCheck.compactLine', {
+                      pct: formatConfidence(top.score),
+                      status: t(
+                        `plantAdvisor.visualOpinion.verificationLine.${visualVerification.visualSupport}`,
+                      ),
+                      label: t(
+                        `plantAdvisor.visualOpinion.confidence.${visualVerification.overallConfidenceLabel}`,
+                      ),
+                    })}
+                  </div>
+                  <div className="text-muted-foreground">
+                    {t(`plantAdvisor.identify.visualCheck.${visualVerification.visualSupport}`)}
+                  </div>
+                  {bucket === 'low' && visualVerification.visualSupport === 'supports' && (
+                    <div className="text-muted-foreground">
+                      {t('plantAdvisor.identify.visualCheck.improved')}
+                    </div>
+                  )}
+                  {visualVerification.visualSupport === 'conflicts' && alts.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-[11px] mt-0.5"
+                      onClick={() =>
+                        altsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }
+                    >
+                      {t('plantAdvisor.identify.visualCheck.reviewAlternatives')}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {!top.is_confirmed && (
             <div>
               <Button
