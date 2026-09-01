@@ -59,7 +59,7 @@ function errorKey(code: string | undefined): string {
   }
 }
 
-export function PlantIdentificationSection({ caseId, images }: Props) {
+export function PlantIdentificationSection({ caseId, images, visualVerification }: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { data: identifications = [], isLoading } = usePlantIdentifications(caseId);
@@ -69,6 +69,7 @@ export function PlantIdentificationSection({ caseId, images }: Props) {
   const settings = usePlantAdvisorSettings();
   const [preparing, setPreparing] = useState(false);
   const [latestReview, setLatestReview] = useState<PlantIdentificationReview | null>(null);
+  const altsRef = useRef<HTMLDivElement | null>(null);
 
   // Anything identifiable: JPEG/PNG go straight through; WebP is converted client-side.
   const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
