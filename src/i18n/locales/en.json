@@ -2328,7 +2328,16 @@
       "author": "Author",
       "openImage": "Open image",
       "fromSpeciesResult": "from species result",
-      "referenceImagesEphemeralNote": "Reference images are shown only for this run and are not stored."
+      "referenceImagesEphemeralNote": "Reference images are shown only for this run and are not stored.",
+      "visualCheck": {
+        "compactLine": "Pl@ntNet: {{pct}} · {{status}} · Overall confidence: {{label}}",
+        "supports": "Visual check supports the confirmed identification.",
+        "conflicts": "Visual check suggests a different plant. Review alternatives before relying on this case.",
+        "inconclusive": "Visual check needs better photos.",
+        "not_plant": "Visual check could not confirm that the image shows a plant.",
+        "reviewAlternatives": "Review alternatives",
+        "improved": "Original identification confidence is low, but the visual check supports the same plant. Treat as improved but still verify with flowers/seeds."
+      }
     },
     "scans": {
       "label": "Plant AI scans",
@@ -2770,7 +2779,8 @@
         "hint": "Adding an alternative never confirms it — your confirmed plant stays unchanged.",
         "addedToast": "Added as an unconfirmed visual candidate",
         "duplicateToast": "Candidate already exists",
-        "addFailed": "Could not add the candidate. Try again."
+        "addFailed": "Could not add the candidate. Try again.",
+        "alreadyAdded": "Already added"
       },
       "problemCandidates": {
         "title": "Visual problem candidates",

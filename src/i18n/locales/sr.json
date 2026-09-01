@@ -2344,7 +2344,16 @@
       "author": "Autor",
       "openImage": "Otvori sliku",
       "fromSpeciesResult": "iz rezultata vrste",
-      "referenceImagesEphemeralNote": "Referentne slike se prikazuju samo za ovo pokretanje i ne čuvaju se."
+      "referenceImagesEphemeralNote": "Referentne slike se prikazuju samo za ovo pokretanje i ne čuvaju se.",
+      "visualCheck": {
+        "compactLine": "Pl@ntNet: {{pct}} · {{status}} · Ukupna pouzdanost: {{label}}",
+        "supports": "Vizuelna provera podržava potvrđenu identifikaciju.",
+        "conflicts": "Vizuelna provera predlaže drugu biljku. Pregledajte alternative pre oslanjanja na ovaj slučaj.",
+        "inconclusive": "Vizuelnoj proveri su potrebne bolje fotografije.",
+        "not_plant": "Vizuelna provera nije mogla da potvrdi da slika prikazuje biljku.",
+        "reviewAlternatives": "Pregledaj alternative",
+        "improved": "Prvobitna pouzdanost identifikacije je niska, ali vizuelna provera podržava istu biljku. Smatrajte je poboljšanom, ali je ipak proverite cvetom/semenom."
+      }
     },
     "scans": {
       "label": "Plant AI skeniranja",
@@ -2786,7 +2795,8 @@
         "hint": "Dodavanje alternative je ne potvrđuje — vaša potvrđena biljka ostaje nepromenjena.",
         "addedToast": "Dodato kao nepotvrđen vizuelni kandidat",
         "duplicateToast": "Kandidat već postoji",
-        "addFailed": "Kandidat nije dodat. Probajte ponovo."
+        "addFailed": "Kandidat nije dodat. Probajte ponovo.",
+        "alreadyAdded": "Već dodato"
       },
       "problemCandidates": {
         "title": "Vizuelni kandidati problema",
