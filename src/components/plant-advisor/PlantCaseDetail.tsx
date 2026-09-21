@@ -44,6 +44,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const { data: permaProfile } = usePermapeopleProfile(plantCase.id);
   const data = usePlantCaseDashboard(plantCase);
   const photosSectionRef = React.useRef<HTMLDivElement | null>(null);
+  const [photosOpen, setPhotosOpen] = React.useState(images.length === 0);
 
   const handleDelete = async () => {
     if (!confirm(t('plantAdvisor.confirmDelete'))) return;
@@ -238,7 +239,8 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           summary={t('plantAdvisor.dashboard.sections.imagesHelper')}
           expandLabel={t('plantAdvisor.dashboard.sections.manageImages')}
           collapseLabel={collapse}
-          defaultOpen={images.length === 0}
+          open={photosOpen}
+          onOpenChange={setPhotosOpen}
         >
           <div className={EMBED}>
             <PlantImageUploader caseId={plantCase.id} />
@@ -248,7 +250,12 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
 
       <PlantPhotoQualityCard
         photoQuality={data.photoQuality}
-        onAddPhotos={() => photosSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        onAddPhotos={() => {
+          setPhotosOpen(true);
+          window.requestAnimationFrame(() =>
+            photosSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+          );
+        }}
       />
 
       {plantCase.user_goal === 'diagnose' ? (

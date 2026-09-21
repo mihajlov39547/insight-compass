@@ -20,6 +20,8 @@ interface Props {
   collapseLabel: string;
   actions?: ReactNode;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
 }
 
@@ -45,9 +47,16 @@ export function PlantDashboardSection({
   collapseLabel,
   actions,
   defaultOpen = false,
+  open: controlledOpen,
+  onOpenChange,
   children,
 }: Props) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (next: boolean) => {
+    if (controlledOpen === undefined) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
 
   return (
     <section className="rounded-xl border border-border/60 bg-card/80 shadow-sm">
