@@ -22,6 +22,7 @@ import { PlantCaseProgressTimeline } from './dashboard/PlantCaseProgressTimeline
 import { PlantCaseChatCta } from './dashboard/PlantCaseChatCta';
 import { PlantDashboardSection } from './dashboard/PlantDashboardSection';
 import { PlantPhotoQualityCard } from './dashboard/PlantPhotoQualityCard';
+import { PlantDiagnosisMismatchPanel } from './dashboard/PlantDiagnosisMismatchPanel';
 import { usePlantCaseDashboard, type ResearchArtifactSummary } from '@/hooks/usePlantCaseDashboard';
 
 import { toast } from 'sonner';
