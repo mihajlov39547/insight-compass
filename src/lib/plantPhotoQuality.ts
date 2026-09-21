@@ -168,7 +168,8 @@ export function computePlantPhotoQuality({
   const hasGoalCriticalPhotos = criticalReady(normalizedGoal, baseFlags);
   const flags: PhotoQualityFlags = { ...baseFlags, hasGoalCriticalPhotos };
   const genericMissing = goalMissingKeys(normalizedGoal, flags);
-  const missingPhotoKeys = uniq(hasUploadInProgress ? ['waitForUpload', ...genericMissing] : genericMissing);
+  const uploadKeys: PhotoSuggestionKey[] = hasUploadInProgress ? ['waitForUpload'] : [];
+  const missingPhotoKeys = uniq([...uploadKeys, ...genericMissing]);
   const visualMissingPhotos = cleanVisualSuggestions(visualVerification?.nextPhotoSuggestions);
   const visualSupport = visualVerification?.visualSupport;
   const lowProviderConfidence = normalizedGoal === 'diagnose' ? lowDiagnosisConfidence : lowIdentificationConfidence;
