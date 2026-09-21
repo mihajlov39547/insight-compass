@@ -13,9 +13,12 @@ import { usePlantCaseImages } from '@/hooks/usePlantCaseImages';
 import { usePlantIdentifications, confidenceBucket } from '@/hooks/usePlantIdentifications';
 import { usePlantDiagnoses, usePlantDiagnosisInterpretations } from '@/hooks/usePlantDiagnoses';
 import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
+import { usePlantVisualOpinion } from '@/hooks/usePlantVisualOpinion';
 import { usePlantAdvisorSettings } from '@/hooks/usePlantAdvisorSettings';
 import { useExtractFollowUp } from '@/hooks/useExtractFollowUp';
 import { useCrawlFollowUp } from '@/hooks/useCrawlFollowUp';
+import { getVisualVerification } from '@/lib/plantVisualVerification';
+import { computePlantPhotoQuality } from '@/lib/plantPhotoQuality';
 import { type ResearchTraceState } from '@/services/research/tavilyResearch';
 
 import {
@@ -144,6 +147,8 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const { data: diagnoses = [] } = usePlantDiagnoses(plantCase.id);
   const { data: interpretation } = usePlantDiagnosisInterpretations(plantCase.id);
   const { data: grounding } = usePlantCaseGrounding(plantCase.id);
+  const visualMode = plantCase.user_goal === 'diagnose' ? 'diagnose' : 'identify';
+  const { data: visualOpinion } = usePlantVisualOpinion(plantCase.id, visualMode);
   const hasGrowthGrounding =
     !!grounding && (grounding.status === 'success' || grounding.status === 'partial');
   const isImproveGrowth = plantCase.user_goal === 'improve_growth';
@@ -164,6 +169,14 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const confirmedDiag = diagnoses.find((d) => d.is_confirmed) || null;
   const topDiag = confirmedDiag || diagnoses[0] || null;
   const diagBucket = confidenceBucket(topDiag?.score ?? null);
+  const confirmedIdentSci =
+    confirmedIdent?.scientific_name_without_author || confirmedIdent?.scientific_name || null;
+  const visualVerification = getVisualVerification(visualOpinion ?? null, {
+    mode: visualMode,
+    confirmedScientificName: confirmedIdentSci,
+    confirmedDiagnosisName: confirmedDiag?.name ?? null,
+    identBucket: (identBucket ?? 'uncertain') as 'high' | 'medium' | 'low' | 'uncertain',
+  });
 
   const goal = plantCase.user_goal;
   const cfg = goalConfig(goal);
@@ -191,6 +204,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const diagUncertain =
     isDiagnose && !!confirmedIdent && diagnoses.length > 0 &&
     (diagBucket === 'low' || diagLowRelevance || needsMoreEvidence);
+  const photoQuality = computePlantPhotoQuality({
+    goal,
+    images,
+    visualVerification,
+    lowIdentificationConfidence: identBucket === 'low',
+    lowDiagnosisConfidence: diagBucket === 'low',
+  });
 
   const {
     data: persistedMessages = [],
@@ -502,10 +522,14 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   };
 
   const showDiagnosisContext = isDiagnose;
-  const showRecommendedPhotos = isIdentify && identUncertain;
-  const showSymptomPhotos =
-    isDiagnose && !!confirmedIdent &&
-    (diagnoses.length === 0 || diagBucket === 'low' || diagLowRelevance || needsMoreEvidence);
+  const showPhotoQuality = photoQuality.status !== 'good' || photoQuality.missingPhotos.length > 0;
+  const photoQualityMissing = [
+    ...photoQuality.visualMissingPhotos,
+    ...photoQuality.missingPhotoKeys.map((k) => t(`plantAdvisor.photoQuality.missing.${k}`)),
+  ]
+    .filter(Boolean)
+    .filter((item, index, all) => all.findIndex((x) => x.toLowerCase() === item.toLowerCase()) === index)
+    .slice(0, 4);
 
   return (
     <div className="flex flex-col h-full">
@@ -574,6 +598,28 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
               {t('plantAdvisor.chat.imagesAttached', { count: images.length })}
             </div>
           </section>
+
+          {showPhotoQuality && (
+            <section className="p-3 border-t border-border/50 space-y-1">
+              <div className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <Camera className="h-3.5 w-3.5" />
+                {t('plantAdvisor.photoQuality.title')}
+                <Badge variant="outline" className="text-[10px] py-0">
+                  {t(`plantAdvisor.photoQuality.status.${photoQuality.status}`)}
+                </Badge>
+              </div>
+              <div className="text-muted-foreground">
+                {t('plantAdvisor.photoQuality.chatBasedOn')}
+              </div>
+              {photoQualityMissing.length > 0 && (
+                <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
+                  {photoQualityMissing.map((item, i) => (
+                    <li key={`${item}-${i}`}>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
 
           {/* Confirmed / suggested plant */}
           {topIdent && (
@@ -692,47 +738,6 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
               <span className="text-muted-foreground">
                 {t('plantAdvisor.chat.banners.diagnoseNeedsPlantConfirm')}
               </span>
-            </section>
-          )}
-
-          {/* Recommended next photos — identify cases with weak result */}
-          {showRecommendedPhotos && (
-            <section className="p-3 border-t border-border/50 space-y-1">
-              <div className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Camera className="h-3.5 w-3.5" />
-                {t('plantAdvisor.chat.sections.nextPhotos')}
-              </div>
-              <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
-                {[
-                  'leafUpper', 'leafUnder', 'stemBark',
-                  'flower', 'fruit', 'wholePlant', 'damagedPart',
-                ].map((k) => (
-                  <li key={k}>{t(`plantAdvisor.chat.photoRoles.${k}`)}</li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {/* Recommended symptom photos — diagnose cases with weak/missing evidence */}
-          {showSymptomPhotos && (
-            <section className="p-3 border-t border-border/50 space-y-1">
-              <div className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Camera className="h-3.5 w-3.5" />
-                {t('plantAdvisor.chat.sections.symptomPhotos')}
-              </div>
-              <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
-                {[
-                  'wholePlantCondition',
-                  'affectedLeafUpper',
-                  'affectedLeafUnder',
-                  'stemCaneLesions',
-                  'fruitFlowerDamage',
-                  'healthyVsAffected',
-                  'symptomStages',
-                ].map((k) => (
-                  <li key={k}>{t(`plantAdvisor.chat.symptomPhotoRoles.${k}`)}</li>
-                ))}
-              </ul>
             </section>
           )}
 

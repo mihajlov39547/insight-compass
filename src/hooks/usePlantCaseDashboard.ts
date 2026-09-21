@@ -8,6 +8,7 @@ import { usePlantCaseGrounding } from '@/hooks/usePlantCaseGrounding';
 import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
 import { usePlantVisualOpinion } from '@/hooks/usePlantVisualOpinion';
 import { getVisualVerification } from '@/lib/plantVisualVerification';
+import { computePlantPhotoQuality } from '@/lib/plantPhotoQuality';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 export type ResearchKind = 'research' | 'income_research' | 'problem_research';
@@ -188,6 +189,13 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     confirmedDiagnosisName: confirmedDiag?.name ?? null,
     identBucket: (identBucket ?? 'uncertain') as 'high' | 'medium' | 'low' | 'uncertain',
   });
+  const photoQuality = computePlantPhotoQuality({
+    goal,
+    images,
+    visualVerification,
+    lowIdentificationConfidence: identBucket === 'low',
+    lowDiagnosisConfidence: diagBucket === 'low',
+  });
 
   const chatMissingRequirements: string[] = [];
   if (!hasImages) chatMissingRequirements.push('images');
@@ -243,6 +251,7 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     hasVisualOpinion,
     visualOpinionSaysNotPlant,
     visualVerification,
+    photoQuality,
     confirmedIdentSci,
     isChatReady,
     chatMissingRequirements,

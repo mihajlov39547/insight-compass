@@ -2548,6 +2548,44 @@
       "lowConfidence": "Diagnosis confidence is low. Research findings depend on the confirmed problem being correct.",
       "unknownRelevance": "Plant relevance is unknown. Verify that this problem is plausible for the confirmed plant and location."
     },
+    "photoQuality": {
+      "title": "Photo quality",
+      "status": {
+        "good": "Good",
+        "needs_more_photos": "Needs more photos",
+        "insufficient": "Insufficient"
+      },
+      "summary": {
+        "good": "Photos look sufficient for a first pass.",
+        "needs_more_photos": "Add more verification photos to improve confidence.",
+        "insufficient": "Photos are not sufficient yet."
+      },
+      "helper": "Better photos can improve plant identification, diagnosis verification, and research quality.",
+      "missingTitle": "Photos that would help",
+      "addPhotos": "Add photos",
+      "chatBasedOn": "Based on uploaded photo roles, provider uncertainty, and visual-check suggestions — not pixel-by-pixel inspection.",
+      "missing": {
+        "wholePlant": "Whole plant photo",
+        "leafCloseUp": "Leaf close-up",
+        "leafUpper": "Leaf upper side",
+        "leafUnderside": "Leaf underside",
+        "flowerIfAvailable": "Flower, if available",
+        "fruitSeedPod": "Fruit, seed, or pod, if available",
+        "stemBarkIfWoody": "Stem or bark, if woody",
+        "habitatContext": "Habitat or growing context",
+        "affectedCloseUp": "Affected part close-up",
+        "healthyVsAffected": "Healthy and affected parts together",
+        "stemFruitIfAffected": "Stem, cane, fruit, or flower if affected",
+        "visibleSymptomCloseUp": "Insect, pustule, spot, or lesion close-up",
+        "soilBaseContext": "Soil, base, pot, or bed context",
+        "leafNewGrowth": "Leaf color and new growth",
+        "lightExposureContext": "Light or exposure context",
+        "harvestablePart": "Harvestable part, fruit, pod, or flower",
+        "densityContext": "Plant density, row, or bed context",
+        "qualityDefects": "Quality defects or maturity stage",
+        "waitForUpload": "Wait for image upload to finish"
+      }
+    },
     "dashboard": {
       "expand": "Show details",
       "collapse": "Hide details",

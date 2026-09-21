@@ -31,6 +31,123 @@ interface ChatMessage {
   content: string;
 }
 
+type PhotoQualityStatus = 'good' | 'needs_more_photos' | 'insufficient';
+
+const PHOTO_LABELS: Record<string, string> = {
+  wholePlant: 'Whole plant photo',
+  leafCloseUp: 'Leaf close-up',
+  leafUpper: 'Leaf upper side',
+  leafUnderside: 'Leaf underside',
+  flowerIfAvailable: 'Flower, if available',
+  fruitSeedPod: 'Fruit, seed, or pod, if available',
+  stemBarkIfWoody: 'Stem or bark, if woody',
+  habitatContext: 'Habitat or growing context',
+  affectedCloseUp: 'Affected part close-up',
+  healthyVsAffected: 'Healthy and affected parts together',
+  stemFruitIfAffected: 'Stem, cane, fruit, or flower if affected',
+  visibleSymptomCloseUp: 'Insect, pustule, spot, or lesion close-up',
+  soilBaseContext: 'Soil, base, pot, or bed context',
+  leafNewGrowth: 'Leaf color and new growth',
+  lightExposureContext: 'Light or exposure context',
+  harvestablePart: 'Harvestable part, fruit, pod, or flower',
+  densityContext: 'Plant density, row, or bed context',
+  qualityDefects: 'Quality defects or maturity stage',
+  waitForUpload: 'Wait for image upload to finish',
+};
+
+function uniqStrings(items: string[]): string[] {
+  return items.filter((item, index, all) => all.findIndex((x) => x.toLowerCase() === item.toLowerCase()) === index);
+}
+
+function computePhotoQuality(args: {
+  goal: string | null | undefined;
+  images: Array<{ image_role?: string | null; upload_status?: string | null; mime_type?: string | null }>;
+  visualSupport?: string | null;
+  visualSuggestions?: string[];
+  lowIdentificationConfidence?: boolean;
+  lowDiagnosisConfidence?: boolean;
+}) {
+  const goal = args.goal ?? 'unspecified';
+  const activeImages = args.images.filter((img) => img.upload_status !== 'deleted' && img.upload_status !== 'deleting');
+  const roles = activeImages.map((img) => img.image_role || 'auto');
+  const imageCount = activeImages.length;
+  const hasImages = imageCount > 0;
+  const hasWholePlant = roles.includes('whole_plant');
+  const hasLeaf = roles.includes('leaf');
+  const hasFlower = roles.includes('flower');
+  const hasFruit = roles.includes('fruit');
+  const hasStemOrBark = roles.includes('stem') || roles.includes('bark');
+  const hasSpecificPart = roles.some((r) => ['leaf', 'flower', 'fruit', 'stem', 'bark', 'root', 'other'].includes(r));
+  const hasAffectedArea = goal === 'diagnose' ? hasSpecificPart : roles.includes('root') || roles.includes('other');
+  const hasLeafUnderside = false;
+  const hasHealthyVsAffected = goal === 'diagnose' && imageCount >= 2 && hasWholePlant && hasAffectedArea;
+  const hasGoalCriticalPhotos = (() => {
+    if (!hasImages) return false;
+    if (goal === 'diagnose') return hasWholePlant && hasAffectedArea;
+    if (goal === 'improve_growth') return hasWholePlant && (hasLeaf || hasAffectedArea);
+    if (goal === 'increase_income') return hasWholePlant && (hasFruit || hasFlower || hasAffectedArea);
+    return hasWholePlant && (hasLeaf || hasFlower || hasFruit || hasStemOrBark);
+  })();
+  const missingKeys: string[] = [];
+  if (!hasWholePlant) missingKeys.push('wholePlant');
+  if (goal === 'diagnose') {
+    if (!hasAffectedArea) missingKeys.push('affectedCloseUp');
+    if (!hasHealthyVsAffected) missingKeys.push('healthyVsAffected');
+    if (!hasLeaf) missingKeys.push('leafUpper');
+    if (!hasLeafUnderside) missingKeys.push('leafUnderside');
+    if (!hasStemOrBark) missingKeys.push('stemFruitIfAffected');
+    missingKeys.push('visibleSymptomCloseUp');
+  } else if (goal === 'improve_growth') {
+    if (!hasAffectedArea) missingKeys.push('soilBaseContext');
+    if (!hasLeaf) missingKeys.push('leafNewGrowth');
+    missingKeys.push('lightExposureContext');
+  } else if (goal === 'increase_income') {
+    if (!hasFruit && !hasFlower) missingKeys.push('harvestablePart');
+    missingKeys.push('densityContext', 'qualityDefects');
+  } else {
+    if (!hasLeaf) missingKeys.push('leafCloseUp');
+    if (!hasFlower) missingKeys.push('flowerIfAvailable');
+    if (!hasFruit) missingKeys.push('fruitSeedPod');
+    if (!hasStemOrBark) missingKeys.push('stemBarkIfWoody');
+    missingKeys.push('habitatContext');
+  }
+  if (activeImages.some((img) => img.upload_status === 'uploading' || img.upload_status === 'staged')) {
+    missingKeys.unshift('waitForUpload');
+  }
+  const lowProviderConfidence = goal === 'diagnose' ? args.lowDiagnosisConfidence : args.lowIdentificationConfidence;
+  let status: PhotoQualityStatus = 'good';
+  if (!hasImages || args.visualSupport === 'not_plant') status = 'insufficient';
+  else if (
+    imageCount === 1 ||
+    args.visualSupport === 'inconclusive' ||
+    args.visualSupport === 'conflicts' ||
+    !hasGoalCriticalPhotos ||
+    (lowProviderConfidence && missingKeys.length > 0)
+  ) status = 'needs_more_photos';
+  const visualMissing = uniqStrings((args.visualSuggestions ?? []).filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim())).slice(0, 4);
+  const missingPhotos = uniqStrings([
+    ...visualMissing,
+    ...uniqStrings(missingKeys).map((k) => PHOTO_LABELS[k]).filter((s): s is string => !!s),
+  ]).slice(0, 4);
+  return {
+    status,
+    missingPhotos,
+    goal,
+    basedOn: ['uploaded photo roles', 'provider uncertainty', 'visual-check suggestions'],
+    hasImages,
+    imageCount,
+    hasWholePlant,
+    hasLeaf,
+    hasLeafUnderside,
+    hasFlower,
+    hasFruit,
+    hasStemOrBark,
+    hasAffectedArea,
+    hasHealthyVsAffected,
+    hasGoalCriticalPhotos,
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { status: 200, headers: corsHeaders });
@@ -77,7 +194,7 @@ Deno.serve(async (req: Request) => {
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
     const [imgs, idents, diags, interps, profiles, groundings, incomeResearch, plantResearch, problemResearch, permaProfiles, visualOpinions] = await Promise.all([
-      admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
+      admin.from('plant_case_images').select('id, image_role, upload_status, mime_type').eq('case_id', caseId),
       admin
         .from('plant_identifications')
         .select('id, rank, score, scientific_name, scientific_name_without_author, common_name, genus, family, provider, is_confirmed, gbif_id, powo_id')
@@ -163,7 +280,7 @@ Deno.serve(async (req: Request) => {
         .limit(1),
     ]);
 
-    const imageRows = (imgs.data as { image_role: string | null }[] | null) ?? [];
+    const imageRows = (imgs.data as { image_role: string | null; upload_status: string | null; mime_type: string | null }[] | null) ?? [];
     const identRows = (idents.data as any[] | null) ?? [];
     const diagRows = (diags.data as any[] | null) ?? [];
     const interp = (interps.data as any[] | null)?.[0] ?? null;
@@ -194,6 +311,19 @@ Deno.serve(async (req: Request) => {
       if (v >= 0.4) return 'medium';
       return 'low';
     };
+    const topIdent = confirmedIdent ?? identRows[0] ?? null;
+    const topDiag = confirmedDiag ?? diagRows[0] ?? null;
+    const photoQuality = computePhotoQuality({
+      goal: pc.user_goal,
+      images: imageRows,
+      visualSupport: visualSaysNotPlant ? 'not_plant' : visualStructured?.visualSupport,
+      visualSuggestions:
+        visualStructured?.nextPhotoSuggestions ??
+        visualStructured?.missingPhotoSuggestions ??
+        [],
+      lowIdentificationConfidence: confidenceBucket(topIdent?.score) === 'low',
+      lowDiagnosisConfidence: confidenceBucket(topDiag?.score) === 'low',
+    });
 
     const context = {
       caseContext: {
@@ -209,6 +339,7 @@ Deno.serve(async (req: Request) => {
         imageCount: imageRows.length,
         imageRoles: imageRows.map((r) => r.image_role || 'auto'),
       },
+      photoQuality,
       identification: {
         confirmedPlant: confirmedIdent
           ? {
@@ -433,6 +564,8 @@ Deno.serve(async (req: Request) => {
           : null,
         permapeopleUsage:
           'Permapeople is community-maintained practical cultivation data. Use it as secondary support for growing, propagation, edibility and use questions. Prefer Trefle for taxonomy, and never use Permapeople to diagnose a problem or to recommend chemical treatments.',
+        photoQualityUsage:
+          'photoQuality is a heuristic checklist based on uploaded photo roles, upload status, provider uncertainty, and optional visual-check nextPhotoSuggestions. It is NOT pixel-by-pixel image inspection. If confidence is low, use photoQuality.missingPhotos to explain what would improve the result. Missing photos are not hard blockers unless no images exist.',
         visualOpinionUsage:
           'visualOpinion is an unverified VISUAL SECOND OPINION from a general web AI. It is never authoritative: Pl@ntNet remains the identification provider and plantnet_disease the diagnosis provider. Use it only to describe what the photo shows, to flag an obviously wrong or non-plant image, to explain uncertainty, or to suggest missing photos. Never state a plant name or a problem name on its authority alone, never derive treatment or chemical advice from it, and never mention a person or celebrity identity. Prefer its STRUCTURED verification fields over its raw text: visualSupport (supports/conflicts/inconclusive/not_plant), verificationSummary, overallConfidenceLabel, confidenceAdjustment, visualCandidates and visualProblemCandidates, and nextPhotoSuggestions. When visualSupport is "supports", say the visual check supports the confirmed record and that overall confidence is higher, while keeping the Pl@ntNet percentage unchanged. When it is "conflicts", present the visual candidates as SECONDARY candidates to compare, never as a replacement for the confirmed plant or diagnosis. When it is "inconclusive" or "not_plant", ask for the specific photos in nextPhotoSuggestions.',
         visualOpinionNotPlant: visualSaysNotPlant
@@ -481,7 +614,7 @@ Deno.serve(async (req: Request) => {
 GOAL DIRECTIVE: ${goalDirective}
 
 Rules:
-- Answer using ONLY the provided case context (caseContext, identification, diagnosis, aiInterpretation, speciesProfile, growthGrounding, incomeResearch, plantResearch, problemResearch).
+- Answer using ONLY the provided case context (caseContext, photoQuality, identification, diagnosis, aiInterpretation, speciesProfile, growthGrounding, incomeResearch, plantResearch, problemResearch).
 - NEVER include pesticide/fungicide/herbicide/insecticide product names, active ingredient recommendations, doses, concentrations, mixing or application rates, spray intervals or schedules, or step-by-step chemical application instructions, and never promise a guaranteed cure or guaranteed control. Regulated chemical control may only be mentioned at a high level ("regulated chemical options may exist; consult local extension or licensed professionals").
 - Clearly distinguish CONFIRMED facts (confirmedPlant, confirmedDiagnosis) from CANDIDATES (providerCandidates, alternatives).
 - When provider confidence is low or plantRelevance is not "high", explicitly mention the uncertainty.
@@ -492,7 +625,8 @@ Rules:
 - If speciesProfile is null or a specific field is missing/null, say the profile does not contain that information. Do NOT invent values.
 - Explain what visual details the user should check next when helpful (e.g. "inspect leaf undersides for orange pustules").
 - If evidence is weak or missing, ask the user for clearer photos of the affected parts.
-- You are NOT looking at the images directly. You only see image counts and roles. If the user asks what you see in the photo, say you cannot inspect the images directly in this chat and rely on metadata, provider results, and notes.
+- You are NOT looking at the images directly and must not claim image quality was inspected pixel-by-pixel. You only see image counts, uploaded photo roles, upload status, provider uncertainty, and visual-check suggestions. If the user asks what you see in the photo, say you cannot inspect the images directly in this chat and rely on metadata, provider results, visual-check suggestions, and notes.
+- If confidence is low, use photoQuality.missingPhotos to explain what would improve the result. Say the checklist is based on uploaded photo roles, provider uncertainty, and visual-check suggestions.
 - When explaining low-confidence identification, describe it in RELATIVE terms: the confirmed plant has a low score AND the nearest alternative has a very similar score, so the system did not clearly separate several similar candidates. Do NOT quote universal thresholds (e.g. "below 30-40% is unreliable") — use the actual scores and the closeness of alternatives.
 - NEVER expose internal context field names to the user (growthGrounding, normalizedCare, sourceGroups, aiInterpretation, speciesProfile, providerCandidates, caseContext, pestsDisease...). Refer to them in natural language instead: English "according to the gathered growth guidance" / "according to the collected plant-care sources"; Serbian (Latin) "Prema prikupljenim smernicama za rast" / "Prema prikupljenim izvorima za negu biljke". Named databases (Trefle, Perenual, GBIF, Plants of the World Online) and web source titles may be cited by name.
 
