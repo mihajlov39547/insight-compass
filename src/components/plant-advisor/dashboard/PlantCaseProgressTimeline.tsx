@@ -28,7 +28,12 @@ export function PlantCaseProgressTimeline({ data }: { data: PlantCaseDashboardDa
     {
       key: 'images',
       label: t('plantAdvisor.dashboard.timeline.images'),
-      state: data.hasImages ? 'complete' : 'missing',
+      state:
+        data.photoQuality.status === 'good'
+          ? 'complete'
+          : data.photoQuality.status === 'needs_more_photos'
+            ? 'warning'
+            : 'missing',
     },
     {
       key: 'identified',

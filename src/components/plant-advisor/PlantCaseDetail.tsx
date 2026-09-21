@@ -21,6 +21,7 @@ import { PlantCaseKeyFacts } from './dashboard/PlantCaseKeyFacts';
 import { PlantCaseProgressTimeline } from './dashboard/PlantCaseProgressTimeline';
 import { PlantCaseChatCta } from './dashboard/PlantCaseChatCta';
 import { PlantDashboardSection } from './dashboard/PlantDashboardSection';
+import { PlantPhotoQualityCard } from './dashboard/PlantPhotoQualityCard';
 import { usePlantCaseDashboard, type ResearchArtifactSummary } from '@/hooks/usePlantCaseDashboard';
 
 import { toast } from 'sonner';
@@ -42,6 +43,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
   const { data: permaProfile } = usePermapeopleProfile(plantCase.id);
   const data = usePlantCaseDashboard(plantCase);
+  const photosSectionRef = React.useRef<HTMLDivElement | null>(null);
 
   const handleDelete = async () => {
     if (!confirm(t('plantAdvisor.confirmDelete'))) return;
@@ -223,24 +225,31 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
       <PlantCaseKeyFacts data={data} />
       <PlantCaseProgressTimeline data={data} />
 
-      <PlantDashboardSection
-        icon={<Images className="h-4 w-4" />}
-        title={t('plantAdvisor.dashboard.sections.images')}
-        statusLabel={
-          images.length > 0
-            ? t('plantAdvisor.dashboard.sections.imageCount', { count: images.length })
-            : t('plantAdvisor.dashboard.sections.noImages')
-        }
-        statusTone={images.length > 0 ? 'ready' : 'pending'}
-        summary={t('plantAdvisor.dashboard.sections.imagesHelper')}
-        expandLabel={t('plantAdvisor.dashboard.sections.manageImages')}
-        collapseLabel={collapse}
-        defaultOpen={images.length === 0}
-      >
-        <div className={EMBED}>
-          <PlantImageUploader caseId={plantCase.id} />
-        </div>
-      </PlantDashboardSection>
+      <div ref={photosSectionRef}>
+        <PlantDashboardSection
+          icon={<Images className="h-4 w-4" />}
+          title={t('plantAdvisor.dashboard.sections.images')}
+          statusLabel={
+            images.length > 0
+              ? t('plantAdvisor.dashboard.sections.imageCount', { count: images.length })
+              : t('plantAdvisor.dashboard.sections.noImages')
+          }
+          statusTone={images.length > 0 ? 'ready' : 'pending'}
+          summary={t('plantAdvisor.dashboard.sections.imagesHelper')}
+          expandLabel={t('plantAdvisor.dashboard.sections.manageImages')}
+          collapseLabel={collapse}
+          defaultOpen={images.length === 0}
+        >
+          <div className={EMBED}>
+            <PlantImageUploader caseId={plantCase.id} />
+          </div>
+        </PlantDashboardSection>
+      </div>
+
+      <PlantPhotoQualityCard
+        photoQuality={data.photoQuality}
+        onAddPhotos={() => photosSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+      />
 
       {plantCase.user_goal === 'diagnose' ? (
         <>
