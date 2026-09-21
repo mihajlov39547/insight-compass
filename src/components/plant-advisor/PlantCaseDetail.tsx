@@ -263,6 +263,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           {identificationSection}
           {profileSection}
 
+          <div ref={diagnosisSectionRef}>
           <PlantDashboardSection
             icon={<Bug className="h-4 w-4" />}
             title={t('plantAdvisor.dashboard.sections.diagnosis')}
