@@ -9,6 +9,7 @@ import { usePermapeopleProfile } from '@/hooks/usePermapeopleProfile';
 import { usePlantVisualOpinion } from '@/hooks/usePlantVisualOpinion';
 import { getVisualVerification } from '@/lib/plantVisualVerification';
 import { computePlantPhotoQuality } from '@/lib/plantPhotoQuality';
+import { computeDiagnosisMismatch } from '@/lib/plantDiagnosisMismatch';
 import type { PlantCase } from '@/hooks/usePlantCases';
 
 export type ResearchKind = 'research' | 'income_research' | 'problem_research';
@@ -213,6 +214,19 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
   }
   const isChatReady = chatMissingRequirements.length === 0;
 
+  const diagnosisMismatch = computeDiagnosisMismatch({
+    goal,
+    confirmedDiagnosisName: confirmedDiag?.name ?? null,
+    lowDiagnosisConfidence: diagBucket === 'low',
+    relevance,
+    triagePreferredName: interpretation?.bestCandidates?.[0]?.name ?? null,
+    visualSupport: visualVerification?.visualSupport ?? null,
+    hasAlternativeCandidates: diagnoses.length > 1,
+    hasProblemResearch,
+    photoQualityGood: photoQuality.status === 'good',
+    isChatReady,
+  });
+
   return {
     caseId,
     goal,
@@ -252,6 +266,7 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
     visualOpinionSaysNotPlant,
     visualVerification,
     photoQuality,
+    diagnosisMismatch,
     confirmedIdentSci,
     isChatReady,
     chatMissingRequirements,
