@@ -523,6 +523,13 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
 
   const showDiagnosisContext = isDiagnose;
   const showPhotoQuality = photoQuality.status !== 'good' || photoQuality.missingPhotos.length > 0;
+  const photoQualityMissing = [
+    ...photoQuality.visualMissingPhotos,
+    ...photoQuality.missingPhotoKeys.map((k) => t(`plantAdvisor.photoQuality.missing.${k}`)),
+  ]
+    .filter(Boolean)
+    .filter((item, index, all) => all.findIndex((x) => x.toLowerCase() === item.toLowerCase()) === index)
+    .slice(0, 4);
 
   return (
     <div className="flex flex-col h-full">
@@ -604,9 +611,9 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
               <div className="text-muted-foreground">
                 {t('plantAdvisor.photoQuality.chatBasedOn')}
               </div>
-              {photoQuality.missingPhotos.length > 0 && (
+              {photoQualityMissing.length > 0 && (
                 <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
-                  {photoQuality.missingPhotos.map((item, i) => (
+                  {photoQualityMissing.map((item, i) => (
                     <li key={`${item}-${i}`}>{item}</li>
                   ))}
                 </ul>
