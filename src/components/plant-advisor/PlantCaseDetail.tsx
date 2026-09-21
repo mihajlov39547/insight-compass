@@ -300,7 +300,8 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             }
             expandLabel={expand}
             collapseLabel={collapse}
-            defaultOpen={false}
+            open={diagnosisOpen}
+            onOpenChange={setDiagnosisOpen}
           >
             {plantCase.confirmed_identification_id ? (
               <PlantDiagnosisDashboardContent
