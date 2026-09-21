@@ -317,14 +317,36 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
               </div>
             )}
           </PlantDashboardSection>
+          </div>
+
+          <PlantDiagnosisMismatchPanel
+            mismatch={data.diagnosisMismatch}
+            onAddPhotos={openPhotos}
+            onReviewCandidates={() => {
+              setDiagnosisOpen(true);
+              window.requestAnimationFrame(() =>
+                diagnosisSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+              );
+            }}
+            onRunProblemResearch={() => {
+              setProblemResearchOpen(true);
+              window.requestAnimationFrame(() =>
+                problemResearchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+              );
+            }}
+            onAskChat={onOpenChat}
+          />
 
           {visualOpinionSection('diagnose', data.confirmedDiag?.name ?? null)}
 
+          <div ref={problemResearchRef}>
           <PlantDashboardSection
             icon={<Telescope className="h-4 w-4" />}
             title={t('plantAdvisor.problemResearch.title')}
             {...researchSectionProps(data.research.problem_research ?? null)}
             preview={undefined}
+            open={problemResearchOpen}
+            onOpenChange={setProblemResearchOpen}
           >
             <div className={EMBED}>
               <PlantProblemResearchSection
@@ -333,6 +355,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
               />
             </div>
           </PlantDashboardSection>
+          </div>
         </>
       ) : plantCase.user_goal === 'improve_growth' ? (
         <>
