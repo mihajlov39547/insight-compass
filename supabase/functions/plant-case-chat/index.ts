@@ -31,6 +31,123 @@ interface ChatMessage {
   content: string;
 }
 
+type PhotoQualityStatus = 'good' | 'needs_more_photos' | 'insufficient';
+
+const PHOTO_LABELS: Record<string, string> = {
+  wholePlant: 'Whole plant photo',
+  leafCloseUp: 'Leaf close-up',
+  leafUpper: 'Leaf upper side',
+  leafUnderside: 'Leaf underside',
+  flowerIfAvailable: 'Flower, if available',
+  fruitSeedPod: 'Fruit, seed, or pod, if available',
+  stemBarkIfWoody: 'Stem or bark, if woody',
+  habitatContext: 'Habitat or growing context',
+  affectedCloseUp: 'Affected part close-up',
+  healthyVsAffected: 'Healthy and affected parts together',
+  stemFruitIfAffected: 'Stem, cane, fruit, or flower if affected',
+  visibleSymptomCloseUp: 'Insect, pustule, spot, or lesion close-up',
+  soilBaseContext: 'Soil, base, pot, or bed context',
+  leafNewGrowth: 'Leaf color and new growth',
+  lightExposureContext: 'Light or exposure context',
+  harvestablePart: 'Harvestable part, fruit, pod, or flower',
+  densityContext: 'Plant density, row, or bed context',
+  qualityDefects: 'Quality defects or maturity stage',
+  waitForUpload: 'Wait for image upload to finish',
+};
+
+function uniqStrings(items: string[]): string[] {
+  return items.filter((item, index, all) => all.findIndex((x) => x.toLowerCase() === item.toLowerCase()) === index);
+}
+
+function computePhotoQuality(args: {
+  goal: string | null | undefined;
+  images: Array<{ image_role?: string | null; upload_status?: string | null; mime_type?: string | null }>;
+  visualSupport?: string | null;
+  visualSuggestions?: string[];
+  lowIdentificationConfidence?: boolean;
+  lowDiagnosisConfidence?: boolean;
+}) {
+  const goal = args.goal ?? 'unspecified';
+  const activeImages = args.images.filter((img) => img.upload_status !== 'deleted' && img.upload_status !== 'deleting');
+  const roles = activeImages.map((img) => img.image_role || 'auto');
+  const imageCount = activeImages.length;
+  const hasImages = imageCount > 0;
+  const hasWholePlant = roles.includes('whole_plant');
+  const hasLeaf = roles.includes('leaf');
+  const hasFlower = roles.includes('flower');
+  const hasFruit = roles.includes('fruit');
+  const hasStemOrBark = roles.includes('stem') || roles.includes('bark');
+  const hasSpecificPart = roles.some((r) => ['leaf', 'flower', 'fruit', 'stem', 'bark', 'root', 'other'].includes(r));
+  const hasAffectedArea = goal === 'diagnose' ? hasSpecificPart : roles.includes('root') || roles.includes('other');
+  const hasLeafUnderside = false;
+  const hasHealthyVsAffected = goal === 'diagnose' && imageCount >= 2 && hasWholePlant && hasAffectedArea;
+  const hasGoalCriticalPhotos = (() => {
+    if (!hasImages) return false;
+    if (goal === 'diagnose') return hasWholePlant && hasAffectedArea;
+    if (goal === 'improve_growth') return hasWholePlant && (hasLeaf || hasAffectedArea);
+    if (goal === 'increase_income') return hasWholePlant && (hasFruit || hasFlower || hasAffectedArea);
+    return hasWholePlant && (hasLeaf || hasFlower || hasFruit || hasStemOrBark);
+  })();
+  const missingKeys: string[] = [];
+  if (!hasWholePlant) missingKeys.push('wholePlant');
+  if (goal === 'diagnose') {
+    if (!hasAffectedArea) missingKeys.push('affectedCloseUp');
+    if (!hasHealthyVsAffected) missingKeys.push('healthyVsAffected');
+    if (!hasLeaf) missingKeys.push('leafUpper');
+    if (!hasLeafUnderside) missingKeys.push('leafUnderside');
+    if (!hasStemOrBark) missingKeys.push('stemFruitIfAffected');
+    missingKeys.push('visibleSymptomCloseUp');
+  } else if (goal === 'improve_growth') {
+    if (!hasAffectedArea) missingKeys.push('soilBaseContext');
+    if (!hasLeaf) missingKeys.push('leafNewGrowth');
+    missingKeys.push('lightExposureContext');
+  } else if (goal === 'increase_income') {
+    if (!hasFruit && !hasFlower) missingKeys.push('harvestablePart');
+    missingKeys.push('densityContext', 'qualityDefects');
+  } else {
+    if (!hasLeaf) missingKeys.push('leafCloseUp');
+    if (!hasFlower) missingKeys.push('flowerIfAvailable');
+    if (!hasFruit) missingKeys.push('fruitSeedPod');
+    if (!hasStemOrBark) missingKeys.push('stemBarkIfWoody');
+    missingKeys.push('habitatContext');
+  }
+  if (activeImages.some((img) => img.upload_status === 'uploading' || img.upload_status === 'staged')) {
+    missingKeys.unshift('waitForUpload');
+  }
+  const lowProviderConfidence = goal === 'diagnose' ? args.lowDiagnosisConfidence : args.lowIdentificationConfidence;
+  let status: PhotoQualityStatus = 'good';
+  if (!hasImages || args.visualSupport === 'not_plant') status = 'insufficient';
+  else if (
+    imageCount === 1 ||
+    args.visualSupport === 'inconclusive' ||
+    args.visualSupport === 'conflicts' ||
+    !hasGoalCriticalPhotos ||
+    (lowProviderConfidence && missingKeys.length > 0)
+  ) status = 'needs_more_photos';
+  const visualMissing = uniqStrings((args.visualSuggestions ?? []).filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim())).slice(0, 4);
+  const missingPhotos = uniqStrings([
+    ...visualMissing,
+    ...uniqStrings(missingKeys).map((k) => PHOTO_LABELS[k]).filter((s): s is string => !!s),
+  ]).slice(0, 4);
+  return {
+    status,
+    missingPhotos,
+    goal,
+    basedOn: ['uploaded photo roles', 'provider uncertainty', 'visual-check suggestions'],
+    hasImages,
+    imageCount,
+    hasWholePlant,
+    hasLeaf,
+    hasLeafUnderside,
+    hasFlower,
+    hasFruit,
+    hasStemOrBark,
+    hasAffectedArea,
+    hasHealthyVsAffected,
+    hasGoalCriticalPhotos,
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { status: 200, headers: corsHeaders });
