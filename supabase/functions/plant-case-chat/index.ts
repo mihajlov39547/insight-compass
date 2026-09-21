@@ -194,7 +194,7 @@ Deno.serve(async (req: Request) => {
     if (!pc || pc.user_id !== userId) return json({ error: 'case_not_found' }, 404);
 
     const [imgs, idents, diags, interps, profiles, groundings, incomeResearch, plantResearch, problemResearch, permaProfiles, visualOpinions] = await Promise.all([
-      admin.from('plant_case_images').select('id, image_role').eq('case_id', caseId),
+      admin.from('plant_case_images').select('id, image_role, upload_status, mime_type').eq('case_id', caseId),
       admin
         .from('plant_identifications')
         .select('id, rank, score, scientific_name, scientific_name_without_author, common_name, genus, family, provider, is_confirmed, gbif_id, powo_id')
@@ -280,7 +280,7 @@ Deno.serve(async (req: Request) => {
         .limit(1),
     ]);
 
-    const imageRows = (imgs.data as { image_role: string | null }[] | null) ?? [];
+    const imageRows = (imgs.data as { image_role: string | null; upload_status: string | null; mime_type: string | null }[] | null) ?? [];
     const identRows = (idents.data as any[] | null) ?? [];
     const diagRows = (diags.data as any[] | null) ?? [];
     const interp = (interps.data as any[] | null)?.[0] ?? null;
@@ -311,6 +311,19 @@ Deno.serve(async (req: Request) => {
       if (v >= 0.4) return 'medium';
       return 'low';
     };
+    const topIdent = confirmedIdent ?? identRows[0] ?? null;
+    const topDiag = confirmedDiag ?? diagRows[0] ?? null;
+    const photoQuality = computePhotoQuality({
+      goal: pc.user_goal,
+      images: imageRows,
+      visualSupport: visualSaysNotPlant ? 'not_plant' : visualStructured?.visualSupport,
+      visualSuggestions:
+        visualStructured?.nextPhotoSuggestions ??
+        visualStructured?.missingPhotoSuggestions ??
+        [],
+      lowIdentificationConfidence: confidenceBucket(topIdent?.score) === 'low',
+      lowDiagnosisConfidence: confidenceBucket(topDiag?.score) === 'low',
+    });
 
     const context = {
       caseContext: {
@@ -326,6 +339,7 @@ Deno.serve(async (req: Request) => {
         imageCount: imageRows.length,
         imageRoles: imageRows.map((r) => r.image_role || 'auto'),
       },
+      photoQuality,
       identification: {
         confirmedPlant: confirmedIdent
           ? {
