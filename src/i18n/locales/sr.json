@@ -2564,6 +2564,44 @@
       "lowConfidence": "Pouzdanost dijagnoze je niska. Nalazi istraživanja zavise od toga da li je potvrđeni problem tačan.",
       "unknownRelevance": "Relevantnost za biljku nije poznata. Proverite da li je ovaj problem moguć za potvrđenu biljku i lokaciju."
     },
+    "photoQuality": {
+      "title": "Kvalitet fotografija",
+      "status": {
+        "good": "Dobro",
+        "needs_more_photos": "Potrebno još fotografija",
+        "insufficient": "Nedovoljno"
+      },
+      "summary": {
+        "good": "Fotografije su dovoljne za početnu procenu.",
+        "needs_more_photos": "Dodajte još fotografija za bolju proveru.",
+        "insufficient": "Fotografije još nisu dovoljne."
+      },
+      "helper": "Bolje fotografije mogu poboljšati identifikaciju, proveru dijagnoze i kvalitet istraživanja.",
+      "missingTitle": "Fotografije koje bi pomogle",
+      "addPhotos": "Dodaj fotografije",
+      "chatBasedOn": "Zasnovano je na ulogama otpremljenih fotografija, nesigurnosti rezultata i predlozima vizuelne provere — ne na detaljnom pregledu svakog piksela.",
+      "missing": {
+        "wholePlant": "Fotografija cele biljke",
+        "leafCloseUp": "Krupni kadar lista",
+        "leafUpper": "Gornja strana lista",
+        "leafUnderside": "Donja strana lista",
+        "flowerIfAvailable": "Cvet, ako je dostupan",
+        "fruitSeedPod": "Plod, seme ili mahuna, ako je dostupno",
+        "stemBarkIfWoody": "Stablo ili kora, ako je drvenasto",
+        "habitatContext": "Stanište ili kontekst gajenja",
+        "affectedCloseUp": "Krupni kadar zahvaćenog dela",
+        "healthyVsAffected": "Zdravi i zahvaćeni delovi zajedno",
+        "stemFruitIfAffected": "Stablo, izdanak, plod ili cvet ako je zahvaćen",
+        "visibleSymptomCloseUp": "Krupni kadar insekta, pustule, pege ili lezije",
+        "soilBaseContext": "Zemljište, baza, saksija ili leja",
+        "leafNewGrowth": "Boja listova i novi rast",
+        "lightExposureContext": "Svetlost ili izloženost",
+        "harvestablePart": "Deo za berbu, plod, mahuna ili cvet",
+        "densityContext": "Gustina sadnje, red ili leja",
+        "qualityDefects": "Nedostaci kvaliteta ili faza zrelosti",
+        "waitForUpload": "Sačekajte da se otpremanje fotografije završi"
+      }
+    },
     "dashboard": {
       "expand": "Prikaži detalje",
       "collapse": "Sakrij detalje",
