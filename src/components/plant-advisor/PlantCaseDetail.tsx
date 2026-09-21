@@ -22,6 +22,7 @@ import { PlantCaseProgressTimeline } from './dashboard/PlantCaseProgressTimeline
 import { PlantCaseChatCta } from './dashboard/PlantCaseChatCta';
 import { PlantDashboardSection } from './dashboard/PlantDashboardSection';
 import { PlantPhotoQualityCard } from './dashboard/PlantPhotoQualityCard';
+import { PlantDiagnosisMismatchPanel } from './dashboard/PlantDiagnosisMismatchPanel';
 import { usePlantCaseDashboard, type ResearchArtifactSummary } from '@/hooks/usePlantCaseDashboard';
 
 import { toast } from 'sonner';
@@ -45,6 +46,16 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const data = usePlantCaseDashboard(plantCase);
   const photosSectionRef = React.useRef<HTMLDivElement | null>(null);
   const [photosOpen, setPhotosOpen] = React.useState(images.length === 0);
+  const diagnosisSectionRef = React.useRef<HTMLDivElement | null>(null);
+  const problemResearchRef = React.useRef<HTMLDivElement | null>(null);
+  const [diagnosisOpen, setDiagnosisOpen] = React.useState(false);
+  const [problemResearchOpen, setProblemResearchOpen] = React.useState(false);
+  const openPhotos = React.useCallback(() => {
+    setPhotosOpen(true);
+    window.requestAnimationFrame(() =>
+      photosSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
+  }, []);
 
   const handleDelete = async () => {
     if (!confirm(t('plantAdvisor.confirmDelete'))) return;
@@ -263,6 +274,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           {identificationSection}
           {profileSection}
 
+          <div ref={diagnosisSectionRef}>
           <PlantDashboardSection
             icon={<Bug className="h-4 w-4" />}
             title={t('plantAdvisor.dashboard.sections.diagnosis')}
@@ -299,7 +311,8 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             }
             expandLabel={expand}
             collapseLabel={collapse}
-            defaultOpen={false}
+            open={diagnosisOpen}
+            onOpenChange={setDiagnosisOpen}
           >
             {plantCase.confirmed_identification_id ? (
               <PlantDiagnosisDashboardContent
@@ -315,14 +328,36 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
               </div>
             )}
           </PlantDashboardSection>
+          </div>
+
+          <PlantDiagnosisMismatchPanel
+            mismatch={data.diagnosisMismatch}
+            onAddPhotos={openPhotos}
+            onReviewCandidates={() => {
+              setDiagnosisOpen(true);
+              window.requestAnimationFrame(() =>
+                diagnosisSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+              );
+            }}
+            onRunProblemResearch={() => {
+              setProblemResearchOpen(true);
+              window.requestAnimationFrame(() =>
+                problemResearchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+              );
+            }}
+            onAskChat={onOpenChat}
+          />
 
           {visualOpinionSection('diagnose', data.confirmedDiag?.name ?? null)}
 
+          <div ref={problemResearchRef}>
           <PlantDashboardSection
             icon={<Telescope className="h-4 w-4" />}
             title={t('plantAdvisor.problemResearch.title')}
             {...researchSectionProps(data.research.problem_research ?? null)}
             preview={undefined}
+            open={problemResearchOpen}
+            onOpenChange={setProblemResearchOpen}
           >
             <div className={EMBED}>
               <PlantProblemResearchSection
@@ -331,6 +366,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
               />
             </div>
           </PlantDashboardSection>
+          </div>
         </>
       ) : plantCase.user_goal === 'improve_growth' ? (
         <>

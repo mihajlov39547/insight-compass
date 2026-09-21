@@ -2548,6 +2548,27 @@
       "lowConfidence": "Diagnosis confidence is low. Research findings depend on the confirmed problem being correct.",
       "unknownRelevance": "Plant relevance is unknown. Verify that this problem is plausible for the confirmed plant and location."
     },
+    "diagnosisMismatch": {
+      "title": "Diagnosis needs review",
+      "conflictLead": "The confirmed problem is not clearly supported by all available evidence.",
+      "inconclusiveLead": "The current evidence is not strong enough for a confident diagnosis.",
+      "reasons": {
+        "lowConfidence": "Diagnosis confidence is low.",
+        "unknownRelevance": "Plant relevance is unknown.",
+        "lowRelevance": "The problem may not apply to the confirmed plant.",
+        "triageDiffers": "AI triage prefers a different problem candidate.",
+        "visualConflicts": "Visual problem check suggests another problem category.",
+        "visualInconclusive": "Symptoms are not clearly visible in the uploaded photos.",
+        "visualNotPlant": "The visual check could not confirm the plant or the problem in the photos.",
+        "noProblemResearch": "Problem research has not been run yet."
+      },
+      "cta": {
+        "add_photos": "Add better photos",
+        "review_candidates": "Review diagnosis candidates",
+        "run_problem_research": "Run problem research",
+        "ask_chat": "Ask chat to explain uncertainty"
+      }
+    },
     "photoQuality": {
       "title": "Photo quality",
       "status": {

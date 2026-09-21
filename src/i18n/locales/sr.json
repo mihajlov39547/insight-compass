@@ -2564,6 +2564,27 @@
       "lowConfidence": "Pouzdanost dijagnoze je niska. Nalazi istraživanja zavise od toga da li je potvrđeni problem tačan.",
       "unknownRelevance": "Relevantnost za biljku nije poznata. Proverite da li je ovaj problem moguć za potvrđenu biljku i lokaciju."
     },
+    "diagnosisMismatch": {
+      "title": "Dijagnozu treba proveriti",
+      "conflictLead": "Potvrđeni problem nije jasno podržan svim dostupnim dokazima.",
+      "inconclusiveLead": "Trenutni dokazi nisu dovoljno jaki za sigurnu dijagnozu.",
+      "reasons": {
+        "lowConfidence": "Pouzdanost dijagnoze je niska.",
+        "unknownRelevance": "Relevantnost za biljku nije poznata.",
+        "lowRelevance": "Problem možda ne važi za potvrđenu biljku.",
+        "triageDiffers": "AI analiza preferira drugog kandidata problema.",
+        "visualConflicts": "Vizuelna provera problema predlaže drugu kategoriju problema.",
+        "visualInconclusive": "Simptomi nisu dovoljno vidljivi na otpremljenim fotografijama.",
+        "visualNotPlant": "Vizuelna provera nije mogla da potvrdi biljku ili problem na fotografijama.",
+        "noProblemResearch": "Istraživanje problema još nije pokrenuto."
+      },
+      "cta": {
+        "add_photos": "Dodaj bolje fotografije",
+        "review_candidates": "Pregledaj kandidate dijagnoze",
+        "run_problem_research": "Pokreni istraživanje problema",
+        "ask_chat": "Pitaj chat da objasni nesigurnost"
+      }
+    },
     "photoQuality": {
       "title": "Kvalitet fotografija",
       "status": {
