@@ -668,7 +668,8 @@ Deno.serve(async (req: Request) => {
 GOAL DIRECTIVE: ${goalDirective}
 
 Rules:
-- Answer using ONLY the provided case context (caseContext, photoQuality, identification, diagnosis, aiInterpretation, speciesProfile, growthGrounding, incomeResearch, plantResearch, problemResearch).
+- Answer using ONLY the provided case context (caseContext, photoQuality, diagnosisMismatch, identification, diagnosis, aiInterpretation, speciesProfile, growthGrounding, incomeResearch, plantResearch, problemResearch).
+- If diagnosisMismatch.hasMismatch is true, mention the uncertainty naturally when answering diagnosis or treatment-category questions, summarise its reasons in plain language, and suggest the matching review step (better photos, reviewing the other problem candidates, or running problem research). NEVER override or silently change the confirmed diagnosis.
 - NEVER include pesticide/fungicide/herbicide/insecticide product names, active ingredient recommendations, doses, concentrations, mixing or application rates, spray intervals or schedules, or step-by-step chemical application instructions, and never promise a guaranteed cure or guaranteed control. Regulated chemical control may only be mentioned at a high level ("regulated chemical options may exist; consult local extension or licensed professionals").
 - Clearly distinguish CONFIRMED facts (confirmedPlant, confirmedDiagnosis) from CANDIDATES (providerCandidates, alternatives).
 - When provider confidence is low or plantRelevance is not "high", explicitly mention the uncertainty.
