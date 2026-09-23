@@ -325,6 +325,59 @@ Deno.serve(async (req: Request) => {
       lowDiagnosisConfidence: confidenceBucket(topDiag?.score) === 'low',
     });
 
+    // Read-only uncertainty signal: never overrides the confirmed diagnosis.
+    const diagnosisMismatch = (() => {
+      const confirmedName = confirmedDiag?.name ?? null;
+      const visualSupport = visualSaysNotPlant
+        ? 'not_plant'
+        : (visualStructured?.visualSupport as string | undefined) ?? null;
+      if (pc.user_goal !== 'diagnose' || !confirmedName) {
+        return {
+          hasMismatch: false,
+          severity: 'review',
+          reasons: [] as string[],
+          confirmedDiagnosisName: confirmedName,
+          visualSupport,
+          suggestedReviewAction: 'none',
+        };
+      }
+      const reasons: string[] = [];
+      const norm = (s: string | null | undefined) =>
+        (s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      if (confidenceBucket(confirmedDiag?.score) === 'low') reasons.push('Diagnosis confidence is low.');
+      const relevance = confirmedDiag?.plant_relevance ?? 'unknown';
+      if (!relevance || relevance === 'unknown') reasons.push('Plant relevance is unknown.');
+      else if (relevance === 'low') reasons.push('The problem may not apply to the confirmed plant.');
+      const triage = norm((interp?.interpretation?.bestCandidates ?? [])[0]?.name);
+      const confirmedNorm = norm(confirmedName);
+      if (triage && confirmedNorm && triage !== confirmedNorm && !triage.includes(confirmedNorm) && !confirmedNorm.includes(triage)) {
+        reasons.push('AI triage prefers a different problem candidate.');
+      }
+      if (visualSupport === 'conflicts') reasons.push('Visual problem check suggests another problem category.');
+      else if (visualSupport === 'inconclusive') reasons.push('Symptoms are not clearly visible in the uploaded photos.');
+      else if (visualSupport === 'not_plant') reasons.push('The visual check could not confirm the plant or the problem in the photos.');
+      const hasMismatch = reasons.length > 0;
+      if (hasMismatch && !problemResearchRow) reasons.push('Problem research has not been run yet.');
+      const action = !hasMismatch
+        ? 'none'
+        : visualSupport === 'inconclusive' || visualSupport === 'not_plant' || photoQuality.status !== 'good'
+          ? 'add_photos'
+          : diagRows.length > 1
+            ? 'review_candidates'
+            : !problemResearchRow
+              ? 'run_problem_research'
+              : 'ask_chat';
+      return {
+        hasMismatch,
+        severity:
+          visualSupport === 'conflicts' || visualSupport === 'not_plant' ? 'warning' : 'review',
+        reasons: reasons.slice(0, 3),
+        confirmedDiagnosisName: confirmedName,
+        visualSupport,
+        suggestedReviewAction: action,
+      };
+    })();
+
     const context = {
       caseContext: {
         caseId: pc.id,
