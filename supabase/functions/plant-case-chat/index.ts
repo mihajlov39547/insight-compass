@@ -393,6 +393,7 @@ Deno.serve(async (req: Request) => {
         imageRoles: imageRows.map((r) => r.image_role || 'auto'),
       },
       photoQuality,
+      diagnosisMismatch,
       identification: {
         confirmedPlant: confirmedIdent
           ? {
