@@ -325,6 +325,59 @@ Deno.serve(async (req: Request) => {
       lowDiagnosisConfidence: confidenceBucket(topDiag?.score) === 'low',
     });
 
+    // Read-only uncertainty signal: never overrides the confirmed diagnosis.
+    const diagnosisMismatch = (() => {
+      const confirmedName = confirmedDiag?.name ?? null;
+      const visualSupport = visualSaysNotPlant
+        ? 'not_plant'
+        : (visualStructured?.visualSupport as string | undefined) ?? null;
+      if (pc.user_goal !== 'diagnose' || !confirmedName) {
+        return {
+          hasMismatch: false,
+          severity: 'review',
+          reasons: [] as string[],
+          confirmedDiagnosisName: confirmedName,
+          visualSupport,
+          suggestedReviewAction: 'none',
+        };
+      }
+      const reasons: string[] = [];
+      const norm = (s: string | null | undefined) =>
+        (s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      if (confidenceBucket(confirmedDiag?.score) === 'low') reasons.push('Diagnosis confidence is low.');
+      const relevance = confirmedDiag?.plant_relevance ?? 'unknown';
+      if (!relevance || relevance === 'unknown') reasons.push('Plant relevance is unknown.');
+      else if (relevance === 'low') reasons.push('The problem may not apply to the confirmed plant.');
+      const triage = norm((interp?.interpretation?.bestCandidates ?? [])[0]?.name);
+      const confirmedNorm = norm(confirmedName);
+      if (triage && confirmedNorm && triage !== confirmedNorm && !triage.includes(confirmedNorm) && !confirmedNorm.includes(triage)) {
+        reasons.push('AI triage prefers a different problem candidate.');
+      }
+      if (visualSupport === 'conflicts') reasons.push('Visual problem check suggests another problem category.');
+      else if (visualSupport === 'inconclusive') reasons.push('Symptoms are not clearly visible in the uploaded photos.');
+      else if (visualSupport === 'not_plant') reasons.push('The visual check could not confirm the plant or the problem in the photos.');
+      const hasMismatch = reasons.length > 0;
+      if (hasMismatch && !problemResearchRow) reasons.push('Problem research has not been run yet.');
+      const action = !hasMismatch
+        ? 'none'
+        : visualSupport === 'inconclusive' || visualSupport === 'not_plant' || photoQuality.status !== 'good'
+          ? 'add_photos'
+          : diagRows.length > 1
+            ? 'review_candidates'
+            : !problemResearchRow
+              ? 'run_problem_research'
+              : 'ask_chat';
+      return {
+        hasMismatch,
+        severity:
+          visualSupport === 'conflicts' || visualSupport === 'not_plant' ? 'warning' : 'review',
+        reasons: reasons.slice(0, 3),
+        confirmedDiagnosisName: confirmedName,
+        visualSupport,
+        suggestedReviewAction: action,
+      };
+    })();
+
     const context = {
       caseContext: {
         caseId: pc.id,
@@ -340,6 +393,7 @@ Deno.serve(async (req: Request) => {
         imageRoles: imageRows.map((r) => r.image_role || 'auto'),
       },
       photoQuality,
+      diagnosisMismatch,
       identification: {
         confirmedPlant: confirmedIdent
           ? {
@@ -614,7 +668,8 @@ Deno.serve(async (req: Request) => {
 GOAL DIRECTIVE: ${goalDirective}
 
 Rules:
-- Answer using ONLY the provided case context (caseContext, photoQuality, identification, diagnosis, aiInterpretation, speciesProfile, growthGrounding, incomeResearch, plantResearch, problemResearch).
+- Answer using ONLY the provided case context (caseContext, photoQuality, diagnosisMismatch, identification, diagnosis, aiInterpretation, speciesProfile, growthGrounding, incomeResearch, plantResearch, problemResearch).
+- If diagnosisMismatch.hasMismatch is true, mention the uncertainty naturally when answering diagnosis or treatment-category questions, summarise its reasons in plain language, and suggest the matching review step (better photos, reviewing the other problem candidates, or running problem research). NEVER override or silently change the confirmed diagnosis.
 - NEVER include pesticide/fungicide/herbicide/insecticide product names, active ingredient recommendations, doses, concentrations, mixing or application rates, spray intervals or schedules, or step-by-step chemical application instructions, and never promise a guaranteed cure or guaranteed control. Regulated chemical control may only be mentioned at a high level ("regulated chemical options may exist; consult local extension or licensed professionals").
 - Clearly distinguish CONFIRMED facts (confirmedPlant, confirmedDiagnosis) from CANDIDATES (providerCandidates, alternatives).
 - When provider confidence is low or plantRelevance is not "high", explicitly mention the uncertainty.
