@@ -305,7 +305,7 @@ export function PlantDiagnosisCandidatesReview({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>{t('plantAdvisor.diagnose.candidatesReview.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (pendingConfirm) onConfirm(pendingConfirm.id);
