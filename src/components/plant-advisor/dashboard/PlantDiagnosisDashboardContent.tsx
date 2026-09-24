@@ -18,6 +18,9 @@ import { useAuth } from '@/contexts/useAuth';
 import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
 import { usePlantAdvisorSettings, toPlantnetApiLang } from '@/hooks/usePlantAdvisorSettings';
 import { usePlantAiScanUsage } from '@/hooks/usePlantIdentificationUsage';
+import type { VisualVerification } from '@/lib/plantVisualVerification';
+import { buildDiagnosisCandidateViews } from '@/lib/plantDiagnosisCandidates';
+import { PlantDiagnosisCandidatesReview } from './PlantDiagnosisCandidatesReview';
 
 interface Props {
   caseId: string;
@@ -27,6 +30,16 @@ interface Props {
   problemResearchReady?: boolean;
   /** Short bullets to show under "what to check next". */
   whatToCheckNext?: string[];
+  /** Visual second opinion verification, only when computed in "diagnose" mode. */
+  visualVerification?: VisualVerification | null;
+  /** Localized labels of photos that are still missing. */
+  missingPhotoLabels?: string[];
+  /** Plain text of the stored problem research answer, when available. */
+  problemResearchText?: string;
+  /** Increment to expand + highlight the candidates review area. */
+  focusCandidatesToken?: number;
+  /** Opens the case chat with a prefilled question about one candidate. */
+  onAskChatAboutCandidate?: (prompt: string) => void;
 }
 
 const RELEVANCE_ORDER: Record<string, number> = { high: 0, medium: 1, unknown: 2, low: 3 };
