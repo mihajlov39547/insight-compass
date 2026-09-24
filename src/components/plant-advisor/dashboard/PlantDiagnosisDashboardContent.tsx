@@ -97,6 +97,11 @@ export function PlantDiagnosisDashboardContent({
   images,
   hasConfirmedIdentification,
   problemResearchReady = false,
+  visualVerification = null,
+  missingPhotoLabels = [],
+  problemResearchText = '',
+  focusCandidatesToken = 0,
+  onAskChatAboutCandidate,
 }: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
