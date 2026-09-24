@@ -2082,7 +2082,39 @@
       "confidenceBucket": {
         "low": "Low confidence",
         "medium": "Medium confidence",
-        "high": "High confidence"
+        "high": "High confidence",
+        "unknown": "Unknown confidence"
+      },
+      "candidatesReview": {
+        "title": "Diagnosis candidates",
+        "helper": "Compare the available candidates before changing the confirmed problem. This is not treatment advice.",
+        "confirmedProblem": "Confirmed problem",
+        "candidate": "Candidate",
+        "triagePreferred": "AI triage preferred",
+        "visualMentioned": "Visual check mentioned",
+        "researchMentioned": "Problem research mentions this candidate",
+        "confidence": "Confidence",
+        "relevance": "Plant relevance",
+        "whyFit": "Why it may fit",
+        "missingEvidence": "Evidence still missing",
+        "compare": "Compare",
+        "confirmCandidate": "Confirm this candidate",
+        "askChat": "Ask chat about this candidate",
+        "alreadyConfirmed": "This is already confirmed",
+        "visualCheck": "Visual check",
+        "confirmDialogTitle": "Confirm diagnosis?",
+        "confirmDialogBody": "This will replace the currently confirmed problem for this case with \"{{name}}\".",
+        "confirmAction": "Confirm",
+        "cancel": "Cancel",
+        "reviewLine": "Evidence suggests this diagnosis should be reviewed.",
+        "chatPrompt": "Compare the confirmed diagnosis with {{name}} and explain what evidence would distinguish them. Do not give chemical treatment advice.",
+        "visual": {
+          "supports": "supported by the visual check",
+          "conflicts": "not clearly supported",
+          "inconclusive": "visual check inconclusive",
+          "not_plant": "visual check could not see a plant clearly",
+          "none": "no visual check yet"
+        }
       },
       "errors": {
         "apiKeyMissing": "Plant diagnosis is not configured (API key missing).",
