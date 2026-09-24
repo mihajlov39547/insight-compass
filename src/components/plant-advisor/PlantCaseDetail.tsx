@@ -31,7 +31,7 @@ interface Props {
   plantCase: PlantCase;
   onBack: () => void;
   onEdit: () => void;
-  onOpenChat: () => void;
+  onOpenChat: (prefill?: string) => void;
   onDeleted: () => void;
 }
 
@@ -50,6 +50,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const problemResearchRef = React.useRef<HTMLDivElement | null>(null);
   const [diagnosisOpen, setDiagnosisOpen] = React.useState(false);
   const [problemResearchOpen, setProblemResearchOpen] = React.useState(false);
+  const [focusCandidates, setFocusCandidates] = React.useState(0);
   const openPhotos = React.useCallback(() => {
     setPhotosOpen(true);
     window.requestAnimationFrame(() =>
@@ -321,6 +322,20 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
                 hasConfirmedIdentification={true}
                 problemResearchReady={!!data.research.problem_research}
                 whatToCheckNext={data.whatToCheckNext}
+                visualVerification={
+                  data.visualOpinionMode === 'diagnose' ? data.visualVerification : null
+                }
+                missingPhotoLabels={[
+                  ...data.photoQuality.visualMissingPhotos,
+                  ...data.photoQuality.missingPhotoKeys.map((k) =>
+                    t(`plantAdvisor.photoQuality.missing.${k}`),
+                  ),
+                ]}
+                problemResearchText={(
+                  data.research.problem_research?.previewBullets ?? []
+                ).join(' ')}
+                focusCandidatesToken={focusCandidates}
+                onAskChatAboutCandidate={(prompt) => onOpenChat(prompt)}
               />
             ) : (
               <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
@@ -335,9 +350,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
             onAddPhotos={openPhotos}
             onReviewCandidates={() => {
               setDiagnosisOpen(true);
-              window.requestAnimationFrame(() =>
-                diagnosisSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-              );
+              setFocusCandidates((n) => n + 1);
             }}
             onRunProblemResearch={() => {
               setProblemResearchOpen(true);
