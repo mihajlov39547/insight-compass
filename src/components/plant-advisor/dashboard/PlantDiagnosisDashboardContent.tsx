@@ -433,7 +433,7 @@ export function PlantDiagnosisDashboardContent({
             t('plantAdvisor.diagnose.candidatesReview.chatPrompt', { name }),
           )
         }
-        focusToken={focusCandidatesToken}
+        focusToken={focusCandidatesToken + localFocus}
       />
 
       {/* Next step pointer */}
