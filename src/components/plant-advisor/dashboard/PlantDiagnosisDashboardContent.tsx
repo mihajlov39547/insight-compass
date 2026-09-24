@@ -171,6 +171,16 @@ export function PlantDiagnosisDashboardContent({
   const triageConfidence = interpretation?.overallConfidence || 'low';
   const triageSummary = interpretation?.summary ? firstSentences(interpretation.summary, 2) : null;
 
+  // Server-validated provider rows only; nothing is created from client text here.
+  const candidateViews = buildDiagnosisCandidateViews({
+    diagnoses,
+    interpretation,
+    visualVerification,
+    missingPhotoLabels,
+    problemResearchText,
+    canEdit: true,
+  });
+
   const problemTypeLabel = (pt: string | null | undefined) =>
     pt === 'pest'
       ? t('plantAdvisor.diagnose.problemType.pest')
