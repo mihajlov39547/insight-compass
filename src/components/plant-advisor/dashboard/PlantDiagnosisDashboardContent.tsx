@@ -114,9 +114,8 @@ export function PlantDiagnosisDashboardContent({
 
   const [preparing, setPreparing] = useState(false);
   const [triageOpen, setTriageOpen] = useState(false);
-  const [candidatesOpen, setCandidatesOpen] = useState(false);
-  const [allCandidates, setAllCandidates] = useState(false);
   const [unlikelyOpen, setUnlikelyOpen] = useState(false);
+  const [localFocus, setFocusToken] = useState(0);
 
   const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
   const webps = images.filter((i) => isWebpMime(i.mime_type));
@@ -167,8 +166,6 @@ export function PlantDiagnosisDashboardContent({
   });
 
   const top = sorted.find((d) => d.is_confirmed) || sorted[0] || null;
-  const alts = sorted.filter((d) => d.id !== top?.id);
-  const shownAlts = allCandidates ? alts : alts.slice(0, 2);
 
   const interpretation = dbInterpretation?.interpretation ?? null;
   const triageConfidence = interpretation?.overallConfidence || 'low';
@@ -224,9 +221,9 @@ export function PlantDiagnosisDashboardContent({
             ? t('plantAdvisor.diagnose.runAgain')
             : t('plantAdvisor.diagnose.diagnose')}
         </Button>
-        {alts.length > 0 && (
-          <Button size="sm" variant="outline" onClick={() => setCandidatesOpen((o) => !o)}>
-            {t('plantAdvisor.dashboard.diag.showCandidates')}
+        {diagnoses.length > 1 && (
+          <Button size="sm" variant="outline" onClick={() => setFocusToken((n) => n + 1)}>
+            {t('plantAdvisor.diagnose.candidatesReview.title')}
           </Button>
         )}
         {!usage.loading && (
