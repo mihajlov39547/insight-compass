@@ -2098,7 +2098,39 @@
       "confidenceBucket": {
         "low": "Niska pouzdanost",
         "medium": "Srednja pouzdanost",
-        "high": "Visoka pouzdanost"
+        "high": "Visoka pouzdanost",
+        "unknown": "Nepoznata pouzdanost"
+      },
+      "candidatesReview": {
+        "title": "Kandidati dijagnoze",
+        "helper": "Uporedite dostupne kandidate pre promene potvrđenog problema. Ovo nije savet za tretman.",
+        "confirmedProblem": "Potvrđeni problem",
+        "candidate": "Kandidat",
+        "triagePreferred": "AI trijaža preferira",
+        "visualMentioned": "Pomenuto u vizuelnoj proveri",
+        "researchMentioned": "Istraživanje problema pominje ovog kandidata",
+        "confidence": "Pouzdanost",
+        "relevance": "Relevantnost za biljku",
+        "whyFit": "Zašto može odgovarati",
+        "missingEvidence": "Dokazi koji još nedostaju",
+        "compare": "Uporedi",
+        "confirmCandidate": "Potvrdi ovog kandidata",
+        "askChat": "Pitaj chat o ovom kandidatu",
+        "alreadyConfirmed": "Ovo je već potvrđeno",
+        "visualCheck": "Vizuelna provera",
+        "confirmDialogTitle": "Potvrditi dijagnozu?",
+        "confirmDialogBody": "Ovo će zameniti trenutno potvrđeni problem za ovaj slučaj sa „{{name}}“.",
+        "confirmAction": "Potvrdi",
+        "cancel": "Otkaži",
+        "reviewLine": "Dokazi ukazuju da ovu dijagnozu treba proveriti.",
+        "chatPrompt": "Uporedi potvrđenu dijagnozu sa kandidatom {{name}} i objasni koji dokazi bi ih razlikovali. Ne daj savete za hemijski tretman.",
+        "visual": {
+          "supports": "podržano vizuelnom proverom",
+          "conflicts": "nije jasno podržano",
+          "inconclusive": "vizuelna provera nije bila odlučujuća",
+          "not_plant": "vizuelna provera nije jasno videla biljku",
+          "none": "vizuelna provera još nije pokrenuta"
+        }
       },
       "errors": {
         "apiKeyMissing": "Dijagnoza biljke nije konfigurisana (nedostaje API ključ).",

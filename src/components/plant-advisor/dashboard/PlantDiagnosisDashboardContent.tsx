@@ -18,6 +18,9 @@ import { useAuth } from '@/contexts/useAuth';
 import { isConvertibleForIdentification, isWebpMime } from '@/lib/plantImageConversion';
 import { usePlantAdvisorSettings, toPlantnetApiLang } from '@/hooks/usePlantAdvisorSettings';
 import { usePlantAiScanUsage } from '@/hooks/usePlantIdentificationUsage';
+import type { VisualVerification } from '@/lib/plantVisualVerification';
+import { buildDiagnosisCandidateViews } from '@/lib/plantDiagnosisCandidates';
+import { PlantDiagnosisCandidatesReview } from './PlantDiagnosisCandidatesReview';
 
 interface Props {
   caseId: string;
@@ -27,6 +30,16 @@ interface Props {
   problemResearchReady?: boolean;
   /** Short bullets to show under "what to check next". */
   whatToCheckNext?: string[];
+  /** Visual second opinion verification, only when computed in "diagnose" mode. */
+  visualVerification?: VisualVerification | null;
+  /** Localized labels of photos that are still missing. */
+  missingPhotoLabels?: string[];
+  /** Plain text of the stored problem research answer, when available. */
+  problemResearchText?: string;
+  /** Increment to expand + highlight the candidates review area. */
+  focusCandidatesToken?: number;
+  /** Opens the case chat with a prefilled question about one candidate. */
+  onAskChatAboutCandidate?: (prompt: string) => void;
 }
 
 const RELEVANCE_ORDER: Record<string, number> = { high: 0, medium: 1, unknown: 2, low: 3 };
@@ -84,6 +97,11 @@ export function PlantDiagnosisDashboardContent({
   images,
   hasConfirmedIdentification,
   problemResearchReady = false,
+  visualVerification = null,
+  missingPhotoLabels = [],
+  problemResearchText = '',
+  focusCandidatesToken = 0,
+  onAskChatAboutCandidate,
 }: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -96,9 +114,8 @@ export function PlantDiagnosisDashboardContent({
 
   const [preparing, setPreparing] = useState(false);
   const [triageOpen, setTriageOpen] = useState(false);
-  const [candidatesOpen, setCandidatesOpen] = useState(false);
-  const [allCandidates, setAllCandidates] = useState(false);
   const [unlikelyOpen, setUnlikelyOpen] = useState(false);
+  const [localFocus, setFocusToken] = useState(0);
 
   const identifiable = images.filter((i) => isConvertibleForIdentification(i.mime_type));
   const webps = images.filter((i) => isWebpMime(i.mime_type));
@@ -149,12 +166,20 @@ export function PlantDiagnosisDashboardContent({
   });
 
   const top = sorted.find((d) => d.is_confirmed) || sorted[0] || null;
-  const alts = sorted.filter((d) => d.id !== top?.id);
-  const shownAlts = allCandidates ? alts : alts.slice(0, 2);
 
   const interpretation = dbInterpretation?.interpretation ?? null;
   const triageConfidence = interpretation?.overallConfidence || 'low';
   const triageSummary = interpretation?.summary ? firstSentences(interpretation.summary, 2) : null;
+
+  // Server-validated provider rows only; nothing is created from client text here.
+  const candidateViews = buildDiagnosisCandidateViews({
+    diagnoses,
+    interpretation,
+    visualVerification,
+    missingPhotoLabels,
+    problemResearchText,
+    canEdit: true,
+  });
 
   const problemTypeLabel = (pt: string | null | undefined) =>
     pt === 'pest'
@@ -206,9 +231,9 @@ export function PlantDiagnosisDashboardContent({
             ? t('plantAdvisor.diagnose.runAgain')
             : t('plantAdvisor.diagnose.diagnose')}
         </Button>
-        {alts.length > 0 && (
-          <Button size="sm" variant="outline" onClick={() => setCandidatesOpen((o) => !o)}>
-            {t('plantAdvisor.dashboard.diag.showCandidates')}
+        {diagnoses.length > 1 && (
+          <Button size="sm" variant="outline" onClick={() => setFocusToken((n) => n + 1)}>
+            {t('plantAdvisor.diagnose.candidatesReview.title')}
           </Button>
         )}
         {!usage.loading && (
@@ -397,64 +422,19 @@ export function PlantDiagnosisDashboardContent({
         </Collapsible>
       )}
 
-      {/* Provider candidates, collapsed by default */}
-      {alts.length > 0 && (
-        <Collapsible open={candidatesOpen} onOpenChange={setCandidatesOpen}>
-          <div className="flex items-center gap-2">
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 px-2 -ml-2 text-xs text-muted-foreground">
-                <ChevronDown className={`h-3.5 w-3.5 mr-1.5 transition-transform ${candidatesOpen ? 'rotate-180' : ''}`} />
-                {t('plantAdvisor.dashboard.diag.providerCandidates')}
-              </Button>
-            </CollapsibleTrigger>
-            <span className="text-[10px] text-muted-foreground">
-              {t('plantAdvisor.dashboard.diag.candidatesAvailable', { count: diagnoses.length })}
-            </span>
-          </div>
-          <CollapsibleContent className="pt-2 space-y-1.5">
-            {shownAlts.map((a) => (
-              <div key={a.id} className="rounded-md border border-border/60 px-2 py-2 space-y-1">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="text-xs font-medium truncate min-w-0">{a.name || '—'}</div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Badge variant="outline" className="text-[10px]">
-                      {problemTypeLabel(a.problem_type)}
-                    </Badge>
-                    <Badge variant="outline" className="text-[10px]">
-                      {relevanceLabel(relevanceOf(a))}
-                    </Badge>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {fmtPct(a.score)}
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 px-2 text-[11px]"
-                      onClick={() => doConfirm(a.id)}
-                      disabled={confirmMut.isPending}
-                    >
-                      {t('plantAdvisor.diagnose.useThis')}
-                    </Button>
-                  </div>
-                </div>
-                {a.description && a.description !== a.name && (
-                  <div className="text-[11px] text-muted-foreground line-clamp-2">{a.description}</div>
-                )}
-              </div>
-            ))}
-            {!allCandidates && alts.length > 2 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 -ml-2 text-xs text-muted-foreground"
-                onClick={() => setAllCandidates(true)}
-              >
-                {t('plantAdvisor.dashboard.diag.showAllCandidates')}
-              </Button>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+      {/* Structured candidates review, collapsed by default */}
+      <PlantDiagnosisCandidatesReview
+        candidates={candidateViews}
+        visualSupport={visualVerification?.visualSupport ?? null}
+        confirming={confirmMut.isPending}
+        onConfirm={doConfirm}
+        onAskChat={(name) =>
+          onAskChatAboutCandidate?.(
+            t('plantAdvisor.diagnose.candidatesReview.chatPrompt', { name }),
+          )
+        }
+        focusToken={focusCandidatesToken + localFocus}
+      />
 
       {/* Next step pointer */}
       {top && (
