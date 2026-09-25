@@ -31,6 +31,8 @@ import type { PlantCase, PlantCaseGoal } from '@/hooks/usePlantCases';
 interface Props {
   plantCase: PlantCase;
   onBack: () => void;
+  /** Optional question prefilled into the composer (never auto-sent). */
+  initialPrompt?: string;
 }
 
 interface Msg {
