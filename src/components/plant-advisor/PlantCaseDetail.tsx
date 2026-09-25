@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bug, Images, Leaf, ScanEye, Sparkles, Sprout, Telescope } from 'lucide-react';
