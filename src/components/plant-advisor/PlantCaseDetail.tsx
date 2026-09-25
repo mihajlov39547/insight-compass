@@ -310,6 +310,11 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
                       .join(' · ')
                   : t('plantAdvisor.dashboard.facts.problemEmpty')
             }
+            preview={
+              data.diagnosisMismatch.hasMismatch
+                ? [t('plantAdvisor.diagnose.candidatesReview.reviewLine')]
+                : undefined
+            }
             expandLabel={expand}
             collapseLabel={collapse}
             open={diagnosisOpen}

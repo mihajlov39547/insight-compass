@@ -31,6 +31,8 @@ import type { PlantCase, PlantCaseGoal } from '@/hooks/usePlantCases';
 interface Props {
   plantCase: PlantCase;
   onBack: () => void;
+  /** Optional question prefilled into the composer (never auto-sent). */
+  initialPrompt?: string;
 }
 
 interface Msg {
@@ -140,7 +142,7 @@ function formatPlantName(i: NameableIdent | null | undefined): string {
   return common || scientific || '—';
 }
 
-export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
+export function PlantCaseChatPanel({ plantCase, onBack, initialPrompt }: Props) {
   const { t } = useTranslation();
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
   const { data: idents = [] } = usePlantIdentifications(plantCase.id);
@@ -289,7 +291,7 @@ export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
   const { runCrawl, isCrawling, crawlingMessageId } = useCrawlFollowUp();
 
 
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(initialPrompt ?? '');
   const [pending, setPending] = useState(false);
   // Optimistic messages shown while awaiting the assistant reply.
   // Cleared after the query invalidation returns persisted rows.
