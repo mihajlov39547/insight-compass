@@ -350,7 +350,9 @@ Deno.serve(async (req: Request) => {
       else if (relevance === 'low') reasons.push('The problem may not apply to the confirmed plant.');
       const triage = norm((interp?.interpretation?.bestCandidates ?? [])[0]?.name);
       const confirmedNorm = norm(confirmedName);
-      if (triage && confirmedNorm && triage !== confirmedNorm && !triage.includes(confirmedNorm) && !confirmedNorm.includes(triage)) {
+      const triageDiffers =
+        !!triage && !!confirmedNorm && triage !== confirmedNorm && !triage.includes(confirmedNorm) && !confirmedNorm.includes(triage);
+      if (triageDiffers) {
         reasons.push('AI triage prefers a different problem candidate.');
       }
       if (visualSupport === 'conflicts') reasons.push('Visual problem check suggests another problem category.');
@@ -358,15 +360,22 @@ Deno.serve(async (req: Request) => {
       else if (visualSupport === 'not_plant') reasons.push('The visual check could not confirm the plant or the problem in the photos.');
       const hasMismatch = reasons.length > 0;
       if (hasMismatch && !problemResearchRow) reasons.push('Problem research has not been run yet.');
+      const hasAlternatives = diagRows.length > 1;
       const action = !hasMismatch
         ? 'none'
-        : visualSupport === 'inconclusive' || visualSupport === 'not_plant' || photoQuality.status !== 'good'
+        : visualSupport === 'not_plant' || visualSupport === 'inconclusive'
           ? 'add_photos'
-          : diagRows.length > 1
+          : triageDiffers && hasAlternatives
             ? 'review_candidates'
-            : !problemResearchRow
-              ? 'run_problem_research'
-              : 'ask_chat';
+            : visualSupport === 'conflicts' && hasAlternatives
+              ? 'review_candidates'
+              : photoQuality.status !== 'good'
+                ? 'add_photos'
+                : hasAlternatives
+                  ? 'review_candidates'
+                  : !problemResearchRow
+                    ? 'run_problem_research'
+                    : 'ask_chat';
       return {
         hasMismatch,
         severity:
