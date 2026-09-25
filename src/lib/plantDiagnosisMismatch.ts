@@ -85,7 +85,13 @@ export function computeDiagnosisMismatch(args: {
     visualSupport === 'conflicts' || visualSupport === 'not_plant' ? 'warning' : 'review';
 
   let suggestedReviewAction: DiagnosisReviewAction;
-  if (visualSupport === 'inconclusive' || visualSupport === 'not_plant' || !args.photoQualityGood) {
+  if (visualSupport === 'not_plant' || visualSupport === 'inconclusive') {
+    suggestedReviewAction = 'add_photos';
+  } else if (triageDiffers && args.hasAlternativeCandidates) {
+    suggestedReviewAction = 'review_candidates';
+  } else if (visualSupport === 'conflicts' && args.hasAlternativeCandidates) {
+    suggestedReviewAction = 'review_candidates';
+  } else if (!args.photoQualityGood) {
     suggestedReviewAction = 'add_photos';
   } else if (args.hasAlternativeCandidates) {
     suggestedReviewAction = 'review_candidates';
