@@ -306,7 +306,7 @@ export function PlantDiagnosisDashboardContent({
             {t('plantAdvisor.diagnose.provider')}: {top.provider}
           </div>
 
-          {!top.is_confirmed && (
+          {!top.is_confirmed && canEdit && (
             <Button size="sm" variant="outline" onClick={() => doConfirm(top.id)} disabled={confirmMut.isPending || !canEdit}>
               <Check className="h-3.5 w-3.5 mr-1.5" />
               {t('plantAdvisor.diagnose.confirmThis')}
