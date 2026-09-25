@@ -1,3 +1,4 @@
+import { useAuth } from '@/contexts/useAuth';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bug, Images, Leaf, ScanEye, Sparkles, Sprout, Telescope } from 'lucide-react';
@@ -44,6 +45,7 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
   const { data: permaProfile } = usePermapeopleProfile(plantCase.id);
   const data = usePlantCaseDashboard(plantCase);
+  const { user } = useAuth();
   const photosSectionRef = React.useRef<HTMLDivElement | null>(null);
   const [photosOpen, setPhotosOpen] = React.useState(images.length === 0);
   const diagnosisSectionRef = React.useRef<HTMLDivElement | null>(null);
@@ -336,9 +338,11 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
                     t(`plantAdvisor.photoQuality.missing.${k}`),
                   ),
                 ]}
-                problemResearchText={(
-                  data.research.problem_research?.previewBullets ?? []
-                ).join(' ')}
+                problemResearchText={
+                  data.research.problem_research?.fullText ||
+                  (data.research.problem_research?.previewBullets ?? []).join(' ')
+                }
+                canEdit={!!user && user.id === plantCase.user_id}
                 focusCandidatesToken={focusCandidates}
                 onAskChatAboutCandidate={(prompt) => onOpenChat(prompt)}
               />

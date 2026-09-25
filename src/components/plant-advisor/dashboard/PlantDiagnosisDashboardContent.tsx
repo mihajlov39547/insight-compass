@@ -23,6 +23,8 @@ import { buildDiagnosisCandidateViews } from '@/lib/plantDiagnosisCandidates';
 import { PlantDiagnosisCandidatesReview } from './PlantDiagnosisCandidatesReview';
 
 interface Props {
+  /** Only the case owner may confirm diagnoses. */
+  canEdit?: boolean;
   caseId: string;
   images: PlantCaseImage[];
   hasConfirmedIdentification: boolean;
@@ -102,6 +104,7 @@ export function PlantDiagnosisDashboardContent({
   problemResearchText = '',
   focusCandidatesToken = 0,
   onAskChatAboutCandidate,
+  canEdit = false,
 }: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -178,7 +181,7 @@ export function PlantDiagnosisDashboardContent({
     visualVerification,
     missingPhotoLabels,
     problemResearchText,
-    canEdit: true,
+    canEdit, // owner-only: plant cases have no shared editors
   });
 
   const problemTypeLabel = (pt: string | null | undefined) =>
@@ -303,8 +306,8 @@ export function PlantDiagnosisDashboardContent({
             {t('plantAdvisor.diagnose.provider')}: {top.provider}
           </div>
 
-          {!top.is_confirmed && (
-            <Button size="sm" variant="outline" onClick={() => doConfirm(top.id)} disabled={confirmMut.isPending}>
+          {!top.is_confirmed && canEdit && (
+            <Button size="sm" variant="outline" onClick={() => doConfirm(top.id)} disabled={confirmMut.isPending || !canEdit}>
               <Check className="h-3.5 w-3.5 mr-1.5" />
               {t('plantAdvisor.diagnose.confirmThis')}
             </Button>

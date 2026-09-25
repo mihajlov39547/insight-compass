@@ -206,8 +206,8 @@ export function useConfirmPlantDiagnosis() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (args: { plantCaseId: string; diagnosisId: string }) => {
-      const { data, error } = await supabase.functions.invoke('plant-diagnosis-confirm', {
-        body: args,
+      const { data, error } = await supabase.functions.invoke('plant-confirm-diagnosis-candidate', {
+        body: { caseId: args.plantCaseId, diagnosisId: args.diagnosisId },
       });
       if (error) {
         const ctx: any = (error as any).context;
@@ -228,6 +228,8 @@ export function useConfirmPlantDiagnosis() {
       qc.invalidateQueries({ queryKey: ['plant_diagnoses', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_case', vars.plantCaseId] });
       qc.invalidateQueries({ queryKey: ['plant_cases'] });
+      qc.invalidateQueries({ queryKey: ['plant_case_chat_messages', vars.plantCaseId] });
+      qc.invalidateQueries({ queryKey: ['plant_case_dashboard', vars.plantCaseId] });
     },
   });
 }

@@ -20,6 +20,8 @@ export interface ResearchArtifactSummary {
   updatedAt: string;
   sourceCount: number;
   previewBullets: string[];
+  /** Full research markdown (already loaded with chat messages). */
+  fullText: string;
 }
 
 /** Rejects citation fragments, broken markdown and other unreadable snippets. */
@@ -143,6 +145,7 @@ export function usePlantCaseDashboard(plantCase: PlantCase) {
           kind === 'problem_research'
             ? deriveProblemResearchPreview(m.content)
             : deriveResearchPreview(m.content),
+        fullText: typeof m.content === 'string' ? m.content : '',
       };
     }
     return byKind;
