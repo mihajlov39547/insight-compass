@@ -142,7 +142,7 @@ function formatPlantName(i: NameableIdent | null | undefined): string {
   return common || scientific || '—';
 }
 
-export function PlantCaseChatPanel({ plantCase, onBack }: Props) {
+export function PlantCaseChatPanel({ plantCase, onBack, initialPrompt }: Props) {
   const { t } = useTranslation();
   const { data: images = [] } = usePlantCaseImages(plantCase.id);
   const { data: idents = [] } = usePlantIdentifications(plantCase.id);
