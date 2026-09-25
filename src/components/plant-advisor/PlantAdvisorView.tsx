@@ -10,7 +10,7 @@ type Mode =
   | { kind: 'new' }
   | { kind: 'detail'; caseId: string }
   | { kind: 'edit'; caseId: string }
-  | { kind: 'chat'; caseId: string };
+  | { kind: 'chat'; caseId: string; prefill?: string };
 
 export function PlantAdvisorView() {
   const [mode, setMode] = useState<Mode>({ kind: 'dashboard' });
@@ -47,7 +47,7 @@ export function PlantAdvisorView() {
           plantCase={activeCase}
           onBack={() => setMode({ kind: 'dashboard' })}
           onEdit={() => setMode({ kind: 'edit', caseId: activeCase.id })}
-          onOpenChat={() => setMode({ kind: 'chat', caseId: activeCase.id })}
+          onOpenChat={(prefill) => setMode({ kind: 'chat', caseId: activeCase.id, prefill })}
           onDeleted={() => setMode({ kind: 'dashboard' })}
         />
       </div>
@@ -58,6 +58,7 @@ export function PlantAdvisorView() {
     return (
       <PlantCaseChatPanel
         plantCase={activeCase}
+        initialPrompt={mode.prefill}
         onBack={() => setMode({ kind: 'detail', caseId: activeCase.id })}
       />
     );

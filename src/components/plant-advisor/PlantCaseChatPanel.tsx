@@ -291,7 +291,7 @@ export function PlantCaseChatPanel({ plantCase, onBack, initialPrompt }: Props) 
   const { runCrawl, isCrawling, crawlingMessageId } = useCrawlFollowUp();
 
 
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(initialPrompt ?? '');
   const [pending, setPending] = useState(false);
   // Optimistic messages shown while awaiting the assistant reply.
   // Cleared after the query invalidation returns persisted rows.
