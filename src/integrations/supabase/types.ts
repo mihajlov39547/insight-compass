@@ -1362,6 +1362,56 @@ export type Database = {
           },
         ]
       }
+      plant_case_followups: {
+        Row: {
+          case_id: string
+          created_at: string
+          followup_date: string
+          id: string
+          metadata: Json
+          note: string | null
+          outcome_status: string
+          related_area: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          followup_date?: string
+          id?: string
+          metadata?: Json
+          note?: string | null
+          outcome_status?: string
+          related_area?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          followup_date?: string
+          id?: string
+          metadata?: Json
+          note?: string | null
+          outcome_status?: string
+          related_area?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_case_followups_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plant_case_grounding_contexts: {
         Row: {
           case_id: string
@@ -1442,7 +1492,9 @@ export type Database = {
           drive_uploaded_at: string | null
           drive_web_content_link: string | null
           drive_web_view_link: string | null
+          followup_id: string | null
           id: string
+          image_context: string | null
           image_role: string
           mime_type: string | null
           original_filename: string | null
@@ -1469,7 +1521,9 @@ export type Database = {
           drive_uploaded_at?: string | null
           drive_web_content_link?: string | null
           drive_web_view_link?: string | null
+          followup_id?: string | null
           id?: string
+          image_context?: string | null
           image_role?: string
           mime_type?: string | null
           original_filename?: string | null
@@ -1496,7 +1550,9 @@ export type Database = {
           drive_uploaded_at?: string | null
           drive_web_content_link?: string | null
           drive_web_view_link?: string | null
+          followup_id?: string | null
           id?: string
+          image_context?: string | null
           image_role?: string
           mime_type?: string | null
           original_filename?: string | null
@@ -1515,6 +1571,13 @@ export type Database = {
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "plant_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plant_case_images_followup_id_fkey"
+            columns: ["followup_id"]
+            isOneToOne: false
+            referencedRelation: "plant_case_followups"
             referencedColumns: ["id"]
           },
         ]
