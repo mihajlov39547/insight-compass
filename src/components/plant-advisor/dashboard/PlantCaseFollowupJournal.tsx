@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { AlertTriangle, BookOpen, ImagePlus, MessageSquare, Plus, RefreshCw, Scale, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -89,6 +90,7 @@ export function PlantCaseFollowupJournal({
   const create = useCreatePlantCaseFollowup();
   const del = useDeletePlantCaseFollowup();
   const upload = useUploadPlantImage();
+  const qc = useQueryClient();
   const { data: images = [] } = usePlantCaseImages(caseId);
   const [saving, setSaving] = useState(false);
 
