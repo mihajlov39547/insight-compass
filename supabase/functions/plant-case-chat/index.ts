@@ -325,6 +325,32 @@ Deno.serve(async (req: Request) => {
       lowDiagnosisConfidence: confidenceBucket(topDiag?.score) === 'low',
     });
 
+    // User-entered follow-up journal (observations, not verified evidence).
+    const { data: followupRows } = await admin
+      .from('plant_case_followups')
+      .select('followup_date, title, note, outcome_status, related_area')
+      .eq('case_id', caseId)
+      .order('followup_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(5);
+    const fuList = (followupRows ?? []).map((f: any) => ({
+      date: f.followup_date,
+      title: f.title,
+      note: typeof f.note === 'string' ? f.note.slice(0, 600) : null,
+      outcome: f.outcome_status,
+      area: f.related_area,
+    }));
+    const latestFu = fuList[0] ?? null;
+    const followups = {
+      latest: latestFu,
+      recent: fuList,
+      review: {
+        latestOutcome: latestFu?.outcome ?? null,
+        hasFollowups: !!latestFu,
+        needsReevaluation: latestFu?.outcome === 'worse',
+      },
+    };
+
     // Read-only uncertainty signal: never overrides the confirmed diagnosis.
     const diagnosisMismatch = (() => {
       const confirmedName = confirmedDiag?.name ?? null;
@@ -403,6 +429,7 @@ Deno.serve(async (req: Request) => {
       },
       photoQuality,
       diagnosisMismatch,
+      followups,
       identification: {
         confirmedPlant: confirmedIdent
           ? {
@@ -678,6 +705,7 @@ GOAL DIRECTIVE: ${goalDirective}
 
 Rules:
 - Answer using ONLY the provided case context (caseContext, photoQuality, diagnosisMismatch, identification, diagnosis, aiInterpretation, speciesProfile, growthGrounding, incomeResearch, plantResearch, problemResearch).
+- followups are user-entered case history (not verified evidence). Use them as timeline context. If followups.review.needsReevaluation is true, compare the question against the confirmed diagnosis, previous candidates, photoQuality and research, and suggest a user-initiated re-check. Never claim you inspected follow-up photos, never change the confirmed diagnosis, never give chemical advice.
 - If diagnosisMismatch.hasMismatch is true, mention the uncertainty naturally when answering diagnosis or treatment-category questions, summarise its reasons in plain language, and suggest the matching review step (better photos, reviewing the other problem candidates, or running problem research). NEVER override or silently change the confirmed diagnosis.
 - NEVER include pesticide/fungicide/herbicide/insecticide product names, active ingredient recommendations, doses, concentrations, mixing or application rates, spray intervals or schedules, or step-by-step chemical application instructions, and never promise a guaranteed cure or guaranteed control. Regulated chemical control may only be mentioned at a high level ("regulated chemical options may exist; consult local extension or licensed professionals").
 - Clearly distinguish CONFIRMED facts (confirmedPlant, confirmedDiagnosis) from CANDIDATES (providerCandidates, alternatives).

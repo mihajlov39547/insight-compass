@@ -2899,6 +2899,63 @@
         "inconclusive": "Vizuelnoj proveri su potrebne bolje fotografije.",
         "not_plant": "Vizuelna provera nije prepoznala biljku."
       }
+    },
+    "followups": {
+      "title": "Dnevnik praćenja",
+      "add": "Dodaj praćenje",
+      "date": "Datum praćenja",
+      "titleLabel": "Naslov",
+      "whatChanged": "Šta se promenilo?",
+      "outcome": "Ishod",
+      "area": "Oblast",
+      "addPhotos": "Dodaj fotografije",
+      "save": "Sačuvaj praćenje",
+      "cancel": "Otkaži",
+      "delete": "Obriši praćenje",
+      "confirmDelete": "Obrisati ovo praćenje?",
+      "savedToast": "Praćenje sačuvano",
+      "needNote": "Prvo dodajte naslov ili belešku.",
+      "none": "Nema praćenja",
+      "empty": "Još nema praćenja. Beležite kako se biljka menja tokom vremena.",
+      "latestPrefix": "Poslednje praćenje:",
+      "photoCount_one": "{{count}} fotografija",
+      "photoCount_few": "{{count}} fotografije",
+      "photoCount_other": "{{count}} fotografija",
+      "reevaluation": "Preporučena ponovna provera",
+      "compare": "Uporedi sa prethodnim kandidatima",
+      "rerunVisual": "Ponovi vizuelnu proveru",
+      "rerunDiagnosis": "Ponovi dijagnozu",
+      "askChat": "Pitaj chat o ovoj promeni",
+      "rerunTitle": "Ponoviti dijagnozu?",
+      "rerunBody": "Ovo otvara odeljak dijagnoze problema da biste sami pokrenuli novu proveru. Ništa se ne pokreće automatski i potvrđeni problem ostaje isti.",
+      "rerunConfirm": "Otvori dijagnozu",
+      "disclaimer": "Praćenja su vaša zapažanja, ne provereni dokazi.",
+      "chatPrompt": "Koristi poslednje praćenje da ponovo proceniš ovaj slučaj. Ishod je {{outcome}}. Uporedi ga sa potvrđenom dijagnozom i prethodnim kandidatima, i objasni koji dokazi bi opravdali ponovnu procenu. Ne daj savete za hemijski tretman.",
+      "outcomes": {
+        "improved": "Poboljšano",
+        "unchanged": "Bez promene",
+        "worse": "Pogoršano",
+        "resolved": "Rešeno",
+        "unknown": "Nepoznato"
+      },
+      "areas": {
+        "identification": "Identifikacija",
+        "diagnosis": "Dijagnoza",
+        "growth": "Rast",
+        "income": "Prihod",
+        "general": "Opšte"
+      },
+      "reasons": {
+        "resolved": "Poslednje praćenje označava slučaj kao rešen.",
+        "improved": "Dobar napredak: poslednje praćenje pokazuje poboljšanje.",
+        "unchanged": "Još nema promene. Nastavite praćenje i razmislite o jasnijim fotografijama.",
+        "worseDiagnose": "Preporučena ponovna provera: uporedite nove fotografije sa prethodnim kandidatima dijagnoze.",
+        "worseIdentify": "Stanje se pogoršalo. Pitajte chat da li nega i dalje odgovara ovoj biljci.",
+        "worseIdentifyUncertain": "Stanje se pogoršalo, a identitet biljke je nesiguran. Bolje fotografije i vizuelna provera mogu pomoći.",
+        "worseGrowth": "Rast se pogoršao. Pitajte chat da ga uporedi sa smernicama za rast.",
+        "worseIncome": "Rezultati su lošiji. Pitajte chat da ponovo razmotri istraživanje prihoda.",
+        "worseIncomeSymptoms": "Rezultati su lošiji i pominju se simptomi. Pitajte chat da li vredi pokrenuti proveru problema."
+      }
     }
   }
 }
