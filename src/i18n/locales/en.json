@@ -2883,6 +2883,62 @@
         "inconclusive": "Visual check needs better photos.",
         "not_plant": "Visual check could not see a plant."
       }
+    },
+    "followups": {
+      "title": "Follow-up journal",
+      "add": "Add follow-up",
+      "date": "Follow-up date",
+      "titleLabel": "Title",
+      "whatChanged": "What changed?",
+      "outcome": "Outcome",
+      "area": "Related area",
+      "addPhotos": "Add photos",
+      "save": "Save follow-up",
+      "cancel": "Cancel",
+      "delete": "Delete follow-up",
+      "confirmDelete": "Delete this follow-up?",
+      "savedToast": "Follow-up saved",
+      "needNote": "Add a title or note first.",
+      "none": "No follow-ups",
+      "empty": "No follow-ups yet. Log how the plant changes over time.",
+      "latestPrefix": "Latest follow-up:",
+      "photoCount_one": "{{count}} photo",
+      "photoCount_other": "{{count}} photos",
+      "reevaluation": "Re-evaluation recommended",
+      "compare": "Compare with previous candidates",
+      "rerunVisual": "Re-run visual check",
+      "rerunDiagnosis": "Re-run diagnosis",
+      "askChat": "Ask chat about this update",
+      "rerunTitle": "Re-run diagnosis?",
+      "rerunBody": "This opens the problem diagnosis section so you can run a new check yourself. Nothing runs automatically and your confirmed problem stays as it is.",
+      "rerunConfirm": "Open diagnosis",
+      "disclaimer": "Follow-ups are your own observations, not verified evidence.",
+      "chatPrompt": "Use the latest follow-up update to reassess this case. The outcome is {{outcome}}. Compare it with the confirmed diagnosis and previous candidates, and explain what evidence would justify re-evaluation. Do not give chemical treatment advice.",
+      "outcomes": {
+        "improved": "Improved",
+        "unchanged": "Unchanged",
+        "worse": "Worse",
+        "resolved": "Resolved",
+        "unknown": "Unknown"
+      },
+      "areas": {
+        "identification": "Identification",
+        "diagnosis": "Diagnosis",
+        "growth": "Growth",
+        "income": "Income",
+        "general": "General"
+      },
+      "reasons": {
+        "resolved": "The latest follow-up marks this case as resolved.",
+        "improved": "Good progress: the latest follow-up shows improvement.",
+        "unchanged": "No change yet. Keep monitoring and consider adding clearer photos.",
+        "worseDiagnose": "Re-evaluation recommended: compare new photos with previous diagnosis candidates.",
+        "worseIdentify": "Things got worse. Ask the chat whether the care context still fits this plant.",
+        "worseIdentifyUncertain": "Things got worse and the plant identity is uncertain. Better photos and a visual check could help.",
+        "worseGrowth": "Growth got worse. Ask the chat to review it against the growth guidance.",
+        "worseIncome": "Results got worse. Ask the chat to revisit the income research.",
+        "worseIncomeSymptoms": "Results got worse and symptoms are mentioned. Ask the chat whether a problem check is worth running."
+      }
     }
   }
 }
