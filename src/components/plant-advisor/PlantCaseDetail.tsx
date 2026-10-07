@@ -27,6 +27,9 @@ import { PlantDiagnosisMismatchPanel } from './dashboard/PlantDiagnosisMismatchP
 import { usePlantCaseDashboard, type ResearchArtifactSummary } from '@/hooks/usePlantCaseDashboard';
 
 import { toast } from 'sonner';
+import { PlantCaseFollowupJournal } from './dashboard/PlantCaseFollowupJournal';
+import { usePlantCaseFollowups } from '@/hooks/usePlantCaseFollowups';
+import { computeFollowupReview } from '@/lib/plantFollowupReview';
 
 interface Props {
   plantCase: PlantCase;
@@ -53,6 +56,17 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
   const [diagnosisOpen, setDiagnosisOpen] = React.useState(false);
   const [problemResearchOpen, setProblemResearchOpen] = React.useState(false);
   const [focusCandidates, setFocusCandidates] = React.useState(0);
+  const { data: followups = [] } = usePlantCaseFollowups(plantCase.id);
+  const followupReview = React.useMemo(
+    () =>
+      computeFollowupReview({
+        goal: data.goal,
+        followups,
+        hasAlternativeCandidates: data.diagnoses.length > 1,
+        lowIdentConfidence: data.lowIdentConfidence,
+      }),
+    [data.goal, followups, data.diagnoses.length, data.lowIdentConfidence],
+  );
   const openPhotos = React.useCallback(() => {
     setPhotosOpen(true);
     window.requestAnimationFrame(() =>
@@ -482,6 +496,26 @@ export function PlantCaseDetail({ plantCase, onBack, onEdit, onOpenChat, onDelet
           )}
         </>
       )}
+
+      <PlantCaseFollowupJournal
+        caseId={plantCase.id}
+        goal={data.goal}
+        canEdit={!!user && user.id === plantCase.user_id}
+        followups={followups}
+        review={followupReview}
+        onAskChat={(p) => onOpenChat(p)}
+        onCompareCandidates={() => {
+          setDiagnosisOpen(true);
+          setFocusCandidates((n) => n + 1);
+        }}
+        onRerunDiagnosis={() => {
+          setDiagnosisOpen(true);
+          window.requestAnimationFrame(() =>
+            diagnosisSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+          );
+        }}
+        onRerunVisualCheck={openPhotos}
+      />
 
       <PlantCaseChatCta data={data} onOpenChat={onOpenChat} />
     </div>
