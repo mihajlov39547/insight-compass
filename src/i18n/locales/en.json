@@ -2898,6 +2898,8 @@
       "delete": "Delete follow-up",
       "confirmDelete": "Delete this follow-up?",
       "savedToast": "Follow-up saved",
+      "savedPhotosFailedToast": "Follow-up saved, but some photos could not be uploaded.",
+      "savedLinkFailedToast": "Follow-up saved, but photos could not be attached to this update.",
       "needNote": "Add a title or note first.",
       "none": "No follow-ups",
       "empty": "No follow-ups yet. Log how the plant changes over time.",

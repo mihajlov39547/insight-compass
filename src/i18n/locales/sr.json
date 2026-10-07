@@ -2914,6 +2914,8 @@
       "delete": "Obriši praćenje",
       "confirmDelete": "Obrisati ovo praćenje?",
       "savedToast": "Praćenje sačuvano",
+      "savedPhotosFailedToast": "Praćenje je sačuvano, ali neke fotografije nisu otpremljene.",
+      "savedLinkFailedToast": "Praćenje je sačuvano, ali fotografije nisu povezane sa ovom promenom.",
       "needNote": "Prvo dodajte naslov ili belešku.",
       "none": "Nema praćenja",
       "empty": "Još nema praćenja. Beležite kako se biljka menja tokom vremena.",
