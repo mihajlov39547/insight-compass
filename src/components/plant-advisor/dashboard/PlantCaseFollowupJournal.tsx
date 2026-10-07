@@ -133,6 +133,7 @@ export function PlantCaseFollowupJournal({
       if (files.length > 0) {
         const ids: string[] = [];
         let count = images.length;
+        let uploadFailed = 0;
         for (const f of files) {
           try {
             const img = await upload.mutateAsync({
@@ -144,13 +145,30 @@ export function PlantCaseFollowupJournal({
             });
             ids.push(img.id);
             count += 1;
-          } catch (e) {
-            toast.error((e as Error).message);
+          } catch {
+            uploadFailed += 1;
           }
         }
-        await linkImagesToFollowup(ids, row.id);
+        let linkFailed = false;
+        if (ids.length > 0) {
+          try {
+            await linkImagesToFollowup(ids, row.id);
+          } catch {
+            linkFailed = true;
+          }
+        }
+        // Keep the follow-up regardless of photo failures; surface an accurate warning.
+        if (uploadFailed > 0) {
+          toast.warning(t('plantAdvisor.followups.savedPhotosFailedToast'));
+        } else if (linkFailed) {
+          toast.warning(t('plantAdvisor.followups.savedLinkFailedToast'));
+        } else {
+          toast.success(t('plantAdvisor.followups.savedToast'));
+        }
+        qc.invalidateQueries({ queryKey: ['plant_case_images', caseId] });
+      } else {
+        toast.success(t('plantAdvisor.followups.savedToast'));
       }
-      toast.success(t('plantAdvisor.followups.savedToast'));
       resetForm();
     } catch (e) {
       toast.error((e as Error).message);
