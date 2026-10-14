@@ -153,14 +153,27 @@ export function useRetryResourceProcessing() {
   });
 }
 
-export async function downloadResourceFromStorage(storagePath: string): Promise<string> {
+export async function downloadResourceFromStorage(storagePath: string, filename?: string): Promise<void> {
   const { data, error } = await supabase.storage
     .from('insight-navigator')
-    .createSignedUrl(storagePath, 60);
+    .createSignedUrl(storagePath, 60, { download: filename || true });
 
   if (error) throw error;
   if (!data?.signedUrl) throw new Error('Unable to create download URL');
-  return data.signedUrl;
+
+  // Fetch to a Blob so the browser saves the file instead of opening a viewer.
+  const resp = await fetch(data.signedUrl);
+  if (!resp.ok) throw new Error(`Download failed (${resp.status})`);
+  const blob = await resp.blob();
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || '';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
 export function useRenameResource() {

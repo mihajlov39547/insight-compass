@@ -337,8 +337,12 @@ export function ResourcesLanding() {
     }
     if (!resource.canDownload) return;
     try {
-      const signedUrl = await downloadResourceFromStorage(resource.storagePath);
-      window.open(signedUrl, '_blank', 'noopener,noreferrer');
+      const ext = resource.storagePath.includes('.')
+        ? resource.storagePath.split('.').pop() || ''
+        : '';
+      const safeTitle = (resource.title || 'resource').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'resource';
+      const filename = ext ? `${safeTitle}.${ext}` : safeTitle;
+      await downloadResourceFromStorage(resource.storagePath, filename);
     } catch (err: any) {
       toast({ title: 'Download failed', description: err.message || 'Unable to create download link', variant: 'destructive' });
     }
