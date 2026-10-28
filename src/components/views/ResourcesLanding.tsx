@@ -370,7 +370,7 @@ export function ResourcesLanding() {
       return;
     }
 
-    const canChangeType = renameResource.sourceType !== 'link' && !!renameResource.storagePath && renameResource.storageMode !== 'external_reference';
+    const canChangeType = renameResource.resourceType !== 'link' && !!renameResource.storagePath && renameResource.storageMode !== 'external_reference';
     const nextType = renameType.trim().toLowerCase().replace(/^\./, '');
     if (canChangeType && nextType && nextType !== (renameResource.extension || '').toLowerCase()) {
       const rid = renameResource.id;
@@ -826,7 +826,7 @@ export function ResourcesLanding() {
         onValueChange={setRenameValue}
         typeValue={renameType}
         onTypeChange={setRenameType}
-        showType={!!renameResource && renameResource.sourceType !== 'link' && !!renameResource.storagePath && renameResource.storageMode !== 'external_reference'}
+        showType={!!renameResource && renameResource.resourceType !== 'link' && !!renameResource.storagePath && renameResource.storageMode !== 'external_reference'}
         onSubmit={handleRenameSubmit}
       />
 
