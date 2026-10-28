@@ -607,7 +607,11 @@
       "untitled": "Untitled resource",
       "cancel": "Cancel",
       "submit": "Rename",
-      "submitting": "Renaming..."
+      "submitting": "Renaming...",
+      "fileType": "File type",
+      "fileTypeHint": "Change this if the file was uploaded with the wrong type (e.g. a ZIP saved as PDF). Downloads will use the new extension.",
+      "typeChanged": "File type changed to {{type}}",
+      "typeChangeFailed": "Could not change file type"
     },
     "addSourceDialog": {
       "title": "Add source",

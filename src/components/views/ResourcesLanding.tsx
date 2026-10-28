@@ -26,6 +26,8 @@ import {
   useCreateLinkResource,
   useDeleteResource,
   useRenameResource,
+  useChangeResourceFileType,
+  CHANGEABLE_FILE_TYPES,
   useRetryYouTubeTranscriptIngestion,
   useRetryResourceProcessing,
   type ResourceActionInput,
@@ -130,6 +132,8 @@ export function ResourcesLanding() {
   const queryClient = useQueryClient();
   const deleteMutation = useDeleteResource();
   const renameMutation = useRenameResource();
+  const changeTypeMutation = useChangeResourceFileType();
+  const [renameType, setRenameType] = useState('');
   const retryTranscriptMutation = useRetryYouTubeTranscriptIngestion();
   const retryMutation = useRetryResourceProcessing();
 
@@ -353,6 +357,7 @@ export function ResourcesLanding() {
     if (!resource.canRename) return;
     setRenameResource(resource);
     setRenameValue(resource.title);
+    setRenameType((resource.extension || '').toLowerCase());
     setRenameOpen(true);
   };
 
@@ -363,6 +368,22 @@ export function ResourcesLanding() {
     if (!nextTitle) {
       toast({ title: 'Rename failed', description: 'Title cannot be empty.', variant: 'destructive' });
       return;
+    }
+
+    const canChangeType = renameResource.resourceType !== 'link' && !!renameResource.storagePath && renameResource.storageMode !== 'external_reference';
+    const nextType = renameType.trim().toLowerCase().replace(/^\./, '');
+    if (canChangeType && nextType && nextType !== (renameResource.extension || '').toLowerCase()) {
+      const rid = renameResource.id;
+      changeTypeMutation.mutate(
+        { resourceId: rid, fileType: nextType },
+        {
+          onSuccess: () => {
+            setSelectedResource(prev => (prev && prev.id === rid ? { ...prev, extension: nextType } : prev));
+            toast({ title: t('resources.rename.typeChanged', { type: nextType.toUpperCase() }) });
+          },
+          onError: (err: any) => toast({ title: t('resources.rename.typeChangeFailed'), description: err.message, variant: 'destructive' }),
+        },
+      );
     }
 
     if (nextTitle === renameResource.title) {
@@ -803,6 +824,9 @@ export function ResourcesLanding() {
           }
         }}
         onValueChange={setRenameValue}
+        typeValue={renameType}
+        onTypeChange={setRenameType}
+        showType={!!renameResource && renameResource.resourceType !== 'link' && !!renameResource.storagePath && renameResource.storageMode !== 'external_reference'}
         onSubmit={handleRenameSubmit}
       />
 
@@ -1132,11 +1156,17 @@ function RenameResourceDialog({
   onOpenChange,
   onValueChange,
   onSubmit,
+  typeValue,
+  onTypeChange,
+  showType,
 }: {
   open: boolean;
   value: string;
   currentTitle: string;
   submitting: boolean;
+  typeValue: string;
+  onTypeChange: (value: string) => void;
+  showType: boolean;
   onOpenChange: (open: boolean) => void;
   onValueChange: (value: string) => void;
   onSubmit: () => void;
@@ -1172,6 +1202,23 @@ function RenameResourceDialog({
             autoFocus
           />
         </div>
+
+        {showType && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">{t('resources.rename.fileType')}</p>
+            <Input
+              list="resource-file-types"
+              value={typeValue}
+              onChange={(e) => onTypeChange(e.target.value)}
+              placeholder="pdf, zip, 7z…"
+              maxLength={10}
+            />
+            <datalist id="resource-file-types">
+              {CHANGEABLE_FILE_TYPES.map((ft) => <option key={ft} value={ft} />)}
+            </datalist>
+            <p className="text-xs text-muted-foreground">{t('resources.rename.fileTypeHint')}</p>
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('resources.rename.cancel')}</Button>
