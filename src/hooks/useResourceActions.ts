@@ -176,6 +176,37 @@ export async function downloadResourceFromStorage(storagePath: string, filename?
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
+const FILE_TYPE_MIME: Record<string, string> = {
+  pdf: 'application/pdf', zip: 'application/zip', '7z': 'application/x-7z-compressed',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', doc: 'application/msword',
+  txt: 'text/plain', md: 'text/markdown', csv: 'text/csv', json: 'application/json', xml: 'application/xml',
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+};
+export const CHANGEABLE_FILE_TYPES = Object.keys(FILE_TYPE_MIME);
+
+/** Change the recorded type of an uploaded file (e.g. pdf -> zip). Only updates metadata; file bytes are untouched. */
+export function useChangeResourceFileType() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { resourceId: string; fileType: string }>({
+    mutationFn: async ({ resourceId, fileType }) => {
+      const ft = fileType.trim().toLowerCase().replace(/^\./, '');
+      if (!/^[a-z0-9]{1,10}$/.test(ft)) throw new Error('Invalid file type');
+      const { data, error } = await supabase
+        .from('documents')
+        .update({ file_type: ft, mime_type: FILE_TYPE_MIME[ft] || 'application/octet-stream' } as any)
+        .eq('id', resourceId)
+        .select('id');
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error('You do not have permission to change this file');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+    },
+  });
+}
+
 export function useRenameResource() {
   const queryClient = useQueryClient();
 
