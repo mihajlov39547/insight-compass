@@ -234,11 +234,21 @@ const ALLOWED_EXTENSIONS = new Set([
   'xml',
   'json',
   'log',
+  'zip',
+  '7z',
 ]);
 
 const BLOCKED_EXTENSIONS = new Set([
   'exe', 'bin', 'dll', 'msi', 'app', 'bat', 'cmd', 'com', 'scr',
 ]);
+
+// Archives are stored as-is and never enter the processing pipeline.
+const ARCHIVE_EXTENSIONS = new Set(['zip', '7z']);
+
+export function isArchiveFile(fileName: string): boolean {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  return ARCHIVE_EXTENSIONS.has(ext);
+}
 
 export function isFileAllowed(fileName: string): boolean {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
@@ -294,7 +304,8 @@ export function useUploadDocuments() {
             mime_type: file.type || 'application/octet-stream',
             file_size: file.size,
             storage_path: storagePath,
-            processing_status: 'uploaded',
+            // Archives are stored only — no processing pipeline.
+            processing_status: isArchiveFile(file.name) ? 'completed' : 'uploaded',
           })
           .select()
           .single();
@@ -311,8 +322,9 @@ export function useUploadDocuments() {
         throw new Error(errors.join('\n'));
       }
 
-      // Start workflow processing for each uploaded document.
+      // Start workflow processing for each uploaded document (archives are skipped).
       for (const doc of results) {
+        if (isArchiveFile(doc.file_name)) continue;
         startDocumentWorkflow(doc, 'upload').catch(async (err) => {
           const message = err instanceof Error ? err.message : String(err);
           console.error('[doc-trigger] upload workflow trigger failed', {
