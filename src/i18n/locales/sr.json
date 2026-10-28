@@ -614,7 +614,11 @@
       "untitled": "Resurs bez naslova",
       "cancel": "Otkaži",
       "submit": "Preimenuj",
-      "submitting": "Preimenovanje..."
+      "submitting": "Preimenovanje...",
+      "fileType": "Tip fajla",
+      "fileTypeHint": "Promenite ako je fajl otpremljen sa pogrešnim tipom (npr. ZIP sačuvan kao PDF). Preuzimanje će koristiti novu ekstenziju.",
+      "typeChanged": "Tip fajla promenjen u {{type}}",
+      "typeChangeFailed": "Tip fajla nije promenjen"
     },
     "addSourceDialog": {
       "title": "Dodaj izvor",
