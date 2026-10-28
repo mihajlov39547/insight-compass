@@ -197,7 +197,7 @@ export function UploadDocumentsDialog({
               id="file-upload-real"
               type="file"
               multiple
-              accept=".pdf,.doc,.docx,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.pptx,.eml,.msg,.txt,.txtx,.md,.rtf,.xml,.json,.log"
+              accept=".pdf,.doc,.docx,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.pptx,.eml,.msg,.txt,.txtx,.md,.rtf,.xml,.json,.log,.zip,.7z"
               onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ''; }}
               className="hidden"
             />

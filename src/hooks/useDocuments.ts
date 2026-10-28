@@ -234,11 +234,21 @@ const ALLOWED_EXTENSIONS = new Set([
   'xml',
   'json',
   'log',
+  'zip',
+  '7z',
 ]);
 
 const BLOCKED_EXTENSIONS = new Set([
   'exe', 'bin', 'dll', 'msi', 'app', 'bat', 'cmd', 'com', 'scr',
 ]);
+
+// Archives are stored as-is and never enter the processing pipeline.
+const ARCHIVE_EXTENSIONS = new Set(['zip', '7z']);
+
+export function isArchiveFile(fileName: string): boolean {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  return ARCHIVE_EXTENSIONS.has(ext);
+}
 
 export function isFileAllowed(fileName: string): boolean {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
