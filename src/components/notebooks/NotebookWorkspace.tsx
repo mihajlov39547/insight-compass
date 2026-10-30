@@ -344,11 +344,20 @@ function NotebookSourcesPanel({
           <div className="p-2 space-y-1">
             {documents.map((doc) => {
               const enabled = (doc as any).notebook_enabled !== false;
+              const selected = selectedSourceIds.has(`doc:${doc.id}`);
               return (
                 <div key={doc.id} className={cn(
                   "flex items-start gap-2 p-2 rounded-lg transition-colors",
-                  enabled ? "bg-card" : "bg-muted/50 opacity-60"
+                  selected ? "bg-accent/10" : enabled ? "bg-card" : "bg-muted/50 opacity-60"
                 )}>
+                  {canDeleteDocuments && (
+                    <Checkbox
+                      className="mt-1 shrink-0"
+                      checked={selected}
+                      onCheckedChange={() => onToggleSelectDocument(doc)}
+                      aria-label={t('notebookWorkspace.sources.selection.selectSource', { name: doc.file_name })}
+                    />
+                  )}
                   {canManageDocumentState ? (
                     <button
                       onClick={() => onToggleSource(doc)}
