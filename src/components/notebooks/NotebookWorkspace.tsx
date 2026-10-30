@@ -396,11 +396,20 @@ function NotebookSourcesPanel({
             {linkedVideos.map((video) => {
               const isTranscriptReady = video.transcriptStatus === 'ready';
               const enabled = linkedVideoEnabledById.get(video.id) !== false;
+              const selected = selectedSourceIds.has(`res:${video.id}`);
               return (
                 <div key={video.id} className={cn(
                   "flex items-start gap-2 p-2 rounded-lg transition-colors",
-                  isTranscriptReady && enabled ? "bg-card" : "bg-muted/50 opacity-60"
+                  selected ? "bg-accent/10" : isTranscriptReady && enabled ? "bg-card" : "bg-muted/50 opacity-60"
                 )}>
+                  {canDeleteDocuments && (
+                    <Checkbox
+                      className="mt-1 shrink-0"
+                      checked={selected}
+                      onCheckedChange={() => onToggleSelectLinkedVideo(video)}
+                      aria-label={t('notebookWorkspace.sources.selection.selectSource', { name: video.title })}
+                    />
+                  )}
                   {canManageDocumentState ? (
                     <button
                       onClick={() => onToggleLinkedSource(video)}
