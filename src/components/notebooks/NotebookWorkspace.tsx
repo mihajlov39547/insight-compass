@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { WorkspaceContextHeader } from '@/components/layout/WorkspaceContextHeader';
 import { ChatQuestionNavigator } from '@/components/chat/ChatQuestionNavigator';
@@ -37,10 +38,10 @@ import { useNotebooks, useUpdateNotebook } from '@/hooks/useNotebooks';
 import { useNotebookDocuments } from '@/hooks/useNotebookDocuments';
 import { useNotebookNotes, useCreateNotebookNote, useUpdateNotebookNote, useDeleteNotebookNote, DbNotebookNote } from '@/hooks/useNotebookNotes';
 import { useNotebookMessages, useNotebookAIChat, useDeleteNotebookMessagePair } from '@/hooks/useNotebookChat';
-import { useDeleteDocument, useUploadDocuments, DbDocument } from '@/hooks/useDocuments';
+import { useDeleteDocument, useDeleteDocuments, useUploadDocuments, DbDocument } from '@/hooks/useDocuments';
 import { runTavilyCrawl } from '@/services/tavily-crawl';
 import { useResources } from '@/hooks/useResources';
-import { useDeleteResource, useRetryYouTubeTranscriptIngestion, useCreateLinkResource, type ResourceActionInput } from '@/hooks/useResourceActions';
+import { useDeleteResource, useDeleteResources, useRetryYouTubeTranscriptIngestion, useCreateLinkResource, type ResourceActionInput } from '@/hooks/useResourceActions';
 import type { Resource } from '@/lib/resourceClassification';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { UploadDocumentsDialog } from '@/components/dialogs/UploadDocumentsDialog';
@@ -205,6 +206,16 @@ type NotebookSourcesPanelProps = {
   onClose: () => void;
   onDeleteDoc: (doc: DbDocument) => void;
   onDeleteVideo: (video: any) => void;
+  selectedSourceIds: Set<string>;
+  selectedSourceCount: number;
+  allSourcesSelected: boolean;
+  someSourcesSelected: boolean;
+  batchDeletePending: boolean;
+  onToggleSelectDocument: (doc: DbDocument) => void;
+  onToggleSelectLinkedVideo: (video: Resource) => void;
+  onToggleSelectAllSources: () => void;
+  onClearSourceSelection: () => void;
+  onBatchDeleteSources: () => void;
 };
 
 function NotebookSourcesPanel({
@@ -223,23 +234,44 @@ function NotebookSourcesPanel({
   onClose,
   onDeleteDoc,
   onDeleteVideo,
+  selectedSourceIds,
+  selectedSourceCount,
+  allSourcesSelected,
+  someSourcesSelected,
+  batchDeletePending,
+  onToggleSelectDocument,
+  onToggleSelectLinkedVideo,
+  onToggleSelectAllSources,
+  onClearSourceSelection,
+  onBatchDeleteSources,
 }: NotebookSourcesPanelProps) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col h-full border-r border-border">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 min-w-0">
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1 shrink-0"
             onClick={onClose}
             title={t('notebookWorkspace.sources.collapse')}
           >
             <PanelLeftClose className="h-4 w-4" />
           </Button>
-          <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.sources.title')}</h2>
+          <h2 className="text-sm font-semibold text-foreground truncate">{t('notebookWorkspace.sources.title')}</h2>
+          {canDeleteDocuments && hasSources && (
+            <Checkbox
+              className="ml-1 shrink-0"
+              checked={allSourcesSelected ? true : someSourcesSelected ? 'indeterminate' : false}
+              onCheckedChange={onToggleSelectAllSources}
+              aria-label={t('notebookWorkspace.sources.selection.selectAll')}
+              title={t('notebookWorkspace.sources.selection.selectAll')}
+            />
+          )}
+
         </div>
+
         {canUploadDocuments && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -264,6 +296,36 @@ function NotebookSourcesPanel({
           </DropdownMenu>
         )}
       </div>
+      {selectedSourceCount > 0 && (
+        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-muted/50">
+          <span className="text-xs font-medium text-foreground truncate">
+            {t('notebookWorkspace.sources.selection.selected', { count: selectedSourceCount })}
+          </span>
+          <div className="flex-1" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={onClearSourceSelection}
+            title={t('notebookWorkspace.sources.selection.clear')}
+            aria-label={t('notebookWorkspace.sources.selection.clear')}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+          <Button
+            size="icon"
+            className="h-6 w-6 shrink-0 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={batchDeletePending}
+            onClick={onBatchDeleteSources}
+            title={t('notebookWorkspace.sources.selection.deleteSelected')}
+            aria-label={t('notebookWorkspace.sources.selection.deleteSelected')}
+          >
+            {batchDeletePending
+              ? <Loader2 className="h-3 w-3 animate-spin" />
+              : <Trash2 className="h-3 w-3" />}
+          </Button>
+        </div>
+      )}
       <ScrollArea className="flex-1">
         {documents.length === 0 && linkedVideos.length === 0 ? (
           <div className="p-4 text-center">
@@ -282,11 +344,20 @@ function NotebookSourcesPanel({
           <div className="p-2 space-y-1">
             {documents.map((doc) => {
               const enabled = (doc as any).notebook_enabled !== false;
+              const selected = selectedSourceIds.has(`doc:${doc.id}`);
               return (
                 <div key={doc.id} className={cn(
                   "flex items-start gap-2 p-2 rounded-lg transition-colors",
-                  enabled ? "bg-card" : "bg-muted/50 opacity-60"
+                  selected ? "bg-accent/10" : enabled ? "bg-card" : "bg-muted/50 opacity-60"
                 )}>
+                  {canDeleteDocuments && (
+                    <Checkbox
+                      className="mt-1 shrink-0"
+                      checked={selected}
+                      onCheckedChange={() => onToggleSelectDocument(doc)}
+                      aria-label={t('notebookWorkspace.sources.selection.selectSource', { name: doc.file_name })}
+                    />
+                  )}
                   {canManageDocumentState ? (
                     <button
                       onClick={() => onToggleSource(doc)}
@@ -325,11 +396,20 @@ function NotebookSourcesPanel({
             {linkedVideos.map((video) => {
               const isTranscriptReady = video.transcriptStatus === 'ready';
               const enabled = linkedVideoEnabledById.get(video.id) !== false;
+              const selected = selectedSourceIds.has(`res:${video.id}`);
               return (
                 <div key={video.id} className={cn(
                   "flex items-start gap-2 p-2 rounded-lg transition-colors",
-                  isTranscriptReady && enabled ? "bg-card" : "bg-muted/50 opacity-60"
+                  selected ? "bg-accent/10" : isTranscriptReady && enabled ? "bg-card" : "bg-muted/50 opacity-60"
                 )}>
+                  {canDeleteDocuments && (
+                    <Checkbox
+                      className="mt-1 shrink-0"
+                      checked={selected}
+                      onCheckedChange={() => onToggleSelectLinkedVideo(video)}
+                      aria-label={t('notebookWorkspace.sources.selection.selectSource', { name: video.title })}
+                    />
+                  )}
                   {canManageDocumentState ? (
                     <button
                       onClick={() => onToggleLinkedSource(video)}
