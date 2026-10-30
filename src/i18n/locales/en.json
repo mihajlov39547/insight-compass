@@ -544,6 +544,24 @@
       "status": "Status",
       "updated": "Updated"
     },
+    "selection": {
+      "selectAll": "Select all",
+      "selectRow": "Select {{title}}",
+      "selected_one": "{{count}} selected",
+      "selected_other": "{{count}} selected",
+      "clear": "Clear selection",
+      "deleteSelected": "Delete selected",
+      "confirmTitle_one": "Delete {{count}} resource?",
+      "confirmTitle_other": "Delete {{count}} resources?",
+      "confirmDescription": "This permanently deletes the selected files and their contents. This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirmAction_one": "Delete {{count}} file",
+      "confirmAction_other": "Delete {{count}} files",
+      "deleted_one": "{{count}} resource deleted",
+      "deleted_other": "{{count}} resources deleted",
+      "deletedWithFailures": "{{deleted}} deleted, {{failed}} could not be deleted",
+      "deleteFailed": "Some resources could not be deleted"
+    },
     "row": {
       "linkedResource": "Linked resource",
       "by": "by {{name}}",

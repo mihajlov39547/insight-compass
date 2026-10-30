@@ -551,6 +551,28 @@
       "status": "Status",
       "updated": "Ažurirano"
     },
+    "selection": {
+      "selectAll": "Izaberi sve",
+      "selectRow": "Izaberi {{title}}",
+      "selected_one": "{{count}} izabrano",
+      "selected_few": "{{count}} izabrano",
+      "selected_other": "{{count}} izabrano",
+      "clear": "Poništi izbor",
+      "deleteSelected": "Obriši izabrano",
+      "confirmTitle_one": "Obrisati {{count}} datoteku?",
+      "confirmTitle_few": "Obrisati {{count}} datoteke?",
+      "confirmTitle_other": "Obrisati {{count}} datoteka?",
+      "confirmDescription": "Ovo trajno briše izabrane datoteke i njihov sadržaj. Ova radnja ne može da se poništi.",
+      "cancel": "Otkaži",
+      "confirmAction_one": "Obriši {{count}} datoteku",
+      "confirmAction_few": "Obriši {{count}} datoteke",
+      "confirmAction_other": "Obriši {{count}} datoteka",
+      "deleted_one": "{{count}} datoteka obrisana",
+      "deleted_few": "{{count}} datoteke obrisane",
+      "deleted_other": "{{count}} datoteka obrisano",
+      "deletedWithFailures": "{{deleted}} obrisano, {{failed}} nije moglo da se obriše",
+      "deleteFailed": "Neke datoteke nisu mogle da se obrišu"
+    },
     "row": {
       "linkedResource": "Povezani resurs",
       "by": "od {{name}}",

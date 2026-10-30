@@ -13,6 +13,10 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -25,6 +29,7 @@ import {
   downloadResourceFromStorage,
   useCreateLinkResource,
   useDeleteResource,
+  useDeleteResources,
   useRenameResource,
   useChangeResourceFileType,
   CHANGEABLE_FILE_TYPES,
@@ -131,6 +136,7 @@ export function ResourcesLanding() {
   const uploadMutation = useUploadDocuments();
   const queryClient = useQueryClient();
   const deleteMutation = useDeleteResource();
+  const batchDeleteMutation = useDeleteResources();
   const renameMutation = useRenameResource();
   const changeTypeMutation = useChangeResourceFileType();
   const [renameType, setRenameType] = useState('');
@@ -148,6 +154,8 @@ export function ResourcesLanding() {
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameResource, setRenameResource] = useState<Resource | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [addSourceOpen, setAddSourceOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
@@ -227,6 +235,37 @@ export function ResourcesLanding() {
 
   const hasActiveFilters = ownershipFilter !== 'all' || statusFilter !== 'all' || typeFilter !== 'all' || containerFilter !== 'all' || search.length > 0;
 
+  // ── Batch selection ───────────────────────────────────────────
+  const deletableFiltered = useMemo(() => filtered.filter(r => r.canDelete), [filtered]);
+  const selectedDeletable = useMemo(
+    () => resources.filter(r => selectedIds.has(r.id) && r.canDelete),
+    [resources, selectedIds],
+  );
+  const selectedCount = selectedDeletable.length;
+  const allVisibleSelected = deletableFiltered.length > 0 && deletableFiltered.every(r => selectedIds.has(r.id));
+  const someVisibleSelected = deletableFiltered.some(r => selectedIds.has(r.id));
+
+  const toggleSelected = (resource: Resource) => {
+    if (!resource.canDelete) return;
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(resource.id)) next.delete(resource.id);
+      else next.add(resource.id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) deletableFiltered.forEach(r => next.delete(r.id));
+      else deletableFiltered.forEach(r => next.add(r.id));
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
   const toResourceActionInput = (resource: Resource): ResourceActionInput => ({
     id: resource.id,
     title: resource.title,
@@ -250,12 +289,58 @@ export function ResourcesLanding() {
     }
   }, [resources, selectedResource]);
 
+  // Keep selection honest: drop ids that disappeared from the dataset.
+  useEffect(() => {
+    if (selectedIds.size === 0) return;
+    const alive = new Set(resources.map(r => r.id));
+    let changed = false;
+    const next = new Set<string>();
+    for (const id of selectedIds) {
+      if (alive.has(id)) next.add(id);
+      else changed = true;
+    }
+    if (changed) setSelectedIds(next);
+  }, [resources, selectedIds]);
+
   const handleDelete = (resource: Resource) => {
     if (!resource.canDelete) return;
     const actionInput = toResourceActionInput(resource);
     deleteMutation.mutate(actionInput, {
       onSuccess: () => toast({ title: `${resource.title} deleted` }),
       onError: (err: any) => toast({ title: 'Delete failed', description: err.message, variant: 'destructive' }),
+    });
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedDeletable.length === 0) return;
+    batchDeleteMutation.mutate(selectedDeletable.map(toResourceActionInput), {
+      onSuccess: (result) => {
+        clearSelection();
+        setBatchDeleteOpen(false);
+        if (result.failed.length === 0) {
+          toast({ title: t('resources.selection.deleted', { count: result.deleted.length }) });
+        } else if (result.deleted.length > 0) {
+          toast({
+            title: t('resources.selection.deletedWithFailures', {
+              deleted: result.deleted.length,
+              failed: result.failed.length,
+            }),
+            description: result.failed[0]?.message,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: t('resources.selection.deleteFailed'),
+            description: result.failed[0]?.message,
+            variant: 'destructive',
+          });
+        }
+      },
+      onError: (err: any) => toast({
+        title: t('resources.selection.deleteFailed'),
+        description: err.message,
+        variant: 'destructive',
+      }),
     });
   };
 
@@ -752,6 +837,31 @@ export function ResourcesLanding() {
         </div>
       </div>
 
+      {/* ── Batch selection bar ───────────────────────────────── */}
+      {selectedCount > 0 && (
+        <div className="px-6 py-2 border-b border-border bg-muted/50 flex items-center gap-3 shrink-0">
+          <span className="text-xs font-medium text-foreground">
+            {t('resources.selection.selected', { count: selectedCount })}
+          </span>
+          <div className="h-3.5 w-px bg-border" />
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5" onClick={clearSelection}>
+            <X className="h-3 w-3" /> {t('resources.selection.clear')}
+          </Button>
+          <div className="flex-1" />
+          <Button
+            size="sm"
+            className="h-7 text-xs gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={batchDeleteMutation.isPending}
+            onClick={() => setBatchDeleteOpen(true)}
+          >
+            {batchDeleteMutation.isPending
+              ? <Loader2 className="h-3 w-3 animate-spin" />
+              : <Trash2 className="h-3 w-3" />}
+            {t('resources.selection.deleteSelected')}
+          </Button>
+        </div>
+      )}
+
       {/* ── Resource list ─────────────────────────────────────── */}
       <ScrollArea className="flex-1">
         <div className="px-6 py-4">
@@ -764,7 +874,13 @@ export function ResourcesLanding() {
           ) : (
             <div className="space-y-1">
               {/* Table header */}
-              <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+              <div className="grid grid-cols-[28px_minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+                <Checkbox
+                  checked={allVisibleSelected ? true : someVisibleSelected ? 'indeterminate' : false}
+                  onCheckedChange={toggleSelectAllVisible}
+                  disabled={deletableFiltered.length === 0}
+                  aria-label={t('resources.selection.selectAll')}
+                />
                 <span>{t('resources.table.resource')}</span>
                 <span>{t('resources.table.type')}</span>
                 <span>{t('resources.table.location')}</span>
@@ -785,6 +901,8 @@ export function ResourcesLanding() {
                   onRetry={() => handleRetry(resource)}
                   isDeleting={deleteMutation.isPending}
                   isRetrying={retryMutation.isPending || retryTranscriptMutation.isPending}
+                  selected={selectedIds.has(resource.id)}
+                  onToggleSelect={() => toggleSelected(resource)}
                 />
               ))}
             </div>
@@ -872,6 +990,31 @@ export function ResourcesLanding() {
         onContainerIdChange={setLinkContainerId}
         onSubmit={handleAddSource}
       />
+
+      <AlertDialog open={batchDeleteOpen} onOpenChange={setBatchDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('resources.selection.confirmTitle', { count: selectedCount })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('resources.selection.confirmDescription')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('resources.selection.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                handleBatchDelete();
+              }}
+            >
+              {t('resources.selection.confirmAction', { count: selectedCount })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -927,7 +1070,7 @@ function ReadinessBadge({ readiness }: { readiness: ReadinessStatus }) {
   }
 }
 
-function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, onDelete, onRetry, isDeleting, isRetrying }: {
+function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, onDelete, onRetry, isDeleting, isRetrying, selected, onToggleSelect }: {
   resource: Resource;
   onOpen: () => void;
   onViewDetails: () => void;
@@ -937,6 +1080,8 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   onRetry: () => void;
   isDeleting: boolean;
   isRetrying: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const { t } = useTranslation();
   const Icon = RESOURCE_ICONS[resource.resourceType] || File;
@@ -974,7 +1119,21 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   }, [resource.updatedAt, t]);
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors group">
+    <div className={cn(
+      'grid grid-cols-[28px_minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg transition-colors group',
+      selected ? 'bg-accent/10' : 'hover:bg-muted/50',
+    )}>
+      {/* Selection */}
+      <div className="flex items-center justify-center">
+        {resource.canDelete && (
+          <Checkbox
+            checked={selected}
+            onCheckedChange={onToggleSelect}
+            aria-label={t('resources.selection.selectRow', { title: resource.title })}
+          />
+        )}
+      </div>
+
       {/* Resource info */}
       <div className="flex items-center gap-3 min-w-0">
         <div className={cn('p-1.5 rounded-md bg-muted shrink-0', color)}>
