@@ -383,34 +383,82 @@ export function useRetryProcessing() {
   };
 }
 
+/** Remove one document (storage file + DB row). */
+async function deleteDocumentPermanently(doc: DbDocument): Promise<void> {
+  const { error: storageError } = await supabase.storage
+    .from('insight-navigator')
+    .remove([doc.storage_path]);
+
+  if (storageError && !/not found/i.test(storageError.message || '')) {
+    throw storageError;
+  }
+
+  const { error } = await supabase
+    .from('documents' as any)
+    .delete()
+    .eq('id', doc.id);
+
+  if (error) throw error;
+}
+
+function invalidateDocumentScopes(
+  queryClient: ReturnType<typeof useQueryClient>,
+  doc: DbDocument,
+) {
+  queryClient.invalidateQueries({ queryKey: ['documents', doc.project_id] });
+  queryClient.invalidateQueries({ queryKey: ['document-count', doc.project_id] });
+  queryClient.invalidateQueries({ queryKey: ['resources'] });
+  if (doc.notebook_id) {
+    queryClient.invalidateQueries({ queryKey: ['notebook-documents', doc.notebook_id] });
+    queryClient.invalidateQueries({ queryKey: ['notebook-document-counts'] });
+  }
+}
+
+export interface BatchDeleteDocumentsResult {
+  deleted: DbDocument[];
+  failed: { document: DbDocument; message: string }[];
+}
+
 export function useDeleteDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (doc: DbDocument) => {
-      const { error: storageError } = await supabase.storage
-        .from('insight-navigator')
-        .remove([doc.storage_path]);
-
-      if (storageError && !/not found/i.test(storageError.message || '')) {
-        throw storageError;
-      }
-
-      const { error } = await supabase
-        .from('documents' as any)
-        .delete()
-        .eq('id', doc.id);
-
-      if (error) throw error;
+      await deleteDocumentPermanently(doc);
       return doc;
     },
     onSuccess: (doc) => {
-      queryClient.invalidateQueries({ queryKey: ['documents', doc.project_id] });
-      queryClient.invalidateQueries({ queryKey: ['document-count', doc.project_id] });
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
-      if (doc.notebook_id) {
-        queryClient.invalidateQueries({ queryKey: ['notebook-documents', doc.notebook_id] });
-        queryClient.invalidateQueries({ queryKey: ['notebook-document-counts'] });
+      invalidateDocumentScopes(queryClient, doc);
+    },
+  });
+}
+
+/** Delete several documents with bounded concurrency, reporting per-item outcomes. */
+export function useDeleteDocuments() {
+  const queryClient = useQueryClient();
+
+  return useMutation<BatchDeleteDocumentsResult, Error, DbDocument[]>({
+    mutationFn: async (docs) => {
+      const result: BatchDeleteDocumentsResult = { deleted: [], failed: [] };
+      const queue = [...docs];
+
+      const runWorker = async () => {
+        for (let item = queue.shift(); item; item = queue.shift()) {
+          try {
+            await deleteDocumentPermanently(item);
+            result.deleted.push(item);
+          } catch (err: any) {
+            result.failed.push({ document: item, message: err?.message || 'Delete failed' });
+          }
+        }
+      };
+
+      await Promise.all(Array.from({ length: Math.min(4, queue.length) }, runWorker));
+      return result;
+    },
+    onSuccess: (result) => {
+      for (const doc of result.deleted) {
+        invalidateDocumentScopes(queryClient, doc);
       }
     },
   });
