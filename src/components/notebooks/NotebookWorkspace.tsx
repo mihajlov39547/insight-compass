@@ -265,11 +265,11 @@ function NotebookSourcesPanel({
               className="ml-1 shrink-0"
               checked={allSourcesSelected ? true : someSourcesSelected ? 'indeterminate' : false}
               onCheckedChange={onToggleSelectAllSources}
-              disabled={selectedSourceCount === 0 && !someSourcesSelected && !allSourcesSelected && documents.length + linkedVideos.length === 0}
               aria-label={t('notebookWorkspace.sources.selection.selectAll')}
               title={t('notebookWorkspace.sources.selection.selectAll')}
             />
           )}
+
         </div>
 
         {canUploadDocuments && (
