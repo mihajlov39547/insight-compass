@@ -52,54 +52,94 @@ function invalidateResourceScopes(
   }
 }
 
+/** Remove one resource (storage file + DB row, or linked-resource row). Throws when nothing was deleted. */
+async function deleteResourcePermanently(resource: ResourceActionInput): Promise<void> {
+  const isLinkedResource = resource.resourceKind === 'resource' || resource.resourceKind === 'link';
+
+  if (isLinkedResource) {
+    // Linked resources live in resource_links; FK cascades handle
+    // youtube_transcript_jobs and link_transcript_chunks automatically.
+    const { data, error } = await supabase
+      .from('resource_links' as any)
+      .delete()
+      .eq('id', resource.id)
+      .select('id');
+
+    if (error) throw error;
+    if (!data || (data as any[]).length === 0) {
+      throw new Error('Delete had no effect — linked resource not found or not permitted.');
+    }
+  } else {
+    // Document-backed resources: remove storage file first, then DB row.
+    if (resource.storagePath) {
+      const { error: storageError } = await supabase.storage
+        .from('insight-navigator')
+        .remove([resource.storagePath]);
+
+      if (storageError && !/not found/i.test(storageError.message || '')) {
+        throw storageError;
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('documents' as any)
+      .delete()
+      .eq('id', resource.id)
+      .select('id');
+
+    if (error) throw error;
+    if (!data || (data as any[]).length === 0) {
+      throw new Error('Delete had no effect — document not found or not permitted.');
+    }
+  }
+}
+
+export interface BatchDeleteResult {
+  deleted: ResourceActionInput[];
+  failed: { resource: ResourceActionInput; message: string }[];
+}
+
 export function useDeleteResource() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (resource: ResourceActionInput) => {
-      const isLinkedResource = resource.resourceKind === 'resource' || resource.resourceKind === 'link';
-
-      if (isLinkedResource) {
-        // Linked resources live in resource_links; FK cascades handle
-        // youtube_transcript_jobs and link_transcript_chunks automatically.
-        const { data, error, count } = await supabase
-          .from('resource_links' as any)
-          .delete()
-          .eq('id', resource.id)
-          .select('id');
-
-        if (error) throw error;
-        if (!data || (data as any[]).length === 0) {
-          throw new Error('Delete had no effect — linked resource not found or not permitted.');
-        }
-      } else {
-        // Document-backed resources: remove storage file first, then DB row.
-        if (resource.storagePath) {
-          const { error: storageError } = await supabase.storage
-            .from('insight-navigator')
-            .remove([resource.storagePath]);
-
-          if (storageError && !/not found/i.test(storageError.message || '')) {
-            throw storageError;
-          }
-        }
-
-        const { data, error } = await supabase
-          .from('documents' as any)
-          .delete()
-          .eq('id', resource.id)
-          .select('id');
-
-        if (error) throw error;
-        if (!data || (data as any[]).length === 0) {
-          throw new Error('Delete had no effect — document not found or not permitted.');
-        }
-      }
-
+      await deleteResourcePermanently(resource);
       return resource;
     },
     onSuccess: (resource) => {
       invalidateResourceScopes(queryClient, resource);
+    },
+  });
+}
+
+/** Delete several resources with bounded concurrency, reporting per-item outcomes. */
+export function useDeleteResources() {
+  const queryClient = useQueryClient();
+
+  return useMutation<BatchDeleteResult, Error, ResourceActionInput[]>({
+    mutationFn: async (resources) => {
+      const result: BatchDeleteResult = { deleted: [], failed: [] };
+      const queue = [...resources];
+
+      const runWorker = async () => {
+        for (let item = queue.shift(); item; item = queue.shift()) {
+          try {
+            await deleteResourcePermanently(item);
+            result.deleted.push(item);
+          } catch (err: any) {
+            result.failed.push({ resource: item, message: err?.message || 'Delete failed' });
+          }
+        }
+      };
+
+      await Promise.all(Array.from({ length: Math.min(4, queue.length) }, runWorker));
+      return result;
+    },
+    onSuccess: (result) => {
+      for (const resource of result.deleted) {
+        invalidateResourceScopes(queryClient, resource);
+      }
     },
   });
 }
