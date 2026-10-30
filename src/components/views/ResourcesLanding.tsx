@@ -235,6 +235,37 @@ export function ResourcesLanding() {
 
   const hasActiveFilters = ownershipFilter !== 'all' || statusFilter !== 'all' || typeFilter !== 'all' || containerFilter !== 'all' || search.length > 0;
 
+  // ── Batch selection ───────────────────────────────────────────
+  const deletableFiltered = useMemo(() => filtered.filter(r => r.canDelete), [filtered]);
+  const selectedDeletable = useMemo(
+    () => resources.filter(r => selectedIds.has(r.id) && r.canDelete),
+    [resources, selectedIds],
+  );
+  const selectedCount = selectedDeletable.length;
+  const allVisibleSelected = deletableFiltered.length > 0 && deletableFiltered.every(r => selectedIds.has(r.id));
+  const someVisibleSelected = deletableFiltered.some(r => selectedIds.has(r.id));
+
+  const toggleSelected = (resource: Resource) => {
+    if (!resource.canDelete) return;
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(resource.id)) next.delete(resource.id);
+      else next.add(resource.id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) deletableFiltered.forEach(r => next.delete(r.id));
+      else deletableFiltered.forEach(r => next.add(r.id));
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
   const toResourceActionInput = (resource: Resource): ResourceActionInput => ({
     id: resource.id,
     title: resource.title,
@@ -258,12 +289,58 @@ export function ResourcesLanding() {
     }
   }, [resources, selectedResource]);
 
+  // Keep selection honest: drop ids that disappeared from the dataset.
+  useEffect(() => {
+    if (selectedIds.size === 0) return;
+    const alive = new Set(resources.map(r => r.id));
+    let changed = false;
+    const next = new Set<string>();
+    for (const id of selectedIds) {
+      if (alive.has(id)) next.add(id);
+      else changed = true;
+    }
+    if (changed) setSelectedIds(next);
+  }, [resources, selectedIds]);
+
   const handleDelete = (resource: Resource) => {
     if (!resource.canDelete) return;
     const actionInput = toResourceActionInput(resource);
     deleteMutation.mutate(actionInput, {
       onSuccess: () => toast({ title: `${resource.title} deleted` }),
       onError: (err: any) => toast({ title: 'Delete failed', description: err.message, variant: 'destructive' }),
+    });
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedDeletable.length === 0) return;
+    batchDeleteMutation.mutate(selectedDeletable.map(toResourceActionInput), {
+      onSuccess: (result) => {
+        clearSelection();
+        setBatchDeleteOpen(false);
+        if (result.failed.length === 0) {
+          toast({ title: t('resources.selection.deleted', { count: result.deleted.length }) });
+        } else if (result.deleted.length > 0) {
+          toast({
+            title: t('resources.selection.deletedWithFailures', {
+              deleted: result.deleted.length,
+              failed: result.failed.length,
+            }),
+            description: result.failed[0]?.message,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: t('resources.selection.deleteFailed'),
+            description: result.failed[0]?.message,
+            variant: 'destructive',
+          });
+        }
+      },
+      onError: (err: any) => toast({
+        title: t('resources.selection.deleteFailed'),
+        description: err.message,
+        variant: 'destructive',
+      }),
     });
   };
 
