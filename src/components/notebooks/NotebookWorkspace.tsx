@@ -206,6 +206,16 @@ type NotebookSourcesPanelProps = {
   onClose: () => void;
   onDeleteDoc: (doc: DbDocument) => void;
   onDeleteVideo: (video: any) => void;
+  selectedSourceIds: Set<string>;
+  selectedSourceCount: number;
+  allSourcesSelected: boolean;
+  someSourcesSelected: boolean;
+  batchDeletePending: boolean;
+  onToggleSelectDocument: (doc: DbDocument) => void;
+  onToggleSelectLinkedVideo: (video: Resource) => void;
+  onToggleSelectAllSources: () => void;
+  onClearSourceSelection: () => void;
+  onBatchDeleteSources: () => void;
 };
 
 function NotebookSourcesPanel({
@@ -224,6 +234,16 @@ function NotebookSourcesPanel({
   onClose,
   onDeleteDoc,
   onDeleteVideo,
+  selectedSourceIds,
+  selectedSourceCount,
+  allSourcesSelected,
+  someSourcesSelected,
+  batchDeletePending,
+  onToggleSelectDocument,
+  onToggleSelectLinkedVideo,
+  onToggleSelectAllSources,
+  onClearSourceSelection,
+  onBatchDeleteSources,
 }: NotebookSourcesPanelProps) {
   const { t } = useTranslation();
   return (
