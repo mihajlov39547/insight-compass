@@ -837,6 +837,31 @@ export function ResourcesLanding() {
         </div>
       </div>
 
+      {/* ── Batch selection bar ───────────────────────────────── */}
+      {selectedCount > 0 && (
+        <div className="px-6 py-2 border-b border-border bg-muted/50 flex items-center gap-3 shrink-0">
+          <span className="text-xs font-medium text-foreground">
+            {t('resources.selection.selected', { count: selectedCount })}
+          </span>
+          <div className="h-3.5 w-px bg-border" />
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5" onClick={clearSelection}>
+            <X className="h-3 w-3" /> {t('resources.selection.clear')}
+          </Button>
+          <div className="flex-1" />
+          <Button
+            size="sm"
+            className="h-7 text-xs gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={batchDeleteMutation.isPending}
+            onClick={() => setBatchDeleteOpen(true)}
+          >
+            {batchDeleteMutation.isPending
+              ? <Loader2 className="h-3 w-3 animate-spin" />
+              : <Trash2 className="h-3 w-3" />}
+            {t('resources.selection.deleteSelected')}
+          </Button>
+        </div>
+      )}
+
       {/* ── Resource list ─────────────────────────────────────── */}
       <ScrollArea className="flex-1">
         <div className="px-6 py-4">
@@ -957,6 +982,31 @@ export function ResourcesLanding() {
         onContainerIdChange={setLinkContainerId}
         onSubmit={handleAddSource}
       />
+
+      <AlertDialog open={batchDeleteOpen} onOpenChange={setBatchDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('resources.selection.confirmTitle', { count: selectedCount })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('resources.selection.confirmDescription')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('resources.selection.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                handleBatchDelete();
+              }}
+            >
+              {t('resources.selection.confirmAction', { count: selectedCount })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -1012,7 +1062,7 @@ function ReadinessBadge({ readiness }: { readiness: ReadinessStatus }) {
   }
 }
 
-function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, onDelete, onRetry, isDeleting, isRetrying }: {
+function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, onDelete, onRetry, isDeleting, isRetrying, selected, onToggleSelect }: {
   resource: Resource;
   onOpen: () => void;
   onViewDetails: () => void;
@@ -1022,6 +1072,8 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   onRetry: () => void;
   isDeleting: boolean;
   isRetrying: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const { t } = useTranslation();
   const Icon = RESOURCE_ICONS[resource.resourceType] || File;
@@ -1059,7 +1111,21 @@ function ResourceRow({ resource, onOpen, onViewDetails, onRename, onDownload, on
   }, [resource.updatedAt, t]);
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors group">
+    <div className={cn(
+      'grid grid-cols-[28px_minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 items-center px-3 py-2.5 rounded-lg transition-colors group',
+      selected ? 'bg-accent/10' : 'hover:bg-muted/50',
+    )}>
+      {/* Selection */}
+      <div className="flex items-center justify-center">
+        {resource.canDelete && (
+          <Checkbox
+            checked={selected}
+            onCheckedChange={onToggleSelect}
+            aria-label={t('resources.selection.selectRow', { title: resource.title })}
+          />
+        )}
+      </div>
+
       {/* Resource info */}
       <div className="flex items-center gap-3 min-w-0">
         <div className={cn('p-1.5 rounded-md bg-muted shrink-0', color)}>
