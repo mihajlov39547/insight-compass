@@ -874,7 +874,13 @@ export function ResourcesLanding() {
           ) : (
             <div className="space-y-1">
               {/* Table header */}
-              <div className="grid grid-cols-[minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+              <div className="grid grid-cols-[28px_minmax(0,1fr)_120px_220px_100px_100px_40px] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+                <Checkbox
+                  checked={allVisibleSelected ? true : someVisibleSelected ? 'indeterminate' : false}
+                  onCheckedChange={toggleSelectAllVisible}
+                  disabled={deletableFiltered.length === 0}
+                  aria-label={t('resources.selection.selectAll')}
+                />
                 <span>{t('resources.table.resource')}</span>
                 <span>{t('resources.table.type')}</span>
                 <span>{t('resources.table.location')}</span>
@@ -895,6 +901,8 @@ export function ResourcesLanding() {
                   onRetry={() => handleRetry(resource)}
                   isDeleting={deleteMutation.isPending}
                   isRetrying={retryMutation.isPending || retryTranscriptMutation.isPending}
+                  selected={selectedIds.has(resource.id)}
+                  onToggleSelect={() => toggleSelected(resource)}
                 />
               ))}
             </div>
