@@ -154,6 +154,8 @@ export function ResourcesLanding() {
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameResource, setRenameResource] = useState<Resource | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [addSourceOpen, setAddSourceOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
