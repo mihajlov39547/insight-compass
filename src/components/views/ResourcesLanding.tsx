@@ -13,6 +13,10 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -25,6 +29,7 @@ import {
   downloadResourceFromStorage,
   useCreateLinkResource,
   useDeleteResource,
+  useDeleteResources,
   useRenameResource,
   useChangeResourceFileType,
   CHANGEABLE_FILE_TYPES,
@@ -131,6 +136,7 @@ export function ResourcesLanding() {
   const uploadMutation = useUploadDocuments();
   const queryClient = useQueryClient();
   const deleteMutation = useDeleteResource();
+  const batchDeleteMutation = useDeleteResources();
   const renameMutation = useRenameResource();
   const changeTypeMutation = useChangeResourceFileType();
   const [renameType, setRenameType] = useState('');
