@@ -296,6 +296,36 @@ function NotebookSourcesPanel({
           </DropdownMenu>
         )}
       </div>
+      {selectedSourceCount > 0 && (
+        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-muted/50">
+          <span className="text-xs font-medium text-foreground truncate">
+            {t('notebookWorkspace.sources.selection.selected', { count: selectedSourceCount })}
+          </span>
+          <div className="flex-1" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={onClearSourceSelection}
+            title={t('notebookWorkspace.sources.selection.clear')}
+            aria-label={t('notebookWorkspace.sources.selection.clear')}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+          <Button
+            size="icon"
+            className="h-6 w-6 shrink-0 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={batchDeletePending}
+            onClick={onBatchDeleteSources}
+            title={t('notebookWorkspace.sources.selection.deleteSelected')}
+            aria-label={t('notebookWorkspace.sources.selection.deleteSelected')}
+          >
+            {batchDeletePending
+              ? <Loader2 className="h-3 w-3 animate-spin" />
+              : <Trash2 className="h-3 w-3" />}
+          </Button>
+        </div>
+      )}
       <ScrollArea className="flex-1">
         {documents.length === 0 && linkedVideos.length === 0 ? (
           <div className="p-4 text-center">
