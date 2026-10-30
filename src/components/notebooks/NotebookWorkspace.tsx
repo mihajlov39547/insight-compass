@@ -249,18 +249,29 @@ function NotebookSourcesPanel({
   return (
     <div className="flex flex-col h-full border-r border-border">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 min-w-0">
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground -ml-1 shrink-0"
             onClick={onClose}
             title={t('notebookWorkspace.sources.collapse')}
           >
             <PanelLeftClose className="h-4 w-4" />
           </Button>
-          <h2 className="text-sm font-semibold text-foreground">{t('notebookWorkspace.sources.title')}</h2>
+          <h2 className="text-sm font-semibold text-foreground truncate">{t('notebookWorkspace.sources.title')}</h2>
+          {canDeleteDocuments && hasSources && (
+            <Checkbox
+              className="ml-1 shrink-0"
+              checked={allSourcesSelected ? true : someSourcesSelected ? 'indeterminate' : false}
+              onCheckedChange={onToggleSelectAllSources}
+              disabled={selectedSourceCount === 0 && !someSourcesSelected && !allSourcesSelected && documents.length + linkedVideos.length === 0}
+              aria-label={t('notebookWorkspace.sources.selection.selectAll')}
+              title={t('notebookWorkspace.sources.selection.selectAll')}
+            />
+          )}
         </div>
+
         {canUploadDocuments && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
