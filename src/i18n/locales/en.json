@@ -419,6 +419,24 @@
         "toastWebsiteCrawled": "Crawled {{count}} page(s) — processing started",
         "toastNoContent": "Crawl returned no readable content",
         "toastFailed": "Failed to add source"
+      },
+      "selection": {
+        "selectAll": "Select all sources",
+        "selectSource": "Select {{name}}",
+        "selected_one": "{{count}} selected",
+        "selected_other": "{{count}} selected",
+        "clear": "Clear selection",
+        "deleteSelected": "Delete selected",
+        "confirmTitle_one": "Delete {{count}} source?",
+        "confirmTitle_other": "Delete {{count}} sources?",
+        "confirmDescription": "This permanently removes these sources and all of their data. This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirmAction_one": "Delete {{count}} source",
+        "confirmAction_other": "Delete {{count}} sources",
+        "deleted_one": "{{count}} source deleted",
+        "deleted_other": "{{count}} sources deleted",
+        "deletedWithFailures": "{{deleted}} deleted, {{failed}} could not be deleted",
+        "deleteFailed": "Sources could not be deleted"
       }
     },
     "notes": {

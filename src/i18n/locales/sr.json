@@ -426,6 +426,28 @@
         "toastWebsiteCrawled": "Pretraženo {{count}} stranica — obrada započeta",
         "toastNoContent": "Pretraga nije vratila čitljiv sadržaj",
         "toastFailed": "Neuspešno dodavanje izvora"
+      },
+      "selection": {
+        "selectAll": "Izaberi sve izvore",
+        "selectSource": "Izaberi {{name}}",
+        "selected_one": "Izabran {{count}} izvor",
+        "selected_few": "Izabrana {{count}} izvora",
+        "selected_other": "Izabrano {{count}} izvora",
+        "clear": "Poništi izbor",
+        "deleteSelected": "Izbriši označeno",
+        "confirmTitle_one": "Obrisati {{count}} izvor?",
+        "confirmTitle_few": "Obrisati {{count}} izvora?",
+        "confirmTitle_other": "Obrisati {{count}} izvora?",
+        "confirmDescription": "Ovo trajno uklanja ove izvore i sve njihove podatke. Ova radnja se ne može poništiti.",
+        "cancel": "Otkaži",
+        "confirmAction_one": "Obriši {{count}} izvor",
+        "confirmAction_few": "Obriši {{count}} izvora",
+        "confirmAction_other": "Obriši {{count}} izvora",
+        "deleted_one": "Obrisan {{count}} izvor",
+        "deleted_few": "Obrisana {{count}} izvora",
+        "deleted_other": "Obrisano {{count}} izvora",
+        "deletedWithFailures": "Obrisano {{deleted}}, {{failed}} nije moglo da se obriše",
+        "deleteFailed": "Izvori nisu obrisani"
       }
     },
     "notes": {
