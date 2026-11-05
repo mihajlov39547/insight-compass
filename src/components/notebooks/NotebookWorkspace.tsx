@@ -616,6 +616,135 @@ export function NotebookWorkspace() {
     resourceKind: resource.resourceKind,
   });
 
+  // ── Batch selection in the Sources sidebar ────────────────────
+  const selectedDocuments = useMemo(
+    () => documents.filter((d) => selectedSourceIds.has(`doc:${d.id}`)),
+    [documents, selectedSourceIds],
+  );
+  const selectedVideos = useMemo(
+    () => linkedVideos.filter((v) => selectedSourceIds.has(`res:${v.id}`)),
+    [linkedVideos, selectedSourceIds],
+  );
+  const selectedSourceCount = selectedDocuments.length + selectedVideos.length;
+  const allSourcesSelected = hasSources && selectedSourceCount === documents.length + linkedVideos.length;
+  const someSourcesSelected = selectedSourceCount > 0 && !allSourcesSelected;
+
+  const toggleSelectDocument = (doc: DbDocument) => {
+    setSelectedSourceIds((prev) => {
+      const next = new Set(prev);
+      const key = `doc:${doc.id}`;
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleSelectLinkedVideo = (video: Resource) => {
+    setSelectedSourceIds((prev) => {
+      const next = new Set(prev);
+      const key = `res:${video.id}`;
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleSelectAllSources = () => {
+    setSelectedSourceIds((prev) => {
+      const next = new Set(prev);
+      if (allSourcesSelected) {
+        documents.forEach((d) => next.delete(`doc:${d.id}`));
+        linkedVideos.forEach((v) => next.delete(`res:${v.id}`));
+      } else {
+        documents.forEach((d) => next.add(`doc:${d.id}`));
+        linkedVideos.forEach((v) => next.add(`res:${v.id}`));
+      }
+      return next;
+    });
+  };
+
+  const clearSourceSelection = () => setSelectedSourceIds(new Set());
+
+  // Keep selection honest: drop ids that disappeared from the sidebar.
+  useEffect(() => {
+    if (selectedSourceIds.size === 0) return;
+    const alive = new Set<string>([
+      ...documents.map((d) => `doc:${d.id}`),
+      ...linkedVideos.map((v) => `res:${v.id}`),
+    ]);
+    let changed = false;
+    const next = new Set<string>();
+    for (const id of selectedSourceIds) {
+      if (alive.has(id)) next.add(id);
+      else changed = true;
+    }
+    if (changed) setSelectedSourceIds(next);
+  }, [documents, linkedVideos, selectedSourceIds]);
+
+  // Never carry a selection across notebooks.
+  useEffect(() => {
+    setSelectedSourceIds(new Set());
+    setBatchDeleteOpen(false);
+  }, [selectedNotebookId]);
+
+  const handleBatchDeleteSources = async () => {
+    if (selectedSourceCount === 0) return;
+    setBatchDeletePending(true);
+    try {
+      const [docsSettled, videosSettled] = await Promise.allSettled([
+        selectedDocuments.length
+          ? deleteDocuments.mutateAsync(selectedDocuments)
+          : Promise.resolve(undefined),
+        selectedVideos.length
+          ? deleteResources.mutateAsync(selectedVideos.map(toResourceActionInput))
+          : Promise.resolve(undefined),
+      ]);
+
+      let deleted = 0;
+      let failed = 0;
+      let firstError = '';
+
+      if (docsSettled.status === 'fulfilled') {
+        if (docsSettled.value) {
+          deleted += docsSettled.value.deleted.length;
+          failed += docsSettled.value.failed.length;
+          firstError = firstError || docsSettled.value.failed[0]?.message || '';
+        }
+      } else {
+        failed += selectedDocuments.length;
+        firstError = firstError || (docsSettled.reason as Error)?.message || '';
+      }
+
+      if (videosSettled.status === 'fulfilled') {
+        if (videosSettled.value) {
+          deleted += videosSettled.value.deleted.length;
+          failed += videosSettled.value.failed.length;
+          firstError = firstError || videosSettled.value.failed[0]?.message || '';
+        }
+      } else {
+        failed += selectedVideos.length;
+        firstError = firstError || (videosSettled.reason as Error)?.message || '';
+      }
+
+      setBatchDeleteOpen(false);
+      clearSourceSelection();
+
+      if (failed === 0 && deleted > 0) {
+        toast.success(t('notebookWorkspace.sources.selection.deleted', { count: deleted }));
+      } else if (deleted > 0) {
+        toast.error(t('notebookWorkspace.sources.selection.deletedWithFailures', { deleted, failed }), {
+          description: firstError || undefined,
+        });
+      } else {
+        toast.error(t('notebookWorkspace.sources.selection.deleteFailed'), {
+          description: firstError || undefined,
+        });
+      }
+    } finally {
+      setBatchDeletePending(false);
+    }
+  };
+
   const previousUserMessage = useMemo(() => {
     const userMsgs = messages.filter(m => m.role === 'user');
     return userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content : undefined;
