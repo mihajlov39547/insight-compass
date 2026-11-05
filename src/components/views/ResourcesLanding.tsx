@@ -849,6 +849,15 @@ export function ResourcesLanding() {
           </Button>
           <div className="flex-1" />
           <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1.5"
+            title={t('resources.selection.downloadSelected')}
+          >
+            <Download className="h-3 w-3" />
+            {t('resources.selection.downloadSelected')}
+          </Button>
+          <Button
             size="sm"
             className="h-7 text-xs gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={batchDeleteMutation.isPending}

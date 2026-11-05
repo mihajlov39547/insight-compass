@@ -4,7 +4,7 @@ import {
   Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
   Pencil, X, Save, AlertCircle, RefreshCw, MessageSquare, Loader2, Bot, User,
   FileUp, ArrowUp, Video, RotateCcw,
-  PanelLeftClose,
+  PanelLeftClose, Download,
 } from 'lucide-react';
 import { SourceAttribution, SourceItem } from '@/components/chat/SourceAttribution';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -311,6 +311,15 @@ function NotebookSourcesPanel({
             aria-label={t('notebookWorkspace.sources.selection.clear')}
           >
             <X className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-6 w-6 shrink-0"
+            title={t('notebookWorkspace.sources.selection.downloadSelected')}
+            aria-label={t('notebookWorkspace.sources.selection.downloadSelected')}
+          >
+            <Download className="h-3 w-3" />
           </Button>
           <Button
             size="icon"
