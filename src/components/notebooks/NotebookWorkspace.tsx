@@ -1658,6 +1658,32 @@ export function NotebookWorkspace() {
         }}
         isPending={deleteResource.isPending}
       />
+
+      <AlertDialog open={batchDeleteOpen} onOpenChange={(open) => { setBatchDeleteOpen(open); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('notebookWorkspace.sources.selection.confirmTitle', { count: selectedSourceCount })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('notebookWorkspace.sources.selection.confirmDescription')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('notebookWorkspace.sources.selection.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={batchDeletePending}
+              onClick={(e) => {
+                e.preventDefault();
+                handleBatchDeleteSources();
+              }}
+            >
+              {t('notebookWorkspace.sources.selection.confirmAction', { count: selectedSourceCount })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
