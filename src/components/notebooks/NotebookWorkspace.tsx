@@ -495,6 +495,8 @@ export function NotebookWorkspace() {
   const { data: messages = [], isLoading: messagesLoading } = useNotebookMessages(selectedNotebookId ?? undefined);
   const deleteDocument = useDeleteDocument();
   const deleteResource = useDeleteResource();
+  const deleteDocuments = useDeleteDocuments();
+  const deleteResources = useDeleteResources();
   const retryTranscript = useRetryYouTubeTranscriptIngestion();
   const createLinkResource = useCreateLinkResource();
   const uploadDocuments = useUploadDocuments();
@@ -526,6 +528,9 @@ export function NotebookWorkspace() {
   const [addingToSources, setAddingToSources] = useState(false);
   const [pendingDeleteDoc, setPendingDeleteDoc] = useState<DbDocument | null>(null);
   const [pendingDeleteVideo, setPendingDeleteVideo] = useState<any | null>(null);
+  const [selectedSourceIds, setSelectedSourceIds] = useState<Set<string>>(new Set());
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeletePending, setBatchDeletePending] = useState(false);
   const chatViewportRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isChatNearBottom, setIsChatNearBottom] = useState(true);
@@ -1043,6 +1048,16 @@ export function NotebookWorkspace() {
                   onClose={() => setLeftPanel(null)}
                   onDeleteDoc={setPendingDeleteDoc}
                   onDeleteVideo={setPendingDeleteVideo}
+                  selectedSourceIds={selectedSourceIds}
+                  selectedSourceCount={selectedSourceCount}
+                  allSourcesSelected={allSourcesSelected}
+                  someSourcesSelected={someSourcesSelected}
+                  batchDeletePending={batchDeletePending}
+                  onToggleSelectDocument={toggleSelectDocument}
+                  onToggleSelectLinkedVideo={toggleSelectLinkedVideo}
+                  onToggleSelectAllSources={toggleSelectAllSources}
+                  onClearSourceSelection={clearSourceSelection}
+                  onBatchDeleteSources={() => setBatchDeleteOpen(true)}
                 />
               </ResizablePanel>
               <ResizableHandle />
