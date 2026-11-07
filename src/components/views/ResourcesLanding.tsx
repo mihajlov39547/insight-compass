@@ -70,6 +70,7 @@ import {
 } from '@/lib/resourceClassification';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { downloadFilesAsZip, zipTimestampName, type ZipItem } from '@/lib/zipDownload';
 import { useTranslation } from 'react-i18next';
 
 // ── Icon mapping ────────────────────────────────────────────────────
@@ -244,6 +245,34 @@ export function ResourcesLanding() {
   const selectedCount = selectedDeletable.length;
   const allVisibleSelected = deletableFiltered.length > 0 && deletableFiltered.every(r => selectedIds.has(r.id));
   const someVisibleSelected = deletableFiltered.some(r => selectedIds.has(r.id));
+
+  const [batchDownloadPending, setBatchDownloadPending] = useState(false);
+  const handleBatchDownload = async () => {
+    const items: ZipItem[] = selectedDeletable
+      .filter(r => r.storagePath && r.storageMode !== 'external_reference' && r.canDownload)
+      .map(r => {
+        const ext = r.storagePath.includes('.') ? r.storagePath.split('.').pop() || '' : '';
+        const title = r.title || 'resource';
+        const filename = ext && !title.toLowerCase().endsWith(`.${ext.toLowerCase()}`) ? `${title}.${ext}` : title;
+        return { storagePath: r.storagePath, filename };
+      });
+    if (items.length === 0) {
+      toast({ title: t('resources.selection.downloadNothing'), variant: 'destructive' });
+      return;
+    }
+    setBatchDownloadPending(true);
+    try {
+      const { added, failed } = await downloadFilesAsZip(items, zipTimestampName('resources'));
+      const missing = failed + (selectedDeletable.length - items.length);
+      if (added === 0) toast({ title: t('resources.selection.downloadFailed'), variant: 'destructive' });
+      else if (missing > 0) toast({ title: t('resources.selection.downloadPartial', { added, missing }) });
+      else toast({ title: t('resources.selection.downloadDone', { count: added }) });
+    } catch {
+      toast({ title: t('resources.selection.downloadFailed'), variant: 'destructive' });
+    } finally {
+      setBatchDownloadPending(false);
+    }
+  };
 
   const toggleSelected = (resource: Resource) => {
     if (!resource.canDelete) return;
@@ -853,8 +882,10 @@ export function ResourcesLanding() {
             size="sm"
             className="h-7 text-xs gap-1.5"
             title={t('resources.selection.downloadSelected')}
+            disabled={batchDownloadPending}
+            onClick={handleBatchDownload}
           >
-            <Download className="h-3 w-3" />
+            {batchDownloadPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
             {t('resources.selection.downloadSelected')}
           </Button>
           <Button

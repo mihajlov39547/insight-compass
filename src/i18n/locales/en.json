@@ -437,7 +437,11 @@
         "deleted_one": "{{count}} source deleted",
         "deleted_other": "{{count}} sources deleted",
         "deletedWithFailures": "{{deleted}} deleted, {{failed}} could not be deleted",
-        "deleteFailed": "Sources could not be deleted"
+        "deleteFailed": "Sources could not be deleted",
+        "downloadNothing": "None of the selected items are downloadable files.",
+        "downloadFailed": "Could not prepare the download.",
+        "downloadPartial": "ZIP downloaded with {{added}} files; {{missing}} could not be included.",
+        "downloadDone": "ZIP downloaded with {{count}} files."
       }
     },
     "notes": {
@@ -580,7 +584,11 @@
       "deleted_one": "{{count}} resource deleted",
       "deleted_other": "{{count}} resources deleted",
       "deletedWithFailures": "{{deleted}} deleted, {{failed}} could not be deleted",
-      "deleteFailed": "Some resources could not be deleted"
+      "deleteFailed": "Some resources could not be deleted",
+      "downloadNothing": "None of the selected items are downloadable files.",
+      "downloadFailed": "Could not prepare the download.",
+      "downloadPartial": "ZIP downloaded with {{added}} files; {{missing}} could not be included.",
+      "downloadDone": "ZIP downloaded with {{count}} files."
     },
     "row": {
       "linkedResource": "Linked resource",
