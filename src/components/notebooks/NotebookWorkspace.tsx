@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { getUserAccessToken } from '@/lib/functionAuth';
 import {
   Plus, Upload, FileText, Globe, ToggleLeft, ToggleRight,
   Trash2, Sparkles, Copy, BookmarkPlus, StickyNote,
@@ -965,7 +966,7 @@ export function NotebookWorkspace() {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                    Authorization: `Bearer ${await getUserAccessToken()}`,
                   },
                   body: JSON.stringify({
                     definition_key: 'document_processing_v1',
@@ -1092,7 +1093,7 @@ export function NotebookWorkspace() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${await getUserAccessToken()}`,
           },
           body: JSON.stringify({
             definition_key: 'document_processing_v1',

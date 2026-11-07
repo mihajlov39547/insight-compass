@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { runWorkerLoop } from "./worker-loop.ts";
 import type { WorkerRequest, WorkerResponse } from "./contracts.ts";
+import { isInternalCaller } from "../_shared/auth/service-caller.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,6 +66,16 @@ serve(async (req) => {
       );
     }
 
+    const internal = await isInternalCaller(req);
+    // Only scheduled jobs / internal callers (service key) or signed-in users may kick the worker.
+    if (!internal) {
+      const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+      if (!token) return jsonResponse({ error: "Unauthorized" }, 401);
+      const { data, error } = await createClient(supabaseUrl, anonKey).auth.getUser(token);
+      if (error || !data?.user) return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+
     let body: unknown;
     try {
       body = await req.json();
@@ -73,6 +84,13 @@ serve(async (req) => {
     }
 
     const request = normalizeWorkerRequest(body);
+    if (!internal) {
+      // Browser kicks get conservative limits and no debug output.
+      request.max_activities_to_process = Math.min(request.max_activities_to_process ?? 10, 10);
+      request.lease_seconds = Math.min(request.lease_seconds ?? 180, 300);
+      request.handler_keys = undefined;
+      request.debug = false;
+    }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: {

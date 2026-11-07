@@ -49,32 +49,13 @@ async function verifyPayPalWebhook(
     req.headers.get("paypal-transmission-sig") &&
     req.headers.get("paypal-auth-algo");
 
-  // --- LIVE: never skip verification ---
-  if (paypalEnv === "live") {
-    if (!webhookId || !clientId || !clientSecret) {
-      console.error("LIVE mode: PayPal verification secrets missing — rejecting webhook");
-      return false;
-    }
-    if (!hasSignatureHeaders) {
-      console.error("LIVE mode: Missing PayPal signature headers — rejecting webhook");
-      return false;
-    }
-    // Fall through to full verification below
-  }
-
-  // --- SANDBOX: skip only for simulator events that lack signature headers ---
-  if (paypalEnv === "sandbox" && !hasSignatureHeaders) {
-    console.warn("Sandbox: no signature headers present, skipping verification (simulator event)");
-    return true;
-  }
-
-  // --- Full verification (both sandbox and live when headers are present) ---
+  // Never skip verification — in any environment. Unsigned events are rejected.
   if (!webhookId || !clientId || !clientSecret) {
-    if (paypalEnv === "sandbox") {
-      console.warn("Sandbox: verification secrets missing, allowing event");
-      return true;
-    }
-    // live already handled above, but belt-and-suspenders
+    console.error(`[${paypalEnv}] PayPal verification secrets missing — rejecting webhook`);
+    return false;
+  }
+  if (!hasSignatureHeaders) {
+    console.error(`[${paypalEnv}] Missing PayPal signature headers — rejecting webhook`);
     return false;
   }
 

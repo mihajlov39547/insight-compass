@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getUserAccessToken } from '@/lib/functionAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
@@ -116,7 +117,7 @@ export async function startDocumentWorkflow(doc: DocumentWorkflowTriggerInput, m
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${await getUserAccessToken()}`,
       },
       body: JSON.stringify(requestPayload),
     }
@@ -134,12 +135,12 @@ export async function startDocumentWorkflow(doc: DocumentWorkflowTriggerInput, m
   // Best-effort immediate worker kicks to reduce time-to-first-activity.
   // Fire two rapid kicks: one immediately, one after a short delay for any
   // downstream activities queued by the first kick.
-  const kickWorker = () => {
+  const kickWorker = async () => {
     fetch(getFunctionUrl('/functions/v1/workflow-worker'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${await getUserAccessToken()}`,
       },
       body: JSON.stringify({
         max_activities_to_process: 10,

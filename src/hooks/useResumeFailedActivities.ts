@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { getUserAccessToken } from '@/lib/functionAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { SUPABASE_PUBLISHABLE_KEY, getFunctionUrl } from '@/config/env';
@@ -19,12 +20,12 @@ export function useResumeFailedActivities() {
       if (error) throw error;
 
       // Best-effort worker kicks so the resumed activities pick up quickly.
-      const kick = () => {
+      const kick = async () => {
         fetch(getFunctionUrl('/functions/v1/workflow-worker'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${await getUserAccessToken()}`,
           },
           body: JSON.stringify({
             max_activities_to_process: 10,

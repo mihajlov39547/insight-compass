@@ -1,0 +1,1 @@
+- Internal-only edge functions (workflow worker/maintenance, transactional email) authenticate via `_shared/auth/service-caller.ts` (service key or cron token in `internal_job_tokens`); browser calls must send the user's access token, never the publishable key — so anonymous callers can't trigger privileged work.

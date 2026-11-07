@@ -9,6 +9,7 @@ import type {
   StartWorkflowRunRequest,
   StartWorkflowRunResponse,
 } from "./contracts.ts";
+import { isServiceRoleCaller } from "../_shared/auth/service-caller.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -134,20 +135,21 @@ serve(async (req) => {
 
     const request = normalizeRequest(body);
 
-    const authorizationHeader = req.headers.get("authorization") ?? "";
-    const authUserId = await resolveAuthenticatedUserId(
-      supabaseUrl,
-      anonKey,
-      authorizationHeader
-    );
-
-    const effectiveUserId = request.user_id ?? authUserId ?? null;
-
-    if (request.user_id && authUserId && request.user_id !== authUserId) {
-      throw new ServiceError(
-        "user_id must match authenticated user when auth token is provided",
-        403
+    const isService = isServiceRoleCaller(req);
+    let effectiveUserId: string | null;
+    if (isService) {
+      effectiveUserId = request.user_id ?? null;
+    } else {
+      const authUserId = await resolveAuthenticatedUserId(
+        supabaseUrl,
+        anonKey,
+        req.headers.get("authorization") ?? ""
       );
+      if (!authUserId) throw new ServiceError("Unauthorized", 401);
+      if (request.user_id && request.user_id !== authUserId) {
+        throw new ServiceError("user_id must match the authenticated user", 403);
+      }
+      effectiveUserId = authUserId;
     }
 
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {

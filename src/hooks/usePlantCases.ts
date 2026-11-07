@@ -166,16 +166,19 @@ export function useDeletePlantCase() {
       );
       const driveIds = rows.map((r) => r.drive_file_id).filter((d): d is string => !!d);
 
-      const { error } = await (supabase as any).from(TABLE).delete().eq('id', id);
-      if (error) throw error;
+      if (driveIds.length > 0) {
+        // Case row + Drive copies deleted server-side (ownership verified there).
+        const { data, error } = await supabase.functions.invoke('plant-image-drive-delete', {
+          body: { caseId: id },
+        });
+        if (error || (data as any)?.error) throw error || new Error((data as any).error);
+      } else {
+        const { error } = await (supabase as any).from(TABLE).delete().eq('id', id);
+        if (error) throw error;
+      }
 
       if (paths.length > 0) {
         await supabase.storage.from('plant-case-images').remove(paths).catch(() => {});
-      }
-      if (driveIds.length > 0) {
-        await supabase.functions
-          .invoke('plant-image-drive-delete', { body: { driveFileIds: driveIds } })
-          .catch((e) => console.warn('[plant-case] Drive cleanup failed', e));
       }
     },
     onSuccess: () => {

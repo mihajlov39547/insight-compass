@@ -16,6 +16,35 @@ const PLAN_MAP: Record<string, string> = {
   "P-914500751X525453BNH3YLOA": "premium_monthly",
 };
 
+function getPayPalEnv(): "sandbox" | "live" {
+  const raw = (Deno.env.get("PAYPAL_ENV") || "sandbox").trim().toLowerCase();
+  return raw === "live" || raw === "production" ? "live" : "sandbox";
+}
+
+/** Fetch the subscription from PayPal so the plan is only granted for a real, approved subscription. */
+async function fetchPayPalSubscription(subscriptionId: string): Promise<any | null> {
+  const env = getPayPalEnv();
+  const baseUrl = env === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+  const clientId = (env === "sandbox" ? Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID") : Deno.env.get("PAYPAL_CLIENT_ID"))?.trim() || "";
+  const secret = (env === "sandbox" ? Deno.env.get("PAYPAL_SANDBOX_SECRET_KEY") : Deno.env.get("PAYPAL_SECRET_KEY"))?.trim() || "";
+  if (!clientId || !secret) return null;
+  const tokenRes = await fetch(`${baseUrl}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${btoa(`${clientId}:${secret}`)}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials",
+  });
+  const tokenData = await tokenRes.json().catch(() => null);
+  if (!tokenRes.ok || !tokenData?.access_token) return null;
+  const subRes = await fetch(`${baseUrl}/v1/billing/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+  });
+  if (!subRes.ok) return null;
+  return await subRes.json().catch(() => null);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -44,11 +73,41 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (typeof subscriptionID !== "string" || !/^I-[A-Z0-9]{6,32}$/.test(subscriptionID)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid subscription" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify with PayPal that the subscription exists, is for this plan, and is approved/active.
+    const ppSub = await fetchPayPalSubscription(subscriptionID);
+    const ppStatus = String(ppSub?.status || "").toUpperCase();
+    if (!ppSub || ppSub.plan_id !== paypalPlanId || !["ACTIVE", "APPROVED"].includes(ppStatus)) {
+      return new Response(
+        JSON.stringify({ error: "Subscription could not be verified" }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
+
+    // A PayPal subscription can only ever be linked to one account.
+    const { data: existingLink } = await supabaseAdmin
+      .from("user_subscriptions")
+      .select("user_id")
+      .eq("paypal_subscription_id", subscriptionID)
+      .maybeSingle();
+    if (existingLink && existingLink.user_id !== userId) {
+      return new Response(
+        JSON.stringify({ error: "Subscription already linked" }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Upsert user subscription
     const { error: subError } = await supabaseAdmin
@@ -59,7 +118,7 @@ Deno.serve(async (req) => {
           plan_key: expectedPlanKey,
           paypal_subscription_id: subscriptionID,
           paypal_plan_id: paypalPlanId,
-          status: "pending",
+          status: ppStatus === "ACTIVE" ? "active" : "pending",
           current_period_start: new Date().toISOString(),
         },
         { onConflict: "user_id" }
@@ -112,7 +171,7 @@ Deno.serve(async (req) => {
             },
           },
         });
-        console.log("Subscription confirmation email sent to", recipientEmail);
+        console.log("Subscription confirmation email sent");
       }
     } catch (emailErr) {
       // Non-blocking — subscription still succeeded

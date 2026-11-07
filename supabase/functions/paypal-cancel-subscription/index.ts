@@ -270,7 +270,7 @@ Deno.serve(async (req) => {
             },
           },
         });
-        console.log("[cancel] Cancellation email sent to", recipientEmail);
+        console.log("[cancel] Cancellation email sent");
       }
     } catch (emailErr) {
       console.error("[cancel] Failed to send cancellation email:", emailErr);

@@ -35,24 +35,25 @@ export function SignInDialog({ open, onOpenChange, onSwitchToRegister }: SignInD
 
     setLoading(true);
     try {
-      let email = identifier.trim();
+      const email = identifier.trim();
+      let error: unknown = null;
 
       if (!email.includes('@')) {
-        const { data, error } = await supabase.rpc('get_email_by_username', {
-          lookup_username: email,
+        const { data, error: fnErr } = await supabase.functions.invoke('username-sign-in', {
+          body: { username: email, password },
         });
-        if (error || !data) {
+        if (fnErr || !(data as any)?.access_token) {
           toast.error(t('auth.errors.invalidUsernameOrPassword'));
           setLoading(false);
           return;
         }
-        email = data as string;
+        ({ error } = await supabase.auth.setSession({
+          access_token: (data as any).access_token,
+          refresh_token: (data as any).refresh_token,
+        }));
+      } else {
+        ({ error } = await supabase.auth.signInWithPassword({ email, password }));
       }
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
 
       if (error) {
         toast.error(t('auth.errors.invalidCredentials'));

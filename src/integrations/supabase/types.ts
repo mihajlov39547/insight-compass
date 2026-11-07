@@ -708,6 +708,24 @@ export type Database = {
         }
         Relationships: []
       }
+      internal_job_tokens: {
+        Row: {
+          created_at: string
+          name: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          name: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          name?: string
+          token?: string
+        }
+        Relationships: []
+      }
       link_transcript_chunk_questions: {
         Row: {
           chunk_id: string
@@ -3248,6 +3266,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_see_user_email: { Args: { _target: string }; Returns: boolean }
       check_item_permission: {
         Args: {
           p_item_id: string

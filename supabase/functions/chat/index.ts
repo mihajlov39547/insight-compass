@@ -152,7 +152,14 @@ serve(async (req) => {
 
     const docs = Array.isArray(documentContext) ? (documentContext as DocumentContext[]) : [];
     const web = Array.isArray(webContext) ? (webContext as WebContextItem[]) : [];
-    const chatMessages = Array.isArray(messages) ? messages : [];
+    // Only user/assistant turns are accepted from the client; the system
+    // prompt is always built server-side and cannot be overridden.
+    const chatMessages = (Array.isArray(messages) ? messages : [])
+      .filter((m: any) =>
+        m && (m.role === "user" || m.role === "assistant") &&
+        (typeof m.content === "string" || Array.isArray(m.content)))
+      .slice(-60)
+      .map((m: any) => ({ role: m.role, content: m.content }));
 
     const latestUserPrompt = [...chatMessages]
       .reverse()
@@ -580,7 +587,7 @@ Final answer-shaping instruction (baseline, not an absolute lock):
         apiKey: LOVABLE_API_KEY,
         model: candidate,
         systemPrompt,
-        messages,
+        messages: chatMessages,
         responseMaxOutputTokens: responseLengthConfig.maxOutputTokens,
       });
 

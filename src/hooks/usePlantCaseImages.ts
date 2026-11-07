@@ -240,9 +240,16 @@ export function useDeletePlantImage() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (img: PlantCaseImage) => {
-      // 1) DB row first (avoid orphan refs pointing at missing objects).
-      const { error } = await (supabase as any).from(TABLE).delete().eq('id', img.id);
-      if (error) throw error;
+      // 1) Row + Drive copy deleted server-side (ownership verified there).
+      if (img.drive_file_id) {
+        const { data, error } = await supabase.functions.invoke('plant-image-drive-delete', {
+          body: { imageId: img.id },
+        });
+        if (error || (data as any)?.error) throw error || new Error((data as any).error);
+      } else {
+        const { error } = await (supabase as any).from(TABLE).delete().eq('id', img.id);
+        if (error) throw error;
+      }
 
       // 2) Best-effort Supabase staging object cleanup.
       const supabasePaths = [img.storage_path, img.staging_storage_path].filter(
@@ -250,13 +257,6 @@ export function useDeletePlantImage() {
       );
       if (supabasePaths.length > 0) {
         await supabase.storage.from(BUCKET).remove(supabasePaths).catch(() => {});
-      }
-
-      // 3) Best-effort Drive cleanup via backend.
-      if (img.drive_file_id) {
-        await supabase.functions
-          .invoke('plant-image-drive-delete', { body: { driveFileIds: [img.drive_file_id] } })
-          .catch((e) => console.warn('[plant-image] Drive delete failed', e));
       }
       return img;
     },
