@@ -81,13 +81,15 @@ export function AuthDialog({ open, onOpenChange, initialMode = 'signin' }: AuthD
 
     setLoading(true);
     try {
-      let loginEmail = identifier.trim();
+      const loginEmail = identifier.trim();
+      let error: unknown = null;
       if (!loginEmail.includes('@')) {
-        const { data, error } = await supabase.rpc('get_email_by_username', { lookup_username: loginEmail });
-        if (error || !data) { toast.error(t('auth.errors.invalidUsernameOrPassword')); setLoading(false); return; }
-        loginEmail = data as string;
+        const { data, error: fnErr } = await supabase.functions.invoke('username-sign-in', { body: { username: loginEmail, password } });
+        if (fnErr || !(data as any)?.access_token) { toast.error(t('auth.errors.invalidUsernameOrPassword')); setLoading(false); return; }
+        ({ error } = await supabase.auth.setSession({ access_token: (data as any).access_token, refresh_token: (data as any).refresh_token }));
+      } else {
+        ({ error } = await supabase.auth.signInWithPassword({ email: loginEmail, password }));
       }
-      const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
       if (error) { toast.error(t('auth.errors.invalidCredentials')); return; }
       toast.success(t('auth.toasts.signedIn'));
       handleOpenChange(false);
