@@ -51,6 +51,7 @@ import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 import { modelOptions } from '@/config/modelOptions';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { downloadFilesAsZip, zipTimestampName, type ZipItem } from '@/lib/zipDownload';
 import { MarkdownContent } from '@/components/chat/MarkdownContent';
 import { ResearchTrace } from '@/components/chat/ResearchTrace';
 import { WebSearchTrace } from '@/components/chat/WebSearchTrace';
@@ -216,6 +217,8 @@ type NotebookSourcesPanelProps = {
   onToggleSelectAllSources: () => void;
   onClearSourceSelection: () => void;
   onBatchDeleteSources: () => void;
+  batchDownloadPending: boolean;
+  onBatchDownloadSources: () => void;
 };
 
 function NotebookSourcesPanel({
@@ -244,6 +247,8 @@ function NotebookSourcesPanel({
   onToggleSelectAllSources,
   onClearSourceSelection,
   onBatchDeleteSources,
+  batchDownloadPending,
+  onBatchDownloadSources,
 }: NotebookSourcesPanelProps) {
   const { t } = useTranslation();
   return (
@@ -318,8 +323,10 @@ function NotebookSourcesPanel({
             className="h-6 w-6 shrink-0"
             title={t('notebookWorkspace.sources.selection.downloadSelected')}
             aria-label={t('notebookWorkspace.sources.selection.downloadSelected')}
+            disabled={batchDownloadPending}
+            onClick={onBatchDownloadSources}
           >
-            <Download className="h-3 w-3" />
+            {batchDownloadPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
           </Button>
           <Button
             size="icon"
@@ -695,6 +702,32 @@ export function NotebookWorkspace() {
     setSelectedSourceIds(new Set());
     setBatchDeleteOpen(false);
   }, [selectedNotebookId]);
+
+  const [batchDownloadPending, setBatchDownloadPending] = useState(false);
+  const handleBatchDownloadSources = async () => {
+    const items: ZipItem[] = [
+      ...selectedDocuments.filter((d) => d.storage_path).map((d) => ({ storagePath: d.storage_path, filename: d.file_name || 'file' })),
+      ...selectedVideos
+        .filter((v: any) => v.storagePath && v.storageMode !== 'external_reference')
+        .map((v: any) => ({ storagePath: v.storagePath, filename: v.title || 'file' })),
+    ];
+    if (items.length === 0) {
+      toast.info(t('notebookWorkspace.sources.selection.downloadNothing'));
+      return;
+    }
+    setBatchDownloadPending(true);
+    try {
+      const { added, failed } = await downloadFilesAsZip(items, zipTimestampName(notebook?.name || 'sources'));
+      const skipped = selectedSourceCount - items.length;
+      if (added === 0) toast.error(t('notebookWorkspace.sources.selection.downloadFailed'));
+      else if (failed > 0 || skipped > 0) toast.warning(t('notebookWorkspace.sources.selection.downloadPartial', { added, missing: failed + skipped }));
+      else toast.success(t('notebookWorkspace.sources.selection.downloadDone', { count: added }));
+    } catch {
+      toast.error(t('notebookWorkspace.sources.selection.downloadFailed'));
+    } finally {
+      setBatchDownloadPending(false);
+    }
+  };
 
   const handleBatchDeleteSources = async () => {
     if (selectedSourceCount === 0) return;
@@ -1196,6 +1229,8 @@ export function NotebookWorkspace() {
                   onToggleSelectAllSources={toggleSelectAllSources}
                   onClearSourceSelection={clearSourceSelection}
                   onBatchDeleteSources={() => setBatchDeleteOpen(true)}
+                  batchDownloadPending={batchDownloadPending}
+                  onBatchDownloadSources={handleBatchDownloadSources}
                 />
               </ResizablePanel>
               <ResizableHandle />

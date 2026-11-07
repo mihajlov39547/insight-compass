@@ -45,6 +45,7 @@
         "i18next": "^26.0.8",
         "i18next-browser-languagedetector": "^8.2.1",
         "input-otp": "^1.4.2",
+        "jszip": "^3.10.2",
         "lucide-react": "^0.462.0",
         "mammoth": "^1.8.0",
         "next-themes": "^0.3.0",
@@ -958,7 +959,7 @@
 
     "json-stable-stringify-without-jsonify": ["json-stable-stringify-without-jsonify@1.0.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/json-stable-stringify-without-jsonify/-/json-stable-stringify-without-jsonify-1.0.1.tgz", {}, ""],
 
-    "jszip": ["jszip@3.10.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/jszip/-/jszip-3.10.1.tgz", { "dependencies": { "lie": "~3.3.0", "pako": "~1.0.2", "readable-stream": "~2.3.6", "setimmediate": "^1.0.5" } }, ""],
+    "jszip": ["jszip@3.10.2", "", { "dependencies": { "lie": "~3.3.0", "pako": "~1.0.2", "readable-stream": "~2.3.6", "setimmediate": "^1.0.5" } }, "sha512-3l+rb15IOWtUhU0H5MFqES/T6Kh7abYwjosBey/vD6hDt8zoEffkSC5Ws5SGtgVw3gBx2NEbhTeSW1+kWkpyTQ=="],
 
     "keyv": ["keyv@4.5.4", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/keyv/-/keyv-4.5.4.tgz", { "dependencies": { "json-buffer": "3.0.1" } }, ""],
 
@@ -1633,6 +1634,8 @@
     "js-yaml/argparse": ["argparse@2.0.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/argparse/-/argparse-2.0.1.tgz", {}, ""],
 
     "linebreak/base64-js": ["base64-js@0.0.8", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/base64-js/-/base64-js-0.0.8.tgz", {}, ""],
+
+    "mammoth/jszip": ["jszip@3.10.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/jszip/-/jszip-3.10.1.tgz", { "dependencies": { "lie": "~3.3.0", "pako": "~1.0.2", "readable-stream": "~2.3.6", "setimmediate": "^1.0.5" } }, ""],
 
     "mdast-util-find-and-replace/escape-string-regexp": ["escape-string-regexp@5.0.0", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/escape-string-regexp/-/escape-string-regexp-5.0.0.tgz", {}, ""],
 

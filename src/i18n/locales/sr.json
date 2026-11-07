@@ -448,7 +448,11 @@
         "deleted_few": "Obrisana {{count}} izvora",
         "deleted_other": "Obrisano {{count}} izvora",
         "deletedWithFailures": "Obrisano {{deleted}}, {{failed}} nije moglo da se obriše",
-        "deleteFailed": "Izvori nisu obrisani"
+        "deleteFailed": "Izvori nisu obrisani",
+        "downloadNothing": "Nijedna izabrana stavka nije fajl za preuzimanje.",
+        "downloadFailed": "Preuzimanje nije moglo da se pripremi.",
+        "downloadPartial": "ZIP preuzet sa {{added}} fajlova; {{missing}} nije moglo da se uključi.",
+        "downloadDone": "ZIP preuzet sa {{count}} fajlova."
       }
     },
     "notes": {
@@ -595,7 +599,11 @@
       "deleted_few": "{{count}} datoteke obrisane",
       "deleted_other": "{{count}} datoteka obrisano",
       "deletedWithFailures": "{{deleted}} obrisano, {{failed}} nije moglo da se obriše",
-      "deleteFailed": "Neke datoteke nisu mogle da se obrišu"
+      "deleteFailed": "Neke datoteke nisu mogle da se obrišu",
+      "downloadNothing": "Nijedna izabrana stavka nije fajl za preuzimanje.",
+      "downloadFailed": "Preuzimanje nije moglo da se pripremi.",
+      "downloadPartial": "ZIP preuzet sa {{added}} fajlova; {{missing}} nije moglo da se uključi.",
+      "downloadDone": "ZIP preuzet sa {{count}} fajlova."
     },
     "row": {
       "linkedResource": "Povezani resurs",
