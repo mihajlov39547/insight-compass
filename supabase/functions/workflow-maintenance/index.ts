@@ -12,6 +12,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { isServiceRoleCaller } from "../_shared/auth/service-caller.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,6 +53,11 @@ serve(async (req) => {
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
+  // Maintenance is only for scheduled jobs and internal callers holding the service key.
+  if (!isServiceRoleCaller(req)) {
+    return jsonResponse({ error: "Forbidden" }, 403);
+  }
+
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
