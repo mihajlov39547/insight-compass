@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
             },
           },
         });
-        console.log("Subscription confirmation email sent to", recipientEmail);
+        console.log("Subscription confirmation email sent");
       }
     } catch (emailErr) {
       // Non-blocking — subscription still succeeded
