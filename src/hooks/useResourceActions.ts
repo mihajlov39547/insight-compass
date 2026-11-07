@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { getUserAccessToken } from '@/lib/functionAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { startDocumentWorkflow } from '@/hooks/useDocuments';
 import { getFunctionUrl, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
@@ -303,7 +304,7 @@ async function maybeStartYoutubeWorkflow(resourceId: string, userId: string, url
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${await getUserAccessToken()}`,
       },
       body: JSON.stringify({
         definition_key: 'youtube_processing_v1',
@@ -406,7 +407,7 @@ export function useRetryYouTubeTranscriptIngestion() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+              Authorization: `Bearer ${await getUserAccessToken()}`,
             },
             body: JSON.stringify({
               definition_key: 'youtube_processing_v1',
