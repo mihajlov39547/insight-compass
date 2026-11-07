@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794069050772,
+      "tag": "0000_secure_profile_email_lookups_and_cron_auth",
+      "breakpoints": true
+    }
+  ]
+}
